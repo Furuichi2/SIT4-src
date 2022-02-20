@@ -1,0 +1,944 @@
+;****************************************************************************************
+;* File Name	: ssa_Main.src
+;* Function	: シーケンス メイン処理
+;* Author	: Designed by T.Akiba, Coded by T.Akiba
+;* Date		: 2009-11-20 Akiba
+;* Update	: 2010-08-11 Y.Kobayashi(コード整理)
+;****************************************************************************************
+
+;********************************************************************
+;* INCLUDE
+;********************************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"
+	.INCLUDE	"ssa_ver1.equ"		; //
+	.INCLUDE	"shn_cmd1.mac" 
+	.INCLUDE	"sqa_MemDef.ext" 
+	.INCLUDE	"sqa_CmdDef.ext"
+	.INCLUDE	"sqa_Config.equ" 
+	.LIST	ON
+
+	.SECTION	P,CODE
+
+;********************************************************************
+;* EXTERN 宣言 MEMORY,HARD
+;********************************************************************
+	.IMPORT		_SEQ_CALL_TBL1		;
+	.IMPORT		_SEQ_DATA_TBL1		;
+	.IMPORT		_SEQ_RUN_CHG1_MAIN;	;
+	.IMPORT		_SEQ_RUN_CHG2_MAIN;	;
+	.IMPORT		_SEQ_RUN_CHG3_MAIN;	;
+
+;********************************************************************
+;* PUBLIC 宣言 PROGRAM
+;********************************************************************
+	.EXPORT		_SEQ_BACK_GROUND_INIT	;
+	.EXPORT		_SEQ_MAIN		;
+
+	.IMPORT		_ssc_InitSArea		;
+	.IMPORT		_SeqRunFlg		;
+	.IMPORT		_SEQ_COM1_TOP		;
+	.IMPORT		_SEQ_COM2_TOP		;
+	.IMPORT		_SEQ_COM3_TOP		;
+	.IMPORT		_SeqPOU1		;
+	.IMPORT		_SeqPOU2		;
+	.IMPORT		_SeqPOU3		;
+	.IMPORT		_SeqPOURun1Flg		; POU1 運転ﾌﾗｸﾞ(0:運転可,1:運転不可)
+	.IMPORT		_SeqPOURun2Flg		; POU2 運転ﾌﾗｸﾞ(0:運転可,1:運転不可)
+	.IMPORT		_SeqPOURun3Flg		; POU3 運転ﾌﾗｸﾞ(0:運転可,1:運転不可)
+	
+	
+;********************************************************************
+;* FUNCTION	: シーケンスにかかわる起動前イニシャル
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 10/08/26 Y.Kobayashi
+;********************************************************************
+_SEQ_BACK_GROUND_INIT
+	SUB_START
+	PUSH_ALL
+
+	FAR_JSR	#_ssc_InitSArea,R0		; ｼｽﾃﾑ領域の初期化(ｼｽﾊﾟﾗの転送)	10/08/26 Add Y.Kobayashi
+	FAR_JSR	#_SEQ_L_POP,R0			; 保持ﾒﾓﾘ領域読出処理実行
+
+	MOV.L	#_SeqPOU1,R5			; 転送先ｱﾄﾞﾚｽSET
+	MOV.L	#_SEQ_COM1_TOP,R2		; 転送元ｱﾄﾞﾚｽSET
+	FAR_JSR	#_SEQ_POU_RD,R0			; POU情報読出処理実行
+
+	MOV.L	#_SeqPOU2,R5			; 転送先ｱﾄﾞﾚｽSET
+	MOV.L	#_SEQ_COM2_TOP,R2		; 転送元ｱﾄﾞﾚｽSET
+	FAR_JSR	#_SEQ_POU_RD,R0			; POU情報読出処理実行
+
+	MOV.L	#_SeqPOU3,R5			; 転送先ｱﾄﾞﾚｽSET
+	MOV.L	#_SEQ_COM3_TOP,R2		; 転送元ｱﾄﾞﾚｽSET
+	FAR_JSR	#_SEQ_POU_RD,R0			; POU情報読出処理実行
+
+	MOV.L	#_SeqPOU1,R1			; POU1 ｻｲｽﾞ情報確認
+	MOV.L	#D'12,R2			;
+	ADD.L	R2,R1				;
+	MOV.W	@R1,R0				;
+	MOV.W	#D'1,R1				;
+	CMP/GE	R1,R0				;
+	BT	_SEQ_BACK_GROUND_INIT100	;
+	MOV.L	#_SeqPOURun1Flg,R0		; POU1 ﾌﾟﾛｸﾞﾗﾑなしにより運転不可
+	MOV.W	#D'1,R1				;
+	MOV.W	R1,@R0				;
+	M_BRA	_SEQ_BACK_GROUND_INIT101	;
+
+_SEQ_BACK_GROUND_INIT100;
+
+	FAR_JSR	#_SEQ_INIT1,R0			; ｼｰｹﾝｽｲﾆｼｬﾙ1処理実行
+	MOV.L	#_SEQ_CMP_ERR1,R1		; 
+	MOV.W	@R1,R0				; CMP OK = R0:0000 , CMP NG = R0:FFFF
+	TST	R0,R0				;
+	BF	_SEQ_BACK_GROUND_INIT400	;
+
+_SEQ_BACK_GROUND_INIT101;
+
+	MOV.L	#_SeqPOU2,R1			; POU3 ｻｲｽﾞ情報確認
+	MOV.L	#D'12,R2			;
+	ADD.L	R2,R1				;
+	MOV.W	@R1,R0				;
+	MOV.W	#D'1,R1				;
+	CMP/GE	R1,R0				;
+	BT	_SEQ_BACK_GROUND_INIT200	;
+	MOV.L	#_SeqPOURun2Flg,R0		; POU2 ﾌﾟﾛｸﾞﾗﾑなしにより運転不可
+	MOV.W	#D'1,R1				;
+	MOV.W	R1,@R0				;
+	M_BRA	_SEQ_BACK_GROUND_INIT201	;
+
+_SEQ_BACK_GROUND_INIT200;
+
+	FAR_JSR	#_SEQ_INIT2,R0			; ｼｰｹﾝｽｲﾆｼｬﾙ2処理実行
+	MOV.L	#_SEQ_CMP_ERR2,R1		; 
+	MOV.W	@R1,R0				; CMP OK = R0:0000 , CMP NG = R0:FFFF
+	TST	R0,R0				;
+	BF	_SEQ_BACK_GROUND_INIT400	;
+
+_SEQ_BACK_GROUND_INIT201;
+
+	MOV.L	#_SeqPOU3,R1			; POU3 ｻｲｽﾞ情報確認
+	MOV.L	#D'12,R2			;
+	ADD.L	R2,R1				;
+	MOV.W	@R1,R0				;
+	MOV.W	#D'1,R1				;
+	CMP/GE	R1,R0				;
+	BT	_SEQ_BACK_GROUND_INIT300	;
+	MOV.L	#_SeqPOURun3Flg,R0		; POU3 ﾌﾟﾛｸﾞﾗﾑなしにより運転不可
+	MOV.W	#D'1,R1				;
+	MOV.W	R1,@R0				;
+	M_BRA	_SEQ_BACK_GROUND_INIT301	;
+
+_SEQ_BACK_GROUND_INIT300;
+
+	FAR_JSR	#_SEQ_INIT3,R0			; ｼｰｹﾝｽｲﾆｼｬﾙ3処理実行
+	MOV.L	#_SEQ_CMP_ERR3,R1		; 
+	MOV.W	@R1,R0				; CMP OK = R0:0000 , CMP NG = R0:FFFF
+	TST	R0,R0				;
+	BF	_SEQ_BACK_GROUND_INIT400	;
+
+_SEQ_BACK_GROUND_INIT301;
+
+	MOV.L	#_SeqSysStat,R0			;
+	MOV.W	#BIT0,R1			; 
+	MOV.W	R1,@R0				; ｼｰｹﾝｽｼｽﾃﾑ情報(起動ﾋﾞｯﾄON)
+	MOV.L	#_SeqRunFlg,R0			;
+	MOV.W	R1,@R0				;
+	MOV.L	#_SEQ_CMP_START,R0		;
+	MOV.W	R1,@R0				;
+	M_BRA	_SEQ_BACK_GROUND_INIT500	;
+
+_SEQ_BACK_GROUND_INIT400;
+	MOV.L	#_SeqSysStat,R0			;
+	MOV.W	#(BIT2 + BIT1),R1		;
+	MOV.W	R1,@R0				; ｼｰｹﾝｽｼｽﾃﾑ情報(停止･重故障ﾋﾞｯﾄON)
+	MOV.W	#D'0,R1				; 
+	MOV.L	#_SeqRunFlg,R0			;
+	MOV.W	R1,@R0				;
+
+_SEQ_BACK_GROUND_INIT500;
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: シーケンスにかかわるメインルーチン
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+_SEQ_MAIN;
+	SUB_START
+	PUSH_ALL
+
+;; --------- ステップ実行時間計測用 START ----------
+;;	"DE2"信号にて波形観測
+;;	MOV.L	#H'F8050020,R0
+;;	MOV.W	@R0,R1
+;;	MOV.W	#H'10,R2
+;;	OR	R2,R1
+;;	MOV.W	R1,@R0
+;; --------- ステップ実行時間計測用 END ----------
+
+;;	FAR_JSR	#_SEQ_RUN_MAIN1,R0		; ｼｰｹﾝｽﾒｲﾝﾙｰﾁﾝ1実行	Add 100106 AKIBA
+
+;;	MOV.L	#_SEQ_CMP_START,R1		; ｺﾝﾊﾟｲﾙ中ﾌﾗｸﾞ確認
+;;	MOV.W	@R1,R0
+;;	CMP/EQ	#0,R0
+;;	BT	SEQ_MAIN_100
+;;	FAR_JSR	#_SEQ_RUN_MAIN2,R0		; ｼｰｹﾝｽﾒｲﾝﾙｰﾁﾝ2実行
+
+;;	FAR_JSR	#_SEQ_RUN_MAIN3,R0		; ｼｰｹﾝｽﾒｲﾝﾙｰﾁﾝ3実行	Add 100106 AKIBA
+
+;; --------- ステップ実行時間計測用 START ----------
+;;	"DE2"信号にて波形観測
+;;	MOV.L	#H'F8050020,R0
+;;	MOV.W	@R0,R1
+;;	MOV.W	#H'EF,R2
+;;	AND	R2,R1
+;;	MOV.W	R1,@R0
+;; --------- ステップ実行時間計測用 END ----------
+
+SEQ_MAIN_100:
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: POU1 イニシャル処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+_SEQ_INIT1:
+	SUB_START
+	PUSH_ALL
+	
+	FAR_JSR	#_SEQ_RUN_CHG1_MAIN,R0
+	
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: POU2 イニシャル処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+_SEQ_INIT2:
+	SUB_START
+	PUSH_ALL
+	
+	FAR_JSR	#_SEQ_RUN_CHG2_MAIN,R0
+	
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: POU3 イニシャル処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+_SEQ_INIT3:
+	SUB_START
+	PUSH_ALL
+	
+	FAR_JSR	#_SEQ_RUN_CHG3_MAIN,R0
+	
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: 保持メモリ領域読出処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+	.IMPORT	_SeqMemM			; L領域ﾊﾞｯｸｱｯﾌﾟ情報
+	.ALIGN	4
+_SEQ_L_POP:
+	SUB_START
+
+	DI_PUSH_SR_SH3	WK_REG1=R2,WK_REG2=R4	; 割込ﾏｽｸ
+	MOV.L	#_SeqLd_MKIND_TBL_TOP,R3	;
+	MOV.L	#D'16,R1			;
+	ADD.L	R1,R3				;
+	MOV.L	@R3,R1				;
+	MOV.L	#_SeqMemM,R5			;
+	MOV.W	@R5,R3				;
+	MOV.W	R3,@R1				;
+	XOR	R0,R0				;
+
+_SEQ_L_POP10:
+	MOV.W	#1,R3				;
+	ADD	R3,R0				;
+	CMP/EQ	#_SEQ_L_SET,R0			; 32ward転送完了？
+	BT	_SEQ_L_POP20			; 転送完了
+
+	MOV.L	#D'2,R3				;
+	ADD.L	R3,R5				;
+	ADD.L	R3,R1				;
+	MOV.W	@R5,R3				;
+	MOV.W	R3,@R1				;
+	M_BRA	_SEQ_L_POP10			;
+
+_SEQ_L_POP20:
+	EI_POP_SR_SH3 				; 割込ﾏｽｸ解除
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: POU情報レジスタ作成処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+	.ALIGN	4
+_SEQ_POU_RD:
+	SUB_START
+
+	MOV.L	@R2,R1				;
+	MOV.L	R1,@R5				;
+	XOR	R0,R0				;
+
+_SEQ_POU_RD10:
+	MOV.L	#1,R1				;
+	ADD	R1,R0				;
+	MOV.L	#_SEQ_POU_SET,R1		;
+	CMP/EQ	R1,R0				; 32ward転送完了？
+	BT	_SEQ_POU_RD20			; 転送完了
+
+	MOV.L	#D'4,R1				;
+	ADD.L	R1,R2				;
+	ADD.L	R1,R5				;
+	MOV.L	@R2,R1				;
+	MOV.L	R1,@R5				;
+	M_BRA	_SEQ_POU_RD10			;
+
+_SEQ_POU_RD20:
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: POU1 RUN処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+	.EXPORT		_SEQ_RUN_MAIN1
+	
+_SEQ_RUN_MAIN1:
+	SUB_START
+	PUSH_ALL
+	
+	MOV.L	#_SEQ_CMP_ERR1,R1		; CMP OK = BX:0000 , CMP NG = BX:FFFF
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	BF	_SEQ_RUN_MAIN1_1000		;
+
+	MOV.L	#_X_PUSH_TOP1,R5		; 退避先ﾚｼﾞｽﾀSET
+	FAR_JSR	#_SEQ_X_PUSH,R0			; X領域の退避
+
+	MOV.L	#_DI_X_TOP2,R5			;
+	FAR_JSR	#_SEQ_X_POP,R0			; 実入力ﾚｼﾞｽﾀのSET
+
+	FAR_JSR	#_SEQ_REG_START_SET1,R0		; ﾚｼﾞｽﾀ設定
+
+	MOV.L	#_SeqPOURun1Flg,R1		; POU1 運転ﾌﾗｸﾞ確認(0:運転可,1:運転不可)
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	BF	_SEQ_RUN_MAIN1_100		;
+
+;; --------- ステップ実行時間計測用 START ----------
+;;	"DE2"信号にて波形観測
+;;	MOV.L	#H'F8050020,R0
+;;	MOV.W	@R0,R1
+;;	MOV.W	#H'10,R2
+;;	OR	R2,R1
+;;	MOV.W	R1,@R0
+;; --------- ステップ実行時間計測用 END ----------
+
+	FAR_JSR	#_SEQ_RUN1_TOP,R0		;(実ｼｰｹﾝｽ)
+
+;; --------- ステップ実行時間計測用 START ----------
+;;	"DE2"信号にて波形観測
+;;	MOV.L	#H'F8050020,R0
+;;	MOV.W	@R0,R1
+;;	MOV.W	#H'EF,R2
+;;	AND	R2,R1
+;;	MOV.W	R1,@R0
+;; --------- ステップ実行時間計測用 END ----------
+
+	FAR_JSR	#_SEQ_L_PUSH,R0			; 保持ﾒﾓﾘ領域書込処理実行
+
+_SEQ_RUN_MAIN1_100:
+	MOV.L	#_X_PUSH_TOP1,R5		; 退避元ﾚｼﾞｽﾀSET
+	FAR_JSR	#_SEQ_X_POP,R0			; X領域の退避情報を戻す
+
+_SEQ_RUN_MAIN1_1000:
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: POU2 RUN処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+	.EXPORT		_SEQ_RUN_MAIN2
+
+_SEQ_RUN_MAIN2:
+	SUB_START
+	PUSH_ALL
+
+	MOV.L	#_SEQ_CMP_ERR2,R1		; CMP OK = BX:0000 , CMP NG = BX:FFFF
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	BF	_SEQ_RUN_MAIN2_1000		;
+
+	MOV.L	#_DI_X_TOP2,R5			;
+	FAR_JSR	#_SEQ_X_POP,R0			; 実入力ﾚｼﾞｽﾀのSET
+
+	FAR_JSR	#_SEQ_REG_START_SET2,R0		; ﾚｼﾞｽﾀ設定
+
+	MOV.L	#_SeqPOURun2Flg,R1		; POU2 運転ﾌﾗｸﾞ確認(0:運転可,1:運転不可)
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	BF	_SEQ_RUN_MAIN2_1000		;
+
+;; --------- ステップ実行時間計測用 START ----------
+;;	"DE2"信号にて波形観測
+;;	MOV.L	#H'F8050020,R0
+;;	MOV.W	@R0,R1
+;;	MOV.W	#H'10,R2
+;;	OR	R2,R1
+;;	MOV.W	R1,@R0
+;; --------- ステップ実行時間計測用 END ----------
+
+	FAR_JSR	#_SEQ_RUN2_TOP,R0		;(実ｼｰｹﾝｽ)
+
+;; --------- ステップ実行時間計測用 START ----------
+;;	"DE2"信号にて波形観測
+;;	MOV.L	#H'F8050020,R0
+;;	MOV.W	@R0,R1
+;;	MOV.W	#H'EF,R2
+;;	AND	R2,R1
+;;	MOV.W	R1,@R0
+;; --------- ステップ実行時間計測用 END ----------
+
+	FAR_JSR	#_SEQ_L_PUSH,R0			; 保持ﾒﾓﾘ領域書込処理実行
+
+_SEQ_RUN_MAIN2_1000:
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: POU3 RUN処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+	.EXPORT		_SEQ_RUN_MAIN3
+	.IMPORT		_ssc_UpdateSArea
+
+_SEQ_RUN_MAIN3:
+	SUB_START
+	PUSH_ALL
+	
+	FAR_JSR #_ssc_UpdateSArea,R0		; S領域情報更新
+	FAR_JSR	#_SEQ_DI_RIF,R0			; 実X領域情報更新
+	FAR_JSR #_SEQ_DI_KP_SET,R0		; 強制設定情報SET
+
+	MOV.L	#_SEQ_CMP_ERR3,R1		; CMP OK = BX:0000 , CMP NG = BX:FFFF
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	BF	_SEQ_RUN_MAIN3_1000		;
+
+	MOV.L	#_X_PUSH_TOP2,R5		; 退避先ﾚｼﾞｽﾀSET
+	FAR_JSR	#_SEQ_X_PUSH,R0			; X領域の退避
+
+	MOV.L	#_DI_X_TOP2,R5			;
+	FAR_JSR	#_SEQ_X_POP,R0			; 実入力ﾚｼﾞｽﾀのSET
+
+	FAR_JSR	#_SEQ_REG_START_SET3,R0		; ﾚｼﾞｽﾀ設定
+
+	MOV.L	#_SeqPOURun3Flg,R1		; POU3 運転ﾌﾗｸﾞ確認(0:運転可,1:運転不可)
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	BF	_SEQ_RUN_MAIN3_100		;
+
+;; --------- ステップ実行時間計測用 START ----------
+;;	"DE2"信号にて波形観測
+;;	MOV.L	#H'F8050020,R0
+;;	MOV.W	@R0,R1
+;;	MOV.W	#H'10,R2
+;;	OR	R2,R1
+;;	MOV.W	R1,@R0
+;; --------- ステップ実行時間計測用 END ----------
+
+	FAR_JSR	#_SEQ_RUN3_TOP,R0		; (実ｼｰｹﾝｽ)
+
+;; --------- ステップ実行時間計測用 START ----------
+;;	"DE2"信号にて波形観測
+;;	MOV.L	#H'F8050020,R0
+;;	MOV.W	@R0,R1
+;;	MOV.W	#H'EF,R2
+;;	AND	R2,R1
+;;	MOV.W	R1,@R0
+;; --------- ステップ実行時間計測用 END ----------
+
+	FAR_JSR	#_SEQ_L_PUSH,R0			; 保持ﾒﾓﾘ領域書込処理実行
+
+_SEQ_RUN_MAIN3_100:
+	MOV.L	#_X_PUSH_TOP2,R5		; 退避元ﾚｼﾞｽﾀSET
+	FAR_JSR	#_SEQ_X_POP,R0			; X領域の退避情報を戻す
+
+_SEQ_RUN_MAIN3_1000:
+	FAR_JSR	#_SEQ_Y_MEM_SET,R0		; 実出力ﾚｼﾞｽﾀのSET
+	FAR_JSR	#_SEQ_DO_KP_SET,R0		; 強制設定情報SET
+	FAR_JSR	#_SEQ_DO_RIF,R0			; 実Y領域情報更新
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;********************************************************************
+;* FUNCTION	: X領域(実入力)情報更新処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 10/08/19 Y.Kobayashi
+;********************************************************************
+;;[koma]	.IMPORT		_di_sw1			; ﾃﾞｨｯﾌﾟsw(領域2byte 下位１byte使用)
+;;[koma]	.IMPORT		_di_sw2			; ﾃﾞｼﾞﾀﾙ制御入力(領域2byte 下位１byte使用)
+;;[koma]	.IMPORT		_di_sw3			; ﾃﾞｼﾞﾀﾙ制御入力(領域2byte 下位１byte使用)
+;;[koma]	.IMPORT		_ana_vold_dat		; ｱﾅﾛｸﾞ入力 x 4(電圧ﾚﾍﾞﾙ)
+;;[koma]	実入力→シーケンス実入力領域へ
+
+	.ALIGN	4
+
+_SEQ_DI_RIF:
+	SUB_START
+
+;;[koma]	MOV.W	#D'2,R5				;
+;;[koma]	
+;;[koma]	MOV.L	#_di_sw1,R1			; di_sw1
+;;[koma]	MOV.W	@R1,R0				;
+;;[koma]	MOV.L	#_DI_X_TOP1,R4			;
+;;[koma]	MOV.W	R0,@R4				;
+;;[koma]
+;;[koma]	MOV.L	#_di_sw2,R1			; di_sw2
+;;[koma]	MOV.W	@R1,R0				;
+;;[koma]	ADD	R5,R4				; addr++
+;;[koma]	MOV.W	R0,@R4				;
+;;[koma]	
+;;[koma]	MOV.L	#_di_sw3,R1			; di_sw3
+;;[koma]	MOV.W	@R1,R0				;
+;;[koma]	ADD	R5,R4				; addr++
+;;[koma]	MOV.W	R0,@R4				;
+;;[koma]	
+;;[koma]	MOV.L	#_ana_vold_dat,R1		; _ana_vold_dat[0]
+;;[koma]	MOV.W	@R1,R0				;
+;;[koma]	ADD	R5,R4				; addr++
+;;[koma]	MOV.W	R0,@R4				;
+;;[koma]	
+;;[koma]	ADD	R5,R1				; _ana_vold_dat[1]
+;;[koma]	MOV.W	@R1,R0				;
+;;[koma]	ADD	R5,R4				; addr++
+;;[koma]	MOV.W	R0,@R4				;
+;;[koma]	
+;;[koma]	ADD	R5,R1				; _ana_vold_dat[2]
+;;[koma]	MOV.W	@R1,R0				;
+;;[koma]	ADD	R5,R4				; addr++
+;;[koma]	MOV.W	R0,@R4				;
+;;[koma]	
+;;[koma]	ADD	R5,R1				; _ana_vold_dat[3]
+;;[koma]	MOV.W	@R1,R0				;
+;;[koma]	ADD	R5,R4				; addr++
+;;[koma]	MOV.W	R0,@R4				;
+;;[koma]	
+
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: 強制設定情報セット処理(X領域)
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 10/08/17 Y.Kobayashi
+;********************************************************************
+	.IMPORT	_SeqKpOnX;			; 強制設定登録領域(X領域と同じ)
+	.IMPORT	_SeqKpOffX;			; 強制設定解除領域(X領域と同じ)
+	
+	.ALIGN	4
+
+_SEQ_DI_KP_SET:
+	SUB_START
+
+	MOV.L	#_DI_X_TOP1,R2			;
+	MOV.W	@R2,R1				;
+	MOV.L	#_SeqKpOnX,R3			;
+	MOV.W	@R3,R4				;
+	OR	R4,R1				;
+	MOV.L	#_SeqKpOffX,R5			;
+	MOV.W	@R5,R4				;
+	NOT	R4,R4				;
+	AND	R4,R1				;
+	MOV.L	#_DI_X_TOP2,R6			;
+	MOV.W	R1,@R6				;
+	XOR	R0,R0				;
+	MOV.L	#_SEQ_X_SET,R7			; 
+
+_SEQ_DI_KP_SET10:
+	MOV.W	#1,R1				;
+	ADD	R1,R0				;
+	CMP/EQ	R7,R0				; 32ward転送完了？
+	BT	_SEQ_DI_KP_SET20		; 転送完了
+
+	MOV.L	#D'2,R1				;
+	ADD.L	R1,R2				;
+	ADD.L	R1,R3				;
+	ADD.L	R1,R5				;
+	ADD.L	R1,R6				;
+	MOV.W	@R2,R1				;
+	MOV.W	@R3,R4				;
+	OR	R4,R1				;
+	MOV.W	@R5,R4				;
+	NOT	R4,R4				;
+	AND	R4,R1				;
+	MOV.W	R1,@R6				;
+	M_BRA	_SEQ_DI_KP_SET10		;
+
+_SEQ_DI_KP_SET20:
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: ワークメモリX退避処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 10/08/17 Y.Kobayashi
+;********************************************************************
+	.ALIGN	4
+	
+_SEQ_X_PUSH:
+	SUB_START
+
+	MOV.L	#_SeqLd_MKIND_TBL_TOP,R2	;
+	MOV.L	#D'4,R1				;
+	ADD.L	R1,R2				;
+	MOV.L	@R2,R1				;
+	MOV.W	@R1,R2				;
+	MOV.W	R2,@R5				;
+	XOR	R0,R0				;
+	MOV.L	#_SEQ_X_SET,R7			; 
+
+_SEQ_X_PUSH10:
+	MOV.W	#1,R2				;
+	ADD	R2,R0				;
+	CMP/EQ	R7,R0				; 32ward転送完了？
+	BT	_SEQ_X_PUSH20			; 転送完了
+
+	MOV.L	#D'2,R2				;
+	ADD.L	R2,R1				;
+	ADD.L	R2,R5				;
+	MOV.W	@R1,R2				;
+	MOV.W	R2,@R5				;
+	M_BRA	_SEQ_X_PUSH10			;
+
+_SEQ_X_PUSH20:
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: ワークメモリX返却処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 10/08/17 Y.Kobayashi
+;********************************************************************
+	.ALIGN	4
+	
+_SEQ_X_POP:
+	SUB_START
+
+	MOV.L	#_SeqLd_MKIND_TBL_TOP,R2	;
+	MOV.L	#D'4,R1				;
+	ADD.L	R1,R2				;
+	MOV.L	@R2,R1				;
+	MOV.W	@R5,R2				;
+	MOV.W	R2,@R1				;
+	XOR	R0,R0				;
+	MOV.L	#_SEQ_X_SET,R7			; 
+
+_SEQ_X_POP10:
+	MOV.W	#1,R2				;
+	ADD	R2,R0				;
+	CMP/EQ	R7,R0				; 32ward転送完了？
+	BT	_SEQ_X_POP20			; 転送完了
+
+	MOV.L	#D'2,R2				;
+	ADD.L	R2,R1				;
+	ADD.L	R2,R5				;
+	MOV.W	@R5,R2				;
+	MOV.W	R2,@R1				;
+	M_BRA	_SEQ_X_POP10			;
+
+_SEQ_X_POP20:
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: 保持メモリ領域書込処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+	.ALIGN	4
+	
+_SEQ_L_PUSH:
+	SUB_START
+
+	DI_PUSH_SR_SH3	WK_REG1=R2,WK_REG2=R4	; 割込ﾏｽｸ
+	MOV.L	#_SeqLd_MKIND_TBL_TOP,R3	;
+	MOV.L	#D'16,R1			;
+	ADD.L	R1,R3				;
+	MOV.L	@R3,R1				;
+	MOV.W	@R1,R3				;
+	MOV.L	#_SeqMemM,R5			;
+	MOV.W	R3,@R5				;
+	XOR	R0,R0				;
+
+_SEQ_L_PUSH10:
+	MOV.W	#1,R3				;
+	ADD	R3,R0				;
+	CMP/EQ	#_SEQ_L_SET,R0			; 32ward転送完了？
+	BT	_SEQ_L_PUSH20			; 転送完了
+
+	MOV.L	#D'2,R3				;
+	ADD.L	R3,R1				;
+	ADD.L	R3,R5				;
+	MOV.W	@R1,R3				;
+	MOV.W	R3,@R5				;
+	M_BRA	_SEQ_L_PUSH10			;
+
+_SEQ_L_PUSH20:
+	EI_POP_SR_SH3 				; 割込ﾏｽｸ解除
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: Yメモリ セット処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+	.ALIGN	4
+_SEQ_Y_MEM_SET:
+	SUB_START
+
+	MOV.L	#_SeqLd_MKIND_TBL_TOP,R2	;
+	MOV.L	#D'8,R1				;
+	ADD.L	R1,R2				;
+	MOV.L	@R2,R1				;
+	MOV.L	#_DO_Y_TOP1,R5			;
+	MOV.W	@R1,R2				;
+	MOV.W	R2,@R5				;
+	XOR	R0,R0				;
+
+_SEQ_Y_MEM_SET10:
+	MOV.W	#1,R2				;
+	ADD	R2,R0				;
+	CMP/EQ	#_SEQ_Y_SET,R0			; 32ward転送完了？
+	BT	_SEQ_Y_MEM_SET20		; 転送完了
+
+	MOV.L	#D'2,R2				;
+	ADD.L	R2,R1				;
+	ADD.L	R2,R5				;
+	MOV.W	@R1,R2				;
+	MOV.W	R2,@R5				;
+	M_BRA	_SEQ_Y_MEM_SET10		;
+
+_SEQ_Y_MEM_SET20:
+
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: 強制設定情報セット処理(Y領域)
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+	.IMPORT	_SeqKpOnY;			; 強制設定登録領域(Y領域と同じ)
+	.IMPORT	_SeqKpOffY;			; 強制設定解除領域(Y領域と同じ)
+	
+	.ALIGN	4
+	
+_SEQ_DO_KP_SET:
+	SUB_START
+
+	MOV.L	#_DO_Y_TOP1,R2			;
+	MOV.W	@R2,R1				;
+	MOV.L	#_SeqKpOnY,R3			;
+	MOV.W	@R3,R4				;
+	OR	R4,R1				;
+	MOV.L	#_SeqKpOffY,R5			;
+	MOV.W	@R5,R4				;
+	NOT	R4,R4				;
+	AND	R4,R1				;
+	MOV.L	#_DO_Y_TOP2,R6			;
+	MOV.W	R1,@R6				;
+	MOV.L	#_SeqLd_MKIND_TBL_TOP,R7	;
+	MOV.L	#D'8,R8				;
+	ADD.L	R8,R7				;
+	MOV.L	@R7,R8				;
+	MOV.W	R1,@R8				;
+	XOR	R0,R0				;
+
+_SEQ_DO_KP_SET10:
+	MOV.W	#1,R1				;
+	ADD	R1,R0				;
+	CMP/EQ	#_SEQ_Y_SET,R0			; 32ward転送完了？
+	BT	_SEQ_DO_KP_SET20		; 転送完了
+
+	MOV.L	#D'2,R1				;
+	ADD.L	R1,R2				;
+	ADD.L	R1,R3				;
+	ADD.L	R1,R5				;
+	ADD.L	R1,R6				;
+	ADD.L	R1,R8				;
+	MOV.W	@R2,R1				;
+	MOV.W	@R3,R4				;
+	OR	R4,R1				;
+	MOV.W	@R5,R4				;
+	NOT	R4,R4				;
+	AND	R4,R1				;
+	MOV.W	R1,@R6				;
+	MOV.W	R1,@R8				;
+	M_BRA	_SEQ_DO_KP_SET10		;
+
+_SEQ_DO_KP_SET20:
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: Y領域(実出力)情報更新処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+;;[koma]	.IMPORT		_do_dat1		;ﾃﾞｼﾞﾀﾙ出力
+	
+	.ALIGN	4
+	
+_SEQ_DO_RIF:
+	SUB_START
+
+;;[koma]	MOV.L	#_DO_Y_TOP2,R1			; do_dat1へ出力する
+;;[koma]	MOV.W	@R1,R0				;
+;;[koma]	MOV.L	#_do_dat1,R1			;
+;;[koma]	MOV.W	R0,@R1				;
+
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: POU1 実行側の処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+	.ALIGN	4
+	
+_SEQ_REG_START_SET1:
+	SUB_START
+
+	MOV.B	#0,A_REG			; "ｼｰｹﾝｽ開始時 毎ｽｷｬﾝ 0000,0000,0000,0000"
+	MOV.B	#BIT0,N_REG			; "ｼｰｹﾝｽ開始時 毎ｽｷｬﾝ 0000,0000,0000,0001"*
+	MOV.B	#0,M_REG			; "ｼｰｹﾝｽ開始時 毎ｽｷｬﾝ 0000,0000,0000,0000"
+	MOV.L	#0,D_REG			;
+
+	MOV.L	#_SEQ_ARG1_DATA,R4		; ARG=1
+	MOV.W	A_REG,@R4			;
+
+	MOV.L	#_SEQ_NRG1_DATA,R4		; NRG=1
+	MOV.B	N_REG,@R4			;
+
+	MOV.L	#_SEQ_MRG1_DATA,R4		; MRG=0
+	MOV.B	M_REG,@R4			;
+
+	MOV.L	#_SEQ_DRG1_DATA,R4		; DATA REG=0
+	MOV.L	D_REG,@R4			;
+
+
+	MOV.L	#_SEQ_CARD_RAM,TOP_REG		; =GBR=_SEQ_CARD_RAM
+	LDC	TOP_REG,GBR			;
+
+	MOV.L	#_SEQ_CALL_TBL1,CTBL_REG	; CALL_TABLE=
+	MOV.L	#_SEQ_DATA_TBL1,DTBL_REG	; DATA_TABLE=
+
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: POU2 実行側の処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+	.ALIGN	4
+	
+_SEQ_REG_START_SET2:
+	SUB_START
+
+	MOV.B	#0,A_REG			; "ｼｰｹﾝｽ開始時 毎ｽｷｬﾝ 0000,0000,0000,0000"
+	MOV.B	#BIT0,N_REG			; "ｼｰｹﾝｽ開始時 毎ｽｷｬﾝ 0000,0000,0000,0001"*
+	MOV.B	#0,M_REG			; "ｼｰｹﾝｽ開始時 毎ｽｷｬﾝ 0000,0000,0000,0000"
+	MOV.L	#0,D_REG			;
+
+	MOV.L	#_SEQ_ARG2_DATA,R4		; ARG=1
+	MOV.W	A_REG,@R4			;
+
+	MOV.L	#_SEQ_NRG2_DATA,R4		; NRG=1
+	MOV.B	N_REG,@R4			;
+
+	MOV.L	#_SEQ_MRG2_DATA,R4		; MRG=0
+	MOV.B	M_REG,@R4			;
+
+	MOV.L	#_SEQ_DRG2_DATA,R4		; DATA REG=0
+	MOV.L	D_REG,@R4			;
+
+
+	MOV.L	#_SEQ_CARD_RAM,TOP_REG		; =GBR=_SEQ_CARD_RAM
+	LDC	TOP_REG,GBR			;
+
+	MOV.L	#_SEQ_CALL_TBL1,CTBL_REG	; CALL_TABLE=
+	MOV.L	#_SEQ_DATA_TBL1,DTBL_REG	; DATA_TABLE=
+
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: POU3 実行側の処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+	.ALIGN	4
+	
+_SEQ_REG_START_SET3:
+	SUB_START
+
+	MOV.B	#0,A_REG			; "ｼｰｹﾝｽ開始時 毎ｽｷｬﾝ 0000,0000,0000,0000"
+	MOV.B	#BIT0,N_REG			; "ｼｰｹﾝｽ開始時 毎ｽｷｬﾝ 0000,0000,0000,0001"*
+	MOV.B	#0,M_REG			; "ｼｰｹﾝｽ開始時 毎ｽｷｬﾝ 0000,0000,0000,0000"
+	MOV.L	#0,D_REG			;
+
+	MOV.L	#_SEQ_ARG3_DATA,R4		; ARG=1
+	MOV.W	A_REG,@R4			;
+
+	MOV.L	#_SEQ_NRG3_DATA,R4		; NRG=1
+	MOV.B	N_REG,@R4			;
+
+	MOV.L	#_SEQ_MRG3_DATA,R4		; MRG=0
+	MOV.B	M_REG,@R4			;
+
+	MOV.L	#_SEQ_DRG3_DATA,R4		; DATA REG=0
+	MOV.L	D_REG,@R4			;
+
+
+	MOV.L	#_SEQ_CARD_RAM,TOP_REG		; =GBR=_SEQ_CARD_RAM
+	LDC	TOP_REG,GBR			;
+
+	MOV.L	#_SEQ_CALL_TBL1,CTBL_REG	; CALL_TABLE=
+	MOV.L	#_SEQ_DATA_TBL1,DTBL_REG	; DATA_TABLE=
+
+	SUB_END
+	M_RTS
+
+	.END

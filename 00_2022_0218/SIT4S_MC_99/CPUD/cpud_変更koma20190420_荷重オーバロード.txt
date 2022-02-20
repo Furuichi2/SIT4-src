@@ -1,0 +1,136 @@
+ゴール側から動き（荷重オーバロード設定の上限を追加）
+(1)CPUB->COP1Z
+	.GLOBAL		_CLO_OVER_L
+	.GLOBAL		_CLO_OVER_R
+	.GLOBAL		_CLO_OVER_T
+	.GLOBAL		_CLO_LOWER_L
+	.GLOBAL		_CLO_LOWER_R
+	.GLOBAL		_CLO_LOWER_T
+	.GLOBAL		_CSET_SET
+
+(2)CPUD->CPUB
+   SSC_OPTION.C
+	OPdata_set_kaku(void)
+	swap_mw(&CLO_OVER_L, SV_OVERE1_A26);		//ｵｰﾊﾞｰﾛｰﾄﾞ（左）(1word)
+	swap_mw(&CLO_OVER_T, SV_OVERE2_A26);		//ｵｰﾊﾞｰﾛｰﾄﾞ（全）(1word)
+	swap_mw(&CLO_OVER_R, SV_OVERE3_A26);		//ｵｰﾊﾞｰﾛｰﾄﾞ（右）(1word)
+
+			swap_mw(&CLO_OVER_L, SV_OVERE1_A26);		//ｵｰﾊﾞｰﾛｰﾄﾞ（左）(1word)
+			swap_mw(&CLO_OVER_T, SV_OVERE2_A26);		//ｵｰﾊﾞｰﾛｰﾄﾞ（全）(1word)
+			swap_mw(&CLO_OVER_R, SV_OVERE3_A26);		//ｵｰﾊﾞｰﾛｰﾄﾞ（右）(1word)
+
+			swap_mw(&CLO_LOWER_L, SV_ROALM1_A26);		//ﾛｱｰﾘﾐｯﾄ  （左）(1word)
+			swap_mw(&CLO_LOWER_T, SV_ROALM2_A26);		//ﾛｱｰﾘﾐｯﾄ  （全）(1word)
+			swap_mw(&CLO_LOWER_R, SV_ROALM3_A26);		//ﾛｱｰﾘﾐｯﾄ  （右）(1word)
+
+//2014/03/17-----------------------------------------------------------------------------------
+			swap_mw(&CLO_OVER2_L, SV_OVERE1_A27);		//ｵｰﾊﾞｰﾛｰﾄﾞ（左）(1word)	最小値
+			swap_mw(&CLO_OVER2_T, SV_OVERE2_A27);		//ｵｰﾊﾞｰﾛｰﾄﾞ（全）(1word)	最小値
+			swap_mw(&CLO_OVER2_R, SV_OVERE3_A27);		//ｵｰﾊﾞｰﾛｰﾄﾞ（右）(1word)	最小値
+
+			swap_mw(&CLO_LOWER2_L, SV_ROALM1_A27);		//ﾛｱｰﾘﾐｯﾄ  （左）(1word)	最小値
+			swap_mw(&CLO_LOWER2_T, SV_ROALM2_A27);		//ﾛｱｰﾘﾐｯﾄ  （全）(1word)	最小値
+			swap_mw(&CLO_LOWER2_R, SV_ROALM3_A27);		//ﾛｱｰﾘﾐｯﾄ  （右）(1word)	最小値
+
+			swap_mw(&CLO_OVER3_L, SV_OVERE1_A28);		//ｵｰﾊﾞｰﾛｰﾄﾞ（左）(1word)	振幅
+			swap_mw(&CLO_OVER3_T, SV_OVERE2_A28);		//ｵｰﾊﾞｰﾛｰﾄﾞ（全）(1word)	振幅
+			swap_mw(&CLO_OVER3_R, SV_OVERE3_A28);		//ｵｰﾊﾞｰﾛｰﾄﾞ（右）(1word)	振幅
+
+			swap_mw(&CLO_LOWER3_L, SV_ROALM1_A28);		//ﾛｱｰﾘﾐｯﾄ  （左）(1word)	振幅
+			swap_mw(&CLO_LOWER3_T, SV_ROALM2_A28);		//ﾛｱｰﾘﾐｯﾄ  （全）(1word)	振幅
+			swap_mw(&CLO_LOWER3_R, SV_ROALM3_A28);		//ﾛｱｰﾘﾐｯﾄ  （右）(1word)	振幅
+
+FERAM
+SV_OVERE1_A26
+SV_OVERE2_A26
+SV_OVERE3_A26
+
+初期化
+_SV_OVERE1_A26_INI     .DATA.W	D'0000           ; 荷重計　オーバーロード１
+_SV_ROALM1_A26_INI     .DATA.W	D'0000           ; 荷重計　ロアーリッミト１
+_SV_OVERE2_A26_INI     .DATA.W	D'0000           ; 荷重計　オーバーロード２
+_SV_ROALM2_A26_INI     .DATA.W	D'0000           ; 荷重計　ロアーリッミト２
+_SV_OVERE3_A26_INI     .DATA.W	D'0000           ; 荷重計　オーバーロード３
+_SV_ROALM3_A26_INI     .DATA.W	D'0000           ; 荷重計　ロアーリッミト３
+
+
+（荷重実測は）
+//	ｼｰｹﾝｽにより表示内容を切り替える
+		if( SEQ_PAR_113 & BIT_8 ) {
+			PV_KAJYU1_A24 = swap_iw(&CLO_LOAD_KEEP_L);	//荷重（TON）(1word)
+			PV_KAJYU2_A24 = swap_iw(&CLO_LOAD_KEEP_T);	//荷重（TON）(1word)
+			PV_KAJYU3_A24 = swap_iw(&CLO_LOAD_KEEP_R);	//荷重（TON）(1word)
+		}
+		else {
+			PV_KAJYU1_A24 = swap_iw(&CLO_LOAD_L);		//荷重（TON）(1word)
+			PV_KAJYU2_A24 = swap_iw(&CLO_LOAD_T);		//荷重（TON）(1word)
+			PV_KAJYU3_A24 = swap_iw(&CLO_LOAD_R);		//荷重（TON）(1word)
+		}
+
+
+(3)
+//2014/06/03
+//;	-------------- 最大値選択時 ｵｰﾊﾞﾛｰﾄﾞ,ﾛｱﾘﾐｯﾄ 左,合計,右
+	SVP_OVERE1_A26	= SV_OVERE1_A26;		// 荷重計　オーバーロード１
+	DPB_SEND_2B(&SVP_OVERE1_A26);
+	SVP_ROALM1_A26	= SV_ROALM1_A26;		// 荷重計　ロアーリッミト１
+	DPB_SEND_2B(&SVP_ROALM1_A26);
+	SVP_OVERE2_A26	= SV_OVERE2_A26;		// 荷重計　オーバーロード２
+	DPB_SEND_2B(&SVP_OVERE2_A26);
+	SVP_ROALM2_A26	= SV_ROALM2_A26;		// 荷重計　ロアーリッミト２
+	DPB_SEND_2B(&SVP_ROALM2_A26);
+	SVP_OVERE3_A26	= SV_OVERE3_A26;		// 荷重計　オーバーロード３
+	DPB_SEND_2B(&SVP_OVERE3_A26);
+	SVP_ROALM3_A26	= SV_ROALM3_A26;		// 荷重計　ロアーリッミト３
+	DPB_SEND_2B(&SVP_ROALM3_A26);
+
+//;	-------------- 最小(ﾏｲﾅｽ最大)選択時 ｵｰﾊﾞﾛｰﾄﾞ,ﾛｱﾘﾐｯﾄ 左,合計,右
+	SVP_OVERE1_A27	= SV_OVERE1_A27;		// 荷重計　オーバーロード１ 　（最小値）
+	DPB_SEND_2B(&SVP_OVERE1_A27);
+	SVP_ROALM1_A27	= SV_ROALM1_A27;		// 荷重計　ロアーリッミト１  　（最小値）
+	DPB_SEND_2B(&SVP_ROALM1_A27);
+	SVP_OVERE2_A27	= SV_OVERE2_A27;		// 荷重計　オーバーロード２  　（最小値）
+	DPB_SEND_2B(&SVP_OVERE2_A27);
+	SVP_ROALM2_A27	= SV_ROALM2_A27;		// 荷重計　ロアーリッミト２  　（最小値）
+	DPB_SEND_2B(&SVP_ROALM2_A27);
+	SVP_OVERE3_A27	= SV_OVERE3_A27;		// 荷重計　オーバーロード３  　（最小値）
+	DPB_SEND_2B(&SVP_OVERE3_A27);
+	SVP_ROALM3_A27	= SV_ROALM3_A27;		// 荷重計　ロアーリッミト３  　（最小値）
+	DPB_SEND_2B(&SVP_ROALM3_A27);
+
+//;	-------------- 振幅選択時 ｵｰﾊﾞﾛｰﾄﾞ,ﾛｱﾘﾐｯﾄ 左,合計,右
+	SVP_OVERE1_A28	= SV_OVERE1_A28;		// 荷重計　オーバーロード１ 　（振幅）
+	DPB_SEND_2B(&SVP_OVERE1_A28);
+	SVP_ROALM1_A28	= SV_ROALM1_A28;		// 荷重計　ロアーリッミト１  　（振幅）
+	DPB_SEND_2B(&SVP_ROALM1_A28);
+	SVP_OVERE2_A28	= SV_OVERE2_A28;		// 荷重計　オーバーロード２  　（振幅）
+	DPB_SEND_2B(&SVP_OVERE2_A28);
+	SVP_ROALM2_A28	= SV_ROALM2_A28;		// 荷重計　ロアーリッミト２  　（振幅）
+	DPB_SEND_2B(&SVP_ROALM2_A28);
+	SVP_OVERE3_A28	= SV_OVERE3_A28;		// 荷重計　オーバーロード３  　（振幅）
+	DPB_SEND_2B(&SVP_OVERE3_A28);
+	SVP_ROALM3_A28	= SV_ROALM3_A28;		// 荷重計　ロアーリッミト３  　（振幅）
+	DPB_SEND_2B(&SVP_ROALM3_A28);
+
+
+
+(4)設定？の入力のリミット処理
+
+SSC_KEY.C
+Key_sv_limt_chk(UNs t_no, UNl *wk_p)
+
+SV_OVLD_SEL;                /* 荷重計　オーバーロード選択（0:最大値／1:最小値／2振幅） */
+
+SV_OVLD_SEL != 1
+ オーバロード荷重左	入力上限 	SV_MAXKAJ_A24
+ 振幅荷重左			入力上限 	SV_MAXKAJ_A24
+SV_OVLD_SEL == 1
+ 最小荷重左			入力上限 	GMN_PAR049
+
+
+SV_LWLM_SEL;                /* 荷重計　ロアーリミット選択（0:最大値／1:最小値／2振幅） */
+
+
+
+
+

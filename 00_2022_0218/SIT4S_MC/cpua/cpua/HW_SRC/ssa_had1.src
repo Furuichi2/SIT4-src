@@ -1,0 +1,494 @@
+;	***************************************************
+;	***						***
+;	***	ﾊｰﾄﾞｳｴｱｱｸｾｽｻﾌﾞﾙｰﾁﾝ			***
+;	***						***
+;	***************************************************
+	.LIST OFF
+	.include	"sh7750rg.EXT"
+	.include	"ssa_ver1.equ"
+	.include	"cm_equ1.equ"
+	.INCLUDE	"shn_cmd1.MAC"		; 
+	.INCLUDE	"ssa_out1.mac"		; 
+	.INCLUDE	"ssa_wram.ext"		; DATA SEG PUBLIC=EXTRN DEFINE
+	.LIST ON
+
+
+;	/*	extern	 宣言		*/
+	.import		_DPRAM_TOP			;
+	.import		_DPRAM_END			;
+
+
+;	/*	public 宣言		*/
+	.export	_WORK_MEM1_CHK
+	.export	_IRAM_CLR
+	.export	_DP_MEM_CHK
+	.export	_WDT_Rifresh
+
+_SDRAM_TOP	.EQU	H'0C000000
+;_SDRAM_SIZE	.EQU	H'0FFFFF
+;;;;_SDRAM_SIZE	.EQU	H'11FFFF
+;;;;_SDRAM_SIZE	.EQU	H'3FFFFF
+;;;[20090925]_SDRAM_SIZE	.EQU	H'1BFFFF		; SIT-3と一緒
+;;;_SDRAM_SIZE	.EQU	H'1DFFFF		;[20090925]
+_SDRAM_SIZE	.EQU	H'23FFFF		;2013-12-15
+
+
+
+	.SECTION	Phwsetup1,CODE
+;	****************************************************
+;	****						****
+;	****		SDRAMチェック			****
+;	****						****
+;	****************************************************
+;		0c00,0000~0cff,ffff 本当はこの空間
+;		0c00,0000~0c0f,ffff までﾁｪｯｸを行う.
+;		0c00,0000~0c07,ffff 512k:ﾌﾟﾛｸﾞﾗﾑ展開領域
+;		0c08,0000~0c0f,ffff 512k:ﾜｰｸRAM領域
+_WORK_MEM1_CHK:
+	SUB_START
+	XOR	R4,R4					;
+
+;	********************************************
+;	****		ｲﾝｸﾘﾒﾝﾀﾙWRITE		****
+;	********************************************
+	MOV.L	#_SDRAM_TOP,R6			;
+	MOV.L	#(_SDRAM_SIZE+1)/4,R1			;SIZE BYTE-->WORD
+	MOV.L	#H'5AA50001,R2				;DATA
+
+;	=================================
+WORK_MEM1_WR020:					;
+	TST	R1,R1					;
+	TST_BIT_OF WORK_MEM1_WREND			;
+
+	MOV.L	R2,@R6					;DATA -->MEM
+	ADD	#4,R6					;ADRESS +4
+	ADD	#H'FF,R1				;-1
+	ADD	#1,R2					;DATA +1
+;	------------------------------
+	MOV	R6,R0					;
+	MOV.L	#H'00003FFF,R7				;
+	AND	R7,R0					;
+	TST	R0,R0					;
+	TST_BIT_OF MEM1_WR_WDTST			;
+;	------------------------------
+	M_BRA	WORK_MEM1_WR020				;
+
+MEM1_WR_WDTST:
+;	====================================
+;	-------------- WDT CLR -------------
+;	====================================
+	_WDT_CLR R14,R13,R12
+	M_BRA	WORK_MEM1_WR020				;
+
+WORK_MEM1_WREND:
+	_WDT_CLR R14,R13,R12
+
+;	********************************************
+;	****		ｲﾝｸﾘﾒﾝﾀﾙCHEAK		****
+;	********************************************
+	MOV.L	#_SDRAM_TOP,R6			;
+	MOV.L	#(_SDRAM_SIZE+1)/4,R1			;SIZE BYTE-->WORD
+	MOV.L	#H'5AA50001,R2				;DATA
+
+;	=================================
+WORK_MEM1_CK020:					;
+	TST	R1,R1					;
+	TST_BIT_OF WORK_MEM1_CKEND			;
+	MOV.L	@R6,R3					;
+	CMP/EQ	R3,R2					;
+	BF	WORK_MEM1_EREND				;
+	ADD	#4,R6					;ADRESS +2
+	ADD	#H'FF,R1				;
+	ADD	#1,R2					;DATA +1
+
+;	------------------------------
+	MOV	R6,R0					;
+	MOV.L	#H'00003FFF,R7				;
+	AND	R7,R0					;
+	TST	R0,R0					;
+	TST_BIT_OF MEM1_CK_WDTST			;
+;	------------------------------
+	M_BRA	WORK_MEM1_CK020				;
+
+MEM1_CK_WDTST:
+;	====================================
+;	-------------- WDT CLR -------------
+;	====================================
+	_WDT_CLR R14,R13,R12
+	M_BRA	WORK_MEM1_CK020				;
+
+WORK_MEM1_EREND:
+	ADD	#1,R4					;ERR THEN ELSE 0
+WORK_MEM1_CKEND:
+	_WDT_CLR R14,R13,R12
+
+
+;	********************************************
+;	****		ﾃﾞｸﾘﾒﾝﾄWRITE		****
+;	********************************************
+	M_BRA	WORK_MEM2_CKEND
+
+	MOV.L	#_SDRAM_TOP,R6			;
+	MOV.L	#(_SDRAM_SIZE+1)/4,R1			;SIZE BYTE-->WORD
+	MOV.L	#H'A55A0001,R2				;DATA
+
+;	=================================
+WORK_MEM2_WR020:					;
+	TST	R1,R1					;
+	TST_BIT_OF WORK_MEM2_WREND			;
+
+	MOV.L	R2,@R6					;DATA -->MEM
+	ADD	#4,R6					;ADRESS +4
+	ADD	#H'FF,R1				;-1
+	ADD	#H'FF,R2				;DATA -1
+
+;	------------------------------
+	MOV	R6,R0					;
+	MOV.L	#H'00003FFF,R7				;
+	AND	R7,R0					;
+	TST	R0,R0					;
+	TST_BIT_OF MEM2_WR_WDTST			;
+;	------------------------------
+	M_BRA	WORK_MEM2_WR020				;
+
+MEM2_WR_WDTST:
+
+;	====================================
+;	-------------- WDT CLR -------------
+;	====================================
+	_WDT_CLR R14,R13,R12
+	M_BRA	WORK_MEM2_WR020				;
+
+WORK_MEM2_WREND:
+	_WDT_CLR R14,R13,R12
+
+;	********************************************
+;	****		ﾃﾞｸﾘﾒﾝﾄCHEAK		****
+;	********************************************
+	MOV.L	#_SDRAM_TOP,R6			;
+	MOV.L	#(_SDRAM_SIZE+1)/4,R1			;SIZE BYTE-->WORD
+	MOV.L	#H'A55A0001,R2				;DATA
+
+;	=================================
+WORK_MEM2_CK020:					;
+	TST	R1,R1					;
+	TST_BIT_OF WORK_MEM2_CKEND			;
+	MOV.L	@R6,R3					;
+	CMP/EQ	R3,R2					;
+	BF	WORK_MEM2_EREND				;
+	ADD	#4,R6					;ADRESS +4
+	ADD	#H'FF,R1				;
+	ADD	#H'FF,R2				;DATA -1
+
+;	------------------------------
+	MOV	R6,R0					;
+	MOV.L	#H'00003FFF,R7				;
+	AND	R7,R0					;
+	TST	R0,R0					;
+	TST_BIT_OF MEM2_CK_WDTST			;
+;	------------------------------
+	M_BRA	WORK_MEM2_CK020				;
+MEM2_CK_WDTST:
+
+;	====================================
+;	-------------- WDT CLR -------------
+;	====================================
+	_WDT_CLR R14,R13,R12
+	M_BRA	WORK_MEM2_CK020				;
+
+WORK_MEM2_EREND:
+	ADD	#1,R4					;ERR THEN ELSE 0
+WORK_MEM2_CKEND:
+	_WDT_CLR R14,R13,R12
+
+
+;	********************************************
+;	****		0WRITE			****
+;	********************************************
+	MOV.L	#_SDRAM_TOP,R6			;
+	MOV.L	#(_SDRAM_SIZE+1)/4,R1			;SIZE BYTE-->WORD
+	MOV.L	#0,R2					;DATA
+
+;	=================================
+WORK_MEM3_WR020:					;
+	TST	R1,R1					;
+	TST_BIT_OF WORK_MEM3_WREND			;
+
+	MOV.L	R2,@R6					;DATA -->MEM
+	ADD	#4,R6					;ADRESS +2
+	ADD	#H'FF,R1				;
+
+;	------------------------------
+	MOV	R6,R0					;
+	MOV.L	#H'00003FFF,R7				;
+	AND	R7,R0					;
+	TST	R0,R0					;
+	TST_BIT_OF MEM3_WR_WDTST			;
+;	------------------------------
+	M_BRA	WORK_MEM3_WR020				;
+
+MEM3_WR_WDTST:
+
+;	====================================
+;	-------------- WDT CLR -------------
+;	====================================
+	_WDT_CLR R14,R13,R12
+	M_BRA	WORK_MEM3_WR020				;
+
+WORK_MEM3_WREND:
+	_WDT_CLR R14,R13,R12
+
+	TST	R4,R4			; ＲＡＭチェック異常チェック
+	TST_BIT_OF WORK_MEM123CHK_END	;
+
+	MOV.L	#_mem_chk_flg,R1	;
+	MOV.W	@R1,R0			;
+	OR	#BIT0,R0		; BIT0 SDRAM ERR
+	MOV.W	R0,@R1			;
+
+WORK_MEM123CHK_END:
+
+	SUB_END
+	M_RTS
+
+
+;	****************************************************
+;	****						****
+;	****		DPRAMチェック			**** 今回は使わない
+;	****						****
+;	****************************************************
+_DP_MEM_CHK:
+	SUB_START
+
+;	------- DPRAM CLR-----------------
+	MOV.L	#_DPRAM_TOP,R5		;
+	MOV.L	#_DPRAM_END,R6		;
+	FAR_JSR	#MEM_CHK_CLR,R0		;
+	OR	R0,R0			;
+	BT	_DP_CHK_END		;
+
+	MOV.L	#_mem_chk_flg,R1	;
+	MOV.W	@R1,R0			;
+	OR	#BIT3,R0		;
+	MOV.W	R0,@R1			;
+
+	M_BRA	_DP_CHK_END		;
+
+_DP_CHK_END:
+	SUB_END
+	M_RTS
+
+
+
+;	*******************************************
+;	***					***
+;	***		メモリクリア		***	INS  '01/03/14
+;	***					***
+;	*******************************************
+_IRAM_CLR:
+	SUB_START
+
+;	-------IRAM CLR-----------------
+	MOV.L	#H'7C001000,R5			;
+	MOV.L	#H'7C0027FF-H'40,R6		;
+
+_IMEM_CLR:
+	MOV.L	#0,R1
+
+_IMEM_CLR_LOOP:
+	MOV.B	R1,@R5				;
+
+	CMP/HS	R6,R5			;
+	BT	_IMEM_CLR_END		;BEQ
+
+	ADD	#1,R5			;
+	M_BRA	_IMEM_CLR_LOOP	;
+
+_IMEM_CLR_END:
+	_WDT_CLR R14,R13,R12
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***		ﾒﾓﾘﾁｪｯｸ			***
+;	***					***
+;	*******************************************
+MEM_CHK_CLR:
+	SUB_START
+
+	MOV.B	#H'5A,R1
+	MOV.B	#H'A5,R2
+	MOV.B	#H'00,R3
+
+MEM_CHKCLR_LOOP:
+	_WDT_CLR R14,R13,R12
+
+	MOV.B	R1,@R5		;
+	NOP			;
+	nop
+	nop
+	nop
+	nop
+	nop
+	MOV.B	@R5,R4		;
+	CMP/EQ	R1,R4		;
+	BF	MEM_CHK_ERR	;5A WR ERR
+
+	MOV.B	R2,@R5	;
+	NOP			;
+	nop
+	nop
+	nop
+	nop
+	nop
+	MOV.B	@R5,R4	;
+	CMP/EQ	R2,R4		;
+	BF	MEM_CHK_ERR	;A5 WR ERR
+
+	MOV.B	R3,@R5		;
+	NOP
+	nop
+	nop
+	nop
+	nop
+	nop
+	MOV.B	@R5,R4		;
+	CMP/EQ	R3,R4			;
+	BF	MEM_CHK_ERR		;00 WR ERR
+
+	CMP/HS	R6,R5			;
+	BT	MEM_CHK_END		;BEQ
+
+	ADD	#1,R5			;
+	M_BRA	MEM_CHKCLR_LOOP	;
+
+
+;	*******************************************
+;	***					***
+;	***		ﾒﾓﾘﾁｪｯｸ			***
+;	***					***
+;	*******************************************
+WORD_MEM_CHK_CLR:
+	SUB_START
+
+	SHLR	R6			;
+	SHLL	R6			;
+
+	MOV.W	#H'5AA5,R1
+	MOV.W	#H'A55A,R2		;
+	MOV.W	#H'0000,R3
+
+WORD_MEM_CHKCLR_LOOP:
+	_WDT_CLR R14,R13,R12
+
+	MOV.W	R1,@R5			;
+	NOP				;
+	nop
+	nop
+	nop
+	nop
+	nop
+	MOV.W	@R5,R4			;
+	CMP/EQ	R1,R4			;
+	BF	MEM_CHK_ERR		;5A WR ERR
+
+	MOV.W	R2,@R5			;
+	NOP				;
+	nop
+	nop
+	nop
+	nop
+	nop
+	MOV.W	@R5,R4			;
+	CMP/EQ	R2,R4			;
+	BF	MEM_CHK_ERR		;A5 WR ERR
+
+	MOV.W	R3,@R5			;
+	NOP
+	nop
+	nop
+	nop
+	nop
+	nop
+	MOV.W	@R5,R4			;
+	CMP/EQ	R3,R4			;
+	BF	MEM_CHK_ERR		;00 WR ERR
+
+	CMP/HS	R6,R5			;er5 >=er6
+	BT	MEM_CHK_END		;BEQ
+
+	ADD	#2,R5			;
+	M_BRA	WORD_MEM_CHKCLR_LOOP	;
+
+
+MEM_CHK_ERR:
+	MOV.B	#H'FF,R0	;R0L=FF THEN ERR
+	SUB_END
+	M_RTS
+
+MEM_CHK_END:
+	MOV.B	#H'00,R0	;R0L=FF THEN ERR
+	SUB_END
+	M_RTS
+
+
+
+
+;	***************************************************
+;	***						***
+;	***		WDTﾘﾌﾚｯｼｭ			***
+;	***						***
+;	***************************************************
+_WDT_Rifresh:
+	SUB_START
+	PUSH_ALL
+
+	_WDT_CLR R14,R13,R12
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***	SCI ﾌﾟﾛｸﾞﾗﾑ COPY			***
+;	***	ROM -> RAM				***
+;	***						***
+;	***************************************************
+	.IMPORT		__PvupROM_BGN
+	.IMPORT		__PvupRAM_BGN
+	.IMPORT		__PvupROM_END
+	.EXPORT		_VUP_PRO_ROM_TO_RAM
+_VUP_PRO_ROM_TO_RAM:
+	SUB_START
+
+	MOV.L	#__PvupROM_BGN,R0
+	MOV.L	@R0,R5					;DATA SORCE
+	MOV.L	#__PvupRAM_BGN,R0
+	MOV.L	@R0,R6					;DATA DIST
+	MOV.L	#__PvupROM_END,R0
+	MOV.L	@R0,R4					;
+	SUB	R5,R4					;
+	SHLR	R4					;
+
+_VPC_LOOP:
+	CMP/PL	R4
+	BF	_VPC_LOOP_END				;ZERO or MINS THEN EXIT
+
+	MOV.W	@R5+,R0					;
+	MOV.W	R0,@R6					;
+	ADD	#2,R6					;
+	ADD	#-1,R4				;
+	_WDT_CLR R10,R11,R12
+	M_BRA	_VPC_LOOP	;
+
+_VPC_LOOP_END:
+	SUB_END
+	M_RTS
+
+
+	.END

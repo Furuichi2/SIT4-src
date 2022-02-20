@@ -1,0 +1,89 @@
+
+
+;	*******************************************
+;	***					***
+;	***	2016-04-18			***
+;	***	LNEGTH=(V2^2-V1^2)/(2α)	***
+;	***					***
+;	***					***
+;	*******************************************
+;	ほぼ完全な共通サブルーチン
+;
+;	R0=1 ERR Vn=0
+;	R0=0 NOMAL
+;	R0=-1 ERR 前のVn
+;
+_FPU_COM_CALC_LNG
+	SUB_START
+
+
+	MOV.L	#_CALSPDWORK2,R0			;//PLS/S
+	MOV.L	@R0,R2					;
+	LDS	R2,FPUL					;
+	FLOAT	FPUL,FR2				;
+	FMUL	FR2,FR2					;FR2*FR2
+
+;	----------------------------
+	MOV.L	#_CALSPDWORK1,R0			;//PLS/S
+	MOV.L	@R0,R1					;
+	LDS	R1,FPUL					;
+	FLOAT	FPUL,FR1				;
+	FMUL	FR1,FR1					;FR1*FR1
+	FSUB	FR1,FR2					;FR2= V2^2-V1^2
+
+	FTRC	FR2,FPUL				;
+	STS	FPUL,R0					;
+	CMP/PZ	R0					;
+	BT	FPU_COM_CALCLNG_100			;
+	FNEG	FR2					;
+FPU_COM_CALCLNG_100:					;
+
+	MOV.L	#D'1000*2,R4				;(V2^2-V1^2)*Tmax/Vmax /2/1000
+	LDS	R4,FPUL					;
+	FLOAT	FPUL,FR4				;
+	FDIV	FR4,FR2					;
+
+
+	MOV.L	#_CHKSPDWORKTMAX,R0			;//
+	MOV.L	@R0,R1					;
+	TST	R1,R1					;
+	TST_BIT_OF FPU_COM_CALCLNG_ZERO			;
+
+	MOV.L	#_CHKSPDWORKVMAX,R0			;//PLS/S
+	MOV.L	@R0,R4					;
+	TST	R4,R4					:
+	TST_BIT_OF FPU_COM_CALCLNG_ZERO			;
+
+	LDS	R1,FPUL					;
+	FLOAT	FPUL,FR1				;
+
+	LDS	R4,FPUL					;
+	FLOAT	FPUL,FR4				;
+
+	FMUL	FR1,FR2					;FR1(1000)*Tmax/(VMAX)
+	FDIV	FR4,FR2					;FR2:ANS
+
+	FTRC	FR2,FPUL				;
+	STS	FPUL,R2					;
+	M_BRA	FPU_COM_CALCLNG_900			;
+
+
+FPU_COM_CALCLNG_ZERO:
+	MOV.L	#0,R2					;0.1%
+	MOV.L	#_CALPOSANSLNG,R0			;
+	MOV.L	R2,@R0					;0~100.0%data 下1桁は.0
+	MOV.B	#1,R0					;ERR1:
+	M_BRA	FPU_COM_CALCLNG_END
+
+
+FPU_COM_CALCLNG_900:
+	MOV.L	#_CALPOSANSLNG,R0			;
+	MOV.L	R2,@R0					;0~100.0%data 下1桁は.0
+	XOR	R0,R0					;NOMAL
+FPU_COM_CALCLNG_END:
+
+	SUB_END
+	M_RTS
+
+
+

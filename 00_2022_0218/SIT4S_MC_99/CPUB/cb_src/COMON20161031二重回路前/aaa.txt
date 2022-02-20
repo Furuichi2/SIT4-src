@@ -1,0 +1,7 @@
+SECTION=B_BAKUPCOOK_2
+FILE=D:\csv2\csv2_ctrl\csv2_ctrl\Debug\gbl_mem.obj
+                                  00001000  00002fb5      1fb6
+  _CtrlCookSv
+                                  00001000        12   data ,g         * 
+  _MenuCookSv
+                                  00001012      1fa4   data ,g         * 

@@ -1,0 +1,850 @@
+
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***								***
+;	***	HMI-cpu(sh2)-Servo-Cpu(sh4) I/F Dual Port RAM		***
+;	***								***
+;	***								***
+;	***								***
+;	*******************************************************************
+;	このファイルはsh2またはsh4のアセンブラソースにインクルードされ
+;	その中で、実アドレスを割り付ける			
+;	このではdpramのオフセットアドレスを定義する
+;	このファイルのextern宣言として
+;	dp_cpuab.ext(ｱｾﾝﾌﾞﾗ用)
+;	dp_cpuab.h(c言語ｿｰｽ用)
+_COP2_START_COD1	.EQU	H'12345678	;
+_COP2_START_COD2	.EQU	H'9ABCDEF0	;
+_COP2_ANS_COD1		.EQU	H'56789ABC	;
+_COP2_ANS_COD2		.EQU	H'DEF01234	;
+
+
+	.GLOBAL		_COP2DPRAM_TOP
+	.GLOBAL		_COP2DPRAM_END
+	.GLOBAL		_COP2_CPUA_COD1	;CPUA-->COP2 WR:12345678//COP2 0CLR
+	.GLOBAL		_COP2_CPUA_COD2	;CPUA-->COP2 WR:9ABCEDF0//COP2 0CLR
+	.GLOBAL		_COP2_COP2_COD1	;COP2-->CPUA WR:NOT 12345678
+	.GLOBAL		_COP2_COP2_COD2	;COP2-->CPUA WR:NOT 9ABCDEF0
+
+	.GLOBAL		_DEBUG_COP2_SIG1	;COP2->CPUA 2013-04-14
+	.GLOBAL		_DEBUG_COP2_SIG2	;COP2->CPUA 2013-04-14
+
+	.GLOBAL		_COP2_PLS_OUTF		;
+	.GLOBAL		_COP2_CPUA_SV_STEP	;2016-01-10
+	.GLOBAL		_COP2_CPUB_SV_STEP	;2016-01-10
+	.GLOBAL		_COP2_CPUC_SV_STEP	;2016-01-10
+
+;	*******************************************
+;	***					***
+;	***	SH2→SH4　ﾊﾝﾄﾞｼｪｲｸ		***
+;	***					***
+;	*******************************************
+	.GLOBAL	_COP2_HS_SVCHG_B_TO_A	
+
+;	*******************************************
+;	***					***
+;	***	SH2←SH4　ﾊﾝﾄﾞｼｪｲｸ		***
+;	***					***
+;	*******************************************
+	.GLOBAL	_COP2_HS_SVCHG_A_TO_B	
+	.GLOBAL	_COP2_HS_PVP_TAKIKI_FLG		;//待機点通過ﾌﾗｸﾞ 1ｾｯﾄはSH4　0CLRはSH2(HMI部)
+	.GLOBAL	_COP2_HS_PVP_LOTCNT_FLG	;	;
+
+;	==== 2003-07-09 ===
+	.GLOBAL	_COP2_CMD_1CYCLE_DSP1	;	;2003-07-09 1ｻｲｸﾙ速度/時間 0:非表示　1:表示
+	.GLOBAL	_COP2_CMD_DAIPOS_DSP1	;	;2003-07-09 生産下限位置　 0:非表示　1:表示
+
+;	==== 2007-03-18 ===
+	.GLOBAL	_COP2_PSD_ORG_PLS1		;ORIGIN DATA(FUNUC)
+	.GLOBAL	_COP2_PSD_ORG_PLS_CMD1		;
+	.GLOBAL	_COP2_PSD_ORG_PLS2		;ORIGIN DATA(FUNUC)
+	.GLOBAL	_COP2_PSD_ORG_PLS_CMD2		;
+
+
+;	==== 2013-01-10 =============
+	.GLOBAL	_COP2_PV_CH2_OUTPUTF		;
+
+;	***************************************************
+;	***	4/2BYTE  ﾊﾞｯｸｱｯﾌﾟ返し領域(64b)		***
+;	***************************************************
+	.GLOBAL	_COP2_SVB_RNAORG_PLS1		;ﾘﾆｱ基準位置ﾊﾟﾙｽ
+						;予備4byte領域
+	.GLOBAL	_COP2_SVB_DYHITO_POS		;2003-07-09 ﾀﾞｲﾊｲﾄ(下限位置)
+	.GLOBAL	_COP2_SVB_SLIDE_POS		;		;2003-07-09 生産下限位置
+	.GLOBAL	_COP2_SVB_BAKORG_PLS1		;ﾘﾆｱ基準位置ﾊﾟﾙｽ	COP2
+	.GLOBAL	_COP2_SVB_BAKORG_PLS2		;ﾘﾆｱ基準位置ﾊﾟﾙｽ	COP2
+
+;	***************************************************
+;	***	ｻｰﾎﾞﾊﾟﾗﾒｰﾀ領域	4/2BYTE領域		***
+;	***************************************************
+	.GLOBAL	_COP2_SVP_RNADIR_SEL1		;	;ﾘﾆｱｾﾝｻ極性
+	.GLOBAL	_COP2_SVP_INCDIR_SEL1		;	;PG極性
+	.GLOBAL	_COP2_SVP_INCPLS_1REV		;	;PG1回転のﾊﾟﾙｽ選択
+	.GLOBAL	_COP2_SVP_INCPLS_HOSN		;	;PG補正N　ﾓｰﾀN回
+	.GLOBAL	_COP2_SVP_INCPLS_HOSM		;	;PG補正M　ｸﾗﾝｸ角度M
+	.GLOBAL	_COP2_SVP_MOTRPM_MAXM		;	;ﾓｰﾀ最大回転数
+
+	.GLOBAL	_COP2_SVP_MOTMAX_FREQ		;	;ﾓｰﾀ最大時指令周波数
+	.GLOBAL	_COP2_SVP_RNAORG_POS1		;	;機械原点入力
+	.GLOBAL	_COP2_SVP_RNAPOS_MAXP		;	;機械上限
+	.GLOBAL	_COP2_SVP_RNAPOS_MINP		;	;機械下限
+	.GLOBAL	_COP2_SVP_UPAREA_JUDG		;	;上死点判定範囲
+	.GLOBAL	_COP2_SVP_DNAREA_JUDG		;	;反転設定不可範囲
+
+
+
+	.GLOBAL	_COP2_SVP_DNDINC_SPD1		;	;段取速度	
+	.GLOBAL	_COP2_SVP_UPAREA_SPD1		;	;待機点復帰速度	
+	.GLOBAL	_COP2_SVP_STDINC_SPD1		;	;寸動速度	
+	.GLOBAL	_COP2_SVP_REVDAT_SPD1		;	;予備速度１	(クリープ速度)
+	.GLOBAL	_COP2_SVP_REVDAT_SPD2		;	;予備速度２	(自起動INCHING)
+	.GLOBAL	_COP2_SVP_REVDAT_SPD3		;	;予備速度３	
+	.GLOBAL	_COP2_SVP_TEPDAT_SPD1		;	;手動ﾊﾟﾙｻ速度	
+	.GLOBAL	_COP2_SVP_TEPLAT_DAT1		;	;手動ﾊﾟﾙｻ低倍率	
+	.GLOBAL	_COP2_SVP_TEPLAT_DAT2		;	;手動ﾊﾟﾙｻ高倍率	
+
+	.GLOBAL	_COP2_SVP_INCPOS_KP01		;	;PG位置比例ｹﾞｲﾝ
+	.GLOBAL	_COP2_SVP_RNAPOS_KP01		;	;ﾘﾆｱ位置比例ｹﾞｲﾝ
+	.GLOBAL	_COP2_SVP_ACCLAT_TIM1		;	;加減速時間
+	.GLOBAL	_COP2_SVP_SSCURV_TIM1		;	;Ｓ字時間
+	.GLOBAL	_COP2_SVP_UPAREA_INP1		;	;上死点ｲﾝﾎﾟｼﾞｼｮﾝ
+	.GLOBAL	_COP2_SVP_DNAREA_INP1		;	;下死点ｲﾝﾎﾟｼﾞｼｮﾝ
+	.GLOBAL	_COP2_SVP_OBJARA_INP1		;	;目標位置ｲﾝﾎﾟｼﾞｼｮﾝ
+	.GLOBAL	_COP2_SVP_INPPOS_TIM1		;	;ｲﾝﾎﾟｼﾞｼｮﾝﾁｪｯｸ時間
+	.GLOBAL	_COP2_SVP_ARACHK_LNG1		;	;上／下死点通過判定量
+	.GLOBAL	_COP2_SVP_UPAREA_DIG1		;	;回転時待機点(上死点)
+
+	.GLOBAL	_COP2_SVP_INCHEN_ELNG		;	;PG偏差異常幅
+	.GLOBAL	_COP2_SVP_INCENC_ELNG		;	;PG-ENC一致量 0.1度
+	.GLOBAL	_COP2_SVP_INCRNA_ELNG		;	;PG-ﾘﾆｱ一致量
+	.GLOBAL	_COP2_SVP_INCSTP_ELNG		;	;PG停止異常量
+	.GLOBAL	_COP2_SVP_RNASTP_ELNG		;	;ﾘﾆｱ停止異常量
+	.GLOBAL	_COP2_SVP_INCREV_ELNG		;	;PG逆転異常量
+	.GLOBAL	_COP2_SVP_RNAREV_ELNG		;	;ﾘﾆｱ逆転異常量
+	.GLOBAL	_COP2_SVP_DAIHAI_LNG1		;	;ﾀﾞｲﾊｲﾄ補正比較値(小)
+	.GLOBAL	_COP2_SVP_DAIHAI_LNG2		;	;ﾀﾞｲﾊｲﾄ補正比較値(中)
+	.GLOBAL	_COP2_SVP_DAIHAI_LNG3		;	;ﾀﾞｲﾊｲﾄ補正比較値(大)
+
+	.GLOBAL	_COP2_SVP_AMPERR_VLT1		;	;過負荷電圧1
+	.GLOBAL	_COP2_SVP_AMPERR_TIM1		;	;過負荷時間1
+	.GLOBAL	_COP2_SVP_AMPERR_VLT2		;	;過負荷電圧2
+	.GLOBAL	_COP2_SVP_AMPERR_TIM2		;	;過負荷時間2
+	.GLOBAL	_COP2_SVP_AMPERR_VLT3		;	;過負荷電圧3
+	.GLOBAL	_COP2_SVP_AMPERR_TIM3		;	;過負荷時間3
+
+;	==== 2002-08-08 ==
+	.GLOBAL	_COP2_SVP_CNT_TIM			;	;連続タイマ
+	.GLOBAL	_COP2_SVP_CNT_CNT			;	;連続カウンタ
+	.GLOBAL	_COP2_SVP_BREAK_DIG			;	;ﾌﾞﾚｰｷ角度   0.1度
+	.GLOBAL	_COP2_SVP_BREAK_TIM1			;	;ブレーキタイマ設定
+	.GLOBAL	_COP2_SVP_WT_DIG1			;	;待機点選択1
+	.GLOBAL	_COP2_SVP_WT_DIG2			;	;待機点選択2
+	.GLOBAL	_COP2_SVP_WT_DIG3			;	;待機点選択3
+	.GLOBAL	_COP2_SVP_MOTWT_TIM			;	;起動保証時間
+	.GLOBAL	_COP2_SVP_PSMOD_SEL			;	;PSID　ﾓｰﾄﾞ選択
+
+;	==== 2002-08-21 ==
+
+	.GLOBAL	_COP2_SVP_RNA_STLORK			;	;
+	.GLOBAL	_COP2_SVP_OUTPLS_HOSA		;	;
+	.GLOBAL	_COP2_SVP_OUTPLS_HOSB		;	;
+	.GLOBAL	_COP2_SVP_UPHOLD_DIG			;	;
+	.GLOBAL	_COP2_SVP_MACINE_SEL1		;	;
+
+;	==== 2003-01-27 ==
+
+	.GLOBAL	_COP2_SVP_NEG_OFS_LNG		;	;反転下限距離(0.001mm ｻｰﾎﾞﾊﾟﾗﾒｰﾀ)
+	.GLOBAL	_COP2_SVP_AMP100P_VLT		;	;AMP100%相当時の電圧値 0~10.0v(ｻｰﾎﾞﾊﾟﾗﾒｰﾀ)
+
+;	=== 2006-07-11 ===	SHIMA(HMI:V01v)
+	.GLOBAL	_COP2_SVP_LSAABN_AGL1		;	;//LSA異常検知の角度1
+	.GLOBAL	_COP2_SVP_LSAABN_AGL2		;	;//LSA異常検知の角度2
+	.GLOBAL	_COP2_SVP_PLSALO_PLS			;	;//パルサ倍率低
+	.GLOBAL	_COP2_SVP_PLSAHI_PLS			;	;//パルサ倍率高
+
+;	***************************************************
+;	***	ｸﾗｯﾁ制御画面設定1 4/2BYTE領域		***
+;	***************************************************
+	.GLOBAL	_COP2_SVP_OBJECT_POS_TOP
+	.GLOBAL	_COP2_SVP_OBJECT_PS01		;	;01段目目標位置
+	.GLOBAL	_COP2_SVP_OBJECT_PS02		;	;02段目目標位置
+	.GLOBAL	_COP2_SVP_OBJECT_PS03		;	;03段目目標位置
+	.GLOBAL	_COP2_SVP_OBJECT_PS04		;	;04段目目標位置
+	.GLOBAL	_COP2_SVP_OBJECT_PS05		;	;05段目目標位置
+	.GLOBAL	_COP2_SVP_OBJECT_PS06		;	;06段目目標位置
+	.GLOBAL	_COP2_SVP_OBJECT_PS07		;	;07段目目標位置
+	.GLOBAL	_COP2_SVP_OBJECT_PS08		;	;08段目目標位置
+	.GLOBAL	_COP2_SVP_OBJECT_PS09		;	;09段目目標位置
+	.GLOBAL	_COP2_SVP_OBJECT_PS10		;	;10段目目標位置
+	.GLOBAL	_COP2_SVP_OBJECT_PS11		;	;11段目目標位置
+	.GLOBAL	_COP2_SVP_OBJECT_PS12		;	;12段目目標位置
+	.GLOBAL	_COP2_SVP_OBJECT_PS13		;	;13段目目標位置
+	.GLOBAL	_COP2_SVP_OBJECT_PS14		;	;14段目目標位置
+	.GLOBAL	_COP2_SVP_OBJECT_PS15		;	;15段目目標位置
+	.GLOBAL	_COP2_SVP_OBJECT_PS16		;	;16段目目標位置
+	.GLOBAL	_COP2_SVP_OBJECT_PS17		;	;17段目目標位置
+	.GLOBAL	_COP2_SVP_OBJECT_PS18		;	;18段目目標位置
+	.GLOBAL	_COP2_SVP_OBJECT_PS19		;	;19段目目標位置
+	.GLOBAL	_COP2_SVP_OBJECT_PS20		;	;20段目目標位置
+
+	.GLOBAL	_COP2_SVP_OBJECT_DIG_TOP				;01段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG01		;	;01段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG02		;	;02段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG03		;	;03段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG04		;	;04段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG05		;	;05段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG06		;	;06段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG07		;	;07段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG08		;	;08段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG09		;	;09段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG10		;	;10段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG11		;	;予備11段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG12		;	;予備12段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG13		;	;予備13段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG14		;	;予備14段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG15		;	;予備15段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG16		;	;予備16段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG17		;	;予備17段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG18		;	;予備18段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG19		;	;予備19段目角度位置
+	.GLOBAL	_COP2_SVP_OBJECT_DG20		;	;予備20段目角度位置
+
+	.GLOBAL	_COP2_SVP_OBJECT_SPD_TOP				;01段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP01		;	;01段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP02		;	;02段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP03		;	;03段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP04		;	;04段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP05		;	;05段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP06		;	;06段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP07		;	;07段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP08		;	;08段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP09		;	;09段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP10		;	;10段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP11		;	;予備11段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP12		;	;予備12段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP13		;	;予備13段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP14		;	;予備14段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP15		;	;予備15段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP16		;	;予備16段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP17		;	;予備17段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP18		;	;予備18段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP19		;	;予備19段目移動速度
+	.GLOBAL	_COP2_SVP_OBJECT_SP20		;	;予備20段目移動速度
+
+	.GLOBAL	_COP2_SVP_OBJECT_TIM_TOP				;01段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM01		;	;01段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM02		;	;02段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM03		;	;03段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM04		;	;04段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM05		;	;05段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM06		;	;06段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM07		;	;07段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM08		;	;08段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM09		;	;09段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM10		;	;10段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM11		;	;11段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM12		;	;12段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM13		;	;13段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM14		;	;14段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM15		;	;15段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM16		;	;16段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM17		;	;17段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM18		;	;18段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM19		;	;19段目停止時間
+	.GLOBAL	_COP2_SVP_OBJECT_TM20		;	;20段目停止時間
+
+;	***************************************************
+;	***	ｸﾗｯﾁ制御画面設定2 4/2BYTE領域		***
+;	***************************************************
+	.GLOBAL	_COP2_SVP_DAIHAI_ORG0		;	;ダイハイト
+	.GLOBAL	_COP2_SVP_MRTION_SEL1		;	;回転方式
+	.GLOBAL	_COP2_SVP_MTSTEP_MAXM		;	;段数
+
+	.GLOBAL	_COP2_SVP_UPAREA_POS0		;	;待機点位置
+	.GLOBAL	_COP2_SVP_UPAREA_DIG0		;	;待機点角度
+	.GLOBAL	_COP2_SVP_UPAREA_SPD0		;	;基準速度
+	.GLOBAL	_COP2_SVP_UPAREA_TIM0		;	;待機時間
+	.GLOBAL	_COP2_SVP_DNAREA_INP0		;	;下死点ｲﾝﾎﾟｼﾞｼｮﾝ(2002-06-28)
+	.GLOBAL	_COP2_SVP_OBJARA_INP0		;	;目標位置ｲﾝﾎﾟｼﾞｼｮﾝ(2002-06-28)
+	.GLOBAL	_COP2_SVP_DAIHSA_LENG		;	;ﾀﾞｲﾊｲﾄ補正距離
+
+;	==== 2002-08-08======
+
+	.GLOBAL	_COP2_SVP_SLID_POS1		;	;ｽﾗｲﾄﾞ位置　生産
+	.GLOBAL	_COP2_SVP_SLID_POS2		;	;ｽﾗｲﾄﾞ位置　段取1
+	.GLOBAL	_COP2_SVP_SLID_POS3		;	;ｽﾗｲﾄﾞ位置　段取2
+
+;	===== 2002-08-29==
+
+	.GLOBAL	_COP2_SVP_ATSLID_OBJ1		; スライド自動調節設定値（現在動作中）0.001mm
+	.GLOBAL	_COP2_SVP_ATSLID_DNOBJ1		; スライド自動調節　下降停止 0~99
+	.GLOBAL	_COP2_SVP_ATSLID_UPOBJ1		; スライド自動調節　上昇停止 "
+	.GLOBAL	_COP2_SVP_ATSLID_BAKLNG		; スライド自動調節　戻り量   "
+	.GLOBAL	_COP2_SVP_ATSLID_COEF1		; スライド自動調節　制御精度 "
+
+;	===== 2004-06-08　=====
+	.GLOBAL	_COP2_SVP_KAJYUU_PRS1	;		;荷重補正 1Kn (2004-06-08)
+	.GLOBAL	_COP2_SVP_KAJYUU_OBJP	;		;荷重目標値 1Kn(2004-07-01)
+	.GLOBAL	_COP2_SVP_KAJYUU_PV1		;		;最大荷重(ｵﾌﾟｼｮﾝの実測をC/Bの設定として渡す)
+
+;	=== 2006-07-11 ===	SHIMA(HMI:V01v)
+	.GLOBAL	_COP2_PVP_KAJLIV_LFT		;		;//荷重生（TON）(1word)
+	.GLOBAL	_COP2_PVP_KAJLIV_TTL		;		;//荷重生（TON）(1word)
+	.GLOBAL	_COP2_PVP_KAJLIV_RIH		;		;//荷重生（TON）(1word)
+
+
+;	=====2006-07-24(ｵｰﾊﾞﾗｲﾄﾞ) ====
+	.GLOBAL	_COP2_SVP_OVERLIDE_COF	;		;0,1~127%
+
+;	=====2006-07-24(段取) ====
+	.GLOBAL	_COP2_SVP_DND_STOPDIG1	;		;段取停止角度 0~358.0
+
+;;[];	=====2006-07-24(荷重補正) ====
+;;[]	.GLOBAL	_COP2_SVP_KJSTR_STEP1	;		;0,1~工程 
+;;[]	.GLOBAL	_COP2_SVP_KJSTR_DIG1		;		;359.0
+;;[]	.GLOBAL	_COP2_SVP_KJEND_STEP1	;		;0,1~工程
+;;[]	.GLOBAL	_COP2_SVP_KJEND_DIG1		;		;359.0
+	.GLOBAL	_COP2_PVP_ARA1_KAJ_R		;		;OPTION 区間最大荷重
+	.GLOBAL	_COP2_PVP_ARA1_KAJ_L		;		;OPTION 区間最大荷重
+	.GLOBAL	_COP2_PVP_ARA1_KAJ_T		;		;OPTION 区間最大荷重TOTALのみ使用
+
+;	=====2006-07-24(表示) ====
+
+;;[]	.GLOBAL	_COP2_PVP_ORGRNA_MOV1		;ﾘﾆｱ移動量実測1
+;;[]	.GLOBAL	_COP2_PVP_ORGRNA_MOV2		;ﾘﾆｱ移動量実測2
+;;[]	.GLOBAL	_COP2_PVP_ORGSTRK_LEG1		;ｽﾄﾛｰｸ1実測
+;;[]	.GLOBAL	_COP2_PVP_ORGSTRK_LEG2		;ｽﾄﾛｰｸ2実測
+;;[]	.GLOBAL	_COP2_PVP_BAKORG_PLS1		;ﾊﾞｯｸｱｯﾌﾟ実測
+;;[]	.GLOBAL	_COP2_PVP_BAKORG_PLS2		;ﾊﾞｯｸｱｯﾌﾟ実測
+;;[]	.GLOBAL	_COP2_PVP_RENIA_POS1		;ﾘﾆｱｽｹｰﾙ1実測
+;;[]	.GLOBAL	_COP2_PVP_RENIA_POS2		;ﾘﾆｱｽｹｰﾙ2実測
+;;[]	.GLOBAL	_COP2_PVP_360_DEG		;360度ｴﾝｺｰﾀﾞ角度
+;;[]	.GLOBAL	_COP2_PVP_PG_DEG1		;PG角度1
+;;[]	.GLOBAL	_COP2_PVP_PG_DEG2		;PG角度2
+;;[]	.GLOBAL	_COP2_PVP_ZURE_PLS		;軸間ｽﾞﾚ実測
+;;[]	.GLOBAL	_COP2_PVP_ZURE_RNA		;軸間ｽﾞﾚﾘﾆｱ
+
+
+
+;;[]	.GLOBAL		_COP2_SVP_ORGSOK_PLS		;原点測定ﾊﾟﾙｽ
+;;[]	.GLOBAL		_COP2_SVP_ORGCAL_DAT1	;演算係数1
+;;[]	.GLOBAL		_COP2_SVP_ORGCAL_DAT2	;演算係数2
+;;[]	.GLOBAL		_COP2_SVP_ORGCAL_DAT3	;演算係数3
+;;[]	.GLOBAL		_COP2_SVP_ORGCAL_DAT4	;演算係数4
+;;[]	.GLOBAL		_COP2_SVP_ORGCAL_DAT5	;演算係数5
+;;[]	.GLOBAL		_COP2_SVP_ORGCAL_DAT6	;演算係数6
+;;[]	.GLOBAL		_COP2_SVP_ORGSTRK_LEN1	;ｽﾄﾛｰｸ1
+;;[]	.GLOBAL		_COP2_SVP_ORGSTRK_LEN2	;ｽﾄﾛｰｸ2
+;;[]	.GLOBAL		_COP2_SVP_RNAORGMEM_LEG1	;ﾘﾆｱ原点1軸記憶
+;;[]	.GLOBAL		_COP2_SVP_RNAORG_PLS1	;ﾊﾞｯｸｱｯﾌﾟ実測
+;;[]	.GLOBAL		_COP2_SVP_RNAORGMEM_LEG2	;ﾘﾆｱ原点2軸記憶
+;;[]	.GLOBAL		_COP2_SVP_RNAORG_PLS2	;ﾊﾞｯｸｱｯﾌﾟ実測
+;;[]	.GLOBAL		_COP2_SVP_RNAORG_SIN1	;ﾊﾞｯｸｱｯﾌﾟ実測符号
+;;[]	.GLOBAL		_COP2_SVP_RNAORG_SIN2	;ﾊﾞｯｸｱｯﾌﾟ実測符号
+;;[]	.GLOBAL		_COP2_SVP_ORGRUP_DEG		;原点右区間上
+;;[]	.GLOBAL		_COP2_SVP_ORGRDN_DEG		;原点右区間下
+;;[]	.GLOBAL		_COP2_SVP_ORGLUP_DEG		;原点左区間上
+;;[]	.GLOBAL		_COP2_SVP_ORGLDN_DEG		;原点左区間下
+;;[]	.GLOBAL		_COP2_SVP_ORGMEM_DEG1	;角度1軸
+;;[]	.GLOBAL		_COP2_SVP_ORGMEM_DEGS1	;角度1軸　ON/OFF
+;;[]	.GLOBAL		_COP2_SVP_ORGMEM_DEG2	;角度2軸
+;;[]	.GLOBAL		_COP2_SVP_ORGMEM_DEGS2	;角度2軸　ON/OFF
+;;[]	.GLOBAL		_COP2_SVP_ORGMPL_SEL1	;手ﾊﾟﾙｻ選択1軸　ON/OFF
+;;[]	.GLOBAL		_COP2_SVP_ORGMPL_SEL2	;手ﾊﾟﾙｻ選択2軸　ON/OFF
+;;[]	.GLOBAL		_COP2_SVP_HOSRAG_PLS1	;軸間補正範囲１
+;;[]	.GLOBAL		_COP2_SVP_HOSRAG_PLS2	;軸間補正範囲２
+;;[]	.GLOBAL		_COP2_SVP_HOSEI_SPD		;補正速度
+;;[]	.GLOBAL		_COP2_SVP_MANSAM_LEN		;手動時同期
+;;[]	.GLOBAL		_COP2_SVP_DANSAM_LEN		;段取字同期
+;;[]	.GLOBAL		_COP2_SVP_RUNSAMER_LEN1	;運転同期異常１
+;;[]	.GLOBAL		_COP2_SVP_RUNSAMER_LEN2	;運転同期異常２
+;;[]	.GLOBAL		_COP2_SVP_MANSAMER_PLS	;手動同期異常
+;;[]	.GLOBAL		_COP2_SVP_RUNSAMER_PLS	;運転同期異常
+
+;	*******************************************
+;	***					***
+;	***		予備			***
+;	***	通信やﾄﾚﾝﾄﾞ関係			***
+;	*******************************************
+
+;	*******************************************
+;	***		実測 4/2BYTE領域	***
+;	*******************************************
+
+;;[]	.GLOBAL	_COP2_PVP_RNAORG_PLS1		;	;ﾘﾆｱ基準位置ﾊﾟﾙｽ(ﾊﾞｯｸｱｯﾌﾟ専用)
+;;[]	.GLOBAL	_COP2_PVP_NOW_POSI000		;	;下死点高さ位置(表示用 原点完了まではABS値)
+;;[]	.GLOBAL	_COP2_PVP_RENIA_POSI0		;	;リニアセンサ現在位置(生表示用 ABS値 何も使っていない?HMIで)
+;;[]	.GLOBAL	_COP2_PVP_NOW_ANGLE00		;	;SH2->SH4　360度ｴﾝｺｰﾀﾞ(CHEAK用)
+;;[]	.GLOBAL	_COP2_PVP_CYCLE_TIME0		;	;サイクル時間表示用
+;;[];	----- 追加2002/07/02 ---
+;;[]	.GLOBAL	_COP2_PVP_CYCLE_SPM1			;	;サイクル速度表示用
+;;[]	.GLOBAL	_COP2_PVP_DISP_SPM2			;	;高速時描画を塗りつぶしにする為の速度(単位不明)
+;;[]	.GLOBAL	_COP2_PVP_NOW_ANGLE_RNA		;	;現在角度0.1度HEX(ﾘﾆｱｽｹｰﾙからの1度単位 SH4->SH2)(画面表示用)
+;;[]	.GLOBAL	_COP2_PVP_DYHITO_HOSLNG		;	;ﾀﾞｲﾊｲﾄ補正量 1um(0.001mm) +/-
+;;[]
+;;[]	.GLOBAL	_COP2_PVP_DYHITO_POS			;	;ﾀﾞｲﾊｲﾄ実測 生産初期画面表示値 
+;;[]						;2003-07-09 下限位置のまま
+;;[]	.GLOBAL	_COP2_PVP_SLIDE_POS			;	;ｽﾗｲﾄﾞ位置・ﾀﾞｲﾊｲﾄを含めた位置(ｸﾗｯﾁは未使用)
+;;[]						;2003-07-09 生産下限位置
+;;[]	.GLOBAL	_COP2_PVP_TAIKITEN_POS		;	;待機点角度表示（描画用）
+;;[]
+;;[];	----- 追加2002/08/01 ---
+;;[]
+;;[]	.GLOBAL	_COP2_PVP_RNA_STLORK			;	;ｽﾄﾛｰｸ実測
+;;[]	.GLOBAL	_COP2_PVP_STOP_TIM			;	;ｽﾄｯﾋﾟﾝｸﾞﾀｲﾏ 1msec data
+;;[]	.GLOBAL	_COP2_PVP_BREAK_DIG			;	;ﾌﾞﾚｰｷ角度   0.1度
+;;[]	.GLOBAL	_COP2_PVP_COM_ERR			;	;ｺﾝﾊﾟｲﾙ異常有り／無し
+;;[]	.GLOBAL	_COP2_PVP_COM_ADR			;	;ｺﾝﾊﾟｲﾙ異常ｱﾄﾞﾚｽ
+;;[]	.GLOBAL	_COP2_PVP_SEQ_ERR			;	;ｺﾝﾊﾟｲﾙ異常 異常時ﾒｲﾝSEQか割込SEQかの判断(今回未使用)
+;;[];	----- 追加2002/08/08-----
+;;[]	.GLOBAL	_COP2_PVP_BREAK_TIM1			;	;
+;;[]
+;;[]
+;;[];	========== 2003-01-27 過負荷実測追加====
+;;[]	.GLOBAL	_COP2_PVP_POWER_MONI		;	;ADR=3854
+;;[]
+;	========= 2003-02-04 ======
+	.GLOBAL	_COP2_PVP_CPUA_TEPPLS	;	;
+	.GLOBAL	_COP2_PVP_CPUA_ANAIN		;	;
+
+
+	.GLOBAL	_COP2_PVP_ENC_PLS_SPD	;	;SHIN
+	.GLOBAL	_COP2_PVP_OUT_PLS_SPD	;	;SHIN
+	.GLOBAL	_COP2_PVP_ABS_ENC_SPD	;	;ABS
+	.GLOBAL	_COP2_PVP_ABS_OUT_SPD	;	;ABS
+	.GLOBAL	_COP2_PVP_ENC_SPD_PER	;	;
+	.GLOBAL	_COP2_PVP_OUT_SPD_PER	;	;
+	.GLOBAL	_COP2_PVP_BRK_ENC_SPD	;	;
+	.GLOBAL	_COP2_PVP_BRK_OUT_SPD	;	;
+	.GLOBAL	_COP2_PVP_ENC_SPD_DIR	;	;
+	.GLOBAL	_COP2_PVP_OUT_SPD_DIR	;	;
+
+	.GLOBAL	_COP2_PVP_A_LOT_CNT1		;	;
+	.GLOBAL	_COP2_PVP_B_LOT_CNT1		;	;
+	.GLOBAL	_COP2_PVP_A_LOT_CNT2		;	;
+	.GLOBAL	_COP2_PVP_B_LOT_CNT2		;	;
+	.GLOBAL	_COP2_PVP_A_LOT_CNT3		;	;
+	.GLOBAL	_COP2_PVP_B_LOT_CNT3		;	;
+	.GLOBAL	_COP2_PVP_A_LOT_CNT4		;	;
+	.GLOBAL	_COP2_PVP_B_LOT_CNT4		;	;
+	.GLOBAL	_COP2_PVP_A_LOT_CNT5		;	;
+	.GLOBAL	_COP2_PVP_B_LOT_CNT5		;	;
+
+
+;	*******************************************
+;	***					***
+;	***	2002-08-29			***
+;	***	固定実測(ﾊﾞｰｼﾞｮﾝ表示)		***
+;	*******************************************
+	.GLOBAL	_COP2_PVP_CB_A_VER		;*6	;ASCIIﾃﾞｰﾀ (1WORDでｷｬﾗｸﾀする 6char) SH4-->
+
+;	======= 2003-01-27 ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ追加 =====
+	.GLOBAL	_COP2_PVP_PAR_A_VER		;	;ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ HEX data
+	.GLOBAL	_COP2_PVP_TBL_A_VER		;	;ｾﾝｻのﾃｰﾌﾞﾙ番号1~99 HEX data
+
+;	======= 2003-02-03 ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ追加 =====
+	.GLOBAL	_COP2_PVP_PAR_A_CHAR		;	;ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ 末尾ｷｬﾗｸﾀ ASCII(2BYTE)
+	.GLOBAL	_COP2_PVP_TBL_A_CHAR		;	;ｾﾝｻのﾃｰﾌﾞﾙ番号()
+
+
+;	=== 2004-01-27 ERR-INFO ===
+	.GLOBAL	_COP2_ERR_INFO_CPUA_FLG	;	;CPUA=>WRITE 55AA CPUB=>0CLR
+	.GLOBAL	_COP2_ERR_INFO_CPUA_TOP	;
+
+;	*******************************************
+;	***					***
+;	***	SH2←SH4　ﾊﾝﾄﾞｼｪｲｸ		***
+;	***					***
+;	*******************************************
+	.GLOBAL	_COP2_PVX_RNA_INDAT		;	;生	SH4-->SH2 生
+	.GLOBAL	_COP2_PVX_RNA_POSD1		;	;変換	SH4-->SH2 極性・ｵﾌｾｯﾄ分
+	.GLOBAL	_COP2_PVX_RNA_POSD2		;	;変換	SH4-->SH2 0.5um->1mm+原点
+	.GLOBAL	_COP2_PVX_RNA_POSDT		;	;制御用
+	.GLOBAL	_COP2_PVX_RNA_DIGDT		;	;角度	360.0度程度 RNAｾﾝｻから求まる角度
+	.GLOBAL	_COP2_PVX_RNA_PLS_P		;	;RNAｾﾝｻから求まるｵﾌｾｯﾄﾊﾟﾙｽP
+
+	.GLOBAL	_COP2_EMG_CPA_TO_CP2		;
+	.GLOBAL	_COP2_EXQ_CPA_TO_CP2		;
+	.GLOBAL	_COP2_EMG_CP2_TO_CPA		;
+	.GLOBAL	_COP2_EXQ_CP2_TO_CPA		;
+	
+	.GLOBAL	_COP2_PVX_SH4_OUTPLS		;*2	;8BYTE
+
+	.GLOBAL	_COP2_STEP_NO			;工程二重回路ﾁｪｯｸ用/ COP2=>CPUA
+	.GLOBAL	_COP2_STEP_NO_A			;工程二重回路ﾁｪｯｸ用/ CPUA=>COP2
+
+	.GLOBAL	_COP2_SH4_POS_STS1		;	;上記信号 SH4==> WRITE SH2 ==>BIT7 CLR
+	.GLOBAL	_COP2_SH2_POS_STS1		;	;上記信号 SH2==> WRITE SH4 ==>BIT7 CLR
+	.GLOBAL	_COP2_SH4_CMP_STS1		;	;(二重化異常信号 203同様      生)
+	.GLOBAL	_COP2_SH2_CMP_STS1		;	;(二重化異常信号 273同様      生)
+	.GLOBAL	_COP2_SH4_CMP_STS2		;	;(二重化異常信号 BIT0位置決中 生)
+	.GLOBAL	_COP2_SH2_CMP_STS2		;	;(二重化異常信号 BIT0位置決中 生)
+
+;	====================================
+	.GLOBAL	_COP2_HD_CTRL_REDY	;	;準備完了にしたい
+	.GLOBAL	_COP2_HD_CTRL_REDY_A	;	;準備完了にしたい
+	.GLOBAL	_COP2_HD_POS_START	;	;起動したい
+	.GLOBAL	_COP2_HD_POS_START_A	;	;起動したい
+	.GLOBAL	_COP2_HD_SFTY_AUTO	;	;[2013-04-14]
+	.GLOBAL	_COP2_HD_SFTY_AUTO_A	;	;[2013-04-14]
+	.GLOBAL	_COP2_HD_NEAR_ZERO	;	;ﾆｱｾﾞﾛ処理を行いたい(使用済み)
+	.GLOBAL	_COP2_HD_NEAR_ZERO_A	;	;ﾆｱｾﾞﾛ処理を行いたい(使用済み)
+	.GLOBAL	_COP2_HD_CNT_STOP	;	;[2013-04-14]
+	.GLOBAL	_COP2_HD_CNT_STOP_A	;	;[2013-04-14]
+	.GLOBAL	_COP2_HD_STEP_END	;	;位置決め完了としたい(使用済み)
+	.GLOBAL	_COP2_HD_STEP_END_A	;	;位置決め完了としたい(使用済み)
+	.GLOBAL	_COP2_HD_CNT_CNT		;[2013-04-14]
+	.GLOBAL	_COP2_HD_CNT_CNT_A		;[2013-04-14]
+
+;	===== 2002-09-12 SAITO =====
+;	SELF CHECK HAND SHAKE FLG
+
+;	===== 2008-09-21 KOMA =====
+	.GLOBAL	_CPUA_COP2_SELF_REQ		;START/CODE _COP2_CPUA_SELF_HAND_FLG
+	.GLOBAL	_CPUA_COP2_SELF_ANS		;END _COP2_CPUB_SELF_HAND_FLG
+_CPUA_COP2_SELF_COD1	.SRES	2	;START/CODE _COP2_CPUA_SELF_HAND_FLG	.SRES	2	; CPUAの状態ﾌﾗｸﾞ
+_CPUA_COP2_SELF_COD2	.SRES	2	;END _COP2_CPUB_SELF_HAND_FLG	.SRES	2	; CPUBの状態ﾌﾗｸﾞ
+
+;	===================================
+;	===	各ｶｰﾄﾞのｽﾃｰﾀｽ作成用	===
+;	===================================
+;	運転開始
+;	１工程開始
+;	最終工程開始
+;	終了/
+;	==== 2004-03-01 同期ｽﾞﾚ測定用時間 =====
+	.GLOBAL	_COP2_CPU_CTRL_CLK		;	;(同期ｽﾞﾚ測定ﾀｲﾑｽﾀﾝﾌﾟ)
+
+
+;	=========== 2006-04-10 =========
+	.GLOBAL	_COP2_CPUA_SELF2_STR		;	;
+	.GLOBAL	_COP2_CPUA_SELF2_END		;	;
+	.GLOBAL	_COP2_CPUA_SELF2_CD1		;	;
+	.GLOBAL	_COP2_CPUA_SELF2_CD2		;	;
+	.GLOBAL	_COP2_CPUA_SELF2_CD3		;	;
+	.GLOBAL	_COP2_CPUA_SELF2_CD4		;	;
+
+	.GLOBAL	_COP2_CPUB_SELF2_STR		;	;
+	.GLOBAL	_COP2_CPUB_SELF2_END		;	;
+	.GLOBAL	_COP2_CPUB_SELF2_CD1		;	;
+	.GLOBAL	_COP2_CPUB_SELF2_CD2		;	;
+	.GLOBAL	_COP2_CPUB_SELF2_CD3		;	;
+	.GLOBAL	_COP2_CPUB_SELF2_CD4		;	;
+
+
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+	.GLOBAL	_COP2_SEQ_DP_024		;CMD(C/B)
+	.GLOBAL	_COP2_SEQ_DP_028		;CMD(C/B)
+	.GLOBAL	_COP2_SEQ_DP_029		;CMD(C/B)
+	.GLOBAL	_COP2_SEQ_DP_032		;CMD(C/B)
+	.GLOBAL	_COP2_SEQ_DP_033		;CMD(C/B)
+	.GLOBAL	_COP2_SEQ_DP_050		;CMD(C/B)
+	.GLOBAL	_COP2_SEQ_DP_056		;CMD(C/B)
+	.GLOBAL	_COP2_SEQ_DP_109		;CMD(C/B)
+	.GLOBAL	_COP2_SEQ_DP_340		;CMD(C/B)
+	.GLOBAL	_COP2_SEQ_DP_200		;STS
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	***		COP2->SIT4		***
+;	***		制御情報		***
+;	***		RNA,PG,POS		***
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+	.GLOBAL	_COP2_CH1RNA_INDAT	
+	.GLOBAL	_COP2_PG1_PLS		
+
+	.GLOBAL	_COP2_CH2RNA_INDAT	
+	.GLOBAL	_COP2_PG2_PLS		
+
+	.GLOBAL	_COP2_OUT1_PLS		;払出パルス
+	.GLOBAL	_COP2_OUT2_PLS		;払出パルス
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	***		フィーダ		***
+;	***		設定・実測		***
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+;	=== 2016-03-20 ﾚﾍﾞﾙﾌｨｰﾀﾞの意味で"LFEED"で統一する(上がALIGN 4だからOK)=====
+	.GLOBAL	_COP2_SVP_LFEED_LNG1		;送り長さ　0.01mm
+	.GLOBAL	_COP2_SVP_LFEED_STRPOS		;送り開始位置 0.001mm
+	.GLOBAL	_COP2_SVP_LFEED_STRDEG		;送り開始角度 0.1度
+	.GLOBAL	_COP2_SVP_LFEED_STRNO		;送り開始行程		
+	.GLOBAL	_COP2_SVP_LFEED_ENDPOS		;送り終了位置 0.001mm
+	.GLOBAL	_COP2_SVP_LFEED_ENDDEG		;送り終了角度 0.1度
+	.GLOBAL	_COP2_SVP_LFEED_ENDNO		;送り終了行程
+	.GLOBAL	_COP2_SVP_LFEED_SPD1		;通常の送り速度1%
+	.GLOBAL	_COP2_SVP_LFEED_SPD2		;低速の送り速度1%
+	.GLOBAL	_COP2_SVP_LFEED_SELNO		;型式の選択番号
+	.GLOBAL	_COP2_SVP_LFEED_HOSIN		;矯正量(ｸﾘｱﾗﾝｽ) 入口
+	.GLOBAL	_COP2_SVP_LFEED_HOSOT		;矯正量(ｸﾘｱﾗﾝｽ) 出口
+	.GLOBAL	_COP2_SVP_LFEED_GMNSQ1		;ｼｰｹﾝｽ396
+	.GLOBAL	_COP2_SVP_LFEED_GMNSQ2		;ｼｰｹﾝｽ397
+	.GLOBAL	_COP2_SVP_LFEED_GMNSQ3		;ｼｰｹﾝｽ398
+	.GLOBAL	_COP2_SVP_LFEED_GMNSQ4		;ｼｰｹﾝｽ399
+
+	.GLOBAL	_COP2_PVP_LFEED_POS		;ﾌｨｰﾀﾞ現在位置
+
+	.GLOBAL	_COP2_PVP_LFD_PVABSPOS1		;ﾌｨｰﾀﾞ現在位置1(ABS)
+	.GLOBAL	_COP2_PVP_LFD_PVABSPOS2		;ﾌｨｰﾀﾞ現在位置2(ABS)
+	.GLOBAL	_COP2_PVP_LFD_PVABSPLS1		;ﾌｨｰﾀﾞ現在位置PLS1(ABS)
+	.GLOBAL	_COP2_PVP_LFD_PVABSPLS2		;ﾌｨｰﾀﾞ現在位置PLS2(ABS)
+
+	.GLOBAL	_COP2_PVP_LFD_PVINCPOS1		;ﾌｨｰﾀﾞ現在位置1(INC)
+	.GLOBAL	_COP2_PVP_LFD_PVINCPOS2		;ﾌｨｰﾀﾞ現在位置2(INC)
+	.GLOBAL	_COP2_PVP_LFD_PVINCPLS1		;ﾌｨｰﾀﾞ現在位置PLS1(INC)
+	.GLOBAL	_COP2_PVP_LFD_PVINCPLS2		;ﾌｨｰﾀﾞ現在位置PLS2(INC)
+
+	.GLOBAL	_COP2_PVP_LFD_OBJABSPLS		;ﾌｨｰﾀﾞ現在位置1(ABS)
+	.GLOBAL	_COP2_PVP_LFD_OBJINCPLS		;ﾌｨｰﾀﾞ現在位置PLS1(INC)
+
+	.GLOBAL	_COP2_PVP_LFD_OBJSPD		;+/- PER
+	.GLOBAL	_COP2_PVP_LFD_ENCSPD		;+/- PER
+	
+	.GLOBAL	_COP2_LFD_SITMCN_SIG		;
+
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	***		SIT4->COP2		***
+;	***		制御情報		***
+;	***		DI,360ENC		***
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+
+	.GLOBAL	_COP2_ENC360_INDT	;WR/RD OK
+	.GLOBAL	_COP2_INT_SFY_INP_DAT	;
+	.GLOBAL	_COP2_INT_STP_INP_DAT	;
+	.GLOBAL	_COP2_PVX_SH4_SFTY_IN	;
+	.GLOBAL	_COP2_di1_cb_ctl1	;
+	.GLOBAL	_COP2_di2_cb_ctl2	;
+	.GLOBAL	_COP2_di3_cb_inp1	;
+	.GLOBAL	_COP2_di4_cb_inp2	;
+	.GLOBAL	_COP2_REAL_INP1_DATA	;
+	.GLOBAL	_COP2_FACT_IN_DATA	;
+	.GLOBAL	_COP2_FDEV_IN_DATA	;
+	.GLOBAL	_COP2_RACT_IN_DATA	;
+	.GLOBAL	_COP2_RDEV_IN_DATA	;
+;;[]
+;;[]
+;;[];	--- 2015-02-23[入力ANSﾊﾞｯｸ] ----
+;;[]	.GLOBAL	_COP2_di1_cb_ctl1_ANS	;[運転釦]
+;;[]	.GLOBAL	_COP2_di3_cb_inp1_ANS	;[非常停止]
+;;[]	.GLOBAL	_COP2_di4_cb_inp2_ANS	;[安全装置遮光・通光]
+;;[]
+;;[];	--- 2015-02-23[ﾊﾝﾄﾞｲｪｲｸ WDT] ----
+;;[]	.GLOBAL	_COP2_A_TO_C_REQ	;5F8,5F9
+;;[]	.GLOBAL	_COP2_A_TO_C_ANS	;5FA,5FB
+;;[]	.GLOBAL	_COP2_C_TO_A_REQ	;5FC,5FD
+;;[]	.GLOBAL	_COP2_C_TO_A_ANS	;5FE,5FF
+;;[]
+;;[];---------　ﾊﾟﾗﾒｰﾀ ----------------------
+;;[]	.GLOBAL	_COP2_SEND_PAR_NO	;COP2->CPUA 0->1[no1]->0-2->0->3->...512->[NO512]
+;;[]	.GLOBAL	_COP2_SEND_PAR_DAT	;
+;;[]
+;;[];-----------------------------------------
+;;[]	.GLOBAL	_COP2_SVB_RENIA_BUP1		;
+;;[]	.GLOBAL	_COP2_SVB_RENIA_BUP2		;
+;;[]	.GLOBAL	_COP2_SVB_RENIA_BUP3		;
+;;[]	.GLOBAL	_COP2_SVB_RENIA_BUP4		;
+;;[]	.GLOBAL	_COP2_SVP_ORGMEM_DEG1A		;角度1軸
+;;[]	.GLOBAL	_COP2_SVP_ORGMEM_DEG2A		;角度2軸
+;;[]	.GLOBAL	_COP2_PVP_RENIA_BUP1		;
+;;[]	.GLOBAL	_COP2_PVP_RENIA_BUP2		;
+;;[]	.GLOBAL	_COP2_PVP_RENIA_BUP3		;
+;;[]	.GLOBAL	_COP2_PVP_RENIA_BUP4		;
+;;[]	.GLOBAL	_COP2_PVP_RNABUP_ENB		;
+;;[]	.GLOBAL	_COP2_SVP_RNADIR_SEL2		;極性
+;;[]
+;;[]
+;;[];	-------------------------------
+;;[]	.GLOBAL	_COP2_PVOP2_WAIT_CODA	;OP->CPUA
+;;[]	.GLOBAL	_COP2_PVOP2_WAIT_CODB	;OP->CPUB
+;;[]	.GLOBAL	_COP2_SVOP2_WAIT_ANSA	;CPUA->OP
+;;[]	.GLOBAL	_COP2_SVOP2_WAIT_ANSB	;CPUB->OP
+;;[]
+;;[];	==== 2007-02-13(CPO2関係 2軸ｻｰﾎﾞﾊﾟﾗﾒｰﾀ) =====
+;;[]	.GLOBAL	_COP2_PVP_PG_DEG1X		;PG角度1
+;;[]	.GLOBAL	_COP2_PVP_PG_DEG2X		;PG角度2
+;;[]	.GLOBAL	_COP2_PVP_PG_PLS1		;PG1実測ﾊﾟﾙｽ
+;;[]	.GLOBAL	_COP2_PVP_PG_PLS2		;PG2実測ﾊﾟﾙｽ
+;;[]	.GLOBAL	_COP2_PVP_PG12_DEG1		;PG1-2角度
+;;[]
+;;[]	.GLOBAL	_COP2_SVP_FCLS_STR_DEG		;ﾌﾙｸﾛ開始角度
+;;[]	.GLOBAL	_COP2_SVP_FCLS_STR_HENS		;ﾌﾙｸﾛ開始偏差
+;;[]	.GLOBAL	_COP2_SVP_FCLS_ZIKI_SPD1	;ﾌﾙｸﾛ自起動速度1
+;;[]	.GLOBAL	_COP2_SVP_FCLS_ZIKI_SPD2	;ﾌﾙｸﾛ自起動速度2
+;;[]	.GLOBAL	_COP2_SVP_SYNC_ERR_DEGA		;同期異常領域角度A
+;;[]	.GLOBAL	_COP2_SVP_SYNC_ERR_DEGB		;同期異常領域角度B
+;;[]	.GLOBAL	_COP2_SVP_SYNC_ERR_DEGC		;同期異常領域角度C
+;;[]	.GLOBAL	_COP2_SVP_SYNC_ERR_DEGD		;同期異常領域角度D
+;;[]	.GLOBAL	_COP2_SVP_SYNC_ERR_RNAA		;ﾘﾆｱ同期異常A
+;;[]	.GLOBAL	_COP2_SVP_SYNC_ERR_RNAB		;ﾘﾆｱ同期異常B
+;;[]	.GLOBAL	_COP2_SVP_SYNC_ERR_RNAC		;ﾘﾆｱ同期異常C
+;;[]	.GLOBAL	_COP2_SVP_SYNC_ERR_RNAD		;ﾘﾆｱ同期異常D
+;;[]	.GLOBAL	_COP2_SVP_SYNC_ERR_PGA		;PG同期異常A
+;;[]	.GLOBAL	_COP2_SVP_SYNC_ERR_PGB		;PG同期異常B
+;;[]	.GLOBAL	_COP2_SVP_SYNC_ERR_PGC		;PG同期異常C
+;;[]	.GLOBAL	_COP2_SVP_SYNC_ERR_PGD		;PG同期異常D
+;;[]
+;;[]
+;;[];--------------2007-11-13------
+;;[]	.GLOBAL	_COP2_SVP_MOADRF_SQH		;
+;;[]
+;;[];----- 2008-01-26 --------
+;;[];	======= V05k 2008/01/19 COP2ﾊﾞｰｼﾞｮﾝ追加 =====
+;;[]	.GLOBAL	_COP2_PVP_CB_C_VER		;ASCIIﾃﾞｰﾀ (1WORDでｷｬﾗｸﾀする 6char) SH4-->
+;;[]	.GLOBAL	_COP2_PVP_PAR_C_VER		;ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ HEX data
+;;[]	.GLOBAL	_COP2_PVP_PAR_C_CHAR		;ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ 末尾ｷｬﾗｸﾀ ASCII(2BYTE)
+;;[]	.GLOBAL	_COP2_PVP_TBL_C_VER		;ﾃｰﾌﾞﾙﾊﾞｰｼﾞｮﾝ HEX data（未使用）
+;;[]	.GLOBAL	_COP2_PVP_TBL_C_CHAR		;ﾃｰﾌﾞﾙﾊﾞｰｼﾞｮﾝ 末尾ｷｬﾗｸﾀ ASCII(2BYTE)
+;;[]
+;;[];	===========================
+;;[];	===	2012-01-23	===
+;;[];	===========================
+;;[]	.GLOBAL	_COP2_SVP_ORGREV_AGL			;サーボパラメータBF　　逆転
+;;[]	.GLOBAL	_COP2_SVP_ORGFWD_AGL			;サーボパラメータBG　　正転
+;;[]
+;;[];	==== 2011-07-05 =====
+;;[]	.GLOBAL	_COP2_SVP_RISE_ZWID			;サーボパラメータBH　　上昇監視ｾﾞﾛ幅
+;;[]	.GLOBAL	_COP2_SVP_RISE_CMP1			;サーボパラメータBI　　上昇監視比較1
+;;[]	.GLOBAL	_COP2_SVP_RISE_CMP2			;サーボパラメータBJ　　上昇監視比較2
+;;[]	.GLOBAL	_COP2_SVP_RISE_CMP3			;サーボパラメータBK　　上昇監視比較予備
+;;[]	.GLOBAL	_COP2_SVP_RISE_DLY1			;サーボパラメータBL　　監視遅延1
+;;[]	.GLOBAL	_COP2_SVP_RISE_DLY2			;サーボパラメータBM　　監視遅延2
+;;[]
+;;[];	----------------2009-09-24(画面用ﾄﾚﾝﾄﾞﾃﾞｰﾀ)-------
+;;[]	.GLOBAL	_COP2_SMPDAT2		;24byte*4block=96
+;;[]	.GLOBAL	_COP2_SHTDAT2		;20byte*1block=20
+;;[]	.GLOBAL	_COP2_SMPCNT_FLG2	;0,1,2,3,4 (BIT15=1:NEXT START)
+;;[]	.GLOBAL	_COP2_SHTCNT_FLG2	;0,1	   (BIT15=1:NEXT START)
+;;[]						;120byte..あまり8b
+;;[];	--------- 2007-05-22-------
+;;[]	.GLOBAL	_COP2_POSCTL_RL_ABSPLS		;
+;;[]	.GLOBAL	_COP2_LSI_REST_PLS		;
+;;[]	.GLOBAL	_COP2_LSI_TOP_FREQ		;
+;;[]	.GLOBAL	_COP2_CAL_RL_SPD
+;;[]
+;;[]	.GLOBAL	_COP2_HD_CMP_RNA_C1	;
+;;[]	.GLOBAL	_COP2_HD_CMP_RNA_C2	;
+;;[]	.GLOBAL	_COP2_HD_CMP_PLS_C1	;
+;;[]	.GLOBAL	_COP2_HD_CMP_PLS_C2	;
+;;[]	.GLOBAL	_COP2_HD_CMP_TRQ_C1	;
+;;[]	.GLOBAL	_COP2_HD_CMP_TRQ_C2	;
+;;[]
+;;[];	---------- 2008-03-25-------
+;;[]	.GLOBAL	_COP2_SYNCHOS_LT_OBJ	;2008-03-25 X軸目標位置
+;;[]	.GLOBAL	_COP2_SYNCHOS_LT_FLG	;2008-03-25 0 1(X) 2(Y)
+;;[]
+;;[]
+;;[];-----------640------
+;;[]	.GLOBAL	_COP2_SHT_RNA1_MIN
+;;[]	.GLOBAL	_COP2_SHT_RNA2_MIN
+;;[]
+;;[];	=== 2015-03-09(多段の荷重設定) ====    HMI
+;;[]	.GLOBAL	_COP2_SVP_OBJECT_PRS_TOP
+;;[]	.GLOBAL	_COP2_SVP_OBJECT_PRS01	;
+;;[]	.GLOBAL	_COP2_SVP_OBJECT_PRS02	;
+;;[]	.GLOBAL	_COP2_SVP_OBJECT_PRS03	;
+;;[]	.GLOBAL	_COP2_SVP_OBJECT_PRS04	;
+;;[]	.GLOBAL	_COP2_SVP_OBJECT_PRS05	;
+;;[]	.GLOBAL	_COP2_SVP_OBJECT_PRS06	;
+;;[]	.GLOBAL	_COP2_SVP_OBJECT_PRS07	;
+;;[]	.GLOBAL	_COP2_SVP_OBJECT_PRS08	;
+;;[]	.GLOBAL	_COP2_SVP_OBJECT_PRS09	;
+;;[]	.GLOBAL	_COP2_SVP_OBJECT_PRS10	;
+;;[]	.GLOBAL	_COP2_SVP_KAJOBJ_HAB	;荷重完了範囲
+;;[]	.GLOBAL	_COP2_SEQ_DP_053	;65E,65F
+;;[]
+;;[]
+;;[];	--------- 2007-06-02-------
+;;[]	.GLOBAL	_COP2_DBG_CPUA_INF0		;5AA5+(16BIT)
+;;[]	.GLOBAL	_COP2_DBG_CPUA_INF1		;項目1 ｻﾝﾌﾟﾘﾝｸﾞに表示する
+;;[]	.GLOBAL	_COP2_DBG_CPUA_INF2		;項目2
+;;[]	.GLOBAL	_COP2_DBG_CPUA_INF3		;項目3
+;;[]	.GLOBAL	_COP2_DBG_CPUA_INF4		;項目4
+;;[]	.GLOBAL	_COP2_DBG_CPUA_INF5		;項目5
+;;[]	.GLOBAL	_COP2_DBG_CPUA_INF6		;項目6
+;;[]
+;;[];	-----------2007-05-30 -----------
+;;[]	.GLOBAL	_COP2_PVOP2_STEP1_CODA		;OP->CPUA(NEAR-ZERO,STEP_END,)
+;;[]	.GLOBAL	_COP2_PVOP2_STEP1_CODB		;OP->CPUB(NEAR-ZERO,STEP_END)
+;;[]	.GLOBAL	_COP2_SVOP2_STEP1_ANSA		;CPUA->OP(NEAR-ZERO,STEP_END)
+;;[]	.GLOBAL	_COP2_SVOP2_STEP1_ANSB		;CPUB->OP(NEAR-ZERO,STEP_END)
+;;[]
+;;[]	.GLOBAL	_COP2_PVOP2_STEP2_CODA		;OP->CPUA(NEAR-ZERO,STEP_END,)
+;;[]	.GLOBAL	_COP2_PVOP2_STEP2_CODB		;OP->CPUB(NEAR-ZERO,STEP_END)
+;;[]	.GLOBAL	_COP2_SVOP2_STEP2_ANSA		;CPUA->OP(NEAR-ZERO,STEP_END)
+;;[]	.GLOBAL	_COP2_SVOP2_STEP2_ANSB		;CPUB->OP(NEAR-ZERO,STEP_END)
+;;[]
+;;[];	----------2015-11-11------------
+;;[]	.GLOBAL	_DP_DBG_CPUAC_DRV_START		;2015-11-11 6DC,6DD
+;;[]
+;;[]
+;;[];	--------------------2007-04-05(ﾄﾚﾝﾄﾞの必要ﾃﾞｰﾀ転送)--------------------------------
+;;[]	.GLOBAL	_COP2_MOST_DN_POS1		;最下死点1
+;;[]	.GLOBAL	_COP2_MOST_DN_POS2		;最下死点2
+;;[]	.GLOBAL	_COP2_TO_TRND_CNT		;0/1/2/3/4 ﾊﾝﾄﾞｼｪｲｸ信号CPUA-->0CLR
+;;[]	.GLOBAL	_COP2_TO_TRND_DATA		;40byte*4block
+;;[]
+;;[];//	-------- 2007-05-30 --------
+;;[]	.GLOBAL	_COP2_HAND_STEP_FLG;	
+;;[]
+;;[]	.GLOBAL	_COP2_PVP_FANC_SEQ_DAT		;2007-07-07
+;;[]
+;;[]	
+;;[]
+
+;	***************************************************
+;	***												***
+;	***			2017-06-29							***
+;	***			COP3-CPUC展示会用					***
+;	***			見える化表示機能					***
+;	***			1msタイマ							***
+;	***												***
+;	***************************************************
+
+	.GLOBAL	_COP23_1MS_CNT				;
+	.GLOBAL	_COP23_CTL_ENC360			;
+	.GLOBAL	_COP23_INC_ENC360			;
+	.GLOBAL	_COP23_RNA_ABS_POS			;RNA_ABS_POS 4BYTE
+	.GLOBAL	_COP23_RNA_CTL_POS1			;
+	.GLOBAL	_COP23_RNA_ABS_MAXPOS		;
+	.GLOBAL	_COP23_RNA_ABS_MINPOS		;
+	.GLOBAL	_COP23_SHOT_MOST_DOWN_POS	;
+	.GLOBAL	_COP23_LINK_RL_OBJ_ABSPLS	;
+	.GLOBAL	_COP23_LINK_PV_ABSPLS		;
+	.GLOBAL	_COP23_PV_OUT_SPD_PER		;PV_OUT_SPD_PER 2BYTE 0.1
+	.GLOBAL	_COP23_PV_ENC_SPD_PER		;PV_ENC_SPD_PER 2BYTE 0.1
+	.GLOBAL	_COP23_TRD_SMP_PV_SEQ		;
+	.GLOBAL	_COP23_PVP_POWER_MONI		;
+	.GLOBAL	_COP23_PV_IVW_DAT_DSP		;[単位切り替え付き]
+	.GLOBAL	_COP23_MON_SV_IVW_USED		;
+
+	.GLOBAL	_COP23_TRD_SEQMONI_01		;ADR
+
+	.GLOBAL	_COP23_TRD_SMPTRG_CNT		;
+

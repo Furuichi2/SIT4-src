@@ -1,0 +1,12 @@
+input	seq_rom.obj
+
+START	ROM(070000)
+;REM START	VECTOR(000000),ROM(040000),SRAM(020000)
+
+OUTPUT		seq
+
+LIST		U
+
+PRINT		seq
+
+EXIT

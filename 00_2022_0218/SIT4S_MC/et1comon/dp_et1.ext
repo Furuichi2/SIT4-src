@@ -1,0 +1,113 @@
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***								***
+;	***								***
+;	***								***
+;	***								***
+;	*******************************************************************
+;	このファイルはsh2またはsh4のアセンブラソースにインクルードされ
+;	その中で、実アドレスを割り付ける			
+;	このではdpramのオフセットアドレスを定義する
+;	このファイルのextern宣言として
+
+
+;	===========================================
+;	===		ET1 SV DATA		===
+;	===========================================
+;	--------------------------------------------------
+	.GLOBAL		_ET_CPUB_SND_INI_ET1	;INITAL CODE REQ
+	.GLOBAL		_ET_CPUB_RCV_INI_ET1	;INITAL CODE ACK
+;;;;	.GLOBAL		_ET_CPUB_SND_REQ_ET1	;H'12345678(req)
+;;;;	.GLOBAL		_ET_CPUB_RCV_ACK_ET1	;H'87654321(ack)
+;	---------------------------------------------------
+;;;;	.GLOBAL		_ET_CPUB_SND_REQ_ADR	;TOPADRESS (192K+32K 256Kbyte)
+;;;;	.GLOBAL		_ET_CPUB_SND_REQ_CNT	;1~128個
+;;;;	.GLOBAL		_ET_CPUB_SND_DAT	;(256byte MAX)
+;;;;	.GLOBAL		_ET_CPUB_SND_END	;
+
+;	===========================================
+;	===		ET1 TOREND DATA		===
+;	===========================================
+;	--------------------------------------------------
+	.GLOBAL		_ET_CPUA_SND_INI_ET1	;INITAL CODE REQ
+	.GLOBAL		_ET_CPUA_RCV_INI_ET1	;INITAL CODE ACK
+	.GLOBAL		_ET_CPUA_SND_REQ_ET1	;H'12345678(req)
+	.GLOBAL		_ET_CPUA_RCV_ACK_ET1	;H'87654321(ack)
+;	---------------------------------------------------
+	.GLOBAL		_ET_CPUA_SND_REQ_ADR	;TOPADRESS (192K+32K 256Kbyte)
+	.GLOBAL		_ET_CPUA_SND_REQ_CNT	;1~128個
+	.GLOBAL		_ET_CPUA_SND_DAT	;(256byte MAX)
+	.GLOBAL		_ET_CPUA_SND_END	;
+
+;	===========================================
+;	===		ET1 loder DATA		===
+;	===========================================
+;	2006-12-01
+
+	.GLOBAL		_ET_LDCMND_AREA		;LdCmnd set area
+	.GLOBAL		_ET_LDCMND_REQ		;LdCmnd Request Flag
+	.GLOBAL		_ET_LDCMND_RES		;LdCmnd Response Flag
+	.GLOBAL		_ET1_VER		;ET1 VERSION		V05
+
+;	===== HMI V05j 2007/12/07 =====
+	.GLOBAL		_ET1_IPS_ENT		;IPｱﾄﾞﾚｽ確定
+	.GLOBAL		_ET1_IPS_ADR0		;IPｱﾄﾞﾚｽ
+	.GLOBAL		_ET1_IPS_ADR1		;IPｱﾄﾞﾚｽ
+	.GLOBAL		_ET1_IPS_ADR2		;IPｱﾄﾞﾚｽ
+	.GLOBAL		_ET1_IPS_ADR3		;IPｱﾄﾞﾚｽ
+	.GLOBAL		_ET1_SUB_NET0		;ｻﾌﾞﾈｯﾄﾏｽｸ
+	.GLOBAL		_ET1_SUB_NET1		;ｻﾌﾞﾈｯﾄﾏｽｸ
+	.GLOBAL		_ET1_SUB_NET2		;ｻﾌﾞﾈｯﾄﾏｽｸ
+	.GLOBAL		_ET1_SUB_NET3		;ｻﾌﾞﾈｯﾄﾏｽｸ
+	.GLOBAL		_ET1_DEF_GAT0		;ﾃﾞﾌｫﾙﾄｹﾞｰﾄｳｪｲ
+	.GLOBAL		_ET1_DEF_GAT1		;ﾃﾞﾌｫﾙﾄｹﾞｰﾄｳｪｲ
+	.GLOBAL		_ET1_DEF_GAT2		;ﾃﾞﾌｫﾙﾄｹﾞｰﾄｳｪｲ
+	.GLOBAL		_ET1_DEF_GAT3		;ﾃﾞﾌｫﾙﾄｹﾞｰﾄｳｪｲ
+	.GLOBAL		_ET1_IPM_ADR0		;IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+	.GLOBAL		_ET1_IPM_ADR1		;IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+	.GLOBAL		_ET1_IPM_ADR2		;IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+	.GLOBAL		_ET1_IPM_ADR3		;IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+
+;	===========================================
+;	===	ET1==>CPUA(読出 32BYTE)	ｽﾃｰﾀｽRD	===
+;	===	2008-10-20			===
+;	===========================================
+	.GLOBAL		_ET_CPUA_RD_REQ		;CPUA-->ET1 READ REQ
+	.GLOBAL		_ET_CPUA_RD_ACK		;ET1-->CPUA data SET ACK
+	.GLOBAL		_ET_CPUA_RD_CNT		;読出個数
+	.GLOBAL		_ET_CPUA_RD_ADR		;読出ｱﾄﾞﾚｽ
+	.GLOBAL		_ET_CPUA_RD_BUF		;32byte(16w)
+;	===========================================
+;	===	CPUA==>書込2(32byte)	ｽﾃｰﾀｽWR	===
+;	===	2008-10-20			===
+;	===========================================
+	.GLOBAL		_ET_CPUA_WR2_ADR	;STS WR LINE
+	.GLOBAL		_ET_CPUA_WR2_BUF	;32byte(16w)
+	.GLOBAL		_ET_CPUA_WR2_REQ	;
+	.GLOBAL		_ET_CPUA_WR2_ACK	;
+	.GLOBAL		_ET_CPUA_WR2_CNT	;
+
+
+;;;	===========================================
+;;;	===	2009-06-19 komtrax(ET2)対応	===
+;;;	===========================================
+;;;	.GLOBAL		_ET2_SEQ_IDT01		;FA2,3 seq-->et2
+;;;	.GLOBAL		_ET2_SEQ_IDT02		;FA4,5 seq-->et2
+;;;	.GLOBAL		_ET2_SEQ_QDT01		;FA6,7 et2-->seq
+;;;	.GLOBAL		_ET2_SEQ_QDT02		;FA8,9 et2-->seq
+;;;;	============== 使用付加(2009-06-19)　後はﾊﾞﾝｸだけ============
+;	===========================================
+;	===	2009-07-24 komtrax(ET2)対応	===
+;	===========================================
+;	------------(KOMTRAX空間に対して SIT_MEM)
+	.GLOBAL		_ET2_SITM_ADR		;FA2,3 SIT4->ET1  R/W ADR
+	.GLOBAL		_ET2_SITM_REQ		;FA4   SIT4->ET1  HND=BIT7 R/W=BIT6(BIT5~BIT0は空間)
+	.GLOBAL		_ET2_SITM_ACK		;FA5   SIT4<-ET1
+	.GLOBAL		_ET2_SITM_WRDT		;FA6,7 SIT4->ET1  WR data
+	.GLOBAL		_ET2_SITM_RDDT		;FA8,9(SIT4<-ET1) RD data
+	.GLOBAL		_ET2_SEQ_IDT01		;FAA,B seq(SQ149)-->et2
+	.GLOBAL		_ET2_SEQ_QDT01		;FAC,D et2-->seq(SQ86)
+;;;;	============== 使用不可(2009-07-24)　後はﾊﾞﾝｸだけ============
+
+

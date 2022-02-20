@@ -1,0 +1,68 @@
+
+;	====================================
+;	-------------- WDT CLR -------------
+;	====================================
+	.MACRO	_WDT_CLR
+	PUSH_REG1 R0
+	PUSH_REG1 R10
+	PUSH_REG1 R14
+
+	MOV.L	#_PJDR,R10				;
+	MOV.B	@R10,R0
+	OR	#BIT4,R0
+	MOV.B	R0,@R10
+	AND	#NBIT4,R0
+	MOV.B	R0,@R10
+
+	;====== 2006-10-19 SAITO 追加　WDTﾎﾟｰﾄ変更 ======
+	MOV.L	#_IOGA2_CTRL_DAT1+_IOGA_P5,R10		;
+	MOV.W	@R10,R0					;
+	MOV.W	#BIT0,R14				;
+	OR	R14,R0					;
+	MOV.W	R0,@R10					; WORK
+
+;;	MOV.L	#_IOGA2_CTRL_DAT1+_IOGA_P5,R10	; WORK ADDRESS
+;;	MOV.W	@R10,R0					;
+	MOV.W	#_IO2B_P5EX,R14				;
+	XOR	R14,R0					;
+	MOV.L	#_dio_top2+_IOGA_PDR5,R10		; IOGA PF ADDRESS
+	MOV.W	R0,@R10					; 実出力SET
+
+	MOV.L	#_IOGA2_CTRL_DAT1+_IOGA_P5,R10		;
+	MOV.W	@R10,R0					;
+	MOV.W	#NBIT0,R14				;
+	AND	R14,R0					;
+	MOV.W	R0,@R10					; WORK
+
+;;	MOV.L	#_IOGA2_CTRL_DAT1+_IOGA_P5,R10	; WORK ADDRESS
+;;	MOV.W	@R10,R0					;
+	MOV.W	#_IO2B_P5EX,R14				;
+	XOR	R14,R0					;
+	MOV.L	#_dio_top2+_IOGA_PDR5,R10		; IOGA PF ADDRESS
+	MOV.W	R0,@R10					; 実出力SET
+
+	M_BRA	AAA\@
+AAA\@:
+	POP_REG1 R14
+	POP_REG1 R10
+	POP_REG1 R0
+	.ENDM
+
+
+;	====================================
+;	-------------- WDT CLR -------------
+;	====================================
+	.MACRO	_WDT_CLR_MEMCHK
+	MOV.L	#_PJDR,R10				;
+	MOV.B	@R10,R0
+	XOR	#BIT4,R0
+	MOV.B	R0,@R10
+
+	;====== 2006-10-19 SAITO 追加　WDTﾎﾟｰﾄ変更 ======
+	MOV.L	#_dio_top2+_IOGA_PDR5,R10		; IOGA PF ADDRESS
+	MOV.W	@R10,R0					;
+	XOR	#BIT0,R0				;
+	MOV.W	R0,@R10					; WORK
+	.ENDM
+
+

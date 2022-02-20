@@ -1,0 +1,642 @@
+;/***********************************************************************/
+;/*								*/
+;/*	コマツ産機㈱殿向け	ＳＩＴ－Ｓコントローラ		*/
+;/*								*/
+;/*				オプションＲＡＭ　データ定義	*/
+;/*								*/
+;/***********************************************************************/
+;*	変更履歴
+;*		原本(asm)		：Katsushige Mamada at '00-09-04
+;*		改版(asm -> c)	：FIT)田端				ON:2002-08-01
+;*
+
+
+;;;;2013-12-17 MC	.SECTION	Bopram,DATA
+	.SECTION	Bopram,DATA,ALIGN=4			;
+
+;	******************************************
+;	**********	EQU TABLE			**********
+;	******************************************
+OP_RAM_TOP	.EQU	H'00000			; OPTION DP_RAM TOP ADR.
+OP_STS_TOP	.EQU	H'00800			; OPTION STATUS TOP ADR.
+
+;	******************************************
+;	**********	PUBLIC TABLE		**********
+;	******************************************
+	.GLOBAL		OP_RAM_TOP
+	.GLOBAL		OP_STS_TOP
+;
+	.GLOBAL		_CLO_TOP
+	.GLOBAL		_CLO_TRK_L
+	.GLOBAL		_CLO_TRK_R
+	.GLOBAL		_CLO_TRK_T
+	.GLOBAL		_CLO_GAIN_BAK1L
+	.GLOBAL		_CLO_GAIN_BAK1R
+	.GLOBAL		_CLO_GAIN_BAK2L
+	.GLOBAL		_CLO_GAIN_BAK2R
+	.GLOBAL		_CLO_GAIN_BAK3L
+	.GLOBAL		_CLO_GAIN_BAK3R
+	.GLOBAL		_CLO_GAIN_BAK4L
+	.GLOBAL		_CLO_GAIN_BAK4R
+	.GLOBAL		_CLO_GAIN_BAK5L
+	.GLOBAL		_CLO_GAIN_BAK5R
+	.GLOBAL		_CLO_OF_BAKL
+	.GLOBAL		_CLO_OF_BAKR
+	.GLOBAL		_CLO_OF_AVE_BAKL
+	.GLOBAL		_CLO_OF_AVE_BAKR
+	.GLOBAL		_CLO_OF_AVE_BAKT
+	.GLOBAL		_CLO_STRAIN_L
+	.GLOBAL		_CLO_STRAIN_R
+	.GLOBAL		_CLO_STRAIN_T
+	.GLOBAL		_CLO_MAXLD_L
+	.GLOBAL		_CLO_MAXLD_R
+	.GLOBAL		_CLO_MAXLD_T
+	.GLOBAL		_CLO_PROOF_L
+	.GLOBAL		_CLO_PROOF_R
+	.GLOBAL		_CLO_PROOF_T
+	.GLOBAL		_CLO_PROOF_SEI
+	.GLOBAL		_CLO_OVER_L
+	.GLOBAL		_CLO_OVER_R
+	.GLOBAL		_CLO_OVER_T
+	.GLOBAL		_CLO_LOWER_L
+	.GLOBAL		_CLO_LOWER_R
+	.GLOBAL		_CLO_LOWER_T
+	.GLOBAL		_CSET_SET
+
+;-------------------------------------------------------------------------------------2014/03/17
+	.GLOBAL		_CLO_OVER2_L		; OVER LOAD LEFT	最小値
+	.GLOBAL		_CLO_OVER2_R		; OVER LOAD RIGHT	最小値
+	.GLOBAL		_CLO_OVER2_T		; OVER LOAD TOTAL	最小値
+;
+	.GLOBAL		_CLO_LOWER2_L		; LOWER LIMIT LEFT	最小値
+	.GLOBAL		_CLO_LOWER2_R		; LOWER LIMIT RIGHT	最小値
+	.GLOBAL		_CLO_LOWER2_T		; LOWER LIMIT TOTAL	最小値
+
+	.GLOBAL		_CLO_OVER3_L		; OVER LOAD LEFT	振幅
+	.GLOBAL		_CLO_OVER3_R		; OVER LOAD RIGHT	振幅
+	.GLOBAL		_CLO_OVER3_T		; OVER LOAD TOTAL	振幅
+;
+	.GLOBAL		_CLO_LOWER3_L		; LOWER LIMIT LEFT	振幅
+	.GLOBAL		_CLO_LOWER3_R		; LOWER LIMIT RIGHT	振幅
+	.GLOBAL		_CLO_LOWER3_T		; LOWER LIMIT TOTAL	振幅
+;-------------------------------------------------------------------------------------
+
+	.GLOBAL		CPOS_TOP
+	.GLOBAL		_CPOS_SET_TOPL
+	.GLOBAL		_CPOS_SET_LOWL
+	.GLOBAL		_CPOS_SET_MRE
+	.GLOBAL		_CPOS_SET_POSI
+	.GLOBAL		_CPOS_SET_UNIT
+	.GLOBAL		_CPOS_SET_ALFA
+	.GLOBAL		_CPOS_SET_BETA
+	.GLOBAL		_CPOS_SET_DELTA
+	.GLOBAL		_CPOS_SET_GANMA
+	.GLOBAL		_CPOS_STD_BAK
+	.GLOBAL		_CPOS_SET_STD
+
+	.GLOBAL		CCALE_TOP
+	.GLOBAL		_CCALE_IN
+
+	.GLOBAL		SEQ_360_371_TOP
+	.GLOBAL		_CPOS_RQE
+	.GLOBAL		_CLO_RQE
+
+	.GLOBAL		_SEQ_384_447_TOP
+	.GLOBAL		_CTLINK_C_OP
+
+	.GLOBAL		CSTATUS_TOP
+	.GLOBAL		_CSTATUS_C
+
+	.GLOBAL		OPLO_TOP
+	.GLOBAL		_CLO_DEG_L
+	.GLOBAL		_CLO_DEG_R
+	.GLOBAL		_CLO_DEG_T
+	.GLOBAL		_CLO_GAIN_SET1L
+	.GLOBAL		_CLO_GAIN_SET1R
+	.GLOBAL		_CLO_GAIN_SET2L
+	.GLOBAL		_CLO_GAIN_SET2R
+	.GLOBAL		_CLO_GAIN_SET3L
+	.GLOBAL		_CLO_GAIN_SET3R
+	.GLOBAL		_CLO_GAIN_SET4L
+	.GLOBAL		_CLO_GAIN_SET4R
+	.GLOBAL		_CLO_GAIN_SET5L
+	.GLOBAL		_CLO_GAIN_SET5R
+	.GLOBAL		_CLO_OF_SETL
+	.GLOBAL		_CLO_OF_SETR
+	.GLOBAL		_CLO_OF_AVE_SETL
+	.GLOBAL		_CLO_OF_AVE_SETR
+	.GLOBAL		_CLO_OF_AVE_SETT
+	.GLOBAL		_CLO_OFAD_L
+	.GLOBAL		_CLO_OFAD_R
+	.GLOBAL		_CLO_OFAD_T
+	.GLOBAL		_CLO_LOAD_L
+	.GLOBAL		_CLO_LOAD_R
+	.GLOBAL		_CLO_LOAD_T
+	.GLOBAL		_CLO_LOAD_KEEP_L
+	.GLOBAL		_CLO_LOAD_KEEP_R
+	.GLOBAL		_CLO_LOAD_KEEP_T
+	.GLOBAL		_CLO_LOAD_LIVE_L
+	.GLOBAL		_CLO_LOAD_LIVE_R
+	.GLOBAL		_CLO_LOAD_LIVE_T
+	.GLOBAL		_CLO_LOAD_L2
+	.GLOBAL		_CLO_LOAD_R2
+	.GLOBAL		_CLO_LOAD_T2
+	.GLOBAL		_CPOS_NOW_MM
+	.GLOBAL		_CPOS_STD
+	.GLOBAL		_CCALE_OUT
+
+	.GLOBAL		SEQ_372_383_TOP
+	.GLOBAL		_CPOS_CONDI
+	.GLOBAL		_CPOS_ORDER
+	.GLOBAL		_CLO_CONDI
+	.GLOBAL		_CLO_LIMERR
+	.GLOBAL		_CLO_SATURATE
+
+	.GLOBAL		_SEQ_448_511_TOP
+	.GLOBAL		_CTLINK_OP_C
+	.GLOBAL		_CCTRL_OP_LO
+	.GLOBAL		_CCTRL_OP_PO
+	.GLOBAL		_CCTRL_OP_CALE
+	.GLOBAL		_CCTRL_OP_GAMEN
+	.GLOBAL		_CCTRL_OP_TLINK
+	.GLOBAL		_CERROR_C
+	.GLOBAL		_CPUC_ROM_ER
+	.GLOBAL		_CPUC_RAM_ER
+	.GLOBAL		_CPUC_CB1_ER
+	.GLOBAL		_CPUC_CB2_ER
+	.GLOBAL		_CPUC_OP_ER
+	.GLOBAL		_CPUC_CMP_ER
+	.GLOBAL		_CPUC_PDN_ER
+	.GLOBAL		_CPUC_079_ER
+	.GLOBAL		_CPUC_077_ER
+	.GLOBAL		_CPUC_160_DT
+;--------------------------------------------------------------- '94-10-31 [H]
+	.GLOBAL		_V25_OP_0
+	.GLOBAL		_V25_OP_1
+	.GLOBAL		_V25_OP_2
+	.GLOBAL		_V25_OP_3
+	.GLOBAL		_V25_OP_4
+	.GLOBAL		_V25_OP_5
+	.GLOBAL		_V25_OP_6
+	.GLOBAL		_V25_OP_7
+	.GLOBAL		_V25_OP_10
+	.GLOBAL		_V25_OP_11
+	.GLOBAL		_V25_OP_12
+
+;---------------------------------------------------------------
+	.GLOBAL		_CERROR_OP
+	.GLOBAL		_OP_ERROR1
+	.GLOBAL		_OP_ERROR2
+;--------------------------------------------------------------- '94-10-31 [H]
+	.GLOBAL		_OP_VER
+	.GLOBAL		_OP_V25_0
+	.GLOBAL		_OP_V25_1
+	.GLOBAL		_OP_V25_2
+	.GLOBAL		_OP_V25_3
+	.GLOBAL		_OP_V25_4
+	.GLOBAL		_OP_V25_5
+	.GLOBAL		_OP_V25_6
+	.GLOBAL		_OP_V25_7
+;---------------------------------------------------------------
+	.GLOBAL		_CENC_DEG
+	.GLOBAL		_RAMOP_C_INT
+	.GLOBAL		_RAMC_OP_INT
+;
+;;V01e	.GLOBAL		_OP_STATUS
+	.GLOBAL		_OP_STATUS_REAL
+;
+
+;	---------------------2013-12-18 KOMA -
+	.GLOBAL		_CLO_BLKMV_END01
+	.GLOBAL		_CLO_BLKMV_END02
+	.GLOBAL		_CLO_BLKMV_END03
+	.GLOBAL		_CLO_BLKMV_END04
+
+;	*********************************************************
+;	**********	Option CARD DP_RAM TABLE			*********
+;	*********************************************************
+;
+	.ORG	OP_RAM_TOP+H'0000
+;
+;	***	LOAD MONITOR IN	***
+;
+_CLO_TOP:
+;
+_CLO_TRK_L			.SRES	72			;DW	36	DUP(?)		; OVER TORUKU LEFT
+_CLO_TRK_R			.SRES	72			;DW	36	DUP(?)		; OVER TORUKU RIGHT
+_CLO_TRK_T			.SRES	72			;DW	36	DUP(?)		; OVER TORUKU TOTAL
+
+
+;
+	.ORG	OP_RAM_TOP+H'00E0
+;
+_CLO_GAIN_BAK1L		.SRES	2			;DW	1	DUP(?)		; LEFT GAIN 2000
+_CLO_GAIN_BAK1R		.SRES	2			;DW	1	DUP(?)		; RIGHT GAIN 2000
+_CLO_GAIN_BAK2L		.SRES	2			;DW	1	DUP(?)		; LEFT GAIN 1500
+_CLO_GAIN_BAK2R		.SRES	2			;DW	1	DUP(?)		; RIGHT GAIN 1500
+_CLO_GAIN_BAK3L		.SRES	2			;DW	1	DUP(?)		; LEFT GAIN 800
+_CLO_GAIN_BAK3R		.SRES	2			;DW	1	DUP(?)		; RIGHT GAIN 800
+_CLO_GAIN_BAK4L		.SRES	2			;DW	1	DUP(?)		; LEFT GAIN 400
+_CLO_GAIN_BAK4R		.SRES	2			;DW	1	DUP(?)		; RIGHT GAIN 400
+_CLO_GAIN_BAK5L		.SRES	2			;DW	1	DUP(?)		; LEFT GAIN 200
+_CLO_GAIN_BAK5R		.SRES	2			;DW	1	DUP(?)		; RIGHT GAIN 200
+_CLO_OF_BAKL		.SRES	1			;DB	1	DUP(?)		; LEFT OFFSET
+_CLO_OF_BAKR		.SRES	1			;DB	1	DUP(?)		; RIGHT OFFSET
+_CLO_OF_AVE_BAKL	.SRES	2			;DW	1	DUP(?)		; LEFT OFFSET A/D AVERAGE
+_CLO_OF_AVE_BAKR	.SRES	2			;DW	1	DUP(?)		; RIGHT OFFSET A/D AVERAGE
+_CLO_OF_AVE_BAKT	.SRES	2			;DW	1	DUP(?)		; TOTAL OFFSET A/D AVERAGE
+;
+	.ORG	OP_RAM_TOP+H'0100
+;
+_CLO_STRAIN_L		.SRES	2			;DW	1	DUP(?)		; MAX STRAIN LEFT
+_CLO_STRAIN_R		.SRES	2			;DW	1	DUP(?)		; MAX STRAIN RIGHT
+_CLO_STRAIN_T		.SRES	2			;DW	1	DUP(?)		; MAX STRAIN TOTAL (NO USE)
+;
+_CLO_MAXLD_L		.SRES	2			;DW	1	DUP(?)		; 最大荷重MAX LOAD LEFT
+_CLO_MAXLD_R		.SRES	2			;DW	1	DUP(?)		; MAX LOAD RIGHT
+_CLO_MAXLD_T		.SRES	2			;DW	1	DUP(?)		; MAX LOAD TOTAL
+;
+_CLO_PROOF_L		.SRES	2			;DW	1	DUP(?)		; 校正荷重MAX PROOF LEFT
+_CLO_PROOF_R		.SRES	2			;DW	1	DUP(?)		; MAX PROOF RIGHT
+_CLO_PROOF_T		.SRES	2			;DW	1	DUP(?)		; MAX PROOF TOTAL
+;
+_CLO_PROOF_SEI		.SRES	1			;DB	1	DUP(?)		; 校正精度PROOF SEIDO
+;					.SRES	1			;2002-08-02(ｱﾄﾞﾚｽｴﾗｰ解消)
+;
+_CLO_OVER_L			.SRES	2			;DW	1	DUP(?)		; OVER LOAD LEFT
+_CLO_OVER_R			.SRES	2			;DW	1	DUP(?)		; OVER LOAD RIGHT
+_CLO_OVER_T			.SRES	2			;DW	1	DUP(?)		; OVER LOAD TOTAL
+;
+_CLO_LOWER_L		.SRES	2			;DW	1	DUP(?)		; LOWER LIMIT LEFT
+_CLO_LOWER_R		.SRES	2			;DW	1	DUP(?)		; LOWER LIMIT RIGHT
+_CLO_LOWER_T		.SRES	2			;DW	1	DUP(?)		; LOWER LIMIT TOTAL
+;
+_CSET_SET			.SRES	1			;DB	1	DUP(?)		; SYOKI SETTEITI
+
+;-------------------------------------------------------------------------------------2014/03/17
+					.SRES	1
+_CLO_OVER2_L		.SRES	2			;DW	1	DUP(?)		; OVER LOAD LEFT	最小値
+_CLO_OVER2_R		.SRES	2			;DW	1	DUP(?)		; OVER LOAD RIGHT	最小値
+_CLO_OVER2_T		.SRES	2			;DW	1	DUP(?)		; OVER LOAD TOTAL	最小値
+;
+_CLO_LOWER2_L		.SRES	2			;DW	1	DUP(?)		; LOWER LIMIT LEFT	最小値
+_CLO_LOWER2_R		.SRES	2			;DW	1	DUP(?)		; LOWER LIMIT RIGHT	最小値
+_CLO_LOWER2_T		.SRES	2			;DW	1	DUP(?)		; LOWER LIMIT TOTAL	最小値
+
+_CLO_OVER3_L		.SRES	2			;DW	1	DUP(?)		; OVER LOAD LEFT	振幅
+_CLO_OVER3_R		.SRES	2			;DW	1	DUP(?)		; OVER LOAD RIGHT	振幅
+_CLO_OVER3_T		.SRES	2			;DW	1	DUP(?)		; OVER LOAD TOTAL	振幅
+;
+_CLO_LOWER3_L		.SRES	2			;DW	1	DUP(?)		; LOWER LIMIT LEFT	振幅
+_CLO_LOWER3_R		.SRES	2			;DW	1	DUP(?)		; LOWER LIMIT RIGHT	振幅
+_CLO_LOWER3_T		.SRES	2			;DW	1	DUP(?)		; LOWER LIMIT TOTAL	振幅
+;-------------------------------------------------------------------------------------
+;
+;	***	POSITINER IN	***
+;
+	.ORG	OP_RAM_TOP+H'0140
+;
+CPOS_TOP:
+;
+_CPOS_SET_POSI		.SRES	4			;DW	2	DUP(?)		; PO ITIGIME SET DATA
+_CPOS_SET_TOPL		.SRES	4			;DW	2	DUP(?)		; TOP LIMIT SET DATA
+_CPOS_SET_LOWL		.SRES	4			;DW	2	DUP(?)		; LOW LIMIT SET DATA
+_CPOS_SET_MRE		.SRES	4			;DW	2	DUP(?)		; PO MRE SET DATA
+_CPOS_SET_STD		.SRES	4			;DW	2	DUP(?)		; PO GENITI SET DATA
+_CPOS_SET_UNIT		.SRES	1			;DB	1	DUP(?)		; PO UNIT SET DATA
+_CPOS_SET_ALFA		.SRES	1			;DB	1	DUP(?)		; PO ALFA SET DATA
+_CPOS_SET_BETA		.SRES	1			;DB	1	DUP(?)		; PO BETA SET DATA
+_CPOS_SET_DELTA		.SRES	1			;DB	1	DUP(?)		; PO DELTA SET DATA
+_CPOS_SET_GANMA		.SRES	1			;DB	1	DUP(?)		; PO GANMA SET DATA
+_CPOS_STD_BAK		.SRES	4			;DD	1	DUP(?)
+
+;
+;	***	CALENDAR IN	***
+;
+	.ORG	OP_RAM_TOP+H'0160
+;
+CCALE_TOP:
+;
+_CCALE_IN			.SRES	16			;DB	16	DUP(?)		; CALENDAR
+
+
+;	***	GAMEN IN	***
+;
+	.ORG	OP_RAM_TOP+H'0180
+;
+SEQ_360_371_TOP:
+;
+_CPOS_RQE			.SRES	1			;DB	1	DUP(?)		; SET RQE
+_CLO_RQE			.SRES	1			;DB	1	DUP(?)		; RQE
+
+;	===<<<<<<<>>>>>>>===
+	.GLOBAL	_CLO_ZERO
+_CLO_ZERO			.SRES	1			;
+
+;----------------------
+	.ALIGN	2
+_CLO_BLKMV_END01
+;---------------------	
+;	====== 2003-01-31 ============
+	.GLOBAL	_CLO_EXT_SMPSIG			;
+	.ORG	OP_RAM_TOP+H'018E
+_CLO_EXT_SMPSIG			.SRES	1			;SIT-S 荷重計ｻﾝﾌﾟﾘﾝﾝｸﾞ信号
+								;BIT0=0 SMPSIG無効 BIT0=1SMPSIG有効
+								;BIT1=1 ｵｰﾄｾﾞﾛ調開始 BIT1=0 STOP
+								;BIT2=1 荷重測定開始 BIT2=0 STOP
+;	======2003-01-31 END==================
+
+
+;	***	SEQ IN	***
+;
+	.ORG	OP_RAM_TOP+H'0190
+;
+_SEQ_384_447_TOP:
+;
+_CTLINK_C_OP		.SRES	64			;DB	64	DUP(?)		; T LINK DATA
+;
+
+
+;----------------------
+	.ALIGN	2
+_CLO_BLKMV_END02
+;---------------------	
+
+;	*******************************************
+;	***					***
+;	***	ﾊﾞｰｼﾞｮﾝｱｯﾌﾟﾌﾗｸﾞ領域 SH2-->COP2	***	2006/10/12
+;	***					***
+;	*******************************************
+	.ORG	OP_RAM_TOP+H'01F0
+	.EXPORT		_VUP_HSAREA_B_TO_COP2
+_VUP_HSAREA_B_TO_COP2		.SRES	64
+
+;	*******************************************
+;	***					***
+;	***	ﾊﾞｰｼﾞｮﾝｱｯﾌﾟﾌﾗｸﾞ領域 SH2<--COP2	***	2006/10/12
+;	***					***
+;	*******************************************
+	.ORG	OP_RAM_TOP+H'0230
+	.EXPORT		_VUP_HSAREA_COP2_TO_B
+_VUP_HSAREA_COP2_TO_B		.SRES	64
+
+
+
+;	***	STATUS IN	***
+;
+	.ORG	OP_RAM_TOP+H'0270
+;
+CSTATUS_TOP:
+;
+_CSTATUS_C			.SRES	1			;DB	1	DUP(?)		; LOAD MONITOR STATUS
+;
+	.GLOBAL		_CLO_DEG_MRD			;2000-09-04
+_CLO_DEG_MRD		.SRES	1			;DB	1	DUP(?)		; CPU-B LOAD DEG DATA READING FLAG 2000-09-04
+;
+;	***	LOAD MONITOR OUT	***
+;
+	.ORG	OP_RAM_TOP+H'0290
+
+	.EXPORT		_VUP_DATA_ADR_COP2
+_VUP_DATA_ADR_COP2:					; COP2ﾌﾟﾛｸﾞﾗﾑ転送領域先頭ｱﾄﾞﾚｽ	2006/10/12
+
+;[[[[[[[[[[[[[ 302dot*3CH 1DIG当たりの描画用　SIT3,SIT4では未使用]]]]]]]]]]]]]]]
+OPLO_TOP:
+;
+_CLO_DEG_L			.SRES	302			;DW	151	DUP(?)		; DEG(50~200) GOTO LOAD LEFT
+_CLO_DEG_R			.SRES	302			;DW	151	DUP(?)		; DEG(50~200) GOTO LOAD RIGHT
+_CLO_DEG_T			.SRES	302			;DW	151	DUP(?)		; DEG(50~200) GOTO LOAD TOTAL
+;
+	.ORG	OP_RAM_TOP+H'0670
+;
+_CLO_GAIN_SET1L		.SRES	2			;DW	1	DUP(?)		; LEFT GAIN 2000
+_CLO_GAIN_SET1R		.SRES	2			;DW	1	DUP(?)		; RIGHT GAIN 2000
+_CLO_GAIN_SET2L		.SRES	2			;DW	1	DUP(?)		; LEFT GAIN 1500
+_CLO_GAIN_SET2R		.SRES	2			;DW	1	DUP(?)		; RIGHT GAIN 1500
+_CLO_GAIN_SET3L		.SRES	2			;DW	1	DUP(?)		; LEFT GAIN 800
+_CLO_GAIN_SET3R		.SRES	2			;DW	1	DUP(?)		; RIGHT GAIN 800
+_CLO_GAIN_SET4L		.SRES	2			;DW	1	DUP(?)		; LEFT GAIN 400
+_CLO_GAIN_SET4R		.SRES	2			;DW	1	DUP(?)		; RIGHT GAIN 400
+_CLO_GAIN_SET5L		.SRES	2			;DW	1	DUP(?)		; LEFT GAIN 200
+_CLO_GAIN_SET5R		.SRES	2			;DW	1	DUP(?)		; RIGHT GAIN 200
+_CLO_OF_SETL		.SRES	1			;DB	1	DUP(?)		; LEFT OFFSET
+_CLO_OF_SETR		.SRES	1			;DB	1	DUP(?)		; RIGHT OFFSET
+_CLO_OF_AVE_SETL	.SRES	2			;DW	1	DUP(?)		; LEFT OFFSET A/D AVERAGE
+_CLO_OF_AVE_SETR	.SRES	2			;DW	1	DUP(?)		; RIGHT OFFSET A/D AVERAGE
+_CLO_OF_AVE_SETT	.SRES	2			;DW	1	DUP(?)		; TOTAL OFFSET A/D AVERAGE
+;
+	.ORG	OP_RAM_TOP+H'0690
+;
+_CLO_OFAD_L			.SRES	2			;DW	1	DUP(?)		; OFFSET DURING A/D DATA LEFT
+_CLO_OFAD_R			.SRES	2			;DW	1	DUP(?)		; OFFSET DURING A/D DATA RIGHT
+_CLO_OFAD_T			.SRES	2			;DW	1	DUP(?)		; OFFSET DURING A/D DATA TOTAL
+;
+_CLO_LOAD_L			.SRES	2			;DW	1	DUP(?)		; LOAD LEFT
+_CLO_LOAD_R			.SRES	2			;DW	1	DUP(?)		; LOAD RIGHT
+_CLO_LOAD_T			.SRES	2			;DW	1	DUP(?)		; LOAD TOTAL
+;
+_CLO_LOAD_KEEP_L		.SRES	2			;左		/* V01o */
+_CLO_LOAD_KEEP_R		.SRES	2			;右		/* V01o */
+_CLO_LOAD_KEEP_T		.SRES	2			;合計		/* V01o */
+
+_CLO_LOAD_LIVE_L		.SRES	2			;左(生)		/* V01v */
+_CLO_LOAD_LIVE_R		.SRES	2			;右(生)		/* V01v */
+_CLO_LOAD_LIVE_T		.SRES	2			;合計(生)	/* V01v */
+
+_CLO_LOAD_L2			.SRES	2			;左		/* V01w */
+_CLO_LOAD_R2			.SRES	2			;右		/* V01w */
+_CLO_LOAD_T2			.SRES	2			;合計		/* V01w */
+
+
+;----------------------
+	.ALIGN	2
+_CLO_BLKMV_END03
+;---------------------	
+
+;	***	POSITINER OUT	***
+;
+	.ORG	OP_RAM_TOP+H'06B0
+;
+_CPOS_NOW_MM		.SRES	4			;DW	2	DUP(?)		; CPU <= NOW POSITION DATA
+;
+_CPOS_STD			.SRES	4			;DW	2	DUP(?)		; CPU <= PO GENITI DATA
+;
+;	***	CALENDAR OUT	***
+;
+	.ORG	OP_RAM_TOP+H'06D0
+;
+_CCALE_OUT			.SRES	16			;DB	16	DUP(?)		; 
+;
+;	***	GAMEN OUT	***
+;
+	.ORG	OP_RAM_TOP+H'06F0
+;
+SEQ_372_383_TOP:
+;
+_CPOS_CONDI			.SRES	1			;DB	1	DUP(?)		; CPU <= PO CONDITION FLG
+_CPOS_ORDER			.SRES	1			;DB	1	DUP(?)		; CPU <= PO TOP,LOW ORDER
+;
+_CLO_CONDI			.SRES	1			;DB	1	DUP(?)		; LOAD MONITOR CONDITION
+_CLO_LIMERR			.SRES	1			;DB	1	DUP(?)		; OVER LOAD,LOWER LIMIT ERROR
+_CLO_SATURATE			.SRES	1			;DB	1	DUP(?)		; VOLTAGE SATURATE
+				.SRES	1
+				.SRES	1
+				.SRES	1
+				.SRES	1
+				.SRES	1
+				.SRES	1
+;	===<<<<<<<>>>>>>>===
+	.GLOBAL	_CLO_END_FLG
+_CLO_END_FLG			.SRES	1
+
+;
+;	***	SEQ OUT	***
+;
+	.ORG	OP_RAM_TOP+H'0700
+;
+_SEQ_448_511_TOP:
+;
+_CTLINK_OP_C		.SRES	64			;DB	64	DUP(?)		; T LINK DATA OP => CPU
+;
+;	***	STATUS OUT	***
+;
+	.ORG	OP_RAM_TOP+H'0780
+;
+_CCTRL_OP_LO		.SRES	1			;DB	1	DUP(?)		; LOAD MONITOR STATUS
+_CCTRL_OP_PO		.SRES	1			;DB	1	DUP(?)		; POSITIONER STATUS
+_CCTRL_OP_CALE		.SRES	1			;DB	1	DUP(?)		; CALENDER STATUS
+_CCTRL_OP_GAMEN		.SRES	1			;DB	1	DUP(?)		; GAMEN STATUS
+_CCTRL_OP_TLINK		.SRES	1			;DB	1	DUP(?)		; TLINK STATUS
+;
+	.GLOBAL		_OP_GENITI_READ
+_OP_GENITI_READ		.SRES	1			;DB	1	DUP(?)		;'98-07-13/* 現位置データ読込完了フラグ　０ＦＦＨ＝完了 */
+;
+	.GLOBAL		_CLO_DEG_CNT,_CLO_DEG_OPWR	;2000-09-04
+_CLO_DEG_CNT		.SRES	2			;DW	1	DUP(?)		;LOAD CHANGE CNT 2000-09-04
+_CLO_DEG_OPWR		.SRES	1			;DB	1	DUP(?)		;OP LOAD DEG DATA WRITEING FLAG 2000-09-04
+;
+
+;----------------------
+	.ALIGN	2
+_CLO_BLKMV_END04
+;---------------------	
+;	***	ERROR DATA	***
+;
+	.ORG	OP_RAM_TOP+H'07A0
+;
+_CERROR_C:								;EQU	THIS	BYTE
+_CPUC_ROM_ER		.SRES	1			;DB	1	DUP(?)		; CPU-C ROM err       (00=OK)
+_CPUC_RAM_ER		.SRES	1			;DB	1	DUP(?)		; CPU-C RAM err       (00=OK)
+_CPUC_CB1_ER		.SRES	1			;DB	1	DUP(?)		; CPU-C DPRAM1 err    (00=OK)
+_CPUC_CB2_ER		.SRES	1			;DB	1	DUP(?)		; CPU-C DPRAM2 err    (00=OK)
+_CPUC_OP_ER			.SRES	1			;DB	1	DUP(?)		; CPU-C OP-DPRAM err  (00=OK)
+_CPUC_CMP_ER		.SRES	1			;DB	1	DUP(?)		; CPU-C COMPILE err   (00=OK)
+_CPUC_PDN_ER		.SRES	1			;DB	1	DUP(?)		; CPU-C POWER DOWN err(00=OK)
+_CPUC_079_ER		.SRES	1			;DB	1	DUP(?)		; CPU-C SEQ_079       (00=OK)
+_CPUC_077_ER		.SRES	1			;DB	1	DUP(?)		; CPU-C SEQ_077       (00=OK)
+_CPUC_160_DT		.SRES	1			;DB	1	DUP(?)		; CPU-C SEQ_160
+;--------------------------------------------------------------- '94-10-31 [H]
+_V25_OP_0			.SRES	1			;DB	1	DUP(?)		; V25 -> Option(0)
+_V25_OP_1			.SRES	1			;DB	1	DUP(?)		; V25 -> Option(1)
+_V25_OP_2			.SRES	1			;DB	1	DUP(?)		; V25 -> Option(2)
+_V25_OP_3			.SRES	1			;DB	1	DUP(?)		; V25 -> Option(3)
+_V25_OP_4			.SRES	1			;DB	1	DUP(?)		; V25 -> Option(4)
+_V25_OP_5			.SRES	1			;DB	1	DUP(?)		; V25 -> Option(5)
+_V25_OP_6			.SRES	1			;DB	1	DUP(?)		; V25 -> Option(6)
+_V25_OP_7			.SRES	1			;DB	1	DUP(?)		; V25 -> Option(7)
+;---------------------------------------------------------------
+_V25_OP_10			.SRES	2			;DW	1	DUP(?)		;V07 /* スライド自動調節　異常検知　一定時間 */
+_V25_OP_11			.SRES	2			;DW	1	DUP(?)		;V07 /* スライド自動調節　異常検知　一定距離 */
+_V25_OP_12			.SRES	2			;DW	1	DUP(?)		;V07 /* スライド自動調節　異常検知　一定予備 */
+
+
+;
+	.ORG	OP_RAM_TOP+H'07C0
+;
+_CERROR_OP:								;EQU	THIS	BYTE
+_OP_ERROR1			.SRES	1			;DB	1	DUP(?)		; Option ERROR1	      (00=OK)
+_OP_ERROR2			.SRES	1			;DB	1	DUP(?)		; Option ERROR2	      (00=OK)
+;--------------------------------------------------------------- '94-10-31 [H]
+_OP_VER				.SRES	1			;DB	1	DUP(?)		; Option Ver
+_OP_V25_0			.SRES	1			;DB	1	DUP(?)		; Option -> V25(0)
+_OP_V25_1			.SRES	1			;DB	1	DUP(?)		; Option -> V25(1)
+_OP_V25_2			.SRES	1			;DB	1	DUP(?)		; Option -> V25(2)
+_OP_V25_3			.SRES	1			;DB	1	DUP(?)		; Option -> V25(3)
+_OP_V25_4			.SRES	1			;DB	1	DUP(?)		; Option -> V25(4)
+_OP_V25_5			.SRES	1			;DB	1	DUP(?)		; Option -> V25(5)
+_OP_V25_6			.SRES	1			;DB	1	DUP(?)		; Option -> V25(6)
+_OP_V25_7			.SRES	1			;DB	1	DUP(?)		; Option -> V25(7)
+;---------------------------------------------------------------
+;
+;	***	ENCORDER DEG DATA	***
+;
+	.ORG	OP_RAM_TOP+H'07FC
+;
+_CENC_DEG			.SRES	2			;DW	1	DUP(?)		; ENCORDER DEG DATA
+;
+;	***	INTERRUPT	***
+;
+	.ORG	OP_RAM_TOP+H'07FE
+;
+_RAMOP_C_INT		.SRES	1			;DB	1	DUP(?)		; NO USE
+;
+	.ORG	OP_RAM_TOP+H'07FF
+;
+_RAMC_OP_INT		.SRES	1			;DB	1	DUP(?)		; CPU CARD => OP INT ADR
+;
+;
+;	***************************************************
+;	**********	Option CARD STATUS       **********
+;	***************************************************
+;
+	.ORG	OP_STS_TOP+H'0000
+;
+;	***	Option status area	***
+;
+;;V01d	_OP_STATUS			.SRES	1			;DB	1	DUP(?)	; OPﾅｼ:00H,OPｱﾘ(OK):55H,OPｱﾘ(WDTup):54H
+_OP_STATUS_REAL			.SRES	1			;DB	1	DUP(?)	; OPﾅｼ:00H,OPｱﾘ(OK):55H,OPｱﾘ(WDTup):54H
+;														; Bit7~1:0101010,Bit0:*WDUP
+;
+;
+;
+;	===================================
+;	===				===
+;	===	ET1(旧ﾒﾓﾘｶｰﾄﾞ空間)	===
+;	===	2006-10-30		===
+;	===				===
+;	===================================
+	.ORG	OP_RAM_TOP+H'840
+;
+;;V05h		.GLOBAL		_MEM_ARI
+;;V05h	_MEM_ARI			.SRES	1			;DB ?			;
+	.GLOBAL		_MEM_ARI_REAL
+_MEM_ARI_REAL			.SRES	1			;DB ?			;
+
+
+	.ORG	OP_RAM_TOP+H'900
+	.GLOBAL		_MEM_BNK_ADR1
+_MEM_BNK_ADR1		.SRES	1			;DB ?			;/*  */
+;
+	.ORG	OP_RAM_TOP+H'940
+	.GLOBAL		_MEM_BNK_ADR2
+_MEM_BNK_ADR2		.SRES	1			;DB ?			;/*  */
+;
+
+	.ORG	OP_RAM_TOP+H'0A00
+	.GLOBAL		_MEM_DAT_ADR1
+_MEM_DAT_ADR1		.SRES	512			;DB 512 DUP(?)		;/*  */
+;
+;
+
+;;;;;;2013-12-12[MC]	.INCLUDE	"dp_et1.ext"		; //
+;;;;;;2013-12-12[MC]	.INCLUDE	"com_et1.equ"		; //
+;;;;;;2013-12-12[MC]
+;;;;;;2013-12-12[MC]	.ORG	OP_RAM_TOP+H'0C00
+;;;;;;2013-12-12[MC]	.INCLUDE	"dp_et1.inc"		; //
+
+
+;
+;
+
+	.END
+;/****************************************************************************/

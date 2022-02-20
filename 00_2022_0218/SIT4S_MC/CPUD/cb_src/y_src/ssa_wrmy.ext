@@ -1,0 +1,398 @@
+;	***********************************
+;	***				***
+;	***		ram定義		***
+;	***				***
+;	***********************************
+;	できる限りssc_wrm*.c/ssc_wrm*.h側に定義する事
+;	ssc_wrm*.h のextern文をアセンブラで参照する場合はここに入れる
+;	===========================================
+;	===	ssa_wrmy.src のextern文		===
+;	===========================================
+	.GLOBAL	_SAITO_ASM_RAM_TOP	;
+
+;//	***********************************
+;//	***	受信異常		***
+;//	***********************************
+	.global	_rcv2_err_hard_INTflg1;	// ﾊｰﾄﾞ異常
+	.global	_rcv2_err_hard_INTflg2;	// ﾊｰﾄﾞ異常
+	.global	_rcv2_err_hard_INTflg3;	// ﾊｰﾄﾞ異常
+	.global	_rcv2_err_data_flg1;	// ﾃﾞｰﾀ異常(未使用)
+	.global	_rcv2_err_hard_sts1;	// 詳細 異常内容
+	.global	_rcv2_err_hard_sts2;	// 詳細 異常内容
+	.global	_rcv2_err_hard_sts3;	// 
+	.global	_rcv2_err_data_sts1;	//(未使用)
+	.global	_rcv2_err_OverRunCnt;	//
+	.global	_rcv2_err_FRPRErrCnt;	//ﾌﾚｰﾑ・ﾊﾟﾘﾃｨ
+	.global	_rcv2_err_elseErrCnt;	//ﾌﾚｰﾑ・ﾊﾟﾘﾃｨ
+
+;//	***********************************
+;//	***	正常受信		***
+;//	***********************************
+	.global	_rcv2_data_INcnt;//受信ﾃﾞｰﾀ数 受信ﾊﾞﾌｧ→個数
+	.global	_rcv2_data_cnt;//処理すべきｶｳﾝﾀ数ﾘﾐｯﾄをかけたもんＰ
+	.global	_rcv2_data_buf;[32];
+
+;//	***********************************
+;//	***	送信			***
+;//	***********************************
+	.global	_send2_data_buf;[32];
+;//	***********************************
+;//	***	送受信管理		***
+;//	***********************************
+	.global	_rcv2_event_flg;	//main-->bit0=1  2ms:bit1(処理開始),bit7(完了)
+	.global	_send2_event_flg;//main-->bit0=1  2ms:bit1(処理開始),bit7(完了)
+
+	.global	_PV1_SCRW_POS;			//;@使用sh->H8 ->表示	[回送有り1CH のみ]
+
+	.global	_PV0_SCRW_POS;			//;@使用sh->H8 ->表示	[回送有り1CH のみ]
+
+
+;//	*******************************************
+;//	***	異常関係のワークＲＡＭ		***
+;//	*******************************************
+
+	.global	_ERR_CHK_OK_FLG			;//異常処理開始ﾌﾗｸﾞ
+
+	.global	_ER_SQRAM_WK1			;//
+	.global	_ER_SQRAM_WK2			;//
+	.global	_SH4_SQERRAM			;// SH4 -> SH2
+	.global	_DBG_ERRCHK_NASI		;// ﾁｪｯｸなし
+
+	.global	_ER_SFTSW_CHG_OLD		;//
+
+	.global	_FROM_SUMCHK_CODE		;// FROM SUM CODE
+
+	.global	_SFTSW_ERR_TM			;//
+	.global	_BTNER_ERR_TM			;//
+	.global	_NCHSW_ERR_TM1			;//
+	.global	_NCHSW_ERR_TM2			;//
+	.global	_VLVER11_ERR_TM			;//
+	.global	_VLVER12_ERR_TM			;//
+	.global	_VLVER21_ERR_TM			;//
+	.global	_VLVER22_ERR_TM			;//
+	.global	_VLVER31_ERR_TM			;//
+	.global	_VLVER32_ERR_TM			;//
+	.global	_CMP2_ERR_TM2			;//
+	.global	_FSFT_TRERR_TM			;//
+	.global	_RSFT_TRERR_TM			;//
+
+
+	.global	_WPAR1_SFTSWER_TM		;//
+	.global	_WPAR1_BTNER_TM			;//
+	.global	_WPAR1_MODSER_TM1		;//
+	.global	_WPAR1_MODSER_TM2		;//
+	.global	_WPAR1_VLVER11_TM1		;//
+	.global	_WPAR1_VLVER12_TM1		;//
+	.global	_WPAR1_VLVER21_TM1		;//
+	.global	_WPAR1_VLVER22_TM1		;//
+	.global	_WPAR1_VLVER31_TM1		;//
+	.global	_WPAR1_VLVER32_TM1		;//
+	.global	_WPAR1_CMPER2_TM		;//
+	.global	_WPAR1_FSFTTRER_TM		;//
+	.global	_WPAR1_RSFTTRER_TM		;//
+
+
+	.global	_REMOTE_ERR_CHKTM		;//
+
+	.global	_ROM_SYSPAR_ERRADR		;//
+
+
+
+;//	***************************************************
+;//	***	セルフチェック関係のワークＲＡＭ	***
+;//	***************************************************
+	.global	_SELF_CHK_FLG			;ｾﾙﾌﾁｪｯｸ中 CHECK
+	.global	_SELF_ACT_FLG			;ｾﾙﾌﾁｪｯｸ中 CHECK
+
+
+	.global	_SELF_HAND_FLG1			; 自分の状態ﾌﾗｸﾞ SRAM
+	.global	_SELF_HAND_FLG2			; 相手の状態ﾌﾗｸﾞ SRAM
+
+	.global	_SELF_FSTY_USE			;//;前安全装置チェックする・しない
+	.global	_SELF_RSTY_USE			;//;後安全装置チェックする・しない
+
+	.global	_SELF_CHK_TIMER			;//;セルフチェックタイマ
+
+;	*** AD CONVERTER WORK RAM ***
+	.global	_AD_CNV_DT0			; 8BIT A/D
+
+	.global	_AD_BUFCNT			;// 移動平均ﾊﾞｯﾌｧｶｳﾝﾀ
+	.global	_AD_AVG_BUF			;// 平均BAFTOP
+	.global	_AD_AVG_TOTAL			;// ８回分のﾃﾞｰﾀ
+	.global	_PV_AD_DATA			;// 移動平均とった後のAD DATA
+
+;	-----------------2014-02-14 -----------
+	.global	_AD2_BUFCNT			;// 移動平均ﾊﾞｯﾌｧｶｳﾝﾀ
+	.global	_AD2_AVG_BUF			;// 平均BAFTOP
+	.global	_AD2_AVG_TOTAL			;// ８回分のﾃﾞｰﾀ
+;//2014-10-11 DPRAMに移動 	.global	_PV_AD2_DATA			;// 移動平均とった後のAD DATA
+	.global	_AD2CNV_IN_DATA			;
+
+	.global	_AD3_BUFCNT			;// 移動平均ﾊﾞｯﾌｧｶｳﾝﾀ
+	.global	_AD3_AVG_BUF			;// 平均BAFTOP
+	.global	_AD3_AVG_TOTAL			;// ８回分のﾃﾞｰﾀ
+;//2014-10-11 DPRAMに移動 	.global	_PV_AD3_DATA			;// 移動平均とった後のAD DATA
+	.global	_AD3CNV_IN_DATA			;
+
+	.global	_AD4_BUFCNT			;// 移動平均ﾊﾞｯﾌｧｶｳﾝﾀ
+	.global	_AD4_AVG_BUF			;// 平均BAFTOP
+	.global	_AD4_AVG_TOTAL			;// ８回分のﾃﾞｰﾀ
+;//2014-10-11 DPRAMに移動 	.global	_PV_AD4_DATA			;// 移動平均とった後のAD DATA
+	.global	_AD4CNV_IN_DATA			;
+
+	.global	_ADCNV_SEL			;
+
+
+
+;//	***************************************
+;//	***	二重回路異常関係のワークＲＡＭ	***
+;//	***************************************
+	.global	_CPUN_2CMP_DATA			;// 相手ＣＰＵの比較データ
+	.global	_CMP2_ERR_FIRST			;// 初めて二重回路異常発生
+
+	.global	_CPUN_2CMP_LATCH2		;// 相手二重回路異常ﾃﾞｰﾀﾗｯﾁ
+	.global	_CPUN_2CMP_LATCH1		;// 自分二重回路異常ﾃﾞｰﾀﾗｯﾁ
+
+
+;//	*** 安全装置関係 ***
+
+	.global	_FACT_IN_DATA			;//
+	.global	_RACT_IN_DATA			;//
+	.global	_FDEV_IN_DATA			;//
+	.global	_RDEV_IN_DATA			;//
+
+
+;	===========================================
+;	===	ssc_wrmy.c のextern文		===
+;	===========================================
+
+	.GLOBAL		_TINT3_10MS_CNT			;
+
+
+;//	通信関連 2004-04-14
+	.global	_WK_RCV_SCLSR2;//2004-04-12
+	.global	_WK_RCV_SCFSR2;//2004-04-12
+	.global	_WK_RCV_SCFDR2	;//2004-04-12
+
+;//	===================
+;//	===		===
+;//	===================
+;//	=== 2004-04-14 ====
+	.global	_IN_RNA_REF_ERR_FLG1;//BIT0,BIT1,BIT2(HARD),BIT3CMD,BIT4(RNA-SYS),BIT5(RNA-FORM),,
+	.global	_IN_RNA_REF_ERR_FLG2;//BIT0~BIT7 ALM.BIT8
+	.global	_RNA_REF_ERR_FLG1;//BIT0,BIT1,BIT2(HARD),BIT3CMD,BIT4(RNA-SYS),BIT5(RNA-FORM),,
+	.global	_RNA_REF_ERR_FLG2;//BIT0~BIT7 ALM.BIT8
+	.global	_LT_RNA_REF_ERR_FLG1;//BIT0,BIT1,BIT2(HARD),BIT3CMD,BIT4(RNA-SYS),BIT5(RNA-FORM),,
+	.global	_LT_RNA_REF_ERR_FLG2;//BIT0~BIT7 ALM.BIT8
+
+	.global	_RNA_CMD_VERIFY_CNT;//00,01以外が発生
+	.global	_RNA_CMD_VERIFY_DAT;//異常時の最新ﾃﾞｰﾀ
+	.global	_RNA_STS_SYSERR_CNT;//BIT0=1
+	.global	_RNA_STS_REQERR_CNT;//BIT2=1
+	.global	_RNA_STS_ERR_DAT;//異常時の最新ﾃﾞｰﾀ
+	.global	_RNA_ALM_BIT0_CNT;//
+	.global	_RNA_ALM_BIT1_CNT;//
+	.global	_RNA_ALM_BIT2_CNT;//
+	.global	_RNA_ALM_BIT3_CNT;//
+	.global	_RNA_ALM_BIT4_CNT;//
+	.global	_RNA_ALM_BIT5_CNT;//
+	.global	_RNA_ALM_BIT6_CNT;//
+	.global	_RNA_ALM_BIT7_CNT;//
+	.global	_RNA_ALM_CNT;//
+	.global	_RNA_ALM_DAT;//
+	.global	_RNA_REF1_CNT;//処理が正常に動作しているか
+	.global	_RNA_REF2_CNT;//処理が正常に動作しているか
+
+	.global	_DSET_SW_FLG;
+
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+;	***********************************
+;	***				***
+;	***		ram定義		***
+;	***				***
+;	***********************************
+;	できる限りssc_wrm*.c/ssc_wrm*.h側に定義する事
+;	ssc_wrm*.h のextern文をアセンブラで参照する場合はここに入れる
+;	===========================================
+;	===	ssa_wrmy.src のextern文		===
+;	===========================================
+;20060725 SAITO	.GLOBAL	_SAITO_ASM_RAM_TOP	;
+
+	.global		_SQ_CBWK_TOP		;//
+	.global		_CPUA_EMG_IN_FLG	;//
+
+
+;//	*** INP1 PORT ***
+	.global		_REAL_INP1_DATA			; 今回値	
+	.global		_REAL_INP1_DT_OLD1		; 1回前		
+	.global		_REAL_INP1_DT_OLD2		; 2回前		
+
+;//	*** PB PORT ***
+	.global		_PB_PORT_CTL_DATA		; 今回値	
+	.global		_PB_INDT_OLD1			; 1回前		
+	.global		_PB_INDT_OLD2			; 2回前		
+
+;//;	*** PJ PORT ***
+	.global		_PJ_PORT_CTL_DATA		; 今回値	
+	.global		_PJ_INDT_OLD1			; 1回前		
+	.global		_PJ_INDT_OLD2			; 2回前		
+
+;//	*** PK PORT ***
+	.global		_PK_PORT_CTL_DATA		; 今回値	
+	.global		_PK_INDT_OLD1			; 1回前		
+	.global		_PK_INDT_OLD2			; 2回前		
+
+;//	*** PL PORT ***
+	.global		_PL_PORT_CTL_DATA		; 今回値	
+	.global		_PL_INDT_OLD1			; 1回前		
+	.global		_PL_INDT_OLD2			; 2回前		
+
+;//	*******************************************
+;//	***	異常関係のワークＲＡＭ		***
+;//	*******************************************
+
+;20060725 SAITO	.global	_ERR_CHK_OK_FLG			;//異常処理開始ﾌﾗｸﾞ
+
+;20060725 SAITO	.global	_ER_SQRAM_WK1			;//
+;20060725 SAITO	.global	_ER_SQRAM_WK2			;//
+;20060725 SAITO	.global	_SH4_SQERRAM			;// SH4 -> SH2
+;20060725 SAITO	.global	_DBG_ERRCHK_NASI		;// ﾁｪｯｸなし
+
+;20060725 SAITO	.global	_ER_SFTSW_CHG_OLD		;//
+
+;20060725 SAITO	.global	_SFTSW_ERR_TM			;//
+;20060725 SAITO	.global	_BTNER_ERR_TM			;//
+;20060725 SAITO	.global	_NCHSW_ERR_TM1			;//
+;20060725 SAITO	.global	_NCHSW_ERR_TM2			;//
+;20060725 SAITO	.global	_VLVER11_ERR_TM			;//
+;20060725 SAITO	.global	_VLVER12_ERR_TM			;//
+;20060725 SAITO	.global	_VLVER21_ERR_TM			;//
+;20060725 SAITO	.global	_VLVER22_ERR_TM			;//
+;20060725 SAITO	.global	_VLVER31_ERR_TM			;//
+;20060725 SAITO	.global	_VLVER32_ERR_TM			;//
+;20060725 SAITO	.global	_CMP2_ERR_TM2			;//
+;20060725 SAITO	.global	_FSFT_TRERR_TM			;//
+;20060725 SAITO	.global	_RSFT_TRERR_TM			;//
+
+;20060725 SAITO	.global	_WPAR1_SFTSWER_TM		;//
+;20060725 SAITO	.global	_WPAR1_BTNER_TM			;//
+;20060725 SAITO	.global	_WPAR1_MODSER_TM1		;//
+;20060725 SAITO	.global	_WPAR1_MODSER_TM2		;//
+;20060725 SAITO	.global	_WPAR1_VLVER11_TM1		;//
+;20060725 SAITO	.global	_WPAR1_VLVER12_TM1		;//
+;20060725 SAITO	.global	_WPAR1_VLVER21_TM1		;//
+;20060725 SAITO	.global	_WPAR1_VLVER22_TM1		;//
+;20060725 SAITO	.global	_WPAR1_VLVER31_TM1		;//
+;20060725 SAITO	.global	_WPAR1_VLVER32_TM1		;//
+;20060725 SAITO	.global	_WPAR1_CMPER2_TM		;//
+;20060725 SAITO	.global	_WPAR1_FSFTTRER_TM		;//
+;20060725 SAITO	.global	_WPAR1_RSFTTRER_TM		;//
+
+
+	.global	_KEEPRY_BKUP_ERR		;//
+
+
+;//	***************************************************
+;//	***	セルフチェック関係のワークＲＡＭ	***
+;//	***************************************************
+;20060725 SAITO	.global	_SELF_CHK_FLG			;ｾﾙﾌﾁｪｯｸ中 CHECK
+;20060725 SAITO	.global	_SELF_ACT_FLG			;ｾﾙﾌﾁｪｯｸ中 CHECK
+
+;20060725 SAITO	.global	_SELF_HAND_FLG1			; 自分の状態ﾌﾗｸﾞ SRAM
+;20060725 SAITO	.global	_SELF_HAND_FLG2			; 相手の状態ﾌﾗｸﾞ SRAM
+
+;20060725 SAITO	.global	_SELF_FSTY_USE			;//;前安全装置チェックする・しない
+;20060725 SAITO	.global	_SELF_RSTY_USE			;//;後安全装置チェックする・しない
+
+;20060725 SAITO	.global	_SELF_CHK_TIMER			;//;セルフチェックタイマ
+
+;//	*** AD CONVERTER WORK RAM ***
+;20060725 SAITO	.global	_AD_CNV_DT0			; 8BIT A/D
+
+;20060725 SAITO	.global	_AD_BUFCNT			; 移動平均ﾊﾞｯﾌｧｶｳﾝﾀ
+;20060725 SAITO	.global	_AD_AVG_BUF			; 平均BAFTOP
+;20060725 SAITO	.global	_AD_AVG_TOTAL			; ８回分のﾃﾞｰﾀ
+;20060725 SAITO	.global	_PV_AD_DATA			; 移動平均とった後のAD DATA
+
+
+
+
+;//	***************************************
+;//	***	二重回路異常関係のワークＲＡＭ	***
+;//	***************************************
+;20060725 SAITO	.global	_CPUN_2CMP_DATA			;// 相手ＣＰＵの比較データ
+;20060725 SAITO	.global	_CMP2_ERR_FIRST			;// 初めて二重回路異常発生
+
+;20060725 SAITO	.global	_CPUN_2CMP_LATCH2		;// 相手二重回路異常ﾃﾞｰﾀﾗｯﾁ
+;20060725 SAITO	.global	_CPUN_2CMP_LATCH1		;// 自分二重回路異常ﾃﾞｰﾀﾗｯﾁ
+
+
+
+;//	*** 安全装置関係 ***
+
+;20060725 SAITO	.global	_FACT_IN_DATA			;//
+;20060725 SAITO	.global	_RACT_IN_DATA			;//
+;20060725 SAITO	.global	_FDEV_IN_DATA			;//
+;20060725 SAITO	.global	_RDEV_IN_DATA			;//
+
+
+
+;//	IOGA	関係　ＳＩＴ－４用 2006-07-16
+
+;//;	*** IO-GA WORK ***
+	.global	_IOGA1_CTRL_DAT1		;	//.SRES	2*8		; GA-PA,PB,PC,PD,PE 入力PORT
+						;//;    PF,PG,PH 出力PORT
+	.global	_IOGA2_CTRL_DAT1		;	//.SRES	2*8		; GA-PA,PB,PC,PD,PE 入力PORT
+						;//;    PF,PG,PH 出力PORT
+;//;	*** IOGA INPUT WORK RAM ***
+	.global	_IOGA1_PA_DT_OLD1		;	// 1回前
+	.global	_IOGA1_PB_DT_OLD1		;	// 1回前
+	.global	_IOGA1_PC_DT_OLD1		;	// 1回前
+	.global	_IOGA1_PD_DT_OLD1		;	// 1回前
+	.global	_IOGA1_PE_DT_OLD1		;	// 1回前
+
+	.global	_IOGA1_PA_DT_OLD2		;	// 2回前
+	.global	_IOGA1_PB_DT_OLD2		;	// 2回前
+	.global	_IOGA1_PC_DT_OLD2		;	// 2回前
+	.global	_IOGA1_PD_DT_OLD2		;	// 2回前
+	.global	_IOGA1_PE_DT_OLD2		;	// 2回前
+
+	.global	_IOGA2_PA_DT_OLD1		;	// 1回前
+	.global	_IOGA2_PB_DT_OLD1		;	// 1回前
+	.global	_IOGA2_PC_DT_OLD1		;	// 1回前
+	.global	_IOGA2_PD_DT_OLD1		;	// 1回前
+	.global	_IOGA2_PE_DT_OLD1		;	// 1回前
+
+	.global	_IOGA2_PA_DT_OLD2		;	// 2回前
+	.global	_IOGA2_PB_DT_OLD2		;	// 2回前
+	.global	_IOGA2_PC_DT_OLD2		;	// 2回前
+	.global	_IOGA2_PD_DT_OLD2		;	// 2回前
+	.global	_IOGA2_PE_DT_OLD2		;	// 2回前
+
+
+;20060725 SAITO	.global	_DSET_SW_FLG;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

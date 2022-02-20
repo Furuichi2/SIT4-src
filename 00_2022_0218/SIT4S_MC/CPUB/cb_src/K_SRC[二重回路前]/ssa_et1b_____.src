@@ -1,0 +1,958 @@
+;	***************************************************
+;	***						***
+;	***						***
+;	***	ET1-SOFT(設定転送,ﾄﾚﾝﾄﾞ転送,mem,dp)	***
+;	***						***
+;	***						***
+;	***************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"		; //共通定義:必ず実行ﾌﾟﾛｸﾞﾗﾑにｲﾝｸﾙｰﾄﾞする事
+	.INCLUDE	"ssa_ver1.equ"		; //
+	.INCLUDE	"ssa_ver2.equ"		; //
+	.INCLUDE	"shn_cmd1.mac"		; 
+	.INCLUDE	"ssa_kmc1.mac"		; //
+	.INCLUDE	"com_et1.equ"		; //
+	.LIST	ON
+
+;
+	.INCLUDE	"dp_et1.ext"		; //
+	.import		_MEM_ARI			;1BYTE(H'840 statu "A5")
+	.import		_MEM_BNK_ADR1			;1BYTE(H'900 d0=0/d0=1 bank)
+
+	.import		_MEM_ARI_REAL		;MC
+
+	.IMPORT	_CPUD_ET1_DP_TOP
+	.IMPORT	_ET1_DP_TOP
+	.IMPORT	_OPTION_ET1_ARI			;005A CPUB-->CPUD
+
+
+_BAS_ET1_DP_TOP		.DEFINE		"_CPUD_ET1_DP_TOP"
+_ET1_ET1_DP_TOP		.DEFINE		"_ET1_DP_TOP"	
+
+__BAS_TOP		.EQU	-_BAS_ET1_DP_TOP+_BAS_ET1_DP_TOP
+__ET1_TOP		.EQU	-_BAS_ET1_DP_TOP+_ET1_ET1_DP_TOP
+
+;;_ET2_DEBUG_TRG	.DEFINE		"_CMPILE_YES"		; ﾃﾞﾊﾞｯｸ
+_ET2_DEBUG_TRG	.DEFINE		"_CMPILE_NO"		;出荷
+
+
+
+;	===========================================
+;	===		ET1 TOREND DATA		===
+;	===========================================
+	.IMPORT		_CPUA_SND_INI_ET1	;INITAL CODE REQ
+	.IMPORT		_CPUA_RCV_INI_ET1	;INITAL CODE ACK
+;;;;	.IMPORT		_CPUA_SND_REQ_ET1	;H'12345678(req)
+;;;;	.IMPORT		_CPUA_RCV_ACK_ET1	;H'87654321(ack)
+;;;;	.IMPORT		_CPUA_SND_REQ_ADR	;TOPADRESS (192K+32K 256Kbyte)
+;;;;	.IMPORT		_CPUA_SND_REQ_CNT	;1~128個
+;;;;	.IMPORT		_CPUA_SND_DAT		;(256byte MAX)
+;;;;	.IMPORT		_CPUA_SND_END		;
+
+
+	.EXPORT	_ET1_CPU_MAIN_MOV
+	.EXPORT	_ET1_CPU_HIGH_MOV
+
+;	--------KOMTRAXのためのEXTERN
+;;;	.IMPORT		_SEQ_024_SV		;DPRAM(島村参照使用設定)2009-*-*   24.6
+	.IMPORT		_SEQAB_DP_TOP		;高速アクセス用
+
+;	------2011-01-14 処理軽減のため10msec作成---
+
+;	***************************************************
+;	***						***
+;	***						***
+;	***	ET1-SOFT(設定転送,ﾄﾚﾝﾄﾞ転送)		***
+;	***	(high:TREND)				***
+;	***						***
+;	***						***
+;	***************************************************
+	.SECTION	Bfram, DATA			; B4007000H
+	.SECTION	P,CODE			;
+	.ALIGN	4					;
+_ET1_CPU_HIGH_MOV
+	SUB_START
+	MOV.L	#_ET1_INITAL_FLG,R1			;
+	MOV.W	@R1,R0					;
+	TST	#BIT6,R0				;
+	TST_BIT_OF ET1_CPU_HIGHMV_END			;
+
+;	---------- ET1/CPUA ﾃﾞｰﾀ転送--------------
+	FAR_JSR	#_ET1_CPUA_DT_MOVE,R0
+	FAR_JSR	#_CPUD_TO_ET1_SET,R0
+
+	MOV.L	#_SEQAB_DP_TOP+24*2,R1		;[MC]
+	MOV.W	@R1,R0				;
+	TST	#BIT6,R0			;24.6(仕様設定135)
+	TST_BIT_OF ET1_CPU_HIGHMV_END		;
+	
+ET1_CPU_HIGHMV_END
+	SUB_END
+	M_RTS
+
+;	***************************************************
+;	***						***
+;	***						***
+;	***	ET1-SOFT(設定転送,ﾄﾚﾝﾄﾞ転送)		***
+;	***	(MAIN:SV)				***
+;	***						***
+;	***************************************************
+_ET1_CPU_MAIN_MOV
+	SUB_START
+
+	MOV.L	#_ET1_INITAL_FLG,R1			;
+	MOV.W	@R1,R0					;
+	TST	#BIT6,R0				;
+	TST_BIT_ON ET1_CPU_MNMV_100			;
+	FAR_JSR	#_ET1_INITAL_CHK,R0			;[ずっとチェックするのはへん]
+	M_BRA	ET1_CPU_MNMV_END			;
+
+ET1_CPU_MNMV_100:
+	FAR_JSR	#_ET1_INIEND_MOVE,R0			;
+
+
+ET1_CPU_MNMV_END:
+
+
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***						***
+;	***	INITAL					***
+;	***	(MAIN)					***
+;	***						***
+;	***************************************************
+;	ET1からINITL終了があった
+_ET1_INITAL_CHK:
+	SUB_START
+	MOV.L	#_ET1_INITAL_FLG,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT6,R0			;
+	TST_BIT_ON ET1_INIT_CHK_END		;
+	
+;;;;2013-12-12	MOV.L	#_MEM_ARI,R1			;
+	MOV.L	#_MEM_ARI_REAL,R1		;一時
+	MOV.B	@R1,R0				;
+	EXTU.B	R0,R0				;
+	MOV.W	#H'00A5,R1			;
+
+	CMP/EQ	R1,R0				;
+	BF	ET1_INIT_CHK_END		;未接続
+
+	MOV.L	#_OPTION_ET1_ARI,R1		;005A CPUB-->CPUD 2013-12-12
+	MOV.W	R0,@R1				;
+
+	FAR_JSR	#_ET1_BANK_SEL0_OUT,R1				;
+
+
+
+
+;	------------------
+ MEM_WORD_BLOCK_MOV1	SRC_ADR=_ET1_IPS_ENT+__BAS_TOP,
++			DST_ADR=_ET1_IPS_ENT+__ET1_TOP,
++			CNT_DAT=(_ET1_DEF_GAT3+2-_ET1_IPS_ENT)/2,DT_REG=R2,CNT_REG=R3
+
+
+
+
+	MOV.L	#_ET_CPUB_RCV_INI_ET1+__ET1_TOP,R1		;
+	MOV.L	@R1,R0						;
+	MOV.L	#_ET_CPUB_RCV_INI_ET1+__BAS_TOP,R1		;
+	MOV.L	R0,@R1						;
+
+	MOV.L	#_ET1_INIT_ACK,R4				;
+	CMP/EQ	R4,R0						;
+	BF	ET1_INIT_CHK_END				;未完了
+
+	MOV.L	#_ET_CPUA_RCV_INI_ET1+__ET1_TOP,R1		;
+	MOV.L	@R1,R0						;
+	MOV.L	#_ET_CPUA_RCV_INI_ET1+__BAS_TOP,R1		;
+	MOV.L	R0,@R1						;
+
+	MOV.L	#_ET1_INIT_ACK,R4				;
+	CMP/EQ	R4,R0						;
+	BF	ET1_INIT_CHK_END				;未完了
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_ET1_INITAL_FLG,LG=W,BIT=BIT6,WKREG=R1	;bit-set
+
+ET1_INIT_CHK_END:
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	INITAL-CODE		***
+;	***				***
+;	***********************************
+_ET1_INIEND_MOVE:
+	SUB_START
+	FAR_JSR	#_ET1_BANK_SEL0_OUT,R1	;
+
+
+
+;;;[MC]	MOV.L	#_ET1_INIT_REQ,R0
+;;;[MC]	REG_MOV_TO_MEM	DST_ADR=_ET_CPUB_SND_INI_ET1,L1=L,DT_REG=R0,WKREG1=R1
+
+
+	MEM_MOV_TO_MEM	SRC_ADR=_ET_CPUB_SND_INI_ET1+__BAS_TOP,L1=L,
++			DST_ADR=_ET_CPUB_SND_INI_ET1+__ET1_TOP,L2=L,
++			WKREG1=R1,WKREG2=R2,WKREG3=R3
+
+;	==== CPUA<=>ET1 ====
+	MEM_MOV_TO_MEM	SRC_ADR=_ET_CPUA_SND_INI_ET1+__BAS_TOP,L1=L,
++			DST_ADR=_ET_CPUA_SND_INI_ET1+__ET1_TOP,L2=L,
++			WKREG1=R1,WKREG2=R2,WKREG3=R3
+
+	MEM_MOV_TO_MEM	SRC_ADR=_ET_CPUA_RCV_INI_ET1+__ET1_TOP,L1=L,
++			DST_ADR=_ET_CPUA_RCV_INI_ET1+__BAS_TOP,L2=L,
++			WKREG1=R1,WKREG2=R2,WKREG3=R3
+
+
+;	------MC CPUB-----
+	MOV.L	#_ET_CPUB_RCV_INI_ET1+__ET1_TOP,R1		;
+	MOV.L	@R1,R0						;
+	MOV.L	#_ET_CPUB_RCV_INI_ET1+__BAS_TOP,R1		;
+	MOV.L	R0,@R1						;
+
+	MOV.L	#_ET_CPUA_RCV_INI_ET1+__ET1_TOP,R1		;
+	MOV.L	@R1,R0						;
+	MOV.L	#_ET_CPUA_RCV_INI_ET1+__BAS_TOP,R1		;
+	MOV.L	R0,@R1						;
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	Input R2		***
+;	***				***
+;	***********************************
+_ET1_BANK_SEL0_OUT:
+	SUB_START
+	XOR	R2,R2
+	MOV.L	#_ET1_BANK_SEL,R1			;
+	MOV.W	R2,@R1					;
+
+	MOV.L	#_MEM_BNK_ADR1,R1		;1BYTE(H'900 d0=0/d0=1 bank)
+	MOV.B	R2,@R1				;BANK OUT
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	CPUA-->ET1		***
+;	***		DATA,TRIG	***
+;	***	ET1-->CPUA		***
+;	***				***
+;	***********************************
+_ET1_CPUA_DT_MOVE:
+	SUB_START
+
+	MOV.L	#_ET_CPUA_SND_REQ_ET1+__BAS_TOP,R1	;_CPUA_SND_REQ_ET1
+	MOV.L	@R1,R2								;
+	MOV.L	#_CPUA_REQ_OLD,R1						;
+	MOV.L	@R1,R0								;
+	MOV.L	R2,@R1								;
+	XOR	R2,R0								;
+	TST	R0,R0								;
+	TST_BIT_OF ET1_CPUA_DT_MV100						;ﾄﾘｶﾞ変化なし
+
+ MEM_WORD_BLOCK_MOV1	SRC_ADR=_ET_CPUA_SND_DAT+__BAS_TOP,
++			DST_ADR=_ET_CPUA_SND_DAT+__ET1_TOP,
++			CNT_DAT=_ET1_CPUAB_BUF_MAX/2,DT_REG=R2,CNT_REG=R3
+
+ MEM_MOV_TO_MEM		SRC_ADR=_ET_CPUA_SND_REQ_CNT+__BAS_TOP,L1=L,
++			DST_ADR=_ET_CPUA_SND_REQ_CNT+__ET1_TOP,L2=L,
++			WKREG1=R1,WKREG2=R2,WKREG3=R3
+
+
+ MEM_MOV_TO_MEM		SRC_ADR=_ET_CPUA_SND_REQ_ADR+__BAS_TOP,L1=L,
++			DST_ADR=_ET_CPUA_SND_REQ_ADR+__ET1_TOP,L2=L,
++			WKREG1=R1,WKREG2=R2,WKREG3=R3
+
+ MEM_MOV_TO_MEM		SRC_ADR=_ET_CPUA_SND_REQ_ET1+__BAS_TOP,L1=L,
++			DST_ADR=_ET_CPUA_SND_REQ_ET1+__ET1_TOP,L2=L,
++			WKREG1=R1,WKREG2=R2,WKREG3=R3
+
+
+
+
+
+ET1_CPUA_DT_MV100:
+
+;	------------- ET1 --> CPUA ---------------
+ MEM_MOV_TO_MEM	SRC_ADR=_ET_CPUA_RCV_ACK_ET1+__ET1_TOP,L1=L,
++		DST_ADR=_ET_CPUA_RCV_ACK_ET1+__BAS_TOP,L2=L,
++		WKREG1=R1,WKREG2=R2,WKREG3=R3
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***		無条件転送		***
+;	***					***
+;	***					***
+;	*******************************************
+;
+_CPUD_TO_ET1_SET
+	SUB_START
+
+;;2014 MEM_WORD_BLOCK_MOV1	SRC_ADR=_ET1_IPS_ENT+__BAS_TOP,
+;;2014			DST_ADR=_ET1_IPS_ENT+__ET1_TOP,
+;;2014			CNT_DAT=(_ET1_DEF_GAT3+2-_ET1_IPS_ENT)/2,DT_REG=R2,CNT_REG=R3
+
+
+
+;_ET1_IPS_ENT		.SRES	2			;[PON.CLR]IPｱﾄﾞﾚｽ確定
+;_ET1_IPS_ADR0		.SRES	2			;IPｱﾄﾞﾚｽ
+;_ET1_IPS_ADR1		.SRES	2			;IPｱﾄﾞﾚｽ
+;_ET1_IPS_ADR2		.SRES	2			;IPｱﾄﾞﾚｽ
+;_ET1_IPS_ADR3		.SRES	2			;IPｱﾄﾞﾚｽ
+;_ET1_SUB_NET0		.SRES	2			;ｻﾌﾞﾈｯﾄﾏｽｸ
+;_ET1_SUB_NET1		.SRES	2			;ｻﾌﾞﾈｯﾄﾏｽｸ
+;_ET1_SUB_NET2		.SRES	2			;ｻﾌﾞﾈｯﾄﾏｽｸ
+;_ET1_SUB_NET3		.SRES	2			;ｻﾌﾞﾈｯﾄﾏｽｸ
+;_ET1_DEF_GAT0		.SRES	2			;ﾃﾞﾌｫﾙﾄｹﾞｰﾄｳｪｲ
+;_ET1_DEF_GAT1		.SRES	2			;ﾃﾞﾌｫﾙﾄｹﾞｰﾄｳｪｲ
+;_ET1_DEF_GAT2		.SRES	2			;ﾃﾞﾌｫﾙﾄｹﾞｰﾄｳｪｲ
+;_ET1_DEF_GAT3		.SRES	2			;ﾃﾞﾌｫﾙﾄｹﾞｰﾄｳｪｲ
+
+;	ET1==>CPUD ADR.MONI
+ MEM_WORD_BLOCK_MOV1	SRC_ADR=_ET1_IPM_ADR0+__ET1_TOP,
++			DST_ADR=_ET1_IPM_ADR0+__BAS_TOP,
++			CNT_DAT=(_ET1_IPM_ADR3+2-_ET1_IPM_ADR0)/2,DT_REG=R2,CNT_REG=R3
+
+;	ET1==>CPUD VER.MONI
+;2014-01-07
+
+	MOV.L	#_ET1_VER+__ET1_TOP,R1		;
+	MOV.L	@R1,R0				;
+	MOV.L	#_ET1_VER+__BAS_TOP,R1		;
+	MOV.L	R0,@R1
+
+
+
+
+
+;;_ET1_IPM_ADR0		.SRES	2			;IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+;;_ET1_IPM_ADR1		.SRES	2			;IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+;;_ET1_IPM_ADR2		.SRES	2			;IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+;;_ET1_IPM_ADR3		.SRES	2			;IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+
+_CPUD2ET_000:
+	MOV.L	#_ET_LDCMND_REQ+__ET1_TOP,R10
+	MOV.B	@R10,R0
+	CMP/EQ	#1,R0
+	BF	_CPUD2ET_100
+
+;	<<< ET1からのﾛｰﾀﾞｺﾏﾝﾄﾞ発行 >>>
+;							; ET1ﾛｰﾀﾞｺﾏﾝﾄﾞ -> CPUD
+	MEM_WORD_BLOCK_MOV1	SRC_ADR=_ET_LDCMND_AREA+__ET1_TOP,
++				DST_ADR=_ET_LDCMND_AREA+__BAS_TOP,
++				CNT_DAT=(512/2), DT_REG=R2, CNT_REG=R3
+
+	MOV.L	#_ET_LDCMND_REQ+__BAS_TOP,R10
+	MOV.L	#1,R0
+	SWAP.B	R0,R0
+	MOV.W	R0,@R10					; CPUDへﾛｰﾀﾞｺﾏﾝﾄﾞ有り通知
+
+	MOV.L	#_ET_LDCMND_REQ+__ET1_TOP,R10
+	MOV.L	#0,R0
+	MOV.B	R0,@R10
+
+
+;	<< CPUDからのﾚｽﾎﾟﾝｽ待ち>>
+_CPUD2ET_100:
+	MOV.L	#_ET_LDCMND_RES+__BAS_TOP,R10
+	MOV.W	@R10,R0
+	SWAP.B	R0,R0
+	CMP/EQ	#1,R0					; 1:CPUDﾛｰﾀﾞｺﾏﾝﾄﾞ有り
+	BF	_CPUD2ET_200
+
+;	<<< CPUDからのﾛｰﾀﾞｺﾏﾝﾄﾞ応答 >>>
+;							; CPUDﾛｰﾀﾞｺﾏﾝﾄﾞ -> ET1
+	MEM_WORD_BLOCK_MOV1	SRC_ADR=_ET_LDCMND_AREA+__BAS_TOP,
++				DST_ADR=_ET_LDCMND_AREA+__ET1_TOP,
++				CNT_DAT=(512/2), DT_REG=R2, CNT_REG=R3
+
+	MOV.L	#_ET_LDCMND_RES+__ET1_TOP,R10		;
+	MOV.L	#1,R0
+	MOV.B	R0,@R10					; ET1へﾛｰﾀﾞｺﾏﾝﾄﾞ有り通知()本当はSWAPしてﾜｰﾄﾞﾗｲﾄが正解
+
+	MOV.L	#_ET_LDCMND_RES+__BAS_TOP,R10		;
+	MOV.L	#0,R0					;
+	MOV.W	R0,@R10					;
+
+_CPUD2ET_200:
+
+
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	CPUB-->ET1		***
+;	***		DATA,TRIG	***
+;	***				***
+;	***********************************
+;	128byte単位で7FFFまで転送する
+
+
+;	*******************************************
+;	***					***
+;	***		KOMTRAX機能時有効	***
+;	***					***
+;	*******************************************
+	.ALIGN	4					;
+_KOMTRAX_DATA_CTRL
+	SUB_START
+
+							;SIT <= RESOPONSE   <= KMT
+
+
+	SUB_END
+	M_RTS
+
+
+
+_KOMTRAX_TIMCNT:
+	SUB_START
+
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	処理軽減のため10msecタイマ使用	***
+;	***					***
+;	*******************************************
+;	----------2011-01-14----
+_KMT_10MSEC_TIM:
+	SUB_START
+
+
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***		1CYCLE 信号		***
+;	***		割込			***
+;	*******************************************
+	.EXPORT	_KMT_1CYCLE_SET	;
+_KMT_1CYCLE_SET					;(CPUBのｸﾗｯﾁからCALL)
+	SUB_START
+	SUB_END
+	M_RTS
+
+_KMT_1CYCLE_SIGCHK
+	SUB_START
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***		ｼｰｹﾝｽ1WORD転送処理	***
+;	***		(read/write)		***
+;	***		割り込み		***
+;	*******************************************
+	.ALIGN	4					;
+_KMT_SEQ_REF1:
+	SUB_START
+
+
+
+	SUB_END
+	M_RTS
+
+
+
+;	***************************************************
+;	***						***
+;	***	MAIN LOOP 				***
+;	***	KOMTRAXに表示すべきﾃﾞｰﾀをINTに送信する	***
+;	***						***
+;	***************************************************
+;
+	.ALIGN	4					;
+_KOMTRAX_EVENT_MAIN
+	SUB_START
+
+
+	SUB_END
+	M_RTS
+
+;	***************************************************
+;	***						***
+;	***	ｷｬﾗｸﾀに変化があったら送信ｲﾍﾞﾝﾄを出力	***
+;	***						***
+;	***************************************************
+;	キャラクタが変化して、そのキャラクタが2文字が"",""でなければ有効なﾃﾞｰﾀ
+;[1]基本的にメインのデータをCOPYする
+;	変化があった際に
+;	最新値が"20"未満のデータまたは"20"20"なら送信しない
+;	=>なし状態
+;・ERRなし状態
+;"CHAR[0][8]をチェックだけをチェックする"
+;・ERR有りでCHAR[0][8]が送信完了したら
+;
+;CHAR[1][8]をﾁｪｯｸする
+
+
+
+
+
+
+;	*******************************************
+;	***					***
+;	***		EVENT割込転送処理	***
+;	***		(write)			***
+;	*******************************************
+	.ALIGN	4					;
+_KMT_EVENT_INT_STEP
+	SUB_START
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***		ﾊﾝﾄﾞｼｪｲｸWR		***
+;	***					***
+;	*******************************************
+
+;	***************************************************
+;	***						***
+;	***		WDT CHKECK			***
+;	***						***
+;	***************************************************
+;	100msec毎にﾁｪｯｸ
+;;;;;;__WDT_TIM_SET_DAT	.EQU	(100/__TM_LATE10MS)+1	;2011-01-14
+;;;;;;__WDT_UP_ERR_CNT	.EQU	100			;2011-01-14 100ﾒｲﾝｽｷｬﾝ*100msec=MIN=10秒 MAX=30秒
+
+_KMT_HAND_WDTCHK:
+	SUB_START
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***		ｽﾃｰﾀｽREAD[KMT->SIT4]	***
+;	***		MAIN			***
+;	*******************************************
+_KOMTRAX_STATUS_READ:
+	SUB_START
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***		SEQ作成			***
+;	***					***
+;	*******************************************
+_KOMTRAX_STAUS_MAKE
+	SUB_START
+
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***		実測作成		***
+;	***					***
+;	*******************************************
+	.IMPORT	_PVP_POWER_MONI	;
+	.IMPORT	_PVP_MENTE_CNT	;
+
+_KOMTRAX_PVDAT_MAKE
+	SUB_START
+
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***		実測転送		***
+;	***					***
+;	*******************************************
+_KOMTRAX_PVDAT_WRITE:
+	SUB_START
+	SUB_END
+	M_RTS
+
+
+
+
+;	*******************************************
+;	***					***
+;	***		転送処理		***
+;	***		1word * N 転送処理	***
+;	***		(read/write)		***
+;	***					***
+;	*******************************************
+;
+;
+;	相手ﾀｽｸ WR 2ﾀｽｸ ｲﾍﾞﾝﾄWR
+;					ﾊﾝﾄﾞｼｪｲｸWR
+;					
+;		    RD 1ﾀｽｸ 0番地から16word
+;
+;
+	.ALIGN	4					;
+_KMT_CMD_TRS:
+	SUB_START
+	SUB_END
+	M_RTS
+
+
+
+;	***********************************
+;	***				***
+;	***	CMD START CHECK		***
+;	***				***
+;	***	Input R8(STRUCT)	***
+;	***				***
+;	***********************************
+;	MOV.L	#_KMT_TRSSV1_TOP,R8		;
+;	-------- 2009-07-27(API1)-------
+;_KMT_TRSSV1_FORM:					;配列
+;_KMT_TRSSV1_TOP:					;配列
+;_KMT_TRSSV1_CMD		.SRES	2			;1:WRITE 2:READ ANS=0:IDLE
+;_KMT_TRSSV1_MEMKND	.SRES	2			;0:固定 (SIT_MEMを対象)
+;_KMT_TRSSV1_OBJADR	.SRES	2			;TOP_ADR()
+;_KMT_TRSSV1_CNT		.SRES	2			;MAX 1~256 word
+;_KMT_TRSSV1_DAT		.SRES	2*256			;MAX 256word
+
+;_KMT_TRSLT_TOPADR	.SRES	4			;ｽﾄﾗｸﾁｬ
+;_KMT_TRSLT_CMD		.SRES	2			;=ADR(_KMT_TRSSV1_CMD)
+;_KMT_TRSLT_MEMKND	.SRES	2			;0:固定 (SIT_MEMを対象)
+;_KMT_TRSLT_OBJADR	.SRES	2			;TOP_ADR
+;_KMT_TRSLT_CNT		.SRES	2			;MAX 1~256 word
+;_KMT_TRSLT_DAT		.SRES	2*256			;MAX 256word
+
+_KMT_CMDTRS_CHK:
+	SUB_START
+
+KMT_CMDTRSCHK_EXT:
+	SUB_END
+	M_RTS
+
+;	***************************
+;	***			***
+;	***	START INITAL 	***
+;	***			***
+;	***************************
+_KMT_CMD_INIT:
+	SUB_START
+
+
+
+	SUB_END
+	M_RTS
+
+;	----------- DPRAM ACK -----
+_KMT_ACKSIG_IN
+	SUB_START
+	MOV.L	#_ET2_SITM_ACK,R1		;
+	MOV.B	@R1,R0				;
+	EXTU.B	R0,R0				;
+
+	.AIF	_ET2_DEBUG_TRG	EQ _CMPILE_YES	;@
+	MOV.L	#_KMT_REQ_SIG,R1		;
+	MOV.W	@R1,R0				;
+	.AENDI
+
+	SUB_END
+	M_RTS
+
+
+
+
+;	*******************************************
+;	***					***
+;	***	WR STEP				***
+;	***	data SET+ HAND-ON/OFF		***
+;	***					***
+;	*******************************************
+_KMT_TRS_STP_WR:
+	SUB_START
+
+	SUB_END
+	M_RTS
+
+
+
+;	***************************
+;	***			***
+;	***	RD STEP		***
+;	***			***
+;	***************************
+;	OFFｴｯｼﾞで取込
+;	ACK     ON      OFF
+;	REQ ON      OFF
+;	     data取込
+;
+
+_KMT_TRS_STP_RD:
+	SUB_START
+
+
+KMT_TRS_STPRD_EXT:
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	 STEP/END CLR		***
+;	***	 CMD CLR		***
+;	***********************************
+_KMT_TRSCMD_ENDCLR
+	SUB_START
+
+	SUB_END
+	M_RTS
+
+
+
+;	***********************************
+;	***				***
+;	***				***
+;	***	TYPE011型判定		***
+;	***	2011-01-14		***
+;	***********************************
+;
+	.ALIGN	4					;
+_KMT_TYPE_011_CHK:
+	SUB_START
+
+
+	SUB_END
+	M_RTS
+
+
+
+;	***************************************************
+;	***						***
+;	***		品番データ作成、転送		***
+;	***		(write)				***
+;	***************************************************
+	.ALIGN	4					;
+_KOMTRAX_HINBAN_MAIN
+	SUB_START
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***		品番データ作成		***
+;	***		(write)			***
+;	*******************************************
+;_KMT_HINBAN_TRG_FLG	.SRES	2*5			;保留が発生した場合の処理
+;+0:現在
+;+1:次回
+;+2:次々回
+;+3:次次々回
+;+4:次次次々回
+;_KMT_HINBAN_BUFNUM	.SRES	2			;BUF使用数　0,1,2,3,4
+
+
+;	***************************************************
+;	***						***
+;	***						***
+;	***		wkram定義			***
+;	***						***
+;	***						***
+;	***************************************************
+	.SECTION	Bwkram1,DATA			;
+
+	.EXPORT		_ET1_INITAL_FLG			; SHIMA
+
+	.ALIGN	4					;
+_CPU_REQ_DAT_CNT	.SRES	4			;
+_ET1_INITAL_FLG		.SRES	2			;
+_ET1_BANK_SEL		.SRES	2			;現在選択バック
+_ET1_BANK_ACS		.SRES	2			;ﾊﾞﾝｸｱｸｾｽ中
+_CPU_REQ_DAT_FLG	.SRES	2			;
+
+	.ALIGN	4					;
+_CPUA_REQ_OLD		.SRES	4			;
+
+;	-------------------------------------------
+;	---					---
+;	---	2009-07-27 KOMTRAX		---
+;	---					---
+;	---					---
+;	-------------------------------------------
+;	-------- 2009-07-27(PROCESS)---------------
+	.ALIGN	4					;
+_KMT_TRS_CMD		.SRES	2			;=ADR(_KMT_TRSSV1_CMD)
+_KMT_TRSPV_CNT		.SRES	2			;書込/読出ﾃﾞｰﾀ数
+_KMT_TRS_SCAN		.SRES	2			;16ﾌﾟﾛｾｽまで起動可能なように監視
+_KMT_REQ_SIG		.SRES	2			;
+
+;	-------- ﾌﾟﾛｾｽのﾗｯﾁﾃﾞｰﾀ -------
+	.ALIGN	4					;
+_KMT_TRSLT_TOPADR	.SRES	4			;ｽﾄﾗｸﾁｬ
+_KMT_TRSLT_MEMKND	.SRES	2			;0:固定 (SIT_MEMを対象)
+_KMT_TRSLT_OBJADR	.SRES	2			;TOP_ADR
+_KMT_TRSLT_CNT		.SRES	2			;MAX 1~256 word
+_KMT_TRSLT_DAT		.SRES	2*256			;MAX 256word
+
+;	--------------------------------
+;	----	EVENT SOFT->TRANS SOFT
+;	-------- 2009-07-27(API1)-------
+	.ALIGN	4							;
+_KMT_TRSSV1_FORM:					;配列
+_KMT_TRSSV1_TOP:					;配列
+_KMT_TRSSV1_CMD		.SRES	2			;1:WRITE 2:READ ANS=0:IDLE
+_KMT_TRSSV1_MEMKND	.SRES	2			;0:固定 (SIT_MEMを対象)
+_KMT_TRSSV1_OBJADR	.SRES	2			;TOP_ADR()
+_KMT_TRSSV1_CNT		.SRES	2			;MAX 1~256 word
+_KMT_TRSSV1_DAT		.SRES	2*8			;MAX 256word "8CHAR MAX16CHAR"
+
+
+;	============= HAND WRITE ==========
+_KMT_TRSSV2_TOP:	.SRES	2*4+2*2			;配列(1word MAX 2word)
+;_KMT_TRSSV2_CMD	.SRES	2			;1:WRITE 2:READ ANS=0:IDLE
+;_KMT_TRSSV2_MEMKND	.SRES	2			;0:固定 (SIT_MEMを対象)
+;_KMT_TRSSV2_OBJADR	.SRES	2			;TOP_ADR()
+;_KMT_TRSSV2_CNT	.SRES	2			;MAX 1~256 word
+;_KMT_TRSSV2_DAT	.SRES	2			;MAX 256word
+
+;	============== STATUS READ
+_KMT_TRSSV3_TOP:	.SRES	2*4+2*50		;配列32word(MAX64word)
+;;_KMT_TRSSV3_CMD	.SRES	2			;1:WRITE 2:READ ANS=0:IDLE
+;;_KMT_TRSSV3_MEMKND	.SRES	2			;0:固定 (SIT_MEMを対象)
+;;_KMT_TRSSV3_OBJADR	.SRES	2			;TOP_ADR()
+;;_KMT_TRSSV3_CNT	.SRES	2			;MAX 1~256 word
+;;_KMT_TRSSV3_DAT	.SRES	2*256		;MAX 256word
+
+;	============== 実測WR======
+_KMT_TRSSV4_TOP:	.SRES	2*4+2*64		;配列32word(MAX50word)
+;;_KMT_TRSSV3_CMD	.SRES	2			;1:WRITE 2:READ ANS=0:IDLE
+;;_KMT_TRSSV3_MEMKND	.SRES	2			;0:固定 (SIT_MEMを対象)
+;;_KMT_TRSSV3_OBJADR	.SRES	2			;TOP_ADR()
+;;_KMT_TRSSV3_CNT	.SRES	2			;MAX 1~256 word
+;;_KMT_TRSSV3_DAT	.SRES	2*256		;MAX 256word
+
+
+;	============== K011品番======
+_KMT_TRSSV5_TOP:	.SRES	2*4+2*80		;80WORD
+;;_KMT_TRSSV5_CMD	.SRES	2			;1:WRITE 2:READ ANS=0:IDLE
+;;_KMT_TRSSV5_MEMKND	.SRES	2			;0:固定 (SIT_MEMを対象)
+;;_KMT_TRSSV5_OBJADR	.SRES	2			;TOP_ADR()
+;;_KMT_TRSSV5_CNT	.SRES	2			;MAX 1~256 word
+;;_KMT_TRSSV5_DAT	.SRES	2*256			;MAX 256word
+
+;	============== K011消耗品======
+_KMT_TRSSV6_TOP:	.SRES	2*4+2*64		;32WORD
+;;_KMT_TRSSV6_CMD	.SRES	2			;1:WRITE 2:READ ANS=0:IDLE
+;;_KMT_TRSSV6_MEMKND	.SRES	2			;0:固定 (SIT_MEMを対象)
+;;_KMT_TRSSV6_OBJADR	.SRES	2			;TOP_ADR()
+;;_KMT_TRSSV6_CNT	.SRES	2			;MAX 1~256 word
+;;_KMT_TRSSV6_DAT	.SRES	2*256			;MAX 256word
+
+
+;	-------- 異常ｲﾍﾞﾝﾄ側ｿﾌﾄ[1msec]-------
+_KMT_EVENT_FLG		.SRES	2			;ｲﾍﾞﾝﾄのｽﾃｯﾌﾟ管理BIT1,2,3 ??なぜBIT0使わなかった?
+_KMT_EVENT_CHAR		.SRES	8			;8文字*8:64文字
+_KMT_EVENT_SIGTIM	.SRES	2			;
+
+;	-------- 異常ｲﾍﾞﾝﾄ側ｿﾌﾄ[MAINsec]-------
+_KMT_EVENT_CHGF		.SRES	2			;ｷｬﾗｸﾀﾃﾞｰﾀ
+_KMT_DLYSCAN_TIM	.SRES	2			;
+_KMT_OLD_CHRNO		.SRES	2*8			;FFFF->dataの時のみ
+_KMT_USE_CHRNO		.SRES	2*8			;
+_KMT_CHK_CHRNO		.SRES	2*8			;
+
+;	-------- [1msec]-------
+_KMT_STS_SQ087		.SRES	2			;
+_KMT_1CYCL_SIGTIM	.SRES	2			;
+
+
+;	-------- MAIN ﾊﾝﾄﾞｼｪｲｸ-------------
+_KMT_HANDWR_FLG		.SRES	2			;HANDｼｪｲｸWR
+_KMT_HANDWDT_CNT	.SRES	2			;
+_KMT_HANDWDT_TIM	.SRES	2			;
+
+;	-------- MAIN ｽﾃｰﾀｽ-------------
+_KMT_STS1RD_FLG		.SRES	2			;ｽﾃｰﾀｽREAD　50WMAX
+
+_KMT_STS1_SET		.SRES	2			;BIT0~BIT7(確定ﾃﾞｰﾀあり)
+_KMT_STS1_AREA		.SRES	2*50			;MAX50word(16WORD)
+_KMT_STS1MN_SQ87	.SRES	2			;
+
+_KMT_COM1_AREA		.SRES	2*50			;
+
+;	--------------------------------------------
+;	-----------2011-01-14-----------------------
+;	--------------------------------------------
+_KMT_TYP_011		.SRES	2			;0:010型/:011型機能
+_KMT_PROC_10MS		.SRES	2			;10msecﾀｲﾏ作成
+
+;	-------- 品番処理-------------
+_KMT_HINBAN_SIGTIM	.SRES	2	;150msec信号作成用
+_KMT_HINBAN_FLG		.SRES	2	;150msec信号作成用
+_KMT_HINBAN_SEL		.SRES	2	;BIT0=1:開始(87.4)　BIT1=1:終了(87.4)
+
+;	--
+_KMT_HINBAN_CHGF	.SRES	2	;BIT0=1開始ｲﾍﾞﾝﾄ BIT1:終了ｲﾍﾞﾝﾄ
+
+;	----ﾄﾘｶﾞの順番は開始→終了→開始・・・・または終了→開始→終了の順番にする
+;	異なる場合は最後のイベントが発生するようにデータを並び替える
+;	バッファ０のみ前回の状態を見ない
+;
+_KMT_HINBAN_TRG_NUM	.SRES	2			;0個[保留なし],1個,2個,3個,4個
+;;;;;;;_KMT_HINBAN_TRG_FLG	.SRES	2*_HINBAN_BUF_MAX		;保留が発生した場合の処理
+							;0:ﾃﾞｰﾀ存在なし BIT0=1[開始],BIT1=1[終了]
+							;+0:現在
+							;+1:次回
+							;+2:次々回
+							;+3:次次々回
+							;+4:次次次々回
+							;
+;	-------- 4byteﾃﾞｰﾀでも2byteｱｸｾｽしかしない------------
+
+
+;	-------- 消耗処理-------------
+_KMT_SYOUMO_SIGTIM	.SRES	2	;150msec信号作成用
+_KMT_SYOUMO_FLG		.SRES	2	;150msec信号作成用
+_KMT_SYOUMO_CHGF	.SRES	2	;BIT0=1開始ｲﾍﾞﾝﾄ BIT1:終了ｲﾍﾞﾝﾄ
+
+;	-------------------------------------------
+;	---	確定して送るだけの状態のデータ	---
+;	---	2011-01-14			---
+;	-------------------------------------------
+;	-------- 4byteﾃﾞｰﾀでも2byteｱｸｾｽしかしない------------
+;;;;;;;_KMT_HMI_SYOUMO_DAT	.SRES	__SITM_SYOUMO_CNT	;64byte
+;;;;;;;_KMT_HMI_HINBAN_BUF	.SRES	__SITM_HINBAN_CNT*_HINBAN_BUF_MAX	;6BUFF
+
+;	----- CPUD <-> ET1 -----------------------
+_ET1_REQ_FLG		.SRES	2		; ET1ﾛｰﾀﾞｺﾏﾝﾄﾞ REQ FLG
+_CPUD_RES_FLG		.SRES	2		; CPUDﾛｰﾀﾞｺﾏﾝﾄﾞ REQ FLG
+
+;
+;;;;	.SECTION	P,CODE			;
+;;;;	.ALIGN	4					;
+
+	.END

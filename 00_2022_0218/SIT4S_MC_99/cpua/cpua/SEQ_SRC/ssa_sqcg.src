@@ -1,0 +1,1526 @@
+;	***************************************************
+;	***						***
+;	***						***
+;	***	ÉVÅ[ÉPÉìÉXÉRÅ[Éhïœä∑É\ÉtÉg		***
+;	***						***
+;	***						***
+;	***************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"		; EQU
+	.INCLUDE	"sh7750rg.ext"		; 
+	.INCLUDE	"ssa_swrm.ext"		; 
+	.INCLUDE	"shn_cmd1.mac"		; 
+	.INCLUDE	"ssa_ver1.equ"		; //
+	.INCLUDE	"ssa_out1.mac"		; 
+	.INCLUDE	"ssa_wram.ext"		; 
+	.INCLUDE	"ssa_seq1.ext"		; 
+	.INCLUDE	"ssa_seq1.equ"		; 
+
+	.LIST	ON
+
+
+;	***************************************************
+;	*****   AND,ANDN,OR,ORN CODE CHANGE MACRO	***
+;	***************************************************
+
+	.MACRO	_SEQ_LD_LDN_CMD	TOP_ADR,END_ADR
+
+	MOV.L	#_SEQ_CARD_MAX,R1		; 127
+	CMP/GE	R1,R8				; CA.DBA DATA CHECK
+	BT	_JMP_C80\@				; IF ADR >= 127 THEN JUMP
+;
+	MOV.L	#(\END_ADR-\TOP_ADR),R0		; ì]ëó BYTEí∑
+	MOV.L	#\TOP_ADR,R3			; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1		; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+						; àÍäáÇµÇƒì]ëóÇµÇƒÇ©ÇÁ“”ÿÇÃÇ∆Ç±ÇæÇØÇ†Ç∆Ç≈ì¸ÇÍíºÇ∑ÅB
+;	*** BIT SET ***
+	MOV.L	#D'6,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				;
+	MOV.L	#_SEQ_BBIT_CHG_TBL,R1		;
+	SHLL	R10				; *2
+	ADD	R10,R1				;
+	MOV.W	@R1,R1				;
+	MOV.W	@R4,R2				; “”ÿÇÃÇ∆Ç±ÇÎÇÃñΩóﬂLOAD
+	MOV.L	#H'FFFFFF00,R0			;
+	AND	R0,R2				; BIT√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	OR	R1,R2				;
+	MOV.W	R2,@R4				; BIT SET
+
+;	*** ADR SET ***
+	MOV.L	#D'4,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 6+4=10
+	MOV.W	@R4,R2				;
+	AND	R0,R2				; ADR√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	SHLL	R8				; ADR*2
+	OR	R8,R2				;
+	MOV.W	R2,@R4				; RAM ADR SET
+
+;	*** OFFSET SET ***
+	MOV.L	#D'4,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 10+4=14  MOV.B @(R0,R*),R0ÇÃñΩóﬂ LOAD
+	MOV.L	#_SEQ_MOVCMD_R0RD_TBL,R0	;
+	SHLL	R9				; OFFSET*2
+	ADD	R9,R0				;
+	MOV.W	@R0,R0				;
+	MOV.W	R0,@R4				; ñΩóﬂíuä∑Ç¶
+
+;	*** SWAPñΩóﬂÇÕBIT7à»â∫Ç»ÇÁNOPÇ…íuä∑Ç¶ÇÈ ***
+	MOV.L	#_NOP_SWAP_TBL0,R0		;
+	ADD	R10,R0				;
+	MOV.W	@R0,R0				; NOP or SWAPñΩóﬂLOAD
+
+	MOV.L	#D'2,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 14+2=16  SWAP.BÇÃñΩóﬂ LOAD
+	MOV.W	R0,@R4				; NOP or SWAPñΩóﬂ WRITE
+
+	MOV.W	#_SQ_NML_COD,R0			; NORMAL END
+	M_BRA	_JMP_EX\@			;
+;
+_JMP_C80\@:
+	MOV.W	#_SQ_ERR_END,R0			; ERR END
+
+_JMP_EX\@:
+	.ENDM
+
+;	***************************************************
+;	*****   AND,ANDN,OR,ORN CODE CHANGE MACRO	***
+;	***************************************************
+
+	.MACRO	_SEQ_A_AN_O_ON_CMD	TOP_ADR,END_ADR
+
+;_AND_CHG:					; 00000100B	4
+;_ANDN_CHG:					; 00000101B	5
+;_OR_CHG:					; 00000110B	6
+;_ORN_CHG:					; 00000111B	7
+	MOV.L	#_SEQ_CARD_MAX,R1		; 127
+	CMP/GE	R1,R8				; CA.DBA DATA CHECK
+	BT	_JMP_C80\@			; IF ADR >= 127 THEN JUMP
+;
+	MOV.L	#(\END_ADR-\TOP_ADR),R0		; ì]ëó BYTEí∑
+	MOV.L	#\TOP_ADR,R3			; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1		; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+						; àÍäáÇµÇƒì]ëóÇµÇƒÇ©ÇÁ“”ÿÇÃÇ∆Ç±ÇæÇØÇ†Ç∆Ç≈ì¸ÇÍíºÇ∑ÅB
+;	*** BIT SET ***
+	MOV.L	#_SEQ_BBIT_CHG_TBL,R1		; “”ÿÇÃÇ∆Ç±ÇÎ +0
+	SHLL	R10				; *2
+	ADD	R10,R1				;
+	MOV.W	@R1,R1				; BIT LOAD
+	MOV.W	@R4,R2				; “”ÿÇÃÇ∆Ç±ÇÎÇÃñΩóﬂLOAD
+	MOV.L	#H'FFFFFF00,R0			;
+	AND	R0,R2				; BIT√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	OR	R1,R2				;
+	MOV.W	R2,@R4				; BIT SET
+
+;	*** ADR SET ***
+	MOV.L	#D'4,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 0+4=4
+	MOV.W	@R4,R2				;
+	AND	R0,R2				; ADR√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	SHLL	R8				; ADR*2
+	OR	R8,R2				;
+	MOV.W	R2,@R4				; RAM ADR SET
+
+;	*** OFFSET SET ***
+	MOV.L	#D'4,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 4+4=8  MOV.B @(R0,R*),R0ÇÃñΩóﬂ LOAD
+	MOV.L	#_SEQ_MOVCMD_R0RD_TBL,R0	;
+	SHLL	R9				; OFFSET*2
+	ADD	R9,R0				;
+	MOV.W	@R0,R0				;
+	MOV.W	R0,@R4				; ñΩóﬂíuä∑Ç¶
+
+;	*** SWAPñΩóﬂÇÕBIT7à»â∫Ç»ÇÁNOPÇ…íuä∑Ç¶ÇÈ ***
+	MOV.L	#_NOP_SWAP_TBL0,R0		;
+	ADD	R10,R0				;
+	MOV.W	@R0,R0				; NOP or SWAPñΩóﬂLOAD
+
+	MOV.L	#D'2,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 8+2=10  SWAP.BÇÃñΩóﬂ LOAD
+	MOV.W	R0,@R4				; NOP or SWAPñΩóﬂ WRITE
+
+	MOV.W	#_SQ_NML_COD,R0			; NORMAL END
+	M_BRA	_JMP_EX\@			;
+;
+_JMP_C80\@:
+	MOV.W	#_SQ_ERR_END,R0			; ERR END
+
+_JMP_EX\@:
+	.ENDM
+
+
+
+;	***************************************************
+;	*****   SET,RST CODE CHANGE MACRO		***
+;	***************************************************
+
+	.MACRO	_SEQ_SET_RST_CMD	TOP_ADR,END_ADR,BIT_AREA,ADR_AREA,COD_AREA1,COD_AREA2,COD_AREA3
+
+	MOV.L	#_SEQ_CARD_MAX,R1		; 127
+	CMP/GE	R1,R8				; CA.DBA DATA CHECK
+	BT	_JMP_C80\@			; IF ADR >= 127 THEN JUMP
+;
+	MOV.L	#(\END_ADR-\TOP_ADR),R0		; ì]ëó BYTEí∑
+	MOV.L	#\TOP_ADR,R3			; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1		; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+						; àÍäáÇµÇƒì]ëóÇµÇƒÇ©ÇÁ“”ÿÇÃÇ∆Ç±ÇæÇØÇ†Ç∆Ç≈ì¸ÇÍíºÇ∑ÅB
+
+	MOV.L	#H'FFFFFF00,R0			;
+
+;	*** BIT SET ***
+	MOV.L	#\BIT_AREA,R1			; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; +2
+	MOV.L	#_SEQ_BBIT_CHG_TBL,R1		; “”ÿÇÃÇ∆Ç±ÇÎ +0
+	SHLL	R10				; *2
+	ADD	R10,R1				;
+	MOV.W	@R1,R1				; BIT LOAD
+	MOV.W	@R4,R2				; “”ÿÇÃÇ∆Ç±ÇÎÇÃñΩóﬂLOAD
+	AND	R0,R2				; BIT√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	OR	R1,R2				;
+	MOV.W	R2,@R4				; BIT SET
+
+;	*** SHLLñΩóﬂÇÕBIT7à»â∫Ç»ÇÁNOPÇ…íuä∑Ç¶ÇÈ ***
+	MOV.L	#_NOP_SHLL8_R3_TBL0,R2		;
+	ADD	R10,R2				;
+	MOV.W	@R2,R2				; NOP or SHLL8ñΩóﬂLOAD
+	MOV.L	#\COD_AREA1,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 8+2=10  SWAP.BÇÃñΩóﬂ LOAD
+	MOV.W	R2,@R4				; NOP or SWAPñΩóﬂ WRITE
+
+;	*** ADR SET ***
+	MOV.L	#\ADR_AREA,R1			; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 2+6=8
+	MOV.W	@R4,R2				;
+	AND	R0,R2				; ADR√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	SHLL	R8				; ADR*2
+	OR	R8,R2				;
+	MOV.W	R2,@R4				; RAM ADR SET
+
+;	*** OFFSET SET ***
+	MOV.L	#\COD_AREA2,R1			; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 8+4=12  MOV.B @(R0,R*),R1ÇÃñΩóﬂ LOAD
+	MOV.L	#_SEQ_MOVCMD_R1RD_TBL,R0	;
+	SHLL	R9				; OFFSET*2
+	ADD	R9,R0				;
+	MOV.W	@R0,R0				;
+	MOV.W	R0,@R4				; ñΩóﬂíuä∑Ç¶
+
+;	*** OFFSET SET ***
+	MOV.L	#\COD_AREA3,R1			; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 12+4=16  MOV.B R1,@(R0,R*)ÇÃñΩóﬂ LOAD
+	MOV.L	#_SEQ_MOVCMD_R1WR_TBL,R0	;
+	ADD	R9,R0				;
+	MOV.W	@R0,R0				;
+	MOV.W	R0,@R4				; ñΩóﬂíuä∑Ç¶
+
+	MOV.W	#_SQ_NML_COD,R0			; NORMAL END
+	M_BRA	_JMP_EX\@			;
+;
+_JMP_C80\@:
+	MOV.W	#_SQ_ERR_END,R0			; ERR END
+
+_JMP_EX\@:
+	.ENDM
+
+
+;	***************************************************
+;	*****   PLS PLF DS CODE CHANGE MACRO		***
+;	***************************************************
+
+	.MACRO	_SEQ_PLS_PLF_CMD	TOP_ADR,END_ADR,BIT_AREA,ADR_AREA,COD_AREA1
+
+	MOV.L	#_SEQ_CARD_MAX,R1		; 127
+	CMP/GE	R1,R8				; CA.DBA DATA CHECK
+	BT	_JMP_C80\@			; IF ADR >= 127 THEN JUMP
+;
+	MOV.L	#(\END_ADR-\TOP_ADR),R0		; ì]ëó BYTEí∑
+	MOV.L	#\TOP_ADR,R3			; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1		; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+						; àÍäáÇµÇƒì]ëóÇµÇƒÇ©ÇÁ“”ÿÇÃÇ∆Ç±ÇæÇØÇ†Ç∆Ç≈ì¸ÇÍíºÇ∑ÅB
+;	*** BIT SET ***
+	MOV.L	#\BIT_AREA,R1			; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				;
+	MOV.L	#_SEQ_BBIT_CHG_TBL,R1		;
+	SHLL	R10				; *2
+	ADD	R10,R1				;
+	MOV.W	@R1,R1				;
+	MOV.W	@R4,R2				; “”ÿÇÃÇ∆Ç±ÇÎÇÃñΩóﬂLOAD
+	MOV.L	#H'FFFFFF00,R0			;
+	AND	R0,R2				; BIT√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	OR	R1,R2				;
+	MOV.W	R2,@R4				; BIT SET
+
+;	*** SHLLñΩóﬂÇÕBIT7à»â∫Ç»ÇÁNOPÇ…íuä∑Ç¶ÇÈ ***
+	MOV.L	#_NOP_SHLL8_R2_TBL0,R2		;
+	ADD	R10,R2				;
+	MOV.W	@R2,R2				; NOP or SHLL8ñΩóﬂLOAD
+
+	MOV.L	#\COD_AREA1,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 8+2=10  SWAP.BÇÃñΩóﬂ LOAD
+	MOV.W	R2,@R4				; NOP or SWAPñΩóﬂ WRITE
+
+;	*** ADR SET ***
+	MOV.L	#\ADR_AREA,R1			; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 0+6=6
+	MOV.W	@R4,R2				;
+	AND	R0,R2				; ADR√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	SHLL	R8				; ADR*2
+	OR	R8,R2				;
+	MOV.W	R2,@R4				; RAM ADR SET
+
+	MOV.W	#_SQ_NML_COD,R0			; NORMAL END
+	M_BRA	_JMP_EX\@			;
+;
+_JMP_C80\@:
+	MOV.W	#_SQ_ERR_END,R0			; ERR END
+
+_JMP_EX\@:
+	.ENDM
+
+
+;	*********************************************************************
+;	*****   LDW,EQ,NE,GT,LE,ANDW,ORW,XORW,ADD,SUBñΩóﬂïœä∑ œ∏€	*****
+;	*********************************************************************
+	.MACRO	_SEQ_LDW_CMP_OPE_CMD	TOP_ADR,END_ADR,ADR_AREA,COD_AREA1
+
+	MOV.L	#_SEQ_CARD_MAX,R1		; 127
+	CMP/GE	R1,R8				; CA.DBA DATA CHECK
+	BT	_JMP_C80\@			; IF ADR >= 127 THEN JUMP
+;
+	MOV.L	#(\END_ADR-\TOP_ADR),R0		; ì]ëó BYTEí∑
+	MOV.L	#\TOP_ADR,R3			; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1		; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+						; àÍäáÇµÇƒì]ëóÇµÇƒÇ©ÇÁ“”ÿÇÃÇ∆Ç±ÇæÇØÇ†Ç∆Ç≈ì¸ÇÍíºÇ∑ÅB
+
+	MOV.L	#H'FFFFFF00,R0			;
+;	*** ADR SET ***
+	MOV.L	#\ADR_AREA,R1			; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; +0
+	MOV.W	@R4,R2				;
+	AND	R0,R2				; ADR√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	SHLL	R8				; ADR*2
+	OR	R8,R2				;
+	MOV.W	R2,@R4				; RAM ADR SET
+
+;	*** OFFSET SET ***
+	MOV.L	#\COD_AREA1,R1			; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 8+4=12  MOV.B @(R0,R*),R1ÇÃñΩóﬂ LOAD
+	MOV.L	#_SEQ_MOVCMD_R3RD_TBL,R0	;
+	SHLL	R9				; OFFSET*2
+	ADD	R9,R0				;
+	MOV.W	@R0,R0				;
+	MOV.W	R0,@R4				; ñΩóﬂíuä∑Ç¶
+
+	MOV.W	#_SQ_NML_COD,R0			; NORMAL END
+	M_BRA	_JMP_EX\@			;
+;
+_JMP_C80\@:
+	MOV.W	#_SQ_ERR_END,R0			; ERR END
+
+_JMP_EX\@:
+	.ENDM
+
+
+;	*****************************************************
+;	*****   STW,CLRñΩóﬂïœä∑ œ∏€			*****
+;	*****************************************************
+	.MACRO	_SEQ_STW_CLR_CMD	TOP_ADR,END_ADR,ADR_AREA,COD_AREA1
+
+	MOV.L	#_SEQ_CARD_MAX,R1		; 127
+	CMP/GE	R1,R8				; CA.DBA DATA CHECK
+	BT	_JMP_C80\@			; IF ADR >= 127 THEN JUMP
+;
+	MOV.L	#(\END_ADR-\TOP_ADR),R0		; ì]ëó BYTEí∑
+	MOV.L	#\TOP_ADR,R3			; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1		; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+						; àÍäáÇµÇƒì]ëóÇµÇƒÇ©ÇÁ“”ÿÇÃÇ∆Ç±ÇæÇØÇ†Ç∆Ç≈ì¸ÇÍíºÇ∑ÅB
+	MOV.L	#H'FFFFFF00,R0			;
+;	*** ADR SET ***
+	MOV.L	#\ADR_AREA,R1			; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; +0
+	MOV.W	@R4,R2				;
+	AND	R0,R2				; ADR√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	SHLL	R8				; ADR*2
+	OR	R8,R2				;
+	MOV.W	R2,@R4				; RAM ADR SET
+
+;	*** OFFSET SET ***
+	MOV.L	#\COD_AREA1,R1			; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 8+4=12  MOV.B @(R0,R*),R1ÇÃñΩóﬂ LOAD
+	MOV.L	#_SEQ_ADDCMD_R0_TBL,R0	;
+	SHLL	R9				; OFFSET*2
+	ADD	R9,R0				;
+	MOV.W	@R0,R0				;
+	MOV.W	R0,@R4				; ñΩóﬂíuä∑Ç¶
+
+	MOV.W	#_SQ_NML_COD,R0			; NORMAL END
+	M_BRA	_JMP_EX\@			;
+;
+_JMP_C80\@:
+	MOV.W	#_SQ_ERR_END,R0			; ERR END
+
+_JMP_EX\@:
+	.ENDM
+
+
+
+
+;	*****************************************************
+;	*****   WTMR,WCTRñΩóﬂïœä∑ œ∏€			*****
+;	*****************************************************
+	.MACRO	_SEQ_WTMR_WCTR_CMD	TOP_ADR,END_ADR,ADR_AREA,COD_AREA1
+
+	MOV.L	#_SEQ_CARD_MAX,R1		; 127
+	CMP/GE	R1,R8				; CA.DBA DATA CHECK
+	BT	_JMP_C80\@			; IF ADR >= 127 THEN JUMP
+;
+	MOV.L	#(\END_ADR-\TOP_ADR),R0		; ì]ëó BYTEí∑
+	MOV.L	#\TOP_ADR,R3			; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1		; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+						; àÍäáÇµÇƒì]ëóÇµÇƒÇ©ÇÁ“”ÿÇÃÇ∆Ç±ÇæÇØÇ†Ç∆Ç≈ì¸ÇÍíºÇ∑ÅB
+
+	MOV.L	#H'FFFFFF00,R0			;
+;	*** ADR SET ***
+	MOV.L	#\ADR_AREA,R1			; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; +0
+	MOV.W	@R4,R2				;
+	AND	R0,R2				; ADR√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+;;;;;	SHLL	R8				; ADR*2
+	OR	R8,R2				;
+	MOV.W	R2,@R4				; RAM ADR SET
+
+	MOV.W	#_SQ_NML_COD,R0			; NORMAL END
+	M_BRA	_JMP_EX\@			;
+;
+_JMP_C80\@:
+	MOV.W	#_SQ_ERR_END,R0			; ERR END
+
+_JMP_EX\@:
+	.ENDM
+
+
+;	***************************************************
+;	***						***
+;	***						***
+;	***	ÉVÅ[ÉPÉìÉXÉRÅ[Éhïœä∑É\ÉtÉg		***
+;	***						***
+;	***						***
+;	***************************************************
+	.SECTION	P,CODE			;
+	.import	_SEQ_COM1_TOP			; SEQUENCE COMMAND AREA TOP ADR.
+	.import	_SEQ_COM1_END			; SEQUENCE COMMAND AREA END ADR.
+
+	.EXPORT	_SEQ_RUN_CHG_MAIN		; º∞π›ΩFROM->SDRAMñΩóﬂïœä∑
+
+
+
+_SEQ_START_CODE:
+	SUB_START
+	NOP
+
+_SEQ_END_CODE:
+	SUB_END
+	M_RTS
+
+
+
+;
+;	/********************************************************
+;	/**********	SEQUENCE COMMAND CHANGE        **********
+;	/********************************************************
+	.IMPORT	_PVP_COM_ADR		;word
+	.IMPORT	_PVP_COM_ERR		;∫› ﬂ≤ŸàŸèÌóLÇËÅ^ñ≥Çµ
+
+
+;SEQ_COMPILE :FLAG IF data  ==0 THEN MAIN-SEQ 0~4000?[EQU=MAIN_SEQ_STP] STEP
+;		   IF data  !=0 THEN INT -SEQ 0~100? [EQU=INT_SEQ_STP] STEP
+
+_SEQ_RUN_CHG_MAIN:
+	SUB_START
+
+;	*** º∞π›ΩÇÃénÇ‹ÇËÇÕSUB_STARTÇì¸ÇÍÇÈ ***
+	MOV.L	#_SEQ_RUN1_TOP,R13		; RUN COMMAND STORE AREA TOP ADR.
+	MOV.L	#_SEQ_START_CODE,R12		;
+	MOV.W	@R12,R0				; SUB_START CODE SET
+	MOV.W	R0,@R13				;
+	MOV.L	#2,R0				;
+	ADD	R0,R13				; ADDRESS INC
+	ADD	R0,R12				; ADDRESS INC
+	MOV.W	@R12,R0				;
+	MOV.W	R0,@R13				; NOP CODE SET
+
+	FAR_JSR	#_SEQ_RUN_CHG1,R1		;
+
+	MOV.L	#_SEQ_CMP_ERR_ADR,R1		;
+	MOV.L	R7,@R1				; compile error adr set
+
+;	===========================
+	MOV.L	#_PVP_COM_ADR,R1		;word
+	MOV.W	R7,@R1				;
+	MOV.L	#_PVP_COM_ERR,R1		;∫› ﬂ≤ŸàŸèÌóLÇËÅ^ñ≥Çµ
+	MOV.W	R0,@R1				;
+;	============================
+
+	MOV.L	#_SEQ_CMP_ERR,R1		; 
+	MOV.W	R0,@R1				; CMP OK = R0:0000 , CMP NG = R0:FFFF
+
+	TST	R0,R0				;
+	BT	_SEQ_RUN_CHG_MAIN020		;
+
+;	*** àŸèÌèIóπéûÇÕSUB_END,M_RTSÇÇ¬ÇØÇÈ ***
+	MOV.L	#_SEQ_END_CODE,R12		;
+	MOV.W	@R12,R0				; SUB_END CODE SET
+	MOV.W	R0,@R13				;
+	MOV.L	#2,R0				;
+	ADD	R0,R13				; ADDRESS INC
+	ADD	R0,R12				; ADDRESS INC
+	MOV.W	@R12,R0				;
+	MOV.W	R0,@R13				; M_RTS SET
+	MOV.L	#2,R0				;
+	ADD	R0,R13				; ADDRESS INC
+	ADD	R0,R12				; ADDRESS INC
+	MOV.W	@R12,R0				;
+	MOV.W	R0,@R13				; M_RTS SET
+
+_SEQ_RUN_CHG_MAIN020:
+
+	XOR	R2,R2				;
+
+	MOV.L	#_SEQ_ARG1_DATA,R1		; ARG clear
+	MOV.W	R2,@R1				;
+	MOV.L	#_SEQ_MRG1_DATA,R1		; MRG clear
+	MOV.W	R2,@R1				;
+	MOV.W	#H'01,R2			; NRG 1 set
+	MOV.L	#_SEQ_NRG1_DATA,R1		;
+	MOV.W	R2,@R1				;
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	∫› ﬂ≤ŸªÃﬁŸ∞¡›		***
+;	***********************************
+;
+_SEQ_RUN_CHG1:
+	SUB_START
+
+	MOV.L	#_SEQ_COM1_TOP,R12		; SEQUENCE COMMAND AREA TOP ADR.
+	MOV.L	#_SEQ_RUN1,R13			; RUN COMMAND STORE AREA TOP ADR.
+	MOV.L	#_SEQ_RUN1_END,R14		; RUN COMMAND STORE AREA TOP ADR.
+
+	MOV.L	#_SEQ_MAX_BYTE,R0		; ç≈ëÂñΩóﬂêî28BYTE
+	SUB	R0,R14				; ç≈ëÂñΩóﬂêî28BYTE
+	XOR	R7,R7				; àŸèÌΩ√ØÃﬂåüèo∂≥›¿
+
+	MOV.L	#_SEQ_COM1_END,R6		; SEQUENCE COMMAND AREA END ADR.
+
+_SEQ_RUN_CHG1_100:
+	_WDT_CLR R0,R1,R2			; 
+						; R12:’-ªﬁñΩóﬂ∫∞ƒﬁ
+						; R12:≤›∏ÿ“›ƒ
+						; R13:SEQ-ìWäJñΩóﬂ-WORK 
+						; R13:≤›∏ÿ“›ƒ
+	CMP/GE	R14,R13				; ‹∞∏“”ÿµ∞ ﬁ¡™Ø∏ IF OVER THEN ERR R13 >= R14
+	BT	_SEQ_RUN_CHG1_ERR_END		; R13>=R14 JUMP
+
+	CMP/GE	R6,R12				; º∞π›Ω∫∞ƒﬁóÃàÊ¡™Ø∏ IF OVER THEN ERR R12 >= R6
+	BT	_SEQ_RUN_CHG1_ERR_END		; R13>=R14 JUMP
+
+	MOV.W	@R12+,R10			; OP CODE , BIT CODE LOAD
+	MOV.W	@R12+,R8			; DATA CODE LOAD
+
+	SWAP.B	R10,R9				;
+	EXTU.B	R9,R9				; OP CODE
+	MOV.W	#H'007F,R0			;
+	AND	R0,R9				;
+	EXTU.B	R10,R10				; BIT CODE
+
+_SEQ_RUN_CHG1_300:
+;						; SEQUENCE COMMAND
+	SHLL2	R9				; OP CODE * 4
+	MOV.L	#_SEQ_CHG_TBL0,R1		;
+	ADD	R9,R1				;
+
+	MOV	R8,R9				;
+	SWAP.B	R9,R9				;
+	EXTU.B	R8,R8				; R8=ADR
+	EXTU.B	R9,R9				; R9=OFFSET
+
+	MOV.L	@R1,R1				; ADDRESS LOAD
+	JSR	@R1				; ∫œ›ƒﬁÇ©ÇÁìWäJÇ∑ÇÈ
+	NOP					; ER0,ER1,ER2,ER3,ER4 BREAK OK! 
+						; IF ERR THEN R0=FFFFH ELSE "0" 
+						; IF END THEN R0=0000H ELSE "0"
+
+	CMP/EQ	#_SQ_NML_COD,R0			;
+	BT	_SEQ_RUN_CHG1_800		; NO ERR THEN JUMP
+
+	CMP/EQ	#_SQ_NML_END,R0			;
+	BT	_SEQ_RUN_CHG1_END		; NORMAL END
+	M_BRA	_SEQ_RUN_CHG1_ERR_END		; ERR[µÕﬂ∫∞ƒﬁàŸèÌÇ‹ÇΩÇÕ
+						;    [ENDÇ»ÇµàŸèÌ=ì‡ïîRAMÇ…é˚Ç‹ÇÁÇ»Ç¢]
+
+_SEQ_RUN_CHG1_800:				; CODE SET END
+
+;--- 2013-06-17 DEBUGã@î\í«â¡
+	MOV.W	#D'3460,R1			;
+	CMP/EQ	R1,R7				;
+	BF	SEQ_RUN_CHG1_DBE		;
+	NOP
+SEQ_RUN_CHG1_DBE
+
+
+
+
+
+
+
+
+	MOV.W	#1,R1				;
+	ADD	R1,R7				; STEP COUNTER + 1
+	M_BRA	_SEQ_RUN_CHG1_100		; LOOP
+
+_SEQ_RUN_CHG1_END:
+	XOR	R0,R0				; 0 --> R0 = NOMAL
+						; ANS.R7 ROMΩ√ØÃﬂêî
+	M_BRA	_SEQ_RUN_CHG1_EXIT		;
+
+_SEQ_RUN_CHG1_ERR_END:
+	MOV.W	#_SQ_ERR_END,R0			; FFFF-->R0 = ERR
+						; ANS.R7 ROMΩ√ØÃﬂêî
+_SEQ_RUN_CHG1_EXIT:
+	SUB_END
+	M_RTS
+;
+
+;	/****************************************************
+;	/*****	  R11 ÅÅÅ@ÇnÇoÅ@ÇbÇnÇcÇd		*****
+;	/*****	  R10 ÅÅÅ@ÇaÇhÇsÅ@ÇbÇnÇcÇd		*****
+;	/*****	  R9  ÅÅÅ@ÇnÇeÇeÇrÇdÇsÅ@ÇbÇnÇcÇd	*****
+;	/*****	  R8  ÅÅÅ@Ç`ÇcÇqÅ@ÇbÇnÇcÇd		*****
+;	/****************************************************
+;
+;	*******************************************
+;	***	NOP CODE CHANGE ROUTINE		***
+;	*******************************************
+	.ALIGN	4
+_NOP_CHG:				; 00000000B
+	SUB_START
+
+	MOV.L	#_NOP_CODE,R1		; NOP CODE MOVE
+	MOV.W	@R1,R0			; *** NOP *** LOAD
+	MOV.W	R0,@R13			;
+	MOV.L	#2,R1			;
+	ADD	R1,R13			; SDRAM ADRESS +2
+	MOV.W	#_SQ_NML_COD,R0		;
+
+	SUB_END
+	M_RTS				; NORMAL END
+;
+
+;	/****************************************************
+;	/*****	  R11 ÅÅÅ@ÇnÇoÅ@ÇbÇnÇcÇd		*****
+;	/*****	  R10 ÅÅÅ@ÇaÇhÇsÅ@ÇbÇnÇcÇd		*****
+;	/*****	  R9  ÅÅÅ@ÇnÇeÇeÇrÇdÇsÅ@ÇbÇnÇcÇd	*****
+;	/*****	  R8  ÅÅÅ@Ç`ÇcÇqÅ@ÇbÇnÇcÇd		*****
+;	/****************************************************
+;	*******************************************
+;	***	Read CODE CHANGE ROUTINE	***
+;	*******************************************
+;
+	.ALIGN	4
+_LD_CHG:					; 00000010B
+	SUB_START
+
+;;;;;	_SEQ_LD_LDN_CMD	_LD_CODE,_LD_CODE_END
+;;;;;
+;;;;;	SUB_END
+;;;;;	M_RTS
+
+;;;;;	è¡Ç∑ÇÃÇ‡Ç¡ÇΩÇ¢Ç»Ç¢ÇÃÇ≈ìÆÇ¢ÇΩÇÁçÌèúÇ∑ÇÈ
+;;;;;_LD_CHG:					; 00000010B
+	MOV.L	#_SEQ_CARD_MAX,R1		; 127
+	CMP/GE	R1,R8				; CA.DBA DATA CHECK
+	BT	_LD_C80				; IF ADR >= 127 THEN JUMP
+;
+	MOV.L	#(_LD_CODE_END-_LD_CODE),R0	; ì]ëó BYTEí∑
+	MOV.L	#_LD_CODE,R3			; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1		; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+						; àÍäáÇµÇƒì]ëóÇµÇƒÇ©ÇÁ“”ÿÇÃÇ∆Ç±ÇæÇØÇ†Ç∆Ç≈ì¸ÇÍíºÇ∑ÅB
+;	*** BIT SET ***
+	MOV.L	#D'6,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				;
+	MOV.L	#_SEQ_BBIT_CHG_TBL,R1		;
+	SHLL	R10				; *2
+	ADD	R10,R1				;
+	MOV.W	@R1,R1				;
+	MOV.W	@R4,R2				; “”ÿÇÃÇ∆Ç±ÇÎÇÃñΩóﬂLOAD
+	MOV.L	#H'FFFFFF00,R0			;
+	AND	R0,R2				; BIT√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	OR	R1,R2				;
+	MOV.W	R2,@R4				; BIT SET
+
+;	*** ADR SET ***
+	MOV.L	#D'4,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 6+4=10
+	MOV.W	@R4,R2				;
+	AND	R0,R2				; ADR√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	SHLL	R8				; ADR*2
+	OR	R8,R2				;
+	MOV.W	R2,@R4				; RAM ADR SET
+
+;	*** OFFSET SET ***
+	MOV.L	#D'4,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 10+4=14  MOV.B @(R0,R*),R0ÇÃñΩóﬂ LOAD
+	MOV.L	#_SEQ_MOVCMD_R0RD_TBL,R0	;
+	SHLL	R9				; OFFSET*2
+	ADD	R9,R0				;
+	MOV.W	@R0,R0				;
+	MOV.W	R0,@R4				; ñΩóﬂíuä∑Ç¶
+
+;	*** SWAPñΩóﬂÇÕBIT7à»â∫Ç»ÇÁNOPÇ…íuä∑Ç¶ÇÈ ***
+	MOV.L	#_NOP_SWAP_TBL0,R0		;
+	ADD	R10,R0				;
+	MOV.W	@R0,R0				; NOP or SWAPñΩóﬂLOAD
+
+	MOV.L	#D'2,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 14+2=16  SWAP.BÇÃñΩóﬂ LOAD
+	MOV.W	R0,@R4				; NOP or SWAPñΩóﬂ WRITE
+
+	MOV.W	#_SQ_NML_COD,R0			; NORMAL END
+	M_BRA	_LD_CHG_EX			;
+;
+_LD_C80:
+	MOV.W	#_SQ_ERR_END,R0			; ERR END
+
+_LD_CHG_EX:
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***	Read Not CODE CHANGE ROUTINE	***
+;	*******************************************
+_LDN_CHG:					; 00000011B
+	SUB_START
+
+	_SEQ_LD_LDN_CMD	_LDN_CODE,_LDN_CODE_END
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	*****   And CODE CHANGE ROUTINE		***
+;	*******************************************
+_AND_CHG:					; 00000100B	4
+	SUB_START
+
+	_SEQ_A_AN_O_ON_CMD	_AND_CODE,_AND_CODE_END
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	*****   And Not CODE CHANGE ROUTINE	***
+;	*******************************************
+_ANDN_CHG:					; 00000101B	5
+	SUB_START
+
+	_SEQ_A_AN_O_ON_CMD	_ANDN_CODE,_ANDN_CODE_END
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	*****   Or CODE CHANGE ROUTINE		***
+;	*******************************************
+_OR_CHG:					; 00000110B	6
+	SUB_START
+
+	_SEQ_A_AN_O_ON_CMD	_OR_CODE,_OR_CODE_END
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	*****   Or Not CODE CHANGE ROUTINE	***
+;	*******************************************
+_ORN_CHG:					; 00000111B	7
+	SUB_START
+
+	_SEQ_A_AN_O_ON_CMD	_ORN_CODE,_ORN_CODE_END
+
+	SUB_END
+	M_RTS
+
+;;;;;	è¡Ç∑ÇÃÇ‡Ç¡ÇΩÇ¢Ç»Ç¢ÇÃÇ≈ìÆÇ¢ÇΩÇÁçÌèúÇ∑ÇÈ
+;;;;;_ORN_CHG:					; 00000111B	7
+	SUB_START
+
+	MOV.L	#_SEQ_CARD_MAX,R1		; 127
+	CMP/GE	R1,R8				; CA.DBA DATA CHECK
+	BT	_ORN_C80			; IF ADR >= 127 THEN JUMP
+;
+	MOV.L	#(_ORN_CODE_END-_ORN_CODE),R0	; ì]ëó BYTEí∑
+	MOV.L	#_ORN_CODE,R3			; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1		; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+						; àÍäáÇµÇƒì]ëóÇµÇƒÇ©ÇÁ“”ÿÇÃÇ∆Ç±ÇæÇØÇ†Ç∆Ç≈ì¸ÇÍíºÇ∑ÅB
+;	*** BIT SET ***
+	MOV.L	#_SEQ_BBIT_CHG_TBL,R1		; “”ÿÇÃÇ∆Ç±ÇÎ +0
+	SHLL	R10				; *2
+	ADD	R10,R1				;
+	MOV.W	@R1,R1				; BIT LOAD
+	MOV.W	@R4,R2				; “”ÿÇÃÇ∆Ç±ÇÎÇÃñΩóﬂLOAD
+	MOV.L	#H'FFFFFF00,R0			;
+	AND	R0,R2				; BIT√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	OR	R1,R2				;
+	MOV.W	R2,@R4				; BIT SET
+
+;	*** ADR SET ***
+	MOV.L	#D'4,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 0+4=4
+	MOV.W	@R4,R2				;
+	AND	R0,R2				; ADR√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	SHLL	R8				; ADR*2
+	OR	R8,R2				;
+	MOV.W	R2,@R4				; RAM ADR SET
+
+;	*** OFFSET SET ***
+	MOV.L	#D'4,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 4+4=8  MOV.B @(R0,R*),R0ÇÃñΩóﬂ LOAD
+	MOV.L	#_SEQ_MOVCMD_R0RD_TBL,R0	;
+	SHLL	R9				; OFFSET*2
+	ADD	R9,R0				;
+	MOV.W	@R0,R0				;
+	MOV.W	R0,@R4				; ñΩóﬂíuä∑Ç¶
+
+;	*** SWAPñΩóﬂÇÕBIT7à»â∫Ç»ÇÁNOPÇ…íuä∑Ç¶ÇÈ ***
+	MOV.L	#_NOP_SWAP_TBL0,R0		;
+	ADD	R10,R0				;
+	MOV.W	@R0,R0				; NOP or SWAPñΩóﬂLOAD
+
+	MOV.L	#D'2,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 8+2=10  SWAP.BÇÃñΩóﬂ LOAD
+	MOV.W	R0,@R4				; NOP or SWAPñΩóﬂ WRITE
+
+	MOV.W	#_SQ_NML_COD,R0			; NORMAL END
+	M_BRA	_ORN_CHG_EX			;
+;
+_ORN_C80:
+	MOV.W	#_SQ_ERR_END,R0			; ERR END
+
+_ORN_CHG_EX:
+	SUB_END
+	M_RTS
+
+
+
+
+;	*******************************************
+;	*****   PLS CODE CHANGE ROUTINE		***
+;	*******************************************
+_PLS_CHG:			; 00001000B	8
+	SUB_START
+
+	_SEQ_PLS_PLF_CMD	_PLS_CODE,_PLS_CODE_END,BIT_AREA=0,ADR_AREA=2,COD_AREA1=4
+
+	SUB_END
+	M_RTS
+
+;;;;;	è¡Ç∑ÇÃÇ‡Ç¡ÇΩÇ¢Ç»Ç¢ÇÃÇ≈ìÆÇ¢ÇΩÇÁçÌèúÇ∑ÇÈ
+;;;;;_PLS_CHG:			; 00001000B	8
+	MOV.L	#_SEQ_CARD_MAX,R1		; 127
+	CMP/GE	R1,R8				; CA.DBA DATA CHECK
+	BT	_PLS_C80				; IF ADR >= 127 THEN JUMP
+;
+	MOV.L	#(_PLS_CODE_END-_PLS_CODE),R0	; ì]ëó BYTEí∑
+	MOV.L	#_PLS_CODE,R3			; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1		; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+						; àÍäáÇµÇƒì]ëóÇµÇƒÇ©ÇÁ“”ÿÇÃÇ∆Ç±ÇæÇØÇ†Ç∆Ç≈ì¸ÇÍíºÇ∑ÅB
+;	*** BIT SET ***
+	MOV.L	#D'0,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; +0
+	MOV.L	#_SEQ_BBIT_CHG_TBL,R1		;
+	SHLL	R10				; *2
+	ADD	R10,R1				;
+	MOV.W	@R1,R1				;
+	MOV.W	@R4,R2				; “”ÿÇÃÇ∆Ç±ÇÎÇÃñΩóﬂLOAD
+	MOV.L	#H'FFFFFF00,R0			;
+	AND	R0,R2				; BIT√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	OR	R1,R2				;
+	MOV.W	R2,@R4				; BIT SET
+
+;	*** SWAPñΩóﬂÇÕBIT7à»â∫Ç»ÇÁNOPÇ…íuä∑Ç¶ÇÈ ***
+	MOV.L	#_NOP_SHLL8_R2_TBL0,R0		;
+	ADD	R10,R0				;
+	MOV.W	@R0,R0				; NOP or SHLL8ñΩóﬂLOAD
+
+	MOV.L	#D'4,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 0+4=4  SWAP.BÇÃñΩóﬂ LOAD
+	MOV.W	R0,@R4				; NOP or SWAPñΩóﬂ WRITE
+
+;	*** ADR SET ***
+	MOV.L	#D'2,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 4+2=6
+	MOV.W	@R4,R2				;
+	AND	R0,R2				; ADR√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	SHLL	R8				; ADR*2
+	OR	R8,R2				;
+	MOV.W	R2,@R4				; RAM ADR SET
+
+	MOV.W	#_SQ_NML_COD,R0			; NORMAL END
+	M_BRA	_PLS_CHG_EX			;
+;
+_PLS_C80:
+	MOV.W	#_SQ_ERR_END,R0			; ERR END
+
+_PLS_CHG_EX:
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	*****   PLF CODE CHANGE ROUTINE		***
+;	*******************************************
+_PLF_CHG:					; 00001001B	9
+	SUB_START
+
+	_SEQ_PLS_PLF_CMD	_PLF_CODE,_PLF_CODE_END,BIT_AREA=0,ADR_AREA=2,COD_AREA1=4
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	*****   BIT STORE CODE CHANGE ROUTINE	***
+;	*******************************************
+_ST_CHG:					; 00001010B	A
+	SUB_START
+
+	MOV.L	#_SEQ_CARD_MAX,R1		; 127
+	CMP/GE	R1,R8				; CA.DBA DATA CHECK
+	BT	_ST_C80				; IF ADR >= 127 THEN JUMP
+;
+	MOV.L	#(_ST_CODE_END-_ST_CODE),R0	; ì]ëó BYTEí∑
+	MOV.L	#_ST_CODE,R3			; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1		; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+						; àÍäáÇµÇƒì]ëóÇµÇƒÇ©ÇÁ“”ÿÇÃÇ∆Ç±ÇæÇØÇ†Ç∆Ç≈ì¸ÇÍíºÇ∑ÅB
+;	*** BIT SET ***
+	MOV.L	#D'2,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				;
+	MOV.L	#_SEQ_BBIT_CHG_TBL,R1		;
+	SHLL	R10				; *2
+	ADD	R10,R1				;
+	MOV.W	@R1,R1				;
+	MOV.W	@R4,R2				; “”ÿÇÃÇ∆Ç±ÇÎÇÃñΩóﬂLOAD
+	MOV.L	#H'FFFFFF00,R0			;
+	AND	R0,R2				; BIT√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	OR	R1,R2				;
+	MOV.W	R2,@R4				; BIT SET
+
+;	*** SWAPñΩóﬂÇÕBIT7à»â∫Ç»ÇÁNOPÇ…íuä∑Ç¶ÇÈ ***
+	MOV.L	#_NOP_SHLL8_R3_TBL0,R2		;
+	ADD	R10,R2				;
+	MOV.W	@R2,R2				; NOP or SHLL8ñΩóﬂLOAD
+
+	MOV.L	#D'4,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 0+4=4  SWAP.BÇÃñΩóﬂ LOAD
+	MOV.W	R2,@R4				; NOP or SWAPñΩóﬂ WRITE
+
+;	*** ADR SET ***
+	MOV.L	#D'4,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 2+8=10
+	MOV.W	@R4,R2				;
+	AND	R0,R2				; ADR√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	SHLL	R8				; ADR*2
+	OR	R8,R2				;
+	MOV.W	R2,@R4				; RAM ADR SET
+
+;	*** OFFSET SET ***
+	MOV.L	#D'4,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 10+4=14  MOV.B @(R0,R*),R1ÇÃñΩóﬂ LOAD
+	MOV.L	#_SEQ_MOVCMD_R1RD_TBL,R0	;
+	SHLL	R9				; OFFSET*2
+	ADD	R9,R0				;
+	MOV.W	@R0,R0				;
+	MOV.W	R0,@R4				; ñΩóﬂíuä∑Ç¶
+
+;	*** OFFSET SET ***
+	MOV.L	#D'10,R1			; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 14+10=24  MOV.B R1,@(R0,R*)ÇÃñΩóﬂ LOAD
+	MOV.L	#_SEQ_MOVCMD_R1WR_TBL,R0	;
+	ADD	R9,R0				;
+	MOV.W	@R0,R0				;
+	MOV.W	R0,@R4				; ñΩóﬂíuä∑Ç¶
+
+	MOV.W	#_SQ_NML_COD,R0			; NORMAL END
+	M_BRA	_ST_CHG_EX			;
+;
+_ST_C80:
+	MOV.W	#_SQ_ERR_END,R0			; ERR END
+
+_ST_CHG_EX:
+	SUB_END
+	M_RTS
+
+
+
+;	*******************************************
+;	*****   WSC CODE CHANGE ROUTINE		***
+;	*******************************************
+_WSC_CHG:			; 00001100B	C
+	SUB_START
+
+	MOV.L	#_SEQ_CARD_MAX,R1		; 127
+	CMP/GE	R1,R8				; CA.DBA DATA CHECK
+	BT	_WSC_C80			; IF ADR >= 127 THEN JUMP
+;
+	MOV.L	#(_WSC_CODE_END-_WSC_CODE),R0	; ì]ëó BYTEí∑
+	MOV.L	#_WSC_CODE,R3			; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1		; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+						; àÍäáÇµÇƒì]ëóÇµÇƒÇ©ÇÁ“”ÿÇÃÇ∆Ç±ÇæÇØÇ†Ç∆Ç≈ì¸ÇÍíºÇ∑ÅB
+;	*** BIT SET ***
+	MOV.L	#_SEQ_BBIT_CHG_TBL,R1		; “”ÿÇÃÇ∆Ç±ÇÎ +0
+	SHLL	R10				; *2
+	ADD	R10,R1				;
+	MOV.W	@R1,R1				; BIT LOAD
+	MOV.W	@R4,R2				; “”ÿÇÃÇ∆Ç±ÇÎÇÃñΩóﬂLOAD
+	MOV.L	#H'FFFFFF00,R0			;
+	AND	R0,R2				; BIT√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	OR	R1,R2				;
+	MOV.W	R2,@R4				; BIT SET
+
+;	*** SWAPñΩóﬂÇÕBIT7à»â∫Ç»ÇÁNOPÇ…íuä∑Ç¶ÇÈ ***
+	MOV.L	#_NOP_SWAP_TBL0,R1		;
+	ADD	R10,R1				;
+	MOV.W	@R1,R1				; NOP or SWAPñΩóﬂLOAD
+
+	MOV.L	#D'4,R2				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R2,R4				; 0+4=4  SWAP.BÇÃñΩóﬂ LOAD
+	MOV.W	R1,@R4				; NOP or SWAPñΩóﬂ WRITE
+
+;	*** ADR SET ***
+	MOV.L	#D'8,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 2+8=10
+	MOV.W	@R4,R2				;
+	AND	R0,R2				; ADR√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	SHLL	R8				; ADR*2
+	OR	R8,R2				;
+	MOV.W	R2,@R4				; RAM ADR SET
+
+;	*** OFFSET SET ***
+	MOV.L	#D'4,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 10+4=14  MOV.B @(R0,R*),R1ÇÃñΩóﬂ LOAD
+	MOV.L	#_SEQ_MOVCMD_R1WR_TBL,R0	;
+	SHLL	R9				; OFFSET*2
+	ADD	R9,R0				;
+	MOV.W	@R0,R0				;
+	MOV.W	R0,@R4				; ñΩóﬂíuä∑Ç¶
+
+	MOV.W	#_SQ_NML_COD,R0			; NORMAL END
+	M_BRA	_WSC_CHG_EX			;
+;
+_WSC_C80:
+	MOV.W	#_SQ_ERR_END,R0			; ERR END
+
+_WSC_CHG_EX:
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	*****   BIT SET CODE CHANGE ROUTINE	***
+;	*******************************************
+_SET_CHG:					; 00001110B	E
+	SUB_START
+
+	_SEQ_SET_RST_CMD	_SET_CODE,_SET_CODE_END,BIT_AREA=2,ADR_AREA=2,COD_AREA1=4,COD_AREA2=4,COD_AREA3=8
+
+	SUB_END
+	M_RTS
+
+
+;;;;;	è¡Ç∑ÇÃÇ‡Ç¡ÇΩÇ¢Ç»Ç¢ÇÃÇ≈ìÆÇ¢ÇΩÇÁçÌèúÇ∑ÇÈ
+;;;;;_SET_CHG:					; 00001110B	E
+	MOV.L	#_SEQ_CARD_MAX,R1		; 127
+	CMP/GE	R1,R8				; CA.DBA DATA CHECK
+	BT	_SET_C80			; IF ADR >= 127 THEN JUMP
+;
+	MOV.L	#(_SET_CODE_END-_SET_CODE),R0	; ì]ëó BYTEí∑
+	MOV.L	#_SET_CODE,R3			; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1		; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+						; àÍäáÇµÇƒì]ëóÇµÇƒÇ©ÇÁ“”ÿÇÃÇ∆Ç±ÇæÇØÇ†Ç∆Ç≈ì¸ÇÍíºÇ∑ÅB
+;	*** BIT SET ***
+	MOV.L	#D'2,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; +2
+	MOV.L	#_SEQ_BBIT_CHG_TBL,R1		; “”ÿÇÃÇ∆Ç±ÇÎ +0
+	SHLL	R10				; *2
+	ADD	R10,R1				;
+	MOV.W	@R1,R1				; BIT LOAD
+	MOV.W	@R4,R2				; “”ÿÇÃÇ∆Ç±ÇÎÇÃñΩóﬂLOAD
+	MOV.L	#H'FFFFFF00,R0			;
+	AND	R0,R2				; BIT√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	OR	R1,R2				;
+	MOV.W	R2,@R4				; BIT SET
+
+;	*** ADR SET ***
+	MOV.L	#D'6,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 2+6=8
+	MOV.W	@R4,R2				;
+	AND	R0,R2				; ADR√ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	SHLL	R8				; ADR*2
+	OR	R8,R2				;
+	MOV.W	R2,@R4				; RAM ADR SET
+
+;	*** OFFSET SET ***
+	MOV.L	#D'4,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 8+4=12  MOV.B @(R0,R*),R1ÇÃñΩóﬂ LOAD
+	MOV.L	#_SEQ_MOVCMD_R1RD_TBL,R0	;
+	SHLL	R9				; OFFSET*2
+	ADD	R9,R0				;
+	MOV.W	@R0,R0				;
+	MOV.W	R0,@R4				; ñΩóﬂíuä∑Ç¶
+
+;	*** OFFSET SET ***
+	MOV.L	#D'4,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 12+4=16  MOV.B R1,@(R0,R*)ÇÃñΩóﬂ LOAD
+	MOV.L	#_SEQ_MOVCMD_R1WR_TBL,R0	;
+	ADD	R9,R0				;
+	MOV.W	@R0,R0				;
+	MOV.W	R0,@R4				; ñΩóﬂíuä∑Ç¶
+
+	MOV.W	#_SQ_NML_COD,R0			; NORMAL END
+	M_BRA	_SET_CHG_EX			;
+;
+_SET_C80:
+	MOV.W	#_SQ_ERR_END,R0			; ERR END
+
+_SET_CHG_EX:
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	*****   BIT RESET CODE CHANGE ROUTINE	***
+;	*******************************************
+_RST_CHG:					; 00001111B	F
+	SUB_START
+
+	_SEQ_SET_RST_CMD	_RST_CODE,_RST_CODE_END,BIT_AREA=2,ADR_AREA=8,COD_AREA1=4,COD_AREA2=4,COD_AREA3=4
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	*****   WTMR CODE CHANGE ROUTINE	***
+;	*******************************************
+_WTMR_CHG:			; 00010000B	10
+	SUB_START
+
+	_SEQ_WTMR_WCTR_CMD	_WTMR_CODE,_WTMR_CODE_END,ADR_AREA=0
+
+	SUB_END
+	M_RTS
+
+
+
+;	*******************************************
+;	*****   WCTR CODE CHANGE ROUTINE	***
+;	*******************************************
+_WCTR_CHG:			; 00010010B	12
+	SUB_START
+
+	_SEQ_WTMR_WCTR_CMD	_WCTR_CODE,_WCTR_CODE_END,ADR_AREA=0
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	*****   WSR CODE CHANGE ROUTINE		***
+;	*******************************************
+_WSR_CHG:			; 00010100B	14
+	SUB_START
+
+	MOV.L	#(_WSR_CODE_END-_WSR_CODE),R0	; ì]ëó BYTEí∑
+	MOV.L	#_WSR_CODE,R3			; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1		; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+						; àÍäáÇµÇƒì]ëóÇµÇƒÇ©ÇÁ“”ÿÇÃÇ∆Ç±ÇæÇØÇ†Ç∆Ç≈ì¸ÇÍíºÇ∑ÅB
+
+	MOV.L	#H'FFFFFF00,R0			;
+;	*** DATA_LO SET ***
+	MOV.L	#0,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; +0
+	MOV.W	@R4,R2				;
+	AND	R0,R2				; √ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	OR	R8,R2				; â∫à √ﬁ∞¿
+	MOV.W	R2,@R4				; RAM ADR SET
+
+;	*** DATA_HI SET ***
+	MOV.L	#4,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 0+4=4
+	MOV.W	@R4,R2				;
+	AND	R0,R2				; √ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	OR	R9,R2				; è„à √ﬁ∞¿
+	MOV.W	R2,@R4				; RAM ADR SET
+
+	MOV.W	#_SQ_NML_COD,R0			; NORMAL END
+
+	SUB_END
+	M_RTS
+
+
+
+;	*******************************************
+;	*****   Clear CODE CHANGE ROUTINE	***
+;	*******************************************
+_CLR_CHG:					; 00010110B	16
+	SUB_START
+
+	_SEQ_STW_CLR_CMD	_CLR_CODE,_CLR_CODE_END,ADR_AREA=0,COD_AREA1=4
+
+	SUB_END
+	M_RTS
+
+_DSET_CHG:			; 00011010B	1A
+	SUB_START
+
+	MOV.L	#(_DS_CODE_END-_DS_CODE),R0	; ì]ëó BYTEí∑
+	MOV.L	#_DS_CODE,R3			; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1		; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+						; àÍäáÇµÇƒì]ëóÇµÇƒÇ©ÇÁ“”ÿÇÃÇ∆Ç±ÇæÇØÇ†Ç∆Ç≈ì¸ÇÍíºÇ∑ÅB
+
+	MOV.L	#H'FFFFFF00,R0			;
+;	*** DATA_LO SET ***
+	MOV.L	#0,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; +0
+	MOV.W	@R4,R2				;
+	AND	R0,R2				; √ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	OR	R8,R2				; â∫à √ﬁ∞¿
+	MOV.W	R2,@R4				; RAM ADR SET
+
+;	*** DATA_HI SET ***
+	MOV.L	#4,R1				; “”ÿÇÃÇ∆Ç±ÇÎ
+	ADD	R1,R4				; 0+4=4
+	MOV.W	@R4,R2				;
+	AND	R0,R2				; √ﬁ∞¿ÇÃÇ∆Ç±ÇÎÇ∏ÿ±
+	OR	R9,R2				; è„à √ﬁ∞¿
+	MOV.W	R2,@R4				; RAM ADR SET
+
+	MOV.W	#_SQ_NML_COD,R0			; NORMAL END
+;
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	*****   ARG And MRG CODE CHANGE ROUTINE	***
+;	*******************************************
+_AMRG_CHG:			; 00100000B	20
+	SUB_START
+
+	MOV.L	#(_AMRG_CODE_END-_AMRG_CODE),R0	; ì]ëó BYTEí∑
+	MOV.L	#_AMRG_CODE,R3			; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1		; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	*****   ARG Or MRG CODE CHANGE ROUTINE	***
+;	*******************************************
+_OMRG_CHG:			; 00100010B	22
+	SUB_START
+
+	MOV.L	#(_OMRG_CODE_END-_OMRG_CODE),R0	; ì]ëó BYTEí∑
+	MOV.L	#_OMRG_CODE,R3			; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1		; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	*****   Write NRG CODE CHANGE ROUTINE	***
+;	*******************************************
+_WNRG_CHG:			; 00100100B	24
+	SUB_START
+
+	MOV.L	#(_WNRG_CODE_END-_WNRG_CODE),R0	; ì]ëó BYTEí∑
+	MOV.L	#_WNRG_CODE,R3			; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1		; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+
+	SUB_END
+	M_RTS
+
+;	***************************************************
+;	*****   Write Not NRG CODE CHANGE ROUTINE	***
+;	***************************************************
+_WNNRG_CHG:			; 00100101B	25
+	SUB_START
+
+	MOV.L	#(_WNNRG_CODE_END-_WNNRG_CODE),R0	; ì]ëó BYTEí∑
+	MOV.L	#_WNNRG_CODE,R3				; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1			; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+
+	SUB_END
+	M_RTS
+
+;	***************************************************
+;	*****   Program End CODE CHANGE ROUTINE		***
+;	***************************************************
+_END_CHG:			; 00101010B	2A
+	SUB_START
+
+	MOV.L	#(_END_CODE_END-_END_CODE),R0	; ì]ëó BYTEí∑
+	MOV.L	#_END_CODE,R3			; Read CODE MOVE	(12 BYTE)
+;;;2011-01-04 í¡aho	MOV.L	R13,R4				; SEQ ADR. KEEP
+	MOV	R13,R4				; SEQ ADR. KEEP
+
+	FAR_JSR	#_SEQ_CODE_BLOCK_MV,R1		; ∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó INPUT R0,R3,R13
+
+	MOV.W	#_SQ_NML_END,R0			; END CODE SET
+
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	*****   CARD DATA LOAD CODE CHANGE ROUTINE	***
+;	***************************************************
+_LDW_CHG:			; 00110000B	30
+	SUB_START
+
+	_SEQ_LDW_CMP_OPE_CMD	_LDW_CODE,_LDW_CODE_END,ADR_AREA=0,COD_AREA1=4
+
+	SUB_END
+	M_RTS
+
+
+
+;	***********************************************************
+;	*****   èåèÇ»ÇµCARD DATA LOAD CODE CHANGE ROUTINE	***
+;	***********************************************************
+_LDWU_CHG:			; 00110010B	32
+	SUB_START
+
+	_SEQ_LDW_CMP_OPE_CMD	_LDWU_CODE,_LDWU_CODE_END,ADR_AREA=0,COD_AREA1=4
+
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	*****   CARD DATA STORE CODE CHANGE ROUTINE	***
+;	***************************************************
+_STW_CHG:			; 00111110B	3E
+	SUB_START
+
+	_SEQ_STW_CLR_CMD	_STW_CODE,_STW_CODE_END,ADR_AREA=0,COD_AREA1=4
+
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	*****   èåèÇ»ÇµCARD DATA STORE CODE CHANGE ROUTINE	***
+;	***********************************************************
+_STWU_CHG:			; 00111100B	3E
+	SUB_START
+
+	_SEQ_STW_CLR_CMD	_STWU_CODE,_STWU_CODE_END,ADR_AREA=0,COD_AREA1=4
+
+	SUB_END
+	M_RTS
+
+;	***************************************************
+;	*****   CMP EQ CODE CHANGE ROUTINE		***
+;	***************************************************
+_EQ_CHG:			; 01000000B	40
+	SUB_START
+
+	_SEQ_LDW_CMP_OPE_CMD	_EQ_CODE,_EQ_CODE_END,ADR_AREA=0,COD_AREA1=4
+
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	*****   CMP NE CODE CHANGE ROUTINE		***
+;	***************************************************
+_NE_CHG:			; 01000010B	42
+	SUB_START
+
+	_SEQ_LDW_CMP_OPE_CMD	_NE_CODE,_NE_CODE_END,ADR_AREA=0,COD_AREA1=4
+
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	*****   CMP GT CODE CHANGE ROUTINE		***
+;	***************************************************
+_GT_CHG:			; 01000100B	44
+	SUB_START
+
+	_SEQ_LDW_CMP_OPE_CMD	_GT_CODE,_GT_CODE_END,ADR_AREA=0,COD_AREA1=4
+
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	*****   CMP LE CODE CHANGE ROUTINE		***
+;	***************************************************
+_LE_CHG:			; 01001000B	48
+	SUB_START
+
+	_SEQ_LDW_CMP_OPE_CMD	_LE_CODE,_LE_CODE_END,ADR_AREA=0,COD_AREA1=4
+
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	*****   ADD CODE CHANGE ROUTINE			***
+;	***************************************************
+_ADD_CHG:			; 01010000B	50
+	SUB_START
+
+	_SEQ_LDW_CMP_OPE_CMD	_ADD_CODE,_ADD_CODE_END,ADR_AREA=0,COD_AREA1=4
+
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	*****   SUB CODE CHANGE ROUTINE			***
+;	***************************************************
+_SUB_CHG:			; 01010010B	52
+	SUB_START
+
+	_SEQ_LDW_CMP_OPE_CMD	_SUB_CODE,_SUB_CODE_END,ADR_AREA=0,COD_AREA1=4
+
+	SUB_END
+	M_RTS
+
+;	***************************************************
+;	*****   ANDW CODE CHANGE ROUTINE		***
+;	***************************************************
+_ANDW_CHG:			; 01011010B	5A
+	SUB_START
+
+	_SEQ_LDW_CMP_OPE_CMD	_ANDW_CODE,_ANDW_CODE_END,ADR_AREA=0,COD_AREA1=4
+
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	*****   ORW CODE CHANGE ROUTINE			***
+;	***************************************************
+_ORW_CHG:			; 01011100B	5C
+	SUB_START
+
+	_SEQ_LDW_CMP_OPE_CMD	_ORW_CODE,_ORW_CODE_END,ADR_AREA=0,COD_AREA1=4
+
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	*****   XORW CODE CHANGE ROUTINE		***
+;	***************************************************
+_XORW_CHG:			; 01011110B	5E
+	SUB_START
+
+	_SEQ_LDW_CMP_OPE_CMD	_XORW_CODE,_XORW_CODE_END,ADR_AREA=0,COD_AREA1=4
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	∫∞ƒﬁÇÃÃﬁ€Ø∏ì]ëó		***
+;	***********************************
+;	INPUT	R0,R3,R13
+;	USE	R1
+
+_SEQ_CODE_BLOCK_MV:
+	SUB_START
+
+_SEQ_CODE_BLOCK_LOOP:
+	TST	R0,R0				; COUNTER CHECK
+	BT	_SEQ_CD_BLOCK_MV_EXIT		; 0 THEN EXIT
+
+	MOV.W	@R3,R1				; SEQ_ROM
+	MOV.W	R1,@R13				; SEQ_RAM
+	MOV.L	#2,R1				;
+	SUB	R1,R0				; COUNTER -2
+	ADD	R1,R3				; ROM ADR. +2
+	ADD	R1,R13				; RAM ADR. +2
+	M_BRA	_SEQ_CODE_BLOCK_LOOP		;
+
+_SEQ_CD_BLOCK_MV_EXIT:
+
+	SUB_END
+	M_RTS
+
+
+	.END
+
+

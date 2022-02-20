@@ -1,0 +1,20 @@
+;	***************************************************
+;	***						***
+;	***	ram’è‹`					***
+;	***	•s—v‚¾‚ªºİÊß²ÙˆÙí‰ñ”ğ‚Ì‚½‚ß‚Ìmem	***
+;	***						***
+;	***************************************************
+	.include	"cm_equ1.equ"
+	.include	"com_et1.equ"
+
+	.SECTION	B,DATA			;
+	.INCLUDE	"ssa_dummymem.ext"	;
+	.ALIGN	4				;
+_ITIZI_MEM	.SRES	4			;
+
+
+	.include	"dp_cpuab.ext"
+	.include	"dp_cpuab.inc"
+
+
+	.END

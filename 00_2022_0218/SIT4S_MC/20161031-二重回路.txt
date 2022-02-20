@@ -1,0 +1,637 @@
+・リピート
+・寸動方向ラッチ
+・フィーダ一旦停止
+
+
+;	-------2016-10-31	-------
+;	二重回路変更
+;
+;-----------------------------;<cm_equ1.equ><1>
+_PROC_CMPERR_CHG2016	.DEFINE		"_CMPILE_YES"
+_DEBUG_CMPERR_DEBUG	.DEFINE		"_CMPILE_NO"	;出荷時は必ずNO!
+;
+;-----------------------------;<dp_cpuab.inc><2>
+;_PROC_CMPERR_CHG2016
+;------2016-10-31---------
+_CPUA_LOT_CHK_FLG	.SRES	2	;2016-07-18CHECK
+_CPUB_LOT_CHK_FLG	.SRES	2	;2016-07-18CHECK
+_CPUA_LOT_CNT_FLG	.SRES	2	;
+_CPUB_LOT_CNT_FLG	.SRES	2	;
+_CPUA_CONT_MOD_CNT_PV	.SRES	2	;
+_CPUB_CONT_MOD_CNT_PV	.SRES	2	;
+_CPUB_DBG_MONI_STP	.SRES	2	;2016-08-12
+_CPUB_DBG_MONI_CNT	.SRES	2	;2016-08-22
+;	----------------------------------------
+
+
+;-----------------------------;<dp_cpuab.ext><3>
+;_PROC_CMPERR_CHG2016
+;------2016-10-31---------
+	.GLOBAL		_CPUA_LOT_CHK_FLG	;2016-07-18CHECK
+	.GLOBAL		_CPUB_LOT_CHK_FLG	;2016-07-18CHECK
+	.GLOBAL		_CPUA_LOT_CNT_FLG	;
+	.GLOBAL		_CPUB_LOT_CNT_FLG	;
+	.GLOBAL		_CPUA_CONT_MOD_CNT_PV	;
+	.GLOBAL		_CPUB_CONT_MOD_CNT_PV	;
+	.GLOBAL		_CPUB_DBG_MONI_STP	;2016-08-12
+	.GLOBAL		_CPUB_DBG_MONI_CNT	;2016-08-22
+;	----------------------------------------
+
+
+;-----------------------------;<ssa_k.src><4>
+;	-------------- バージョン表示[2016-10-30～]----------------
+VER_DATE	.EQU		H'1031			;20161031
+VER_NUMBER1	.EQU		"1"			;S01 [1]
+VER_INDEX	.EQU		"g"			;g:2016-10-31
+
+
+;-----------------------------<ssa_err1.src><5>　ﾁｪｯｸ機能
+;	---------------------------------
+	FAR_JSR	#_CMP_OUT_DPRAM_DAT_ERR,R0
+
+ .AIF	_DEBUG_CMPERR_DEBUG EQ _CMPILE_YES	;出荷時は必ずNO!
+;	---------2016-10-31(2016-06-21)-------------
+	FAR_JSR	#_DBG_CPUAB_STEP_CMPERR1,R0	;[[[[[[[[[[ﾃﾞﾊﾞｯｸ専用機能出荷時はハズス]]]]]]]]]]]]]]]]]
+ .AENDI
+
+;;;;;;;;ERR_SC_200:			;BIT2 二重回路
+
+;	*******************************************
+;	***					***
+;	***	2016-10-31(2016-06-21)		***
+;	***	デバック　行程異常		***
+;	***					***
+;	*******************************************
+;	214.11
+;	CPUA検知	CPUAが起動中でCPUA=1,CPUB=4
+;	CPUB検知	CPUBが起動中でCPUA=4,CPUB=1
+;
+
+	.IMPORT	_CPUA_SV_STEP
+	.IMPORT	_CPUB_SV_STEP
+
+_DBG_CPUAB_STEP_CMPERR1
+	SUB_START
+
+
+
+
+;-----------------------------<ssc_cbrm.inc>
+//	2016-10-31
+//	_PROC_CMPERR_CHG2016
+	S2b	DBG_ATO_DRV_TIME_PV2;//2016-07-15
+	S2b	DBG_ATO_DRV_TIME_SV2;//2016-07-15
+
+//	2016-10-31
+//	_PROC_CMPERR_CHG2016
+//	***************************************************
+//	***						***
+//	***	2016-10-31(2016-05-08)			***
+//	***	位置決めキャンセルによる行程リカバー	***
+//	***						***
+//	***************************************************
+	S2b	POSCANSEL_CMD;//
+	S2b	DNM_RST_SPEC_AREASIG;//2016-10-31(2016-06-21)
+
+
+//	***************************************************
+//	***						***
+//	***	2016-10-31(2016-06-13)			***
+//	***	振り子処理調査				***
+//	***						***
+//	***************************************************
+	S2b	DBG_DNM_STR_CNT;
+	S2b	DBG_DNM_END_CNT;
+	S2b	DBG_DNM_CLR_CNT;
+
+//	***************************************************
+//	***						***
+//	***	2016-10-31(2016-06-21)			***
+//	***	行程２重回路調査			***
+//	***						***
+//	***************************************************
+	S2b	STEP_CMPERR_TIMX1;
+
+
+//	***************************************************
+//	***	2016-10-31(2016-08-11)			***
+//	***	連続停止釦対策				***
+//	***************************************************
+	S2b	CNT_STOP_WAIT_TIM;
+	S2b	CNT_STOP_DBG_CNT;//2016-08-22 CHECK
+
+
+
+;-----------------------------<ssa_cbrm.ext><>------------------
+;//	2016-10-31
+;//	_PROC_CMPERR_CHG2016
+	.GLOBAL	_DBG_ATO_DRV_TIME_PV2;//2016-07-15
+	.GLOBAL	_DBG_ATO_DRV_TIME_SV2;//2016-07-15
+
+
+//	2016-10-31
+//	_PROC_CMPERR_CHG2016
+;//	***************************************************
+;//	***						***
+;//	***	2016-10-31(2016-05-08)			***
+;//	***	位置決めキャンセルによる行程リカバー	***
+;//	***						***
+;//	***************************************************
+	.GLOBAL	_POSCANSEL_CMD;//
+	.GLOBAL	_DNM_RST_SPEC_AREASIG;//2016-06-21
+
+;//	***************************************************
+;//	***						***
+;//	***	2016-10-31(2016-06-13)			***
+;//	***	振り子処理調査				***
+;//	***						***
+;//	***************************************************
+	.GLOBAL	_DBG_DNM_STR_CNT;
+	.GLOBAL	_DBG_DNM_END_CNT;
+	.GLOBAL	_DBG_DNM_CLR_CNT;
+
+
+;//	***************************************************
+;//	***						***
+;//	***	2016-10-31(2016-06-21)			***
+;//	***	行程２重回路調査			***
+;//	***						***
+;//	***************************************************
+	.GLOBAL	_STEP_CMPERR_TIMX1;
+
+
+;//	***************************************************
+;//	***	2016-10-31(2016-08-11)			***
+;//	***	連続停止釦対策				***
+;//	***************************************************
+	.GLOBAL	_CNT_STOP_WAIT_TIM;
+	.GLOBAL	_CNT_STOP_DBG_CNT;//2016-08-22 CHECK
+
+
+
+
+
+;	---------------------<ssa_cbmn.src>----------------------------
+
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+;	---- 連続停止釦検知遅延 2016-10-31(2016-08-11)--------
+	DN_TIME LG=W,MEM_ADR=_CNT_STOP_WAIT_TIM,WKREG1=R1,WKREG2=R2	;
+
+
+
+;	-----------------------<ssa_khad.src><>
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 chg 二重回路対策
+	 .AENDI
+;;;;2016-10-31	--------- 2006-07-28---------------------
+;;;;2016-10-31	位置決めキャンセル機能１
+;;;2016-10-31	MOV.L	#_CB_SEQ_CB_COM340,R1		;340.11 位置決めキャンセル
+;;;2016-10-31	MOV.W	@R1,R0				;
+;;;2016-10-31	MOV.W	#BIT11,R4			;
+;;;2016-10-31	TST	R4,R0				;
+;;;2016-10-31	TST_BIT_OF BTTN_FLG_MK500		;
+;;;2016-10-31	MOV.W	#BIT1,R3			;
+;;;2016-10-31BTTN_FLG_MK500:					;(準備未完了にしたいため)
+
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+;	-------- 2016-10-31(2016-05-11) ﾗｯﾁﾃﾞｰﾀに変更-----------
+	MOV.L	#_CB_SEQ_CB_COM340,R1		;340.11 位置決めキャンセル
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT11,R4			;
+	TST	R4,R0
+	TST_BIT_OF BTTN_FLG_MK500		;
+
+	MOV.L	#_POSCANSEL_CMD,R1		;ﾗｯﾁ
+	MOV.W	R4,@R1				;(これだけで準備完了にならないから他のインターロック不要)
+
+BTTN_FLG_MK500:
+
+;	--------- 2016-10-31(2016-05-11)---------------------
+;	位置決めキャンセル機能１
+	MOV.L	#_POSCANSEL_CMD,R1		;340.11 位置決めキャンセル
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF BTTN_FLG_MK510		;
+	MOV.W	#BIT1,R3			;
+BTTN_FLG_MK510:					;(準備未完了にしたいため)
+
+
+;	*******************************************
+;	***	自分CPUのステップ停止 出力	***
+;	*******************************************
+_CPU_AB_CED_ON_OUT:
+	SUB_START
+
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+;	-------------- デバック用カウンタ-----------
+	MOV.L	#_CNT_STOP_DBG_CNT,R1;//2016-10-31(2016-08-22) CHECK
+	MOV.W	@R1,R0
+	ADD	#1,R0
+	MOV.W	R0,@R1
+
+
+
+
+
+
+--------------------<ssa_ctrl.src><>-------------
+[1]
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+;	--------------------2016-07-18
+	.IMPORT		_CPUA_LOT_CHK_FLG		;2016-07-18CHECK
+	.IMPORT		_CPUB_LOT_CHK_FLG		;2016-07-18CHECK
+	.IMPORT		_CPUA_LOT_CNT_FLG		;
+	.IMPORT		_CPUB_LOT_CNT_FLG		;
+	.IMPORT		_CPUA_CONT_MOD_CNT_PV		;
+	.IMPORT		_CPUB_CONT_MOD_CNT_PV		;
+	.IMPORT		_CPUB_DBG_MONI_CNT		;2016-08-22
+
+[2]
+MODE_CTL_100
+
+;	---------- 2010-08-20[制動モード]---------
+	FAR_JSR	#_BRKTST_CTRL,R0	;
+
+
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+;	---------- 2016-10-31(2016-05-11)----------
+	FAR_JSR	#_POSCTRL_CANSEL_RESET,R0
+
+
+[3]
+MODE_CTL_EXIT:				;
+
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+
+	FAR_JSR	#_DEBUG_CMPERR_STSMAK,R0	;2016-08-09
+
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***		2016-08-09 調査用	***
+;	*******************************************
+	.IMPORT	_CPUB_DBG_MONI_STP	;2016-08-12
+_DEBUG_CMPERR_STSMAK			;2016-08-09
+	SUB_START
+	XOR	R0,R0
+	MOV.L	#_STOP_LATCH_B,R1		;
+
+
+
+[3-2]
+RDY_CHK_0200:
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+	FAR_JSR	#_START_CNT_INFO_OUT,R0		;2016-07-22 二重回路対策
+
+
+[4]
+MODE_CNT_STPCHK_050:
+	MOV.L	#_CONT_MOD_CNT_PV,R1		;//連続ﾓｰﾄﾞ・ｶｳﾝﾀ
+	MOV.W	@R1,R0				;
+
+
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+;	-------- 2016-10-31(2016-07-21)(相手cpu状態)----------------
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+	MOV.L	#_CPUB_CONT_MOD_CNT_PV,R1	;2016-07-18CHECK
+	.AELSE
+	MOV.L	#_CPUA_CONT_MOD_CNT_PV,R1	;2016-07-18CHECK
+	.AENDI					;
+	MOV.W	@R1,R4				;
+	OR	R4,R0				;自分+相手cpu
+
+
+MODE_CNT_STPCHK_080:
+
+[5]
+MODE_CNT_STPCHK_080:
+	TST	R0,R0				;ﾀｲﾏ/ｶｳﾝﾀ　UP?
+	TST_BIT_OF MODE_CNT_STPCHK_199		;
+
+
+	MOV.L	#_BTTN_FLG,R1			;
+	MOV.W	@R1,R0				;
+	TST	#BIT2,R0			;両手ON
+	TST_BIT_ON MODE_CNT_STPCHK_300		;<200の方が安全かな>
+
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+
+;	--2016-10-31(2016-07-31)(CMPERR対策)---------
+	MOV.L	#_CMPSTEP_STEP_END,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON MODE_CNT_STPCHK_300		;ﾊﾝﾄﾞｼｪｲｸに入ったら停止指令を参照しない
+
+;[[2016-10-31];	---------- 2015-11-13[行程2重回路対策]---------------
+;[[2016-10-31];;; .AIF _INCCMPERR_FORCE_USE EQ _CMPILE_YES
+;[[2016-10-31]	FAR_JSR	#_API_ENDHAND_SIGCHK,R0	;
+;[[2016-10-31]	TST	R0,R0				;
+;[[2016-10-31]	TST_BIT_ON MODE_CNT_STPCHK_300		;ﾊﾝﾄﾞｼｪｲｸ途中は運転釦を見ない()
+;[[2016-10-31];;; .AENDI
+
+MODE_CNT_STPCHK_150:				;AUTO OFF
+
+
+[6]
+;	-------------------------------------------
+	MOV.L	#_POSHLD1_STOPLATCH,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF MODE_CNT_STPCHK_210		;
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;
+	M_BRA	MODE_CNT_STPCHK_220		;
+
+MODE_CNT_STPCHK_210:				;
+
+	MOV.L	#_CNT_STOP_CMD,R1		;連続停止釦・連続停止指令・ﾛｯﾄｶｳﾝﾄｱｯﾌﾟ
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF MODE_CNT_STPCHK_250		;
+
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+
+;	--2016-10-31(2016-08-11)(CMPERR対策)---------
+	MOV.L	#_CNT_STOP_WAIT_TIM,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON MODE_CNT_STPCHK_250		;ﾊﾝﾄﾞｼｪｲｸに入ったら停止指令を参照しない
+
+
+MODE_CNT_STPCHK_220:				;
+
+	MOV.L	#_STOP_LATCH_B,R1		;//BIT0:ｽﾄｯﾌﾟ釦
+	MOV.W	@R1,R0				;
+	OR	#BIT0,R0			;
+	MOV.W	R0,@R1				;
+
+MODE_CNT_STPCHK_250:
+
+[7]
+_POS_CANSEL_STOP_CHK:
+	SUB_START
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+
+;;;2016-10-31	MOV.L	#_CB_SEQ_CB_COM340,R1		;340.11 位置決めキャンセル
+;;;2016-10-31	MOV.W	@R1,R0				;
+;;;2016-10-31	MOV.W	#BIT11,R4			;
+
+;	-------- 2016-10-31(2016-05-11) ﾗｯﾁﾃﾞｰﾀに変更-----------
+	MOV.L	#_POSCANSEL_CMD,R1		;
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT11,R4			;
+
+
+	TST	R4,R0				;
+	TST_BIT_OF POS_CANSEL_STPCHK_MOV	;
+
+[8]
+LOT_CNTCNT_050:
+
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+;	---------- 2016-07-16 ----------------
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+	MOV.L	#_CPUB_LOT_CHK_FLG,R1		;2016-07-18CHECK
+	.AELSE					;
+	MOV.L	#_CPUA_LOT_CHK_FLG,R1		;2016-07-18CHECK
+	.AENDI					;
+
+	MOV.W	@R1,R0				;
+	AND	#(BIT4+BIT0),R0			;待機点に入って+下降領域に入った
+	CMP/EQ	#(BIT4+BIT0),R0			;待機点に入って+下降領域に入った
+	BT	LOT_CNTCNT_080			;下降領域に入った
+	M_BRA	LOT_CNTCNT_200			;
+
+LOT_CNTCNT_080:					;
+
+
+[9]
+LOT_CNTCNT_200:
+
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+	FAR_JSR	#_CNT_MODE_CNT_SIG_OUT,R0	;2016-07-21
+
+	SUB_END
+	M_RTS
+
+
+[10]
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+;	---------- 二重回路 2016-07-21---------
+_CNT_MODE_CNT_SIG_OUT
+	SUB_START
+
+;	------2016-07-16
+	MOV.L	#_LOT_CHK_FLG,R1		;
+	MOV.W	@R1,R0				;
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;CPUBのﾌﾟﾛｸﾞﾗﾑ領域が不足のため　2014-08-20
+	MOV.L	#_CPUA_LOT_CHK_FLG,R1		;2016-07-18CHECK
+	.AELSE
+	MOV.L	#_CPUB_LOT_CHK_FLG,R1		;2016-07-18CHECK
+	.AENDI					;
+	MOV.W	R0,@R1				;
+
+
+	MOV.L	#_LOT_CNT_FLG,R1		;
+	MOV.W	@R1,R0				;
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;CPUBのﾌﾟﾛｸﾞﾗﾑ領域が不足のため　2014-08-20
+	MOV.L	#_CPUA_LOT_CNT_FLG,R1		;2016-07-18CHECK
+	.AELSE
+	MOV.L	#_CPUB_LOT_CNT_FLG,R1		;2016-07-18CHECK
+	.AENDI					;
+	MOV.W	R0,@R1				;
+
+
+	MOV.L	#_CONT_MOD_CNT_PV,R1		;
+	MOV.W	@R1,R0				;
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;CPUBのﾌﾟﾛｸﾞﾗﾑ領域が不足のため　2014-08-20
+	MOV.L	#_CPUA_CONT_MOD_CNT_PV,R1		;2016-07-18CHECK
+	.AELSE
+	MOV.L	#_CPUB_CONT_MOD_CNT_PV,R1		;2016-07-18CHECK
+	.AENDI					;
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+POS1
+[1]
+INT_POSCTL_0240:
+;	==========(位置決め完了・継続) ==========
+	MOV.L	#_INT_POS_STEP_FLG,R1						;//ｽﾃｯﾌﾟ,段取り共通
+	MOV.W	@R1,R0								;
+	TST	#BIT6,R0							;工程終了
+	TST_BIT_OF INT_POSCTL_0250						;
+	FAR_JSR	#_CYC_END_POS_FLG_SET,R0					;
+	FAR_JSR	#_CYC_END_POS_FLG_CLR,R0					;
+
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+;	---------2016-06-13[3]
+	FAR_JSR	#_DNM_CYCLE_END,R0			;2016-06-13[3]
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_INT_POS_CTL_FLAG,LG=W,BIT=BIT6,WKREG=R1	;位置決め完了
+	M_BRA	INT_POSCTL_0800							;
+
+[2]
+;	=== 継続運転<> ==
+POS_ALLSTEPCTL_550:				;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_DNM_DEBUG_STS1,LG=W,BIT=BIT4,WKREG=R1 ;2012-12-10 DEBUG
+	MEM1_BIT0_TO_BIT7_ANDCLR MEM=_DNM_DEBUG_STS1,LG=W,BIT=~(BIT3+BIT2+BIT1+BIT0),WKREG=R1	;2012-12-10 DEBUG
+
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+;	---------連続及び寸動の継続時の１サイクル終了はここ
+	FAR_JSR	#_DNM_CYCLE_END,R0			;2016-06-13[3]
+
+[3]
+DAI_CHK03_300:
+	FAR_JSR	#_DBG_END_CNT4,R0
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	.IMPORT	_TRD_SIG_SET
+	FAR_JSR	#_TRD_SIG_SET,R0			;2006-11-20
+	.AENDI
+
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+;;;;2016-10-31 	FAR_JSR	#_DNM_CYCLE_END,R0	;
+
+;	------------- 2007-12-12 ---------------
+	FAR_JSR	#_CYCL_DOWN_POS_REF,R0		;
+
+
+[4]
+;	== 非常停止解除(ｻｲｸﾙ運転),1CYCLEND ==
+	MOV.L	#_MODE_SEL,R1			;
+	MOV.W	@R1,R0				;寸動なら１工程へ、連続なら停止なしなら１工程へ
+	TST	#(_W1CNT+_W1INC),R0		;
+	TST_BIT_OF POS_ALLSTEPCTL_600X		;終了
+	
+	TST	#(_W1INC),R0			;
+	TST_BIT_ON POS_ALLSTEPCTL_530		;開始
+
+;	=== 連続 ===
+	MOV.L	#_STOP_LATCH,R1			;//BIT0:ｽﾄｯﾌﾟ釦
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON POS_ALLSTEPCTL_600X		;終了
+
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+;;;2016-10-31	M_BRA	POS_ALLSTEPCTL_550		;(連続のＶﾓｰﾄﾞでの最終工程から最初の行程) 停止付の処理
+
+;	----------- 2016-10-31(2016-07-31)(CMPERR対策)--------
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_HD_CNT_STOP,R1		;
+	.AELSE
+	MOV.L	#_SH4_HD_CNT_STOP,R1		;
+	.AENDI
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF POS_ALLSTEPCTL_550		;(連続のＶﾓｰﾄﾞでの最終工程から最初の行程) 停止付の処理
+;;;;2016-08-24	XOR	R0,R0				;相手の信号を受け付けた場合,相手の信号をOFFしておく
+;;;;2016-08-24	MOV.W	R0,@R1				;不要
+
+POS_ALLSTEPCTL_600X		;終了
+	M_BRA	POS_ALLSTEPCTL_600		;終了
+
+
+POS_ALLSTEPCTL_530:				;
+	MOV.L	#_CB_SEQ_SW_SEL028,R1		;//SEQ 28
+	MOV.W	@R1,R1				;.3
+	MOV.W	#BIT3,R2			;
+	TST	R2,R1
+	TST_BIT_OF POS_ALLSTEPCTL_550		;
+	M_BRA	POS_ALLSTEPCTL_600		;終了 寸動一工程
+
+;	=== 継続運転<> ==
+POS_ALLSTEPCTL_550:				;
+
+
+[5]
+POS_ALLSTEPCTL_400:
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+
+;	--2016-10-31(2016-07-31)(CMPERR対策)---------
+	MOV.L	#_CMPSTEP_STEP_END,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON POS_ALLSTEPCTL_415		;ﾊﾝﾄﾞｼｪｲｸに入ったら停止指令を参照しない
+
+;	--2016-10-31(2016-08-12)(CMPERR対策)---------
+	MOV.L	#_CNT_STOP_WAIT_TIM,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON POS_ALLSTEPCTL_415		;ﾊﾝﾄﾞｼｪｲｸに入ったら停止指令を参照しない
+
+
+
+;	=== ﾌﾙｸﾛｰｽﾞ・回転共にこれで止める　連続・回転・停止なしのみここ以外
+	MOV.L	#_MODE_SEL,R1			;
+
+[6]
+POS_ALLSTEPCTL_415:				;
+
+;	===================================
+;	===	二重回路対策		===
+;	===	工程完了		===
+;	===================================
+;;;;;;;;;;;;;FORCE_STEPEND_HAND200:				;[2015-04-08]
+
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+	MOV.W	#D'5,R0				;CPUAがCPUBの開始に反応しないかどうかの確認(2016-08-26)
+	MOV.L	#_CNT_STOP_WAIT_TIM,R1		;
+	MOV.W	R0,@R1				;ﾊﾝﾄﾞｼｪｲｸ終了後2msecだけ停止釦を検知しない
+
+	FAR_JSR	#_CMPAB_STEP_END_PROC,R0	;

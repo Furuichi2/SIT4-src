@@ -1,0 +1,84 @@
+."D:\SIT4S_MC_99\cpud\CPUD\color_src\ssa_svp_ctrl.inc"
+・  418,13  :     .data.l _SV_DAITY1_C27
+・ 2162,13  :     .data.l _SV_DAITY1_C27
+."D:\SIT4S_MC_99\cpud\H1Fﾕｰｻﾞﾃﾞｰﾀ(改版MC後)\ssa_svp_ctrl.inc"
+・  418,13  :     .data.l _SV_DAITY1_C27
+・ 2162,13  :     .data.l _SV_DAITY1_C27
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssc_tbl_inc.c"
+・ 1047,14  : { 0x1208, 0, &SV_DAITY1_C27, 45, 3, 0, 2, 0, 5, 1, 0, 2, 0 }, 
+・ 3931,14  : { 0x20A3, 0, &SV_DAITY1_C27, 45, 77, 0x0004, 2, 2, 1, 1, 0, 2, 0 }, 
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssc_tbl_inc_BAK.c"
+・  884,14  : { 0x1208, 0, &SV_DAITY1_C27, 45, 3, 0, 2, 0, 5, 1, 0, 2, 0 }, 
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssc_Tlink.c"
+・  335,16  : 		SEQ_PAR_483 = SV_DAITY1_C27;		/* ダイクッション圧力左 　２バイト*/
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssa_from.inc"
+・  637,1   : _SV_DAITY1_C27_INI     .DATA.W	D'0000           ; ダイクッション調節１／＊＊＊＊　未使用　＊＊＊＊／
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssa_from_bak.inc"
+・  637,1   : _SV_DAITY1_C27_INI     .DATA.W	D'0000           ; ダイクッション調節１／＊＊＊＊　未使用　＊＊＊＊／
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssa_from_ext.inc"
+・  636,12  : 		.GLOBAL		_SV_DAITY1_C27_INI		; ダイクッション調節１
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssc_fram.inc"
+・  784,1   : _SV_DAITY1_C27      .SRES        2           ; ダイクッション調節１　→　圧力１
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssc_fram.ext"
+・  784,22  :         .GLOBAL      _SV_DAITY1_C27          ; ダイクッション調節１　→　圧力１
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssc_fram_ext.h"
+・  784,32  :     extern     unsigned short   SV_DAITY1_C27;              /* ダイクッション調節１　→　圧力１ */
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssc_from_ext.h"
+・  636,32  :     extern     unsigned short   SV_DAITY1_C27_INI;          /* ダイクッション調節１ */
+12ファイル、合計15個所見つけました
+
+
+
+
+
+
+
+
+
+."D:\SIT4S_MC_99\cpud\CPUD\color_src\ssa_svp_ctrl.inc"
+・  410,13  :     .data.l _SV_DAIKA1_C27
+・ 2154,13  :     .data.l _SV_DAIKA1_C27
+・ 2202,13  :     .data.l _SV_DAIKA1_C27
+."D:\SIT4S_MC_99\cpud\H1Fﾕｰｻﾞﾃﾞｰﾀ(改版MC後)\ssa_svp_ctrl.inc"
+・  410,13  :     .data.l _SV_DAIKA1_C27
+・ 2154,13  :     .data.l _SV_DAIKA1_C27
+・ 2202,13  :     .data.l _SV_DAIKA1_C27
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssc_Sysset.c"
+・ 1688,2   : 		SV_DAIKA1_C27		= cnv_mm_inch2(SV_DAIKA1_C27*100, 0);			//ダイクッション調節１
+・ 1688,32  : 		SV_DAIKA1_C27		= cnv_mm_inch2(SV_DAIKA1_C27*100, 0);			//ダイクッション調節１
+・ 1692,2   : 		SV_DAIKA1_C27		= cnv_mm_inch2(SV_DAIKA1_C27, 0);			//ダイクッション調節１
+・ 1692,32  : 		SV_DAIKA1_C27		= cnv_mm_inch2(SV_DAIKA1_C27, 0);			//ダイクッション調節１
+・ 1696,2   : 		SV_DAIKA1_C27		= cnv_mm_inch2(SV_DAIKA1_C27*10, 0);			//ダイクッション調節１
+・ 1696,32  : 		SV_DAIKA1_C27		= cnv_mm_inch2(SV_DAIKA1_C27*10, 0);			//ダイクッション調節１
+・ 1873,2   : 		SV_DAIKA1_C27		= cnv_inch_mm2(SV_DAIKA1_C27, 0)/100;			//ダイクッション調節１
+・ 1873,32  : 		SV_DAIKA1_C27		= cnv_inch_mm2(SV_DAIKA1_C27, 0)/100;			//ダイクッション調節１
+・ 1877,2   : 		SV_DAIKA1_C27		= cnv_inch_mm2(SV_DAIKA1_C27, 0);			//ダイクッション調節１
+・ 1877,32  : 		SV_DAIKA1_C27		= cnv_inch_mm2(SV_DAIKA1_C27, 0);			//ダイクッション調節１
+・ 1881,2   : 		SV_DAIKA1_C27		= cnv_inch_mm2(SV_DAIKA1_C27, 0)/10;			//ダイクッション調節１
+・ 1881,32  : 		SV_DAIKA1_C27		= cnv_inch_mm2(SV_DAIKA1_C27, 0)/10;			//ダイクッション調節１
+・ 2003,1   : 	SV_DAIKA1_C27		*= 10;		//ダイクッション調節１
+・ 2104,1   : 	SV_DAIKA1_C27		/= 10;		//ダイクッション調節１
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssc_tbl_inc.c"
+・ 1045,14  : { 0x19E4, 0, &SV_DAIKA1_C27, 42, 1, 0, 4, 2, 2, 1, 0, 2, 0 }, 
+・ 3896,14  : { 0x3063, 0, &SV_DAIKA1_C27, 42, 76, 0x0004, 4, 2, 2, 1, 0, 2, 0 }, 
+・ 4249,14  : { 0x3184, 0, &SV_DAIKA1_C27, 42, 76, 0x0004, 4, 2, 1, 1, 0, 2, 0 }, 
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssc_tbl_inc_BAK.c"
+・  882,14  : { 0x19E4, 0, &SV_DAIKA1_C27, 42, 1, 0, 4, 2, 2, 1, 0, 2, 0 }, 
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssc_Tlink.c"
+・  338,22  : 		SEQ_PAR_485 = (UNs)(SV_DAIKA1_C27 & 0x0000ffff);
+・  339,23  : 		SEQ_PAR_486 = (UNs)((SV_DAIKA1_C27>>16) & 0x0000ffff);		/* ダイクッション調節左　４バイト */
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssa_from.inc"
+・  635,1   : _SV_DAIKA1_C27_INI     .DATA.W	D'0000           ; ダイクッション圧１／＊＊＊＊　未使用　＊＊＊＊／
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssa_from_bak.inc"
+・  635,1   : _SV_DAIKA1_C27_INI     .DATA.W	D'0000           ; ダイクッション圧１／＊＊＊＊　未使用　＊＊＊＊／
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssa_from_ext.inc"
+・  634,12  : 		.GLOBAL		_SV_DAIKA1_C27_INI		; ダイクッション圧１
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssc_fram.inc"
+・  794,1   : _SV_DAIKA1_C27      .SRES        4           ; ダイクッション圧１ →　調節１
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssc_fram.ext"
+・  794,22  :         .GLOBAL      _SV_DAIKA1_C27          ; ダイクッション圧１ →　調節１
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssc_fram_ext.h"
+・  794,32  :     extern     unsigned long    SV_DAIKA1_C27;              /* ダイクッション圧１ →　調節１ */
+."D:\SIT4S_MC_99\cpud\hmi_src\fit_src\ssc_from_ext.h"
+・  634,32  :     extern     unsigned short   SV_DAIKA1_C27_INI;          /* ダイクッション圧１ */
+13ファイル、合計33個所見つけました

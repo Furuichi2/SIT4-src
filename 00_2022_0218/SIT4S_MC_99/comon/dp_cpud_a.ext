@@ -1,0 +1,122 @@
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***		CPUD<=>CPUA専用					***
+;	***								***
+;	***								***
+;	***								***
+;	*******************************************************************
+
+;	***********************************************************
+;	***							***
+;	***	ｼｰｹﾝｽ 入出力MEMORY MAP領域 SH2<-->SH4(SEQ)	***
+;	***							***
+;	***********************************************************
+	.GLOBAL		_SEQ_DP_TOP;	//
+
+;	*******************************************
+;	***					***
+;	***	予備	SHIMA(HMI:V01v)		***
+;	***	サンプリング			***
+;	*******************************************
+	.GLOBAL		_HMI2CB_LDCMD_FLG		; HMI->C/B ﾛｰﾀﾞｺﾏﾝﾄﾞｾｯﾄﾌﾞﾗｸﾞ
+	.GLOBAL		_HMI2CB_LDCMD_DAT		; HMI->C/B ﾛｰﾀﾞｺﾏﾝﾄﾞ
+	.GLOBAL		_CB2HMI_LDCMD_FLG		; C/B->HMI ﾛｰﾀﾞｺﾏﾝﾄﾞｾｯﾄﾌﾞﾗｸﾞ
+	.GLOBAL		_CB2HMI_LDCMD_DAT		; C/B->HMI ﾛｰﾀﾞｺﾏﾝﾄﾞ
+;	*******************************************
+;	***					***
+;	***		画面描画ﾄﾚﾝﾄﾞﾄﾞｯﾄ	***
+;	***					***
+;	*******************************************
+	.GLOBAL		_CPA_SMPDAT2		;24byte*4block=96
+	.GLOBAL		_CPA_SHTDAT2		;20byte*1block=20
+	.GLOBAL		_HND_SMPCNT_FLG2	;0,1,2,3,4 (BIT15=1:NEXT START)(CPUA:SET CPUB:CLR)
+	.GLOBAL		_HND_SHTCNT_FLG2	;0,1	   (BIT15=1:NEXT START)(CPUA:SET CPUB:CLR)
+
+;	===========================================
+;	===		ET1 TOREND DATA		===
+;	===========================================
+	.GLOBAL		_CPUA_SND_INI_ET1	;INITAL CODE REQ
+	.GLOBAL		_CPUA_RCV_INI_ET1	;INITAL CODE ACK
+	.GLOBAL		_CPUA_SND_REQ_ET1	;H'12345678(req)
+	.GLOBAL		_CPUA_RCV_ACK_ET1	;H'87654321(ack)
+	.GLOBAL		_CPUA_SND_REQ_ADR	;TOPADRESS (192K+32K 256Kbyte)
+	.GLOBAL		_CPUA_SND_REQ_CNT	;1~128個
+	.GLOBAL		_CPUA_SND_DAT		;(256byte MAX)
+	.GLOBAL		_CPUA_SND_END		;
+
+;	===========================================
+;	===	ET1==>CPUA(読出 32BYTE)	ｽﾃｰﾀｽRD	===
+;	===	2008-10-20			===
+;	===========================================
+;
+	.GLOBAL		_CPUA_RD_REQ			;CPUA-->ET1 READ REQ
+	.GLOBAL		_CPUA_RD_ACK			;ET1-->CPUA data SET ACK
+	.GLOBAL		_CPUA_RD_CNT			;読出個数
+	.GLOBAL		_CPUA_RD_ADR			;読出ｱﾄﾞﾚｽ
+	.GLOBAL		_CPUA_RD_BUF			;32byte(16w)
+;	===========================================
+;	===	CPUA==>書込2(32byte)	ｽﾃｰﾀｽWR	===
+;	===	2008-10-20			===
+;	===========================================
+	.GLOBAL		_CPUA_WR2_ADR			;STS WR LINE
+	.GLOBAL		_CPUA_WR2_BUF			;32byte(16w)
+	.GLOBAL		_CPUA_WR2_REQ			;
+	.GLOBAL		_CPUA_WR2_ACK			;
+	.GLOBAL		_CPUA_WR2_CNT			;cpub(FA0,FA1)et1(3A0,3A1)
+
+	.INCLUDE	"ssc_dpram_seq.ext"		; gloval define
+
+
+
+
+;	*******************************************
+;	***					***
+;	***	CPUD=>CPUA			***
+;	***	ｽﾅｯﾌﾟｼｮｯﾄﾊﾞﾌｧ			***
+;	***	ｽﾅｯﾌﾟ:KIND=2[]			***
+;	***					***
+;	*******************************************
+;	[480*640*2byte => 614,400ﾊﾞｲﾄ]を[480*640*1byte=307,200ﾊﾞｲﾄ]にする
+	.GLOBAL		_CPUDTOA_DAT1_REQADR	;OFS WORD
+	.GLOBAL		_CPUDTOA_DAT1_REQKND	;種別[BIT15=1:END <-//-> BIT7~BIT0 KIND]
+	.GLOBAL		_CPUDTOA_DAT1_REQCNT	;WORD個数
+	.GLOBAL		_CPUDTOA_DAT1_REQCOD	;WR
+	.GLOBAL		_CPUDTOA_DAT1_ACKCOD	;ACK
+	.GLOBAL		_CPUDTOA_DAT1_DATTOP	;1024byte
+
+;	*******************************************
+;	***					***
+;	***	CPUA=>CPUD			***
+;	***	KOMTRAX 信号用			***
+;	***	2014-09-29			***
+;	*******************************************
+	.GLOBAL		_CPUATOD_1CYCL_SIG	;BIT0=0/BIT0=1 ｾｯﾄCPUA CLR CPUD
+
+;	*******************************************
+;	***					***
+;	***	2014-10-12			***
+;	***					***
+;	***	CPUD=>A	AD2～AD4		***
+;	***					***
+;	*******************************************
+	.GLOBAL		_CPUD_PV_AD2		;移動平均8回後
+	.GLOBAL		_CPUD_PV_AD3		;移動平均8回後
+	.GLOBAL		_CPUD_PV_AD4		;移動平均8回後
+	.GLOBAL		_CPUD_AD_INF		;
+
+
+;	*******************************************
+;	***					***
+;	***	2015-10-01			***
+;	***	100段仕様表示			***
+;	***					***
+;	*******************************************
+	.GLOBAL		_PVP_MOT_ACT_STEP	;実行中の行程No.
+	.GLOBAL		_PVP_MOT_STS		;表示ｽﾃｰﾀｽ
+	.GLOBAL		_PVP_CKLMT_AGL		;角度ﾘﾐｯﾄ値(ｶｰｿﾙ位置時)
+	.GLOBAL		_PVP_CKLMT_SPD		;速度ﾘﾐｯﾄ値(ｶｰｿﾙ位置時)
+
+;-----------------------このﾌｧｲﾙの最終行につける　MAP確認用---------------------
+	.GLOBAL		_CPUA_DP_SIZEHCK_END	;3FFAまで
+

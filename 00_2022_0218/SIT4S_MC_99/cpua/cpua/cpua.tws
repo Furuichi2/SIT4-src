@@ -1,0 +1,37 @@
+[HIMDBVersion]
+2.0
+[DATABASE_VERSION]
+"1.2" 
+[CURRENT_PROJECT]
+"cpua" 
+[GENERAL_DATA]
+[BREAKPOINTS]
+[OPEN_WORKSPACE_FILES]
+"D:\SIT4S_MC_99\comon\cm_equ1.equ" 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_accstep.inc" 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_accupdn_sel.inc" 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_cop1pos.inc" 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_ctrl.src" 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_dtchk.inc" 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_else.src" 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_err1.src" 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_fulc.inc" 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_pcal.src" 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_pos1.src" 
+"D:\SIT4S_MC_99\cpua\cpua\cpua\cpua.c" 
+[WORKSPACE_FILE_STATES]
+"D:\SIT4S_MC_99\comon\cm_equ1.equ" 44 58 653 260 0 5 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_accstep.inc" 0 0 568 210 0 3 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_accupdn_sel.inc" 44 58 568 210 0 1 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_cop1pos.inc" 66 87 560 179 0 11 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_ctrl.src" 66 87 568 210 0 6 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_dtchk.inc" 22 29 568 210 0 4 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_else.src" 22 29 568 210 0 0 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_err1.src" 44 58 653 260 0 10 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_fulc.inc" 22 29 653 260 0 9 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_pcal.src" 0 0 653 260 0 8 
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON\ssa_pos1.src" 66 87 568 210 0 2 
+"D:\SIT4S_MC_99\cpua\cpua\cpua\cpua.c" 0 0 638 245 0 7 
+[LOADED_PROJECTS]
+"cpua" 
+[END]

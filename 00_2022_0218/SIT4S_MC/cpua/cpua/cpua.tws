@@ -1,0 +1,33 @@
+[HIMDBVersion]
+2.0
+[DATABASE_VERSION]
+"1.2" 
+[CURRENT_PROJECT]
+"cpua" 
+[GENERAL_DATA]
+[BREAKPOINTS]
+[OPEN_WORKSPACE_FILES]
+"D:\SIT4S_MC\cpua\cpua\cb_src\COMON\ssa_cbrm.ext" 
+"D:\SIT4S_MC\cpua\cpua\cb_src\COMON\ssa_cntc.inc" 
+"D:\SIT4S_MC\cpua\cpua\cb_src\COMON\ssa_ctrl.src" 
+"D:\SIT4S_MC\cpua\cpua\cb_src\COMON\ssa_else.src" 
+"D:\SIT4S_MC\cpua\cpua\cb_src\COMON\ssa_pos1.src" 
+"D:\SIT4S_MC\cpua\cpua\cb_src\K_SRC\ssa_k.src" 
+"D:\SIT4S_MC\cpua\cpua\cb_src\K_SRC\ssa_ldtd.src" 
+"D:\SIT4S_MC\cpua\cpua\cb_src\K_SRC\ssa_opcl.inc" 
+"D:\SIT4S_MC\cpua\cpua\cb_src\K_SRC\ssa_tdbk.inc" 
+"D:\SIT4S_MC\cpua\cpua\cb_src\Y_src\ssa_scif.src" 
+[WORKSPACE_FILE_STATES]
+"D:\SIT4S_MC\cpua\cpua\cb_src\COMON\ssa_cbrm.ext" 0 0 653 248 0 8 
+"D:\SIT4S_MC\cpua\cpua\cb_src\COMON\ssa_cntc.inc" 0 0 653 260 0 4 
+"D:\SIT4S_MC\cpua\cpua\cb_src\COMON\ssa_ctrl.src" 44 58 586 208 0 2 
+"D:\SIT4S_MC\cpua\cpua\cb_src\COMON\ssa_else.src" 0 0 653 260 0 0 
+"D:\SIT4S_MC\cpua\cpua\cb_src\COMON\ssa_pos1.src" 22 29 653 248 0 9 
+"D:\SIT4S_MC\cpua\cpua\cb_src\K_SRC\ssa_k.src" 22 29 634 158 0 5 
+"D:\SIT4S_MC\cpua\cpua\cb_src\K_SRC\ssa_ldtd.src" 66 87 590 240 0 7 
+"D:\SIT4S_MC\cpua\cpua\cb_src\K_SRC\ssa_opcl.inc" 0 0 612 154 0 6 
+"D:\SIT4S_MC\cpua\cpua\cb_src\K_SRC\ssa_tdbk.inc" 22 29 586 208 0 1 
+"D:\SIT4S_MC\cpua\cpua\cb_src\Y_src\ssa_scif.src" 66 87 586 210 0 3 
+[LOADED_PROJECTS]
+"cpua" 
+[END]

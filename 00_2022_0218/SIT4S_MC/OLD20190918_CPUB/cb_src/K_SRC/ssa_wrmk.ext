@@ -1,0 +1,79 @@
+;	***********************************
+;	***				***
+;	***		ram定義		***
+;	***				***
+;	***********************************
+;	できる限りssc_wrm*.c/ssc_wrm*.h側に定義する事
+;	ssc_wrm*.h のextern文をアセンブラで参照する場合はここに入れる
+;	===========================================
+;	===	ssa_wrmk.src のextern文		===
+;	===========================================
+	.GLOBAL	_KOMA_ASM_RAM_TOP	;
+
+	.INCLUDE	"ssa_cbrm.ext"		; //
+
+	.GLOBAL	_WPV_CB_STS_DAT_TOP			;//異常履歴ﾊﾞﾌｧ 128byte
+	.GLOBAL	_WPV_CB_TRD_DAT_TOP			;//ﾄﾚﾝﾄﾞﾊﾞﾌｧ
+
+	.GLOBAL	_TRD_SMP_DAT1;
+	.GLOBAL	_TRD_SMP_DAT2;
+	.GLOBAL	_TRD_SMP_DAT3;
+	.GLOBAL	_TRD_SMP_DAT4;
+	.GLOBAL	_TRD_SMP_DAT5;
+	.GLOBAL	_TRD_SMP_DAT6;
+	.GLOBAL	_TRD_SMP_DAT7;
+	.GLOBAL	_TRD_SMP_DAT8;
+	.GLOBAL	_TRD_SMP_POINT;
+	.GLOBAL	_TRD_EVENT_COD;
+
+	.GLOBAL	_TRD_EVENT_LATCH;//停止イベントラッチ
+	.GLOBAL	_TRD_POINT_EVENT;//EVENTが発生したﾎﾟｲﾝﾄ
+	.GLOBAL	_TRD_POINT_END;//ここまでｻﾝﾌﾟﾘﾝｸﾞしたら完了
+	.GLOBAL	_TRD_CLR_CMD;//01 CLR
+	.GLOBAL	_TRD_LATE_SV;
+	.GLOBAL	_TRD_LATE_PV;
+	.GLOBAL	_TRD_SMP_FLG;
+
+	.GLOBAL	_TRD_DP_MOV_FLG;
+	.GLOBAL	_TRD_DP_MOV_CNT;
+
+	.GLOBAL	_WPV_CB_STS_POINT			;//最新値ﾎﾟｲﾝﾀの指示位置
+	.GLOBAL	_WPV_CB_TRD_POINT			;//有効なﾃﾞｰﾀ数
+	.GLOBAL	_WPV_POWER_ON_CNT			;//電源投入回数
+
+	.GLOBAL	_HIST_DAT_SEND_DIS;//1:DISENABLE 0:ENABLE
+	.GLOBAL	_HIST_DAT_SEND_COM;//
+	.GLOBAL	_HIST_EVENT_COD;//CALL時に入れる
+	.GLOBAL	_HIST_KEP_SEND_COM;//保留ｺﾏﾝﾄﾞ～ﾘｾｯﾄまでの間 異常履歴指令受付
+
+	.GLOBAL	_MONI_DISP_MOD;
+
+	.GLOBAL	_CNT_GRF_I_DATA	;//64byte*500=32000
+	.GLOBAL	_CNT_GRF_Y_DATA	;//64byte*500=32000
+	.GLOBAL	_CNT_GRF_POINT;
+
+	.GLOBAL	_ROOT_MAIN_INP;
+	.GLOBAL	_ROOT_MAIN_OUT;
+
+	.GLOBAL	_CB_SEQ_CB_COM345X	;
+
+
+;	-----------------------------------------
+;//	*******************************
+;//	***		CPUA	***
+;//	*******************************
+	.GLOBAL	_CPUBX_MEM1_RCVFLG;		//BIT0=1:REQ-ON有 BIT1=1:ACK-ON:
+	.GLOBAL	_CPUBX_MEM1_ENDFLG;		//BIT0:KIND=1()
+	.GLOBAL	_CPUBX_MEM1_BUF;		//KIND=1
+	.GLOBAL	_CPUDX_MEM1_RCVFLG;		//BIT0=1:REQ-ON有 BIT1=1:ACK-ON:
+	.GLOBAL	_CPUDX_MEM1_ENDFLG;		//BIT0:KIND=1()
+
+;	-----------------------------------------
+	.GLOBAL	_CPUBX_SEND_TOPADR;
+	.GLOBAL	_CPUBX_SEND_MAXCNT;
+	.GLOBAL	_CPUBX_SEND_NOWCNT;
+
+	.GLOBAL	_CPUBX_MEM1_SNDEVN;		//EVNT BIT0:KIND
+	.GLOBAL	_CPUBX_MEM1_SNDKND;		//KIND
+	.GLOBAL	_CPUBX_MEM1_SNDFLG;		//
+

@@ -1,0 +1,1058 @@
+;	*******************************************
+;	***					***
+;	***	DIO				***
+;	***					***
+;	*******************************************
+	.LIST OFF
+	.include	"CPU_REG.EXT"
+	.INCLUDE	"ssa_ver1.equ"		; //
+	.include	"cm_equ1.equ"
+	.include	"ssa_seq1.equ"
+	.INCLUDE	"shn_cmd1.MAC"		; 
+
+	.INCLUDE	"ssa_com1.MAC"		; 
+	.INCLUDE	"vect.inc"		; 
+	.INCLUDE	"ssa_out1.mac"		; 
+
+	.INCLUDE	"ssa_had1.equ"		; 
+	.INCLUDE	"ssa_wram.ext"		; 
+	.INCLUDE	"ssa_wrmy.ext"		; 
+	.INCLUDE	"dp_cpud.ext"		; 
+;;;;;	.INCLUDE	"dp_cpuab.inc"		; 
+
+	.LIST ON
+
+
+;	/*	extern	 宣言		*/
+
+	.IMPORT		_dio_top1
+	.IMPORT		_dio_top2
+
+
+	.import		_dpram_top			; SIT4-MC
+	.import		_dpramB_top			; SIT4-MC
+
+
+;	/*	public 宣言		*/
+	.EXPORT		_SR_INIT_SET
+	.EXPORT		_SR_MAIN_SET
+
+
+
+
+;;;;;	.EXPORT		_AD_LOAD			;
+	.EXPORT	_AD_LOADX
+
+
+
+
+
+
+
+;	ﾒﾓﾘEXTERN
+
+	.SECTION	P,CODE			;
+	.ALIGN	4
+
+_SR_Init_ASM	.EQU	H'400000F0
+;	*******************************************
+;	***	SR INITIAL SET			***
+;	*******************************************
+_SR_INIT_SET:
+	SUB_START
+	PUSH_REG1 R0
+
+
+	POP_REG1 R0
+	SUB_END
+	M_RTS
+
+_SR_MAIN_ASM	.EQU	H'40000010
+;	*******************************************
+;	***	SR INITIAL SET			***
+;	*******************************************
+_SR_MAIN_SET:
+	SUB_START
+	PUSH_REG1 R0
+	POP_REG1 R0
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	位置決めLSI現在ｶｳﾝﾀﾗｯﾁ		***
+;	***					***
+;	*******************************************
+
+
+	.SECTION	P,CODE			;
+	.ALIGN	4
+;	*******************************************
+;	***					***
+;	***	位置決めLSIｶｳﾝﾄ動作開始		***
+;	***					***
+;	*******************************************
+
+
+
+;	*******************************************
+;	***					***
+;	***	IOGAの制御用信号初期出力	***
+;	***					***
+;	*******************************************
+
+
+
+	.EXPORT	_IOGA_PON_INIT
+
+;	*******************************************
+;	***					***
+;	***	立花IOGAのイニシャル処理	***
+;	***					***
+;	*******************************************
+_IOGA_PON_INIT:
+	SUB_START
+
+
+	.AIF _SIT_CPU_SEL	EQ	_SIT3_CPUA
+	.AELIF _SIT_CPU_SEL	EQ	_SIT3_CPUB
+	.AELSE
+		.AIF _SIT_CPU_SEL	EQ	_SIT4_CPUB
+	MOV.L	#_dio_top1+_IOGA_PDIR0,R1		; IC21 PORT0
+	MOV.W	#(BIT7|BIT6),R0				;
+	MOV.W	R0,@R1					; BIT7 BIT6 OUTPUT
+	MOV.L	#_dio_top1+_IOGA_PDIR4,R1		; IC21 PORT4
+	MOV.W	#H'00FF,R0				;
+	MOV.W	R0,@R1					; BIT0~7 OUTPUT
+
+	MOV.L	#_dio_top1+_IOGA_PDIR6,R1		; IC21 PORT6 IC21のRXD2Aは入力に設定 2006-12-08 SAITO
+	MOV.W	#H'00EF,R0				; 2006-12-08 SAITO
+	MOV.W	R0,@R1					; BIT0~7 OUTPUT BIT4 INPUT 2006-12-08 SAITO
+
+		.AELSE					; SIT-4 CPUA
+	MOV.L	#_dio_top1+_IOGA_PDIR4,R1		; IC7 PORT4
+	MOV.W	#(BIT5|BIT6),R0				;
+	MOV.W	R0,@R1					; BIT5 BIT6 OUTPUT
+
+	MOV.L	#_dio_top1+_IOGA_PDIR6,R1		; IC7 PORT6 2006-12-08 SAITO
+	MOV.W	#H'00FF,R0				; 2006-12-08 SAITO
+	MOV.W	R0,@R1					; BIT0~7 OUTPUT  2006-12-08 SAITO
+
+		.AENDI
+
+	MOV.L	#_dio_top1+_IOGA_PDIR5,R1		; IC7 IC21 PORT5
+	MOV.W	#H'00FF,R0				;
+	MOV.W	R0,@R1					; BIT0~7 OUTPUT
+
+;2006-12-08 SAITO	MOV.L	#_dio_top1+_IOGA_PDIR6,R1		; IC7 IC21 PORT6 SIT4-CPUA CPUB で分ける
+;2006-12-08 SAITO	MOV.W	#H'00FF,R0				;
+;2006-12-08 SAITO	MOV.W	R0,@R1					; BIT0~7 OUTPUT
+
+	MOV.W	#H'00F0,R0				;
+	MOV.L	#_dio_top1+_IOGA_PDR7,R1		; IC7 IC21 PORT7
+	MOV.L	#_IOGA1_CTRL_DAT1+_IOGA_P7,R2		;
+	MOV.W	R0,@R1					;
+	MOV.W	R0,@R2					; BIT0~4 OUTPUT, OUTPUT OFF
+
+;	=== IC8 IC22 IOGA INITIAL ===
+	MOV.L	#_dio_top2+_IOGA_PDIR5,R1		; PORT5
+	MOV.W	#H'00FF,R0				;
+	MOV.W	R0,@R1					; BIT0~7 OUTPUT
+
+	MOV.L	#_dio_top2+_IOGA_PDIR6,R1		; PORT6
+	MOV.W	#H'00FF,R0				;
+	MOV.W	R0,@R1					; BIT0~7 OUTPUT
+
+	MOV.W	#H'00F0,R0				;
+	MOV.L	#_dio_top2+_IOGA_PDR7,R1		; PORT7
+	MOV.L	#_IOGA2_CTRL_DAT1+_IOGA_P7,R2		;
+	MOV.W	R0,@R1					;
+	MOV.W	R0,@R2					; BIT0~4 OUTPUT, OUTPUT OFF
+
+	.AENDI
+
+	SUB_END
+	M_RTS
+
+
+
+
+;	***********************************
+;	***				***
+;	***	IOGAの入力読み込み	***
+;	***				***
+;	***********************************
+
+;	***********************************
+;	***	入力3度読み		***
+;	***********************************
+;	INPUT
+;;	MOV.L	#_dio_top1+_IOGAi_PA,R1			; 今回値
+;;	MOV.L	#_IOGA1_PA_DT_OLD1,R2			; 1回前
+;;	MOV.L	#_IOGA1_PA_DT_OLD2,R3			; 2回前
+;;	MOV.L	#(_IOGA1_CTRL_DAT1+_IOGAi_PA),R0	; 今のﾃﾞｰﾀ
+;	USE REG R4,R5,R6,R7
+;	OUTPUT	R6 今回から使用するデータ
+
+_DI_READ3_BYTE:
+	SUB_START
+
+	MOV.W	@R0,R7				; 現在使用している入力データ	10101010
+
+	MOV.W	@R3,R4				; 2回前 KEEP		01010101	00000000
+	EXTU.B	R4,R4				;
+	MOV.W	@R2,R5				; 1回前	KEEP		01010101	01010101
+	EXTU.B	R5,R5				;
+
+
+	MOV.W	R5,@R3				; 1回前->2回前
+
+	MOV.W	@R1,R6				; 今回値KEEP		01010101	01010101
+	EXTU.B	R6,R6				;
+	MOV.W	R6,@R2				; 今回値->1回前
+
+	XOR	R5,R6				; R6=今回 XOR 1回前	00000000	00000000
+	XOR	R4,R5				; R5=1回前 XOR 2回前	00000000	01010101
+						; 			
+	OR	R5,R6				; CHANGE DATA		00000000	01010101
+
+	AND	R6,R7				; 			00000000	01010101
+	NOT	R6,R6				;			11111111	10101010
+	AND	R4,R6				;			01010101	00000000
+;;;;;	OR	R7,R6				;			01010101	01010101
+	OR	R6,R7				;			01010101	01010101
+
+	SUB_END
+	M_RTS
+
+
+
+	.EXPORT		_DSET_FLG_MAKE			; 画面切り替えに使うDSET信号をフラグにする
+;	************************************************************* 2006-07-22 SAITO
+;	*****	画面切り替えに使うDSET信号をフラグにする	*****
+;	*************************************************************(HMI部からcall)
+_DSET_FLG_MAKE:
+	SUB_START
+
+	MOV.L	#_DSET_SW_FLG,R6
+
+;-------------------------------------------------------------------------------
+;	<< SIT4-MC >>
+
+	MOV.W	#BIT6,R4		;
+	MOV.L	#_DSET_SW_CPUB,R1
+	MOV.W	@R1,R0			;
+	TST	R4,R0			;
+	BF	DSET_FLG_ON_MC
+
+	MOV.W	#0,R4	;
+	MOV.W	R4,@R6			;
+	M_BRA	DSET_FLG_MK_END		; FLG OFF
+
+DSET_FLG_ON_MC:
+	MOV.W	#BIT10,R4		;
+	MOV.W	R4,@R6			; FLG ON
+	M_BRA	DSET_FLG_MK_END		; FLG OFF
+
+;-------------------------------------------------------------------------------
+
+	MOV.W	#BIT6,R4		;
+	MOV.L	#(_IOGA2_CTRL_DAT1+_IOGA_P4),R0	;
+	MOV.W	@R1,R0			;
+	TST	R4,R0			;
+	BF	DSET_FLG_ON
+
+	MOV.W	#0,R4	;
+	MOV.W	R4,@R6			;
+	M_BRA	DSET_FLG_MK_END		; FLG OFF
+
+DSET_FLG_ON:
+	MOV.W	#BIT10,R4		;
+	MOV.W	R4,@R6			; FLG ON
+DSET_FLG_MK_END:
+
+	SUB_END
+	M_RTS			; 画面切り替えに使うDSET信号をフラグにする
+
+
+
+
+;	*******************************************
+;	***					***
+;	***	Remote INPUT DATA 読込み処理	***
+;	***					***
+;	*******************************************
+
+
+;	*******************************************
+;	***					***
+;	***	Remote OUTPUT DATA 書込み処理	***
+;	***					***
+;	*******************************************
+
+
+;	*********************************************
+;	*****	汎用入力をｼｰｹﾝｽRAMにｾｯﾄ		*****
+;	*********************************************
+
+;	*********************************************
+;	*****	汎用出力をｼｰｹﾝｽRAMにｾｯﾄ		*****
+;	*********************************************
+
+
+
+
+
+;	*************************************************************
+;	*****	クラッチが使用するシーケンスデータを作成	*****
+;	*****			SEQ200~202			*****
+;	*************************************************************
+;	IOGAの入力からクラッチが使用するWORK RAMを作成
+;	DI_LOADのあとに入れること
+
+
+
+
+;	*******************************************
+;	***		メモリ転送WORD		***
+;	*******************************************
+;	ER5: ﾃﾞｰﾀ元 TOP ADRESS ----> ER6:格納先 TOP ADRESS
+;	R4:ﾜｰﾄﾞ個数 64KB
+	.EXPORT		_AD_CNV_INIT
+
+;	*******************************************
+;	***	ＡＤ変換イニシャルプログラム	***
+;	*******************************************
+;	*******************************************
+;	***	ＡＤ変換イニシャルプログラム	***
+;	*******************************************
+_AD_CNV_INIT:
+	SUB_START
+
+;	-------------初期値-----------------
+;	７７２７用はここ
+;;20140109	MOV.L	#_ADCR,R1			;
+;;20140109	MOV.B	@R1,R0				;
+;;20140109	MOV.B	#0,R2				;
+;;20140109	MOV.B	R2,@R0				; ALL CLEAR
+;;20140109
+;;20140109	MOV.L	#_ADCSR,R1			;
+;;20140109	MOV.B	#(BIT4+BIT1),R2			; 4CH SCAN MODE CH2
+;;20140109	MOV.B	R2,@R1				;
+;;20140109
+;;20140109	MOV.L	#_ADCR,R1			;
+;;20140109	MOV.B	@R1,R0
+;;20140109	MOV.B	#BIT5,R0			;
+;;20140109	MOV.B	R0,@R1				;
+;;20140109
+;;20140109	MOV.L	#_ADCSR,R1			;
+;;20140109	MOV.B	@R1,R0
+;;20140109	OR	#BIT5,R0			; 変換スタート
+;;20140109	MOV.B	R0,@R1				;
+
+
+
+	SUB_END
+	M_RTS
+
+
+
+
+
+	.IMPORT	_FPU_R2_MUL_R1_DIV_R4		; R2*R1/R4=R2
+;;;	.IMPORT	_PVP_CPUB_ANAIN			; DPRAM 2003-02-04 SAITO
+
+;**************************
+;***	AD DATA LOAD	***
+;**************************
+;OUTPUT		AD_CNV_DT0	AD 生DATA
+
+
+;	***********************************
+;	***	AD DATA LOAD		***
+;	***				***
+;	***	2011-03-18 CPUB		***
+;	***********************************
+;	-------- 2011-03-18 KOMA --------------
+	.IMPORT	_ADCNV_IN_DATA		;2011-03-18
+;;	.IMPORT	_SH2_AD_DATA		;2011-03-18
+	.EXPORT	_ADCHGREQ_INIT_START		;
+
+
+;	***********************************
+;	***	AD DATA LOAD		***
+;	***	電流4~20mA／電圧0~10V	***
+;	***	2014-01-09 CPUD		***
+;	***********************************
+;	-------- 2014-01-09 SAITO --------
+;;	.GLOBAL		_CPUD_PV_AD2		;移動平均8回後
+;;	.GLOBAL		_CPUD_PV_AD3		;移動平均8回後
+;;	.GLOBAL		_CPUD_PV_AD4		;移動平均8回後
+
+_AD_LOADX:
+	SUB_START
+
+	MOV.L	#_ADCSR,R1			;SIT4_CPUB SH3-7727
+	MOV.B	@R1,R0				;
+	TST	#BIT7,R0			;ADF ﾁｪｯｸ 変換終了？
+	TST_BIT_ON AD_LDX100			;
+
+	TST	#BIT5,R0			;
+	TST_BIT_ON AD_LDX050			;変換中
+
+;	-------変換開始していない	--------
+	FAR_JSR	#_ADCHGREQ_START_CH4,R0		;
+
+AD_LDX050
+	M_BRA	AD_LDX_EXIT			;
+
+
+AD_LDX100
+;	------- 変換完了--------------
+	MOV.L	#_ADCNV_SEL,R1			;
+	MOV.W	@R1,R0				;
+	CMP/EQ	#4,R0				;
+	BF	AD_LDX200			;
+
+;	---------- AD_LDX_CH4-------------------
+	MOV.L	#_ADDRAH,R1			;
+	MOV.L	#_ADDRAL,R4			;
+	MOV.B	@R1,R0				;RAHﾚｼﾞｽﾀ R0=AD 今回値 生DATA LOAD上位BIT9～BIT2
+	MOV.B	@R4,R2				;RALﾚｼﾞｽﾀ R2=AD 今回値 生DATA LOAD BIT7=BIT1 BIT6=BIT0
+	PUSH_REG1 R0				;
+	PUSH_REG1 R2				;
+	FAR_JSR	#_ADCHGREQ_START_CH3,R0		;次の変換を開始する
+	POP_REG1 R2				;
+	POP_REG1 R0				;
+
+	FAR_JSR	#_ADDR_READ,R13			;
+	MOV.L	#_AD4CNV_IN_DATA,R1		;
+	MOV.W	R2,@R1				;
+
+	MOV.L	#_AD4_BUFCNT,R1			; R0
+	MOV.L	#_AD4_AVG_BUF,R6		; 平均BAFTOP
+	MOV.L	#_AD4_AVG_TOTAL,R5		; ADD DATA
+	MOV.L	#_CPUD_PV_AD4,R7
+	FAR_JSR	#_AD_LDX_CALC,R13
+
+	M_BRA	AD_LDX_EXIT			;
+
+
+
+AD_LDX200
+	CMP/EQ	#3,R0				;
+	BF	AD_LDX300			;
+
+
+;	---------- AD_LDX_CH3-------------------
+	MOV.L	#_ADDRDH,R1			;
+	MOV.L	#_ADDRDL,R4			;
+
+	MOV.B	@R1,R0				;RAHﾚｼﾞｽﾀ R0=AD 今回値 生DATA LOAD上位BIT9～BIT2
+	MOV.B	@R4,R2				;RALﾚｼﾞｽﾀ R2=AD 今回値 生DATA LOAD BIT7=BIT1 BIT6=BIT0
+	PUSH_REG1 R0				;
+	PUSH_REG1 R2				;
+	FAR_JSR	#_ADCHGREQ_START_CH2,R0		;次の変換を開始する
+	POP_REG1 R2				;
+	POP_REG1 R0				;
+
+	FAR_JSR	#_ADDR_READ,R13			;
+	MOV.L	#_AD3CNV_IN_DATA,R1		;
+	MOV.W	R2,@R1				;
+	MOV.L	#_AD3_BUFCNT,R1			; R0
+	MOV.L	#_AD3_AVG_BUF,R6		; 平均BAFTOP
+	MOV.L	#_AD3_AVG_TOTAL,R5		; ADD DATA
+	MOV.L	#_CPUD_PV_AD3,R7
+	FAR_JSR	#_AD_LDX_CALC,R13
+
+
+	M_BRA	AD_LDX_EXIT	
+
+
+AD_LDX300
+
+	CMP/EQ	#2,R0				;
+	BF	AD_LDX400			;
+
+;	---------- AD_LDX_CH2-------------------
+	MOV.L	#_ADDRCH,R1			;
+	MOV.L	#_ADDRCL,R4			;
+
+	MOV.B	@R1,R0				;RAHﾚｼﾞｽﾀ R0=AD 今回値 生DATA LOAD上位BIT9～BIT2
+	MOV.B	@R4,R2				;RALﾚｼﾞｽﾀ R2=AD 今回値 生DATA LOAD BIT7=BIT1 BIT6=BIT0
+	PUSH_REG1 R0				;
+	PUSH_REG1 R2				;
+	FAR_JSR	#_ADCHGREQ_START_CH4,R0		;次の変換を開始する
+	POP_REG1 R2				;
+	POP_REG1 R0				;
+
+	FAR_JSR	#_ADDR_READ,R13			;
+	MOV.L	#_AD2CNV_IN_DATA,R1		;
+	MOV.W	R2,@R1				;
+
+
+	MOV.L	#_AD2_BUFCNT,R1			; R0
+	MOV.L	#_AD2_AVG_BUF,R6		; 平均BAFTOP
+	MOV.L	#_AD2_AVG_TOTAL,R5		; ADD DATA
+	MOV.L	#_CPUD_PV_AD2,R7		;
+	FAR_JSR	#_AD_LDX_CALC,R13		;
+
+AD_LDX400
+	FAR_JSR	#_ADCHGREQ_START_CH4,R0		;次の変換を開始する
+
+AD_LDX_EXIT:
+
+
+	SUB_END
+	M_RTS
+
+
+_ADCHGREQ_START_CH2
+	SUB_START
+	MOV.L	#_ADCSR,R1			;
+	MOV.B	#B'00000010,R0			;ADF:(BIT7)=0変換完了
+	MOV.B	R0,@R1				;CH4 -> CH2
+	OR	#BIT5,R0			;ADST(BIT5)変換開始
+	MOV.B	R0,@R1				;
+
+	MOV.L	#_ADCNV_SEL,R1			;
+	MOV.W	#2,R0				;
+	MOV.W	R0,@R1				;
+	MOV.L	#_CPUD_AD_INF,R1		;
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+
+
+_ADCHGREQ_START_CH3
+	SUB_START
+	MOV.L	#_ADCSR,R1			;
+	MOV.B	#B'00000011,R0			;ADF:(BIT7)=0変換完了
+	MOV.B	R0,@R1				;CH2 -> CH3 選択
+	OR	#BIT5,R0			;ADST(BIT5)変換開始
+	MOV.B	R0,@R1				;
+
+	MOV.L	#_ADCNV_SEL,R1			;
+	MOV.W	#3,R0				;
+	MOV.W	R0,@R1				;
+	MOV.L	#_CPUD_AD_INF,R1		;
+	MOV.W	R0,@R1				;
+
+	SUB_END
+	M_RTS
+
+
+_ADCHGREQ_INIT_START		;
+_ADCHGREQ_START_CH4
+	SUB_START
+	MOV.L	#_ADCSR,R1			;
+	MOV.B	#B'00000100,R0			;ADF:(BIT7)=0変換完了
+	MOV.B	R0,@R1				;CH3->CH4
+	OR	#BIT5,R0			;ADST(BIT5)変換開始
+	MOV.B	R0,@R1				;
+
+	MOV.L	#_ADCNV_SEL,R1			;
+	MOV.W	#4,R0				;
+	MOV.W	R0,@R1				;
+	MOV.L	#_CPUD_AD_INF,R1		;
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+	
+
+
+;	***************************************************
+;	***	AD DATA MAKE				***
+;	***	INPUT	R2:AD生値			***
+;	***		R1:ﾊﾞｯﾌｧｶｳﾝﾀのｱﾄﾞﾚｽ		***
+;	***		R5:ﾊﾞｯﾌｧﾄｰﾀﾙ加算ﾃﾞｰﾀのｱﾄﾞﾚｽ	***
+;	***		R6:ﾊﾞｯﾌｧのﾄｯﾌﾟｱﾄﾞﾚｽ		***
+;	***		R7:移動平均後のﾃﾞｰﾀのｱﾄﾞﾚｽ	***
+;	***	output R2:移動平均後			***
+;	***	2014-01-09 CPUD				***
+;	***************************************************
+	.ALIGN	4
+	.EXPORT	_AD_LDX_CALC
+_AD_LDX_CALC:
+	SUB_START
+
+
+
+;	----- 移動平均８回 -----
+	MOV.W	@R1,R0				;R1=_AD_BUFCNT
+	AND	#H'7,R0				; LIMIT
+	SHLL	R0				; *2
+
+	ADD	R0,R6				;R6=_AD_AVG_BUF 平均BAFTOP ADRESS MAKE(input R6)
+	MOV.W	@R6,R3				; OLD LOAD
+	MOV.W	R2,@R6				; NEW STORE
+
+
+	MOV.L	@R5,R4				;_AD_AVG_TOTAL=TOTAL LOAD(input R5)
+	ADD	R2,R4				; R4 = TOTAL+OLD+NEW DATAこのままだとOLD分が多い
+	SUB	R3,R4				;
+	MOV.L	R4,@R5				; TOTAL DATA SAVE
+
+	SHLR	R4				; /2
+	SHLR	R4				; /4
+	SHLR	R4				; /8[移動平均8回] R4=DATA
+
+	SHLR	R0				;
+	ADD	#1,R0				; CNT+1
+	MOV.W	R0,@R1				; COUNTER SAVE
+
+	MOV	R4,R2				; 1024(AD値が1024なら1024) DATA
+
+	MOV.W	R2,@R7				; _PV_AD_DATA:移動平均とった後のAD DATA
+
+
+	SUB_END
+	M_RTS
+
+
+
+;	*******************************************
+;	***	ADDR READ			***
+;	***	INPUT	R0(RAH),R2(RAL)		***
+;	***	OUTPUT	R2:0~3FF		***
+;	***	2014-01-09 CPUD			***
+;	*******************************************
+	.ALIGN	4
+	.EXPORT	_ADDR_READ
+
+_ADDR_READ:
+	SUB_START
+
+;	------ R0:(RAH)
+	SHLL8	R0			;BIT7~BIT0==>BIT15~BIT8
+	MOV.W	#(BIT7+BIT6),R4		;
+	AND	R4,R2			;H'00C0
+	OR	R0,R2
+	SHLR2	R2				;BIT15~BIT6までがﾃﾞｰﾀなので6回右ｼﾌﾄ
+	SHLR2	R2				;
+	SHLR2	R2				;
+
+	MOV.L	#H'000003FF,R3			;0~1023(10V=>3.3V)
+	AND	R3,R2				;
+
+	SUB_END
+	M_RTS
+
+
+
+
+
+;	***********************************
+;	***	AD DATA LOAD		***
+;	***	電流4~20mA／電圧0~10V	***
+;	***	2014-01-09 CPUD		***
+;	***********************************
+;	-------- 2014-01-09 SAITO --------
+;;	.GLOBAL		_CPUD_PV_AD2		;移動平均8回後
+;;	.GLOBAL		_CPUD_PV_AD3		;移動平均8回後
+;;	.GLOBAL		_CPUD_PV_AD4		;移動平均8回後
+
+;;;;_AD_LOADX:
+;;;;	SUB_START
+;;;;
+;;;;
+;;;;;;	MOV.L	#_ADCSR,R1			; SIT4_CPUB SH3-7727
+;;;;;;	MOV.B	@R1,R0				;
+;;;;;;	TST	#BIT7,R0			; ADF ﾁｪｯｸ 変換終了？
+;;;;;;	BT	AD_LDX_EXIT			;NO JUMP
+;;;;
+;;;;	MOV.L	#_ADCNV_SEL,R1
+;;;;	MOV.W	@R1,R0
+;;;;	MOV.W	#2,R2
+;;;;	CMP/EQ	R2,R0
+;;;;	BF	_AD_LDX100
+;;;;
+;;;;_AD_LDX_CH2:
+;;;;	MOV.L	#_ADDRCH,R1			;
+;;;;	MOV.L	#_ADDRCL,R4			;
+;;;;	FAR_JSR	#_ADDR_READ,R13			;
+;;;;	MOV.L	#_AD2CNV_IN_DATA,R1		;
+;;;;	MOV.W	R2,@R1				;
+;;;;
+;;;;	MOV.L	#_AD2_BUFCNT,R1			; R0
+;;;;	MOV.L	#_AD2_AVG_BUF,R6		; 平均BAFTOP
+;;;;	MOV.L	#_AD2_AVG_TOTAL,R5		; ADD DATA
+;;;;;;;2014-10-11	MOV.L	#_PV_AD2_DATA,R7		; 移動平均とった後のAD DATA
+;;;;	MOV.L	#_CPUD_PV_AD2,R7
+;;;;	FAR_JSR	#_AD_LDX_CALC,R13
+;;;;
+;;;;	MOV.L	#_ADCSR,R1			;
+;;;;	MOV.B	#B'00000011,R0			; CH2 -> CH3
+;;;;	MOV.B	R0,@R1				;
+;;;;	FAR_JSR	#_ADCHGREQ_START		;
+;;;;
+;;;;	MOV.L	#_ADCNV_SEL,R1
+;;;;	MOV.W	#3,R0
+;;;;	MOV.W	R0,@R1
+;;;;
+;;;;	M_BRA	_AD_LDX300
+;;;;
+;;;;_AD_LDX100:
+;;;;	MOV.W	#3,R2
+;;;;	CMP/EQ	R2,R0
+;;;;	BF	_AD_LDX_CH4
+;;;;
+;;;;_AD_LDX_CH3:
+;;;;	MOV.L	#_ADDRDH,R1			;
+;;;;	MOV.L	#_ADDRDL,R4			;
+;;;;	FAR_JSR	#_ADDR_READ,R13			;
+;;;;	MOV.L	#_AD3CNV_IN_DATA,R1		;
+;;;;	MOV.W	R2,@R1				;
+;;;;	MOV.L	#_AD3_BUFCNT,R1			; R0
+;;;;	MOV.L	#_AD3_AVG_BUF,R6		; 平均BAFTOP
+;;;;	MOV.L	#_AD3_AVG_TOTAL,R5		; ADD DATA
+;;;;;;;2014-10-11	MOV.L	#_PV_AD3_DATA,R7		; 移動平均とった後のAD DATA
+;;;;	MOV.L	#_CPUD_PV_AD3,R7
+;;;;	FAR_JSR	#_AD_LDX_CALC,R13
+;;;;
+;;;;	MOV.L	#_ADCSR,R1			;BIT7=0にしている
+;;;;	MOV.B	#B'00000100,R0			;CH3 -> CH4
+;;;;	MOV.B	R0,@R1				;
+;;;;
+;;;;	FAR_JSR	#_ADCHGREQ_START		;
+;;;;
+;;;;	MOV.L	#_ADCNV_SEL,R1
+;;;;	MOV.W	#4,R0
+;;;;	MOV.W	R0,@R1
+;;;;
+;;;;	M_BRA	_AD_LDX300
+;;;;
+;;;;_AD_LDX_CH4:
+;;;;	MOV.L	#_ADDRAH,R1			;
+;;;;	MOV.L	#_ADDRAL,R4			;
+;;;;	FAR_JSR	#_ADDR_READ,R13			;
+;;;;	MOV.L	#_AD4CNV_IN_DATA,R1		;
+;;;;;;;;	MOV.W	R2,@R1				;
+;;;;;;;;
+;;;;;;;;	MOV.L	#_AD4_BUFCNT,R1			; R0
+;;;;;;;;	MOV.L	#_AD4_AVG_BUF,R6		; 平均BAFTOP
+;;;;;;;;	MOV.L	#_AD4_AVG_TOTAL,R5		; ADD DATA
+;;;;;;;;2014-10-11	MOV.L	#_PV_AD4_DATA,R7	; 移動平均とった後のAD DATA
+;;;;;;;;	MOV.L	#_CPUD_PV_AD4,R7
+;;;;;;;;	FAR_JSR	#_AD_LDX_CALC,R13
+;;;;;;;;
+;;;;;;;;	MOV.L	#_ADCSR,R1			;
+;;;;;;;;	MOV.B	#B'00000010,R0			; CH4 -> CH2
+;;;;;;;;	MOV.B	R0,@R1				;
+;;;;;;;;
+;;;;;;;;	FAR_JSR	#_ADCHGREQ_START		;
+;;;;;;;;
+;;;;;;;;	MOV.L	#_ADCNV_SEL,R1
+;;;;;;;;	MOV.W	#2,R0
+;;;;;;;;	MOV.W	R0,@R1
+;;;;;;;;
+;;;;;;;;_AD_LDX300:
+;;;;;;;;
+;;;;;;;;	-------- 2011-03-18 KOMA --------------
+;;;;;;;;;	MOV.L	#H'000003FF,R3			;
+;;;;;;;;;	AND	R3,R2				;
+;;;;;;;;;	MOV.L	#_ADCNV_IN_DATA,R1		;
+;;;;;;;;;	MOV.W	R2,@R1				;
+;;;;;;;;;	MOV.L	#_SH2_AD_DATA,R1		;2011-03-18:0~1024 ad 1msec data(10bit)
+;;;;;;;;;	MOV.W	R2,@R1				;
+;;;;;;;;;	MOV.L	#_PVPAB_SH2_AD_DATA,R1		;2011-03-18:0~1024 ad 1msec data(10bit)
+;;;;;;;;;	MOV.W	R2,@R1				;
+;;;;;;;;	----------------------------------------
+;;;;
+;;;;;;;;
+;;;;;;;2014-10-10	MOV.L	#_ADCSR,R1			;
+;;;;;;;2014-10-10	MOV.B	@R1,R0
+;;;;;;;2014-10-10	MOV.B	#B'01111111,R2			; ADF clear
+;;;;;;;2014-10-10	AND	R2,R0
+;;;;;;;2014-10-10	MOV.B	#B'00100000,R2			; ADST ON
+;;;;;;;2014-10-10	OR	R2,R0
+;;;;;;;2014-10-10	MOV.B	R0,@R1				;
+;;;;;;;;
+;;;;;;;;
+;;;;AD_LDX_EXIT:
+;;;;
+;;;;
+;;;;
+;;;;	SUB_END
+;;;;	M_RTS
+
+
+
+
+
+
+
+
+
+
+
+
+;;;;;_ADDR_READ:
+;;;;;	SUB_START
+;;;;;
+;;;;;;;	MOV.L	#_ADDRCH,R1			;
+;;;;;;;	MOV.L	#_ADDRDH,R1			;
+;;;;;;;	MOV.L	#_ADDRAH,R1			;
+;;;;;
+;;;;;	MOV.B	@R1,R0				;RAHﾚｼﾞｽﾀ R0=AD 今回値 生DATA LOAD上位BIT9～BIT2
+;;;;;	EXTU.B	R0,R0
+;;;;;	SWAP.B	R0,R0
+;;;;;	MOV	R0,R2
+;;;;;
+;;;;;;;	MOV.L	#_ADDRCL,R4			;
+;;;;;;;	MOV.L	#_ADDRDL,R4			;
+;;;;;;;	MOV.L	#_ADDRAL,R4			;
+;;;;;	MOV.B	@R4,R0				;RALﾚｼﾞｽﾀ R2=AD 今回値 生DATA LOAD BIT7=BIT1 BIT6=BIT0
+;;;;;	AND	#B'11000000,R0
+;;;;;	OR	R0,R2
+;;;;;	SHLR2	R2				;BIT15~BIT6までがﾃﾞｰﾀなので6回右ｼﾌﾄ
+;;;;;	SHLR2	R2				;
+;;;;;	SHLR2	R2				;
+;;;;;
+;;;;;	MOV.L	#H'000003FF,R3			;0~1023(10V=>3.3V)
+;;;;;	AND	R3,R2				;
+;;;;;
+;;;;;	SUB_END
+;;;;;	M_RTS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;	*******************************************
+;	***		メモリ転送WORD		***
+;	*******************************************
+;	ER5: ﾃﾞｰﾀ元 TOP ADRESS ----> ER6:格納先 TOP ADRESS
+;	R4:ﾜｰﾄﾞ個数 64KB
+_WORD_MEM_MOV64K:
+	SUB_START			;
+
+	PUSH_REG1 R0
+	PUSH_REG1 R1
+	PUSH_REG1 R2
+	PUSH_REG1 R3
+	PUSH_REG1 R4
+	PUSH_REG1 R5
+	PUSH_REG1 R6
+
+	MOV.L	#1,R1			;
+	MOV.L	#0,R0			;
+	MOV.L	#2,R2			;
+
+WORD_MEMMOV64K_LOOP:
+	CMP/EQ	R0,R4			;
+	BT	WORD_MEMMOV64K_END	;
+
+	MOV.W	@R5+,R3			;
+	MOV.W	R3,@R6			;
+	ADD	R2,R6			; ADR+2
+	SUB	R1,R4			; CNT+1
+
+	M_BRA	WORD_MEMMOV64K_LOOP	;
+
+WORD_MEMMOV64K_END:
+
+	POP_REG1 R6			;AA
+	POP_REG1 R5			;AA
+	POP_REG1 R4			;AA
+	POP_REG1 R3			;AA
+	POP_REG1 R2			;AA
+	POP_REG1 R1			;AA
+	POP_REG1 R0			;AA
+
+	SUB_END				;
+	M_RTS
+
+
+
+
+
+
+
+
+;	***********************************
+;	***	REMOTE READ ENB SET	***
+;	***********************************
+
+;	***********************************
+;	***	非常停止入力作成	***
+;	***********************************
+
+
+
+;	***********************************
+;	*** 	HC541入力３度読み	***
+;	***********************************
+
+	.import		_KEEP_RY_TOP_CODE		; ﾊﾞｯｸｱｯﾌﾟﾁｪｯｸ用ｺｰﾄﾞ 55H
+	.import		_KEEP_RY_AREA_TOP		; ﾊﾞｯｸｱｯﾌﾟ領域SEQ544～549(6WORD)
+	.import		_KEEP_RY_END_CODE		; ﾊﾞｯｸｱｯﾌﾟﾁｪｯｸ用ｺｰﾄﾞ AAH
+
+	.EXPORT		_KEEPRY_DATA_DP_MOV		;
+
+
+_KEEPRY_MAX	.EQU	6				;6WORD 転送
+
+;	***************************************************
+;	***	KEEP RY DATA FeRAM -> DPRAM MOV		***
+;	***************************************************
+;	電源投入時１回
+_KEEPRY_DATA_DP_MOV:
+	SUB_START
+
+	MOV.L	#_KEEP_RY_TOP_CODE,R1			; ﾊﾞｯｸｱｯﾌﾟﾁｪｯｸ用ｺｰﾄﾞ 55H
+	MOV.W	@R1,R0					;
+	MOV.W	#H'0055,R2				;
+	CMP/EQ	R2,R0					; 
+	BF	_KEEPRY_DATA_ERR			; ﾊﾞｯｸｱｯﾌﾟ異常 THEN JUMP
+
+	MOV.L	#_KEEP_RY_END_CODE,R1			; ﾊﾞｯｸｱｯﾌﾟﾁｪｯｸ用ｺｰﾄﾞ AAH
+	MOV.W	@R1,R0					;
+	MOV.W	#H'00AA,R2				;
+	CMP/EQ	R2,R0					; 
+	BF	_KEEPRY_DATA_ERR			; ﾊﾞｯｸｱｯﾌﾟ異常 THEN JUMP
+
+	MOV.L	#_KEEP_RY_AREA_TOP,R5			;FeRAM
+	MOV.L	#(_SEQ_DP_TOP+_SQ544),R6		; DPRAMにSTORE 2008-07-30 SAITO
+	MOV.W	#_KEEPRY_MAX,R4				;6WORD 転送
+
+	FAR_JSR	#_WORD_MEM_MOV64K,R13			; EEPMOV.W
+
+	M_BRA	_KEEPRY_DT_DP_MOV_EXIT			;
+
+_KEEPRY_DATA_ERR:
+	XOR	R0,R0					;
+
+	MOV.L	#(_SEQ_DP_TOP+_SQ544),R6		;DPRAM
+	MOV.W	R0,@R6					;
+	MOV.L	#(_SEQ_DP_TOP+_SQ545),R6		;DPRAM
+	MOV.W	R0,@R6					;
+	MOV.L	#(_SEQ_DP_TOP+_SQ546),R6		;DPRAM
+	MOV.W	R0,@R6					;
+	MOV.L	#(_SEQ_DP_TOP+_SQ547),R6		;DPRAM
+	MOV.W	R0,@R6					;
+	MOV.L	#(_SEQ_DP_TOP+_SQ548),R6		;DPRAM
+	MOV.W	R0,@R6					;
+	MOV.L	#(_SEQ_DP_TOP+_SQ549),R6		;DPRAM
+	MOV.W	R0,@R6					;
+;	===============================================================================================
+
+	MOV.L	#_KEEP_RY_AREA_TOP,R5			;FeRAM
+	MOV.W	R0,@R5					;
+	MOV.L	#_KEEP_RY_AREA_TOP+1*2,R5		;FeRAM
+	MOV.W	R0,@R5					;
+	MOV.L	#_KEEP_RY_AREA_TOP+2*2,R5		;FeRAM
+	MOV.W	R0,@R5					;
+	MOV.L	#_KEEP_RY_AREA_TOP+3*2,R5		;FeRAM
+	MOV.W	R0,@R5					;
+	MOV.L	#_KEEP_RY_AREA_TOP+4*2,R5		;FeRAM
+	MOV.W	R0,@R5					;
+	MOV.L	#_KEEP_RY_AREA_TOP+5*2,R5		;FeRAM
+	MOV.W	R0,@R5					;
+
+
+	MOV.W	#H'0055,R0				;
+	MOV.L	#_KEEP_RY_TOP_CODE,R1			; ﾊﾞｯｸｱｯﾌﾟﾁｪｯｸ用ｺｰﾄﾞ 55H
+	MOV.W	R0,@R1					;
+
+	MOV.W	#H'00AA,R0				;
+	MOV.L	#_KEEP_RY_END_CODE,R1			; ﾊﾞｯｸｱｯﾌﾟﾁｪｯｸ用ｺｰﾄﾞ AAH
+	MOV.W	R0,@R1					;
+
+
+	MOV.L	#_KEEPRY_BKUP_ERR,R1			;
+	MOV.W	#H'FFFF,R0				;
+	MOV.W	R0,@R1					; ERR CODE SET
+
+_KEEPRY_DT_DP_MOV_EXIT:
+
+	SUB_END
+	M_RTS
+
+
+;;;;;	.IMPORT	_KEEPRY_BKUP_FLG	;
+
+	.EXPORT	_KEEPRY_DATA_BAKUP	;
+
+;	***************************************************
+;	***	ｷｰﾌﾟﾘﾚｰﾊﾞｯｸｱｯﾌﾟ 1ms 定周期		***
+;	***	KEEP RY DATA DPRAM -> FeRAM		***
+;	***************************************************
+_KEEPRY_DATA_BAKUP:
+	SUB_START
+
+	MOV.L	#_KEEPRY_BKUP_FLG,R1			;
+	MOV.W	@R1,R0					;
+	MOV.W	#H'00AA,R2				;
+	CMP/EQ	R2,R0					; ﾊﾞｯｸｱｯﾌﾟしてもいい状態？
+	BF	_KEEPRY_DT_BAKUP_EXIT			; だめ THEN EXIT
+
+;;;	MOV.L	#(_SEQ_CARD_RAM+_SQ544),R5		;DPRAM ｺﾒﾝﾄｱｳﾄ 2008-07-30 SAITO
+	MOV.L	#(_SEQ_DP_TOP+_SQ544),R5		;DPRAMにSTORE 2008-07-30 SAITO
+	MOV.L	#_KEEP_RY_AREA_TOP,R6			;FeRAM
+	MOV.W	#_KEEPRY_MAX,R4				;6WORD 転送
+
+	FAR_JSR	#_WORD_MEM_MOV64K,R13			; EEPMOV.W
+
+	MOV.W	#H'0055,R0				;
+	MOV.L	#_KEEP_RY_TOP_CODE,R1			; ﾊﾞｯｸｱｯﾌﾟﾁｪｯｸ用ｺｰﾄﾞ 55H
+	MOV.W	R0,@R1					;
+
+	MOV.W	#H'00AA,R0				;
+	MOV.L	#_KEEP_RY_END_CODE,R1			; ﾊﾞｯｸｱｯﾌﾟﾁｪｯｸ用ｺｰﾄﾞ AAH
+	MOV.W	R0,@R1					;
+
+_KEEPRY_DT_BAKUP_EXIT:
+
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+
+;	***************************************************************
+;	*** CPUAER,CPUBER THEN シーケンス実出力領域ALLOFF(SEQ8～12) ***
+;	***************************************************************
+
+
+
+
+
+
+;	***********************************
+;	***	ＤＡ出力データセット	*** 2003-01-23 SAITO
+;	***********************************
+
+
+
+;	*************************************
+;	*****	パワーダウンの処理	*****
+;	*************************************
+;	SIT-4 MC  ssa_hmi2.srcへ移植
+;///////	.EXPORT		_POWER_DOWN_ACT			; パワーダウンの処理
+;///////_POWER_DOWN_ACT:
+;///////	SUB_START
+;///////
+;///////	SUB_END
+;///////	M_RTS
+
+
+
+
+
+
+	.END

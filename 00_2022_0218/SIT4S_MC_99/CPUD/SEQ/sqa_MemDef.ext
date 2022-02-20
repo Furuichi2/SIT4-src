@@ -1,0 +1,71 @@
+;****************************************************************************************
+;* File Name	: ssa_MemDef.ext
+;* Function	: シーケンス グローバル定義(ワーク)
+;* Author	: Designed by T.Akiba, Coded by T.Akiba
+;* Date		: 2009-11-20 Akiba
+;* Update	: 2010-08-11 Y.Kobayashi(コード整理)
+;* Note		: できる限りssc_Mem.c側に定義する事
+;		: ssc_Mem.h のextern文をアセンブラで参照する場合はここに入れる
+;****************************************************************************************
+
+	.GLOBAL	_SEQ_ASM_RAM_TOP		; ワーク領域TOP
+	
+	.GLOBAL	_SEQ_RUN1_TOP			;
+	.GLOBAL	_SEQ_RUN1			; SEQUENCE RUN CODE AREA
+	.GLOBAL	_SEQ_RUN1_END			; 8000STEP*20BYTE+余力
+	
+	.GLOBAL	_SEQ_RUN2_TOP			;
+	.GLOBAL	_SEQ_RUN2			; SEQUENCE RUN CODE AREA
+	.GLOBAL	_SEQ_RUN2_END			; 8000STEP*20BYTE+余力
+	
+	.GLOBAL	_SEQ_RUN3_TOP			;
+	.GLOBAL	_SEQ_RUN3			; SEQUENCE RUN CODE AREA
+	.GLOBAL	_SEQ_RUN3_END			; 8000STEP*20BYTE+余力
+
+	.GLOBAL	_SEQ_CARD_RAM			; SEQUENCE BIT AREA
+
+	.GLOBAL	_SEQ_TMR_DATA			; SEQUENCE TIMER AREA
+	.GLOBAL	_SEQ_CTR_DATA			; SEQUENCE COUNTER AREA
+	.GLOBAL	_SEQ_SR_FLG			;
+
+	.GLOBAL	_SEQ_CMP_ERR1			; CMP OK = BX:0000 , CMP NG = BX:FFFF
+	.GLOBAL	_SEQ_CMP_ERR_ADR1		;
+	.GLOBAL	_SEQ_ARG1_DATA			; ARG data load
+	.GLOBAL	_SEQ_MRG1_DATA			; MRG data load
+	.GLOBAL	_SEQ_NRG1_DATA			; NRG data load
+	.GLOBAL	_SEQ_DRG1_DATA			; DATA REG data load
+
+	.GLOBAL	_SEQ_CMP_ERR2			; CMP OK = BX:0000 , CMP NG = BX:FFFF
+	.GLOBAL	_SEQ_CMP_ERR_ADR2		;
+	.GLOBAL	_SEQ_ARG2_DATA			; ARG data load
+	.GLOBAL	_SEQ_MRG2_DATA			; MRG data load
+	.GLOBAL	_SEQ_NRG2_DATA			; NRG data load
+	.GLOBAL	_SEQ_DRG2_DATA			; DATA REG data load
+
+	.GLOBAL	_SEQ_CMP_ERR3			; CMP OK = BX:0000 , CMP NG = BX:FFFF
+	.GLOBAL	_SEQ_CMP_ERR_ADR3		;
+	.GLOBAL	_SEQ_ARG3_DATA			; ARG data load
+	.GLOBAL	_SEQ_MRG3_DATA			; MRG data load
+	.GLOBAL	_SEQ_NRG3_DATA			; NRG data load
+	.GLOBAL	_SEQ_DRG3_DATA			; DATA REG data load
+
+	.GLOBAL	_DI_X_TOP1			; X領域ﾜｰｸﾒﾓﾘ1
+	.GLOBAL	_DI_X_TOP2			; X領域ﾜｰｸﾒﾓﾘ2(強制登録/解除SET情報)
+	.GLOBAL	_DO_Y_TOP1			; Y領域ﾜｰｸﾒﾓﾘ1
+	.GLOBAL	_DO_Y_TOP2			; Y領域ﾜｰｸﾒﾓﾘ2(強制登録/解除SET情報)
+	.GLOBAL	_X_PUSH_TOP1			; X領域退避用ﾜｰｸﾒﾓﾘ1
+	.GLOBAL	_X_PUSH_TOP2			; X領域退避用ﾜｰｸﾒﾓﾘ2
+
+	.GLOBAL	_SEQ_CMP_START			; ｺﾝﾊﾟｲﾙ中/異常 = 0 , ｺﾝﾊﾟｲﾙ正常 = 1
+
+	.GLOBAL	_SeqSysStat			; ｽﾃｰﾀｽ情報
+						; 0bit : 起動ﾋﾞｯﾄ(0:停止,1:起動)
+						; 1bit : 停止ﾋﾞｯﾄ(0:起動,1:停止)
+						; 2bit : 重故障ﾋﾞｯﾄ(0:異常なし,1:重故障)
+						; 3bit : 軽故障ﾋﾞｯﾄ(0:異常なし,1:軽故障)
+
+	.GLOBAL	_SEQ_LD_TIMOUT;			; ﾗﾀﾞｰﾂｰﾙ 通信ﾀｲﾑｱｳﾄ
+
+	.GLOBAL	_SEQ_TIM_WK100M;		; 100msﾀｲﾏ起動用ﾜｰｸ
+	.GLOBAL	_SEQ_TIM_WK1000M;		; 1000msﾀｲﾏ起動用ﾜｰｸ
+

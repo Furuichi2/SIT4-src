@@ -1,0 +1,702 @@
+;	***************************************************
+;	***						***
+;	***						***
+;	***	クラッチ定周期処理メイン		***
+;	***						***
+;	***						***
+;	***************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"		; //共通定義:必ず実行ﾌﾟﾛｸﾞﾗﾑにｲﾝｸﾙｰﾄﾞする事
+	.INCLUDE	"shn_cmd1.mac"		; //
+	.INCLUDE	"ssa_kmc1.mac"		; //
+	.INCLUDE	"ssa_pfom.equ"		; //equ定義
+	.INCLUDE	"ssa_khad.equ"		; //equ定義
+	.INCLUDE	"ssa_wrmk.ext"		; //
+	.INCLUDE	"ssa_ver1.equ"		; //
+	
+	.LIST	ON
+
+	.SECTION	P,CODE			;
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 PROGRAM	***
+;	//	***********************************
+	.INCLUDE	"ssa_krom.ext"		; //
+	.IMPORT		_DI_LOAD	;ssa_khad.src(ssa_khd2/ssa_khd4.inc)
+	.IMPORT		_ENC360_LOAD	;
+
+	.IMPORT		_ERR_EMG_INPUT		;ssa_err1.src BIT0 非常停止,VS_ERR,OT
+	.IMPORT		_ERR_EMG_INPUT_SLW1	;
+	.IMPORT		_ERR_EMG_INPUT_SLW2	;
+	.IMPORT		_EMG_PASS_FLG_SET	;
+	
+	.IMPORT		_ERR_SWIN		;ssa_err1.src BIT1 入力論理,ﾊﾞﾙﾌﾞ
+	.IMPORT		_ERR_SRC		;ssa_err1.src BIT2 二重回路
+	.IMPORT		_ERR_CHGSW		;ssa_err1.src BIT3 ﾓｰﾄﾞ変更等
+	.IMPORT		_ERR_EXQ_INPUT		;ssa_err1.src BIT4 急停止ﾚﾍﾞﾙ
+	.IMPORT		_ERR_SFT_INPUT		;ssa_err1.src BIT5 
+	.IMPORT		_ERR_POS_CHEAK		;ssa_err1.src BIT6 位置決め関連
+	.IMPORT		_EMG_STOP		;ssa_err1.src
+	.IMPORT		_EXQ_STOP		;ssa_err1.src
+	.IMPORT		_SFTY_STOP		;ssa_err1.src
+	.IMPORT		_MOTER_MOVING_ERR	;
+	.IMPORT		_ERR_LEV_CLR
+	.IMPORT		_ERR_LEV_SET
+
+
+	.IMPORT		_RESET_CHEAK		;ssa_ctrl.src
+	.IMPORT		_MODE_CHANGE		;ssa_ctrl.src 各ﾓｰﾄﾞ状態作成(非常停止を作成しない[CHGSWで作成])
+	.IMPORT		_MODE_CTRL		;ssa_ctrl.src
+	.IMPORT		_MODE_AREA_MAKE		;ssa_ctrl.src 待機点AREA作成
+
+	.IMPORT		_SELF_CHEAK		;ssa_self.src
+
+	.IMPORT		_SEQ_IN1		;ssa_else1.src
+	.IMPORT		_SEQ_VALV_ON		;ssa_else1.src
+
+	.IMPORT		_OUT_UP_DN_TOTAL_CNT	;
+	.IMPORT		_INT_POS_DATA_REF	;ssa_pos1.src
+	.IMPORT		_POS_LSI_ENC_LOD	;ssa_pos1.src
+	.IMPORT		_ORGIN_POS_PLS_SET1	;ssa_dtmk.src
+
+	.IMPORT		_RNA_POS_MAK		;ssa_had1.src
+	.IMPORT		_CB_SEQ_DATA_MAKE1	;ssa_else.src
+	.IMPORT		_DAI_POS_ERR_POSCHK	;ssa_else.src
+	.IMPORT		_DAI_HOSEI1_CTRL	;ssa_else.src
+	.IMPORT		_NOW_INC_DIG_MAK	;ssa_dtmk.src
+	.IMPORT		_NOW_RNA_DIG_MAK	;ssa_scal.src
+	.IMPORT		_NOW_INCPLS_CHG_MM_MAK	;ssa_scal.src
+
+	.IMPORT		_ERR_ACT1		;異常処理 2002-08-23 SAITO
+	.IMPORT		_UP_AREA_INPCHK		;ssa_else
+	.IMPORT		_UP_AREA_INP360ENCCHK	;
+	.IMPORT		_STOPPING_TIM_CHK
+	
+	.IMPORT		_MOTOR_MOV_STOP_CHK	;ssa_else
+
+;;;pg容量確保[2012-03-06]	.IMPORT		_SMPLE_HIST_DATA_SET1	;SSA_TDBK.SRC
+;;;pg容量確保[2012-03-06]	.IMPORT		_SMPLE_HIST_CLR		;
+
+	.IMPORT		_OUT_PLS_SPD_CALC	;2003-07-01 ssa_pos1.SRC
+	.IMPORT		_ENC_PLS_SPD_CALC	;2003-07-01 ssa_pos1.SRC
+	.IMPORT		_LINK_CLANK_DIG_MAK	;2003-07-09
+
+;;;pg容量確保[2012-03-06]	.IMPORT		_TRD_SMP_INT_MAIN	;
+
+	.IMPORT		_KAJYUU_REFLASH		;2004-07-05
+	.IMPORT		_LSA_ERRCLR_INI		;2006-07-16 SSA_ERR1.SRC
+
+	.IMPORT		_DNM_MATH_ELSE_DAT_MAKE	;2009-10-07下振子
+
+	.IMPORT		_RNA_ERR_RSTCHK		;2008-11-11
+
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+
+	.IMPORT		_VAIBU_CTRL		;2010-08-23 加振動制御(ssa_kjyu.inc)
+	.IMPORT		_SLID_ALM_ELSE_CHK	;2011-03-22 ｽﾗｲﾄﾞ関連ﾁｪｯｸ　SSA_ELSE1.SRC
+	.IMPORT		_INSERT_TEACH_POS	;2011-08-01
+	.IMPORT		_TRQ_OVERHEAT_CALC	;2012-09-25
+	.IMPORT		_POSITIONER_DAIHAITO	;
+
+	.AENDI
+
+
+	.IMPORT		_BRKTMCAL_MAIN		;2012-03-06
+	.IMPORT		_CPU_DEBUG_MONITOR	;2013-06-20
+
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 MEMORY,HARD	***
+;	//	***********************************
+	.GLOBAL		_SH2_STEP_NO		;工程二重回路ﾁｪｯｸ用
+	.GLOBAL		_SH4_STEP_NO		;
+
+	.GLOBAL		_SH4_POS_STS1	;上記信号 SH4==> WRITE SH2 ==>BIT7 CLR
+	.GLOBAL		_SH4_CMP_STS1	;(二重化異常信号 203同様      生)
+	.GLOBAL		_SH4_CMP_STS2	;(二重化異常信号 BIT0位置決中 生)
+
+	.GLOBAL		_SH2_POS_STS1	;上記信号 SH2==> WRITE SH4 ==>BIT7 CLR
+	.GLOBAL		_SH2_CMP_STS1	;(二重化異常信号 273同様      生)
+	.GLOBAL		_SH2_CMP_STS2	;(二重化異常信号 BIT8位置決中 生)
+
+
+;	//	***********************************
+;	//	***	PUBLIC 宣言 PROGRAM	***
+;	//	***********************************
+	.EXPORT		_CB_INT_MAIN	;ｸﾗｯﾁ制御
+
+;	*******************************************
+;	***					***
+;	***	クラッチの定周期メイン制御	***
+;	***	1msec				***
+;	*******************************************
+;
+_CB_INT_MAIN:
+	SUB_START
+	PUSH_ALL
+
+	.AIF	_CB_CPU_SEL EQ _CB_CPUA
+;	*** ﾘﾆｱｾﾝｻ受信ﾃﾞｰﾀ取り込み ***
+	.IMPORT	_RCIVE2_READ			;2msec(受信ﾃﾞｰﾀ)
+	.IMPORT	_SEND2_SEND			;2msec(送信)
+	FAR_JSR	#_RCIVE2_READ,R0		;2msec(受信ﾃﾞｰﾀ)
+	FAR_JSR	#_SEND2_SEND,R0			;2msec(送信)
+	.AENDI
+
+;	*******************************************
+;	***	定周期処理まにあわない異常検出	***
+;	*******************************************
+	mov.l	#_pass_err_flg1,r1					;//異常ﾙｰﾁﾝ(電源投入時)
+	mov.w	@r1,r0							;
+	cmp/eq	#-1,r0							;
+	bt	CB_INT_MN_0050						;
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB214,LG=W,BIT=(BIT5),WKRG1=R1,WKRG2=R4	;SEQ ADD
+	MOV.W	#H'2145,R4		;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0							;
+CB_INT_MN_0050:									;
+	mov.l	#_pass_err_flg2,r1						;//制御ﾙｰﾁﾝ
+	mov.w	@r1,r0									;
+	cmp/eq	#-1,r0									;
+	bt	CB_INT_MN_0100								;
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB214,LG=W,BIT=(BIT5),WKRG1=R1,WKRG2=R4	;
+	MOV.W	#H'2145,R4		;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0								;
+CB_INT_MN_0100:										;
+	M_BRA	CB_INT_MN_0110
+CB_INT_MN_0110
+
+	xor	r0,r0
+	mov.l	#_pass_err_flg1,r1	;//異常ﾙｰﾁﾝ
+	mov.w	r0,@r1			;
+	FAR_JSR	#_CPU_A_B_STS_IF,R0	;
+	M_BRA	CB_INT_MN_0150		;
+CB_INT_MN_0150:				;
+
+
+	MOV.L	#_ORG_PRESET_TIM,R5	;
+	MOV.W	@R5,R0			;
+	TST	R0,R0			;
+	TST_BIT_OF CB_INT_MNORG_050	;
+	ADD	#-1,R0			;
+	MOV.W	R0,@R5			;
+	FAR_JSR	#_ORGIN_POS_PLS_SET1,R0	;ssa_dtmk.src
+	FAR_JSR	#_LSA_ERRCLR_INI,R0	;2006-07-16
+CB_INT_MNORG_050:
+
+;;	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+;;	MOV.L	#_INT1MS_SCAN_05MS1,R1	;
+;;	MOV.W	@R1,R0			;
+;;	TST	R0,R0			;
+;;	TST_BIT_ON CPUB_SCAN_050
+;;	.AENDI
+;;
+;;	FAR_JSR	#_CB_SEQ_DATA_MAKE1,R0	;
+;;
+;;CPUB_SCAN_050:
+
+;	-----------------------------------------------------------
+;	---	EMG+SLID調整時に処理短縮(CPUBの表示ため)	---
+;	-----------------------------------------------------------
+;;まだやらない	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+;;まだやらない	FAR_JSR	#_SILD_SIG_MAK,R0	;2013-07-22
+;;まだやらない	.AENDI
+;;まだやらない
+;;まだやらない	MOV.L	#_EMG_SCANCUT_FLG,R1	;
+;;まだやらない	MOV.W	@R1,R0			;BIT0･･1/2ｽｷｬﾝ
+;;まだやらない	TST	#BIT0,R0		;
+;;まだやらない	TST_BIT_ON CB_INT_MNJMP_100	;
+
+	FAR_JSR	#_RNA_POS_MAK,R0	;できるだけ同一ﾀｲﾐﾝｸﾞで読み出す
+	FAR_JSR	#_POS_LSI_ENC_LOD,R0	;
+	FAR_JSR	#_ENC360_LOAD,R0	;これは基本的に３つとも200usec
+	FAR_JSR	#_NOW_INC_DIG_MAK,R0		;
+	FAR_JSR	#_NOW_RNA_DIG_MAK,R0		;
+	FAR_JSR	#_NOW_INCPLS_CHG_MM_MAK,R0	;ssa_scal.src
+	FAR_JSR	#_OUT_UP_DN_TOTAL_CNT,R0	;
+
+;	--2009-07-17 add[不具合対策 ﾌﾞﾚｰｷ角度ｵｰﾊﾞ　4]---
+	FAR_JSR	#_LINK_CLANK_DIG_MAK,R0		;
+	M_BRA	CB_INT_MNJMP_100		;2007-11-28
+
+
+CB_INT_MNJMP_100:
+;	=== 2003-07-01 ==
+	FAR_JSR	#_OUT_PLS_SPD_CALC,R0		;時間の次元有り
+	FAR_JSR	#_ENC_PLS_SPD_CALC,R0
+
+	FAR_JSR	#_INT_POS_DATA_REF,R0	;
+	FAR_JSR	#_SEQ_IN1,R0		;指令,SWの取込
+	FAR_JSR	#_DI_LOAD,R0		;(SEQ/SW)
+	FAR_JSR	#_CB_TIME_CNT,R0	;ﾀｲﾏｶｳﾝﾄ 1msec/10msec/100msec
+
+
+;	==============================
+;	------ [2009-10-07下振子]---------
+	FAR_JSR	#_DNM_MATH_ELSE_DAT_MAKE,R0
+
+
+
+
+;	========================================
+;	--------2010-12-08 CPUB-SCAN 短縮-----
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+	FAR_JSR	#_RNA_ERR_RSTCHK,R0		;2008-11-11(ｼｰｹﾝｽからﾘｾｯﾄ)
+	.AENDI					;
+
+	FAR_JSR	#_RESET_CHEAK,R0		;BIT7~BIT15
+						;
+;	=======================================
+
+
+	FAR_JSR	#_ERR_CHGSW,R0		;BIT3 ﾓｰﾄﾞ変更等[ﾀｲﾏなし]
+	FAR_JSR	#_ERR_SFT_INPUT,R0	;BIT5 安全装置[ﾀｲﾏなし]
+	FAR_JSR	#_ERR_EXQ_INPUT,R0	;BIT4 急停止ﾚﾍﾞﾙ[ﾀｲﾏなし]
+
+
+;	------ 2014-09-16 2つは取り出す------------
+	FAR_JSR	#_ERR_EMG_INPUT,R0	;BIT0 非常停止,VS_ERR,OT[ﾀｲﾏなし]
+	FAR_JSR	#_ERR_SWIN,R0		;BIT1 LSA異常+相手CPU非常高速性が必要[ﾀｲﾏなし,DEFのみあり]
+
+;	--------2010-12-08 CPUB-SCAN 短縮[CPUB=3msec]-----
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+	MOV.L	#_INT1MS_SCAN_03MS,R1	;
+	MOV.W	@R1,R0			;
+	TST	R0,R0			;
+	TST_BIT_ON CPUB_SCAN_100
+	.AENDI
+
+	MOV.L	#_ERR_LEV_IN2,R5	;
+	FAR_JSR	#_ERR_LEV_CLR,R0
+
+;;;;;;;	FAR_JSR	#_ERR_EMG_INPUT,R0	;BIT0 非常停止,VS_ERR,OT[ﾀｲﾏなし]
+;;;;;;;	FAR_JSR	#_ERR_SWIN,R0		;BIT1 LSA異常+相手CPU非常高速性が必要[ﾀｲﾏなし,DEFのみあり]
+
+	MOV.L	#_ERR_LEV_IN2,R5	;
+	FAR_JSR	#_ERR_LEV_SET,R0
+
+CPUB_SCAN_100:
+
+;	--------2010-12-08 CPUB-SCAN 短縮-----
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+	MOV.L	#_INT1MS_SCAN_05MS2,R1	;
+	MOV.W	@R1,R0			;
+	TST	R0,R0			;
+	TST_BIT_ON CPUB_SCAN_200
+	.AENDI
+
+	MOV.L	#_ERR_LEV_IN3,R5	;
+	FAR_JSR	#_ERR_LEV_CLR,R0
+
+	FAR_JSR	#_ERR_EMG_INPUT_SLW2,R0		;ビット飛び、通信異常[ﾀｲﾏなし]
+	FAR_JSR	#_ERR_SRC,R0			;BIT2 二重回路[ﾀｲﾏあり 2個OK]
+	FAR_JSR	#_ERR_POS_CHEAK,R0		;BIT6 位置決め関連[ﾀｲﾏなし]
+	FAR_JSR	#_ERR_ACT1,R0			;異常処理 2002-08-23 SAITO
+
+	MOV.L	#_ERR_LEV_IN3,R5	;
+	FAR_JSR	#_ERR_LEV_SET,R0
+
+CPUB_SCAN_200:
+
+;;[[2015-07-14]];	--------2010-12-08 CPUB-SCAN 短縮-----
+;;[[2015-07-14]]	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+;;[[2015-07-14]]	MOV.L	#_INT1MS_SCAN_10MS,R1	;
+;;[[2015-07-14]]	MOV.W	@R1,R0			;
+;;[[2015-07-14]]	TST	R0,R0			;
+;;[[2015-07-14]]	TST_BIT_ON CPUB_SCAN_300
+;;[[2015-07-14]]	.AENDI
+
+	MOV.L	#_ERR_LEV_IN4,R5	;
+	FAR_JSR	#_ERR_LEV_CLR,R0
+
+	FAR_JSR	#_ERR_EMG_INPUT_SLW1,R0		;設定異常[ﾀｲﾏなし]
+
+	MOV.L	#_ERR_LEV_IN4,R5	;
+	FAR_JSR	#_ERR_LEV_SET,R0
+
+CPUB_SCAN_300:
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+	FAR_JSR	#_EMG_PASS_FLG_SET,R0		;2010-12-08 PASS強制ｾｯﾄ
+	.AENDI
+
+	M_BRA	CB_INT_MNJMP_200		;2007-11-28
+
+
+CB_INT_MNJMP_200:
+
+	FAR_JSR	#_MODE_CHANGE,R0	;各ﾓｰﾄﾞ状態作成(非常停止を作成しない[CHGSWで作成])
+	FAR_JSR	#_MODE_AREA_MAKE,R0	;待機点AREA作成
+
+	FAR_JSR	#_SEQ_VALV_ON,R0	;
+	FAR_JSR	#_UP_AREA_INPCHK,R0
+	FAR_JSR	#_UP_AREA_INP360ENCCHK,R0
+
+;;;;	--------2010-12-08 CPUB-SCAN 短縮-----
+;;;;	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+;;;;	FAR_JSR	#_RNA_ERR_RSTCHK,R0		;2008-11-11(ｼｰｹﾝｽからﾘｾｯﾄ)
+;;;;	.AENDI					;
+
+;;;;	FAR_JSR	#_RESET_CHEAK,R0		;BIT7~BIT15
+
+	FAR_JSR	#_DAI_POS_ERR_POSCHK,R0		;
+	FAR_JSR	#_DAI_HOSEI1_CTRL,R0		;CPUA,B必要　手動ﾀﾞｲﾊｲﾄ補正
+	M_BRA	CB_INT_MNJMP_250
+
+CB_INT_MNJMP_250
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+	FAR_JSR	#_SLID_ALM_ELSE_CHK,R0		;2011-03-22
+	FAR_JSR	#_INSERT_TEACH_POS,R0		;2011-08-01
+	FAR_JSR	#_TRQ_OVERHEAT_CALC,R0		;2012-09-25
+	
+	.AENDI					;
+
+
+
+;	--------2010-12-08 CPUB-SCAN 短縮-----
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+	MOV.L	#_INT1MS_SCAN_05MS2,R1	;
+	MOV.W	@R1,R0			;
+	TST	R0,R0			;
+	TST_BIT_ON CPUB_SCAN_500
+	.AENDI
+
+	MOV.L	#_ERR_LEV_IN5,R5	;
+	FAR_JSR	#_ERR_LEV_CLR,R0
+
+	FAR_JSR	#_MOTER_MOVING_ERR,R0	;[ｴﾝｺｰﾀﾞ停止異常の停止測定ﾀｲﾏ///だめ
+
+	MOV.L	#_ERR_LEV_IN5,R5	;
+	FAR_JSR	#_ERR_LEV_SET,R0
+
+CPUB_SCAN_500:
+
+;	--2009-07-17 add[不具合対策 ﾌﾞﾚｰｷ角度ｵｰﾊﾞ2]---
+;;---2009-07-16	FAR_JSR	#_LINK_CLANK_DIG_MAK,R0	;2003-07-09
+
+
+	FAR_JSR	#_STOPPING_TIM_CHK,R0	;
+	FAR_JSR	#_BRKTMCAL_MAIN,R0	;2012-03-06
+	
+	FAR_JSR	#_MOTOR_MOV_STOP_CHK,R0	;ssa_else
+
+;;;pg容量確保[2012-03-06]	FAR_JSR	#_TRD_SMP_INT_MAIN,R0
+
+;	---- 2006-07-14 ----NEW----------
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	.IMPORT	_CPUA_TREND_SMPLING	
+	FAR_JSR	#_CPUA_TREND_SMPLING,R0
+	.AENDI
+
+;	=================================
+	xor	r0,r0
+	mov.l	#_pass_err_flg2,r1	;//制御ﾙｰﾁﾝ
+	mov.w	r0,@r1			;
+	FAR_JSR	#_SELF_CHEAK,R0		;
+
+	FAR_JSR	#_MODE_CTRL,R0		;
+
+;	===== 二重回路対象外ソフト=======
+;	過負荷・タイマカム
+;
+	M_BRA	CB_INT_MNJMP_300		;2007-11-28
+
+
+CB_INT_MNJMP_300:
+
+	DN_TIME LG=W,MEM_ADR=_BASE_TIM010MS	,WKREG1=R1,WKREG2=R2	;10msec 定周期
+	MOV.L	#_BASE_TIM010MS,R5	;
+	MOV.W	@R5,R0			;
+	TST	R0,R0			;
+	TST_BIT_ON CB_INT_CNT010MS_050	;
+
+	MOV.L	#_TIM_CNT010MS_DT,R0		;
+	MOV.W	R0,@R5				;
+	FAR_JSR #_CB_010MSEC_TIME_CNT,R0	;	
+
+;;;;;	-------------- EPﾁｪｯｸ 2013-09-30 ------------
+;;;;;	.IMPORT	_EPSENCER_CHECK
+;;;;;	FAR_JSR	#_EPSENCER_CHECK,R0	;2013-09-30
+
+
+
+CB_INT_CNT010MS_050:				;
+
+	DN_TIME LG=W,MEM_ADR=_BASE_TIM100MS	,WKREG1=R1,WKREG2=R2	;100msec 定周期
+	MOV.L	#_BASE_TIM100MS,R5				;2003-02-22
+	MOV.W	@R5,R0						;
+	TST	R0,R0						;
+	TST_BIT_ON CB_INT_CNT100MS_050				;
+	MOV.L	#_TIM_CNT100MS_DT,R0				;
+	MOV.W	R0,@R5
+	FAR_JSR #_CB_100MSEC_TIME_CNT,R0
+
+CB_INT_CNT100MS_050:
+
+	FAR_JSR	#_KAJYUU_REFLASH,R0
+
+;	--------2010-12-08 CPUB-SCAN 短縮-----
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+
+	FAR_JSR	#_VAIBU_CTRL,R0		;加振動制御
+	FAR_JSR	#_POSITIONER_DAIHAITO,R0
+
+	.AENDI
+
+
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+	MOV.L	#_INT1MS_SCAN_05MS1,R1	;
+	MOV.W	@R1,R0			;
+	TST	R0,R0			;
+	TST_BIT_ON CPUB_SCAN_600
+	.AENDI
+
+	FAR_JSR	#_CB_SEQ_DATA_MAKE1,R0	;
+
+CPUB_SCAN_600:
+
+;	------- 2011------------------------
+	.IMPORT	_BIBUN_DATA_MAKE	;
+	FAR_JSR	#_BIBUN_DATA_MAKE,R0
+
+;	====== 2014-02-20 外部運転釦============--
+	.IMPORT	_EXT_DRVBTTN_MODE	;
+	FAR_JSR	#_EXT_DRVBTTN_MODE,R0	;
+
+
+
+	MOV.W	#H'FFFF,R0		;
+	mov.l	#_pass_err_flg2,r1	;//制御ﾙｰﾁﾝ
+	mov.w	r0,@r1			;
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+	.IMPORT	_CBB_STS_BKUP_SAVE	;
+	FAR_JSR	#_CBB_STS_BKUP_SAVE,R0	;2011-09-14 ﾊﾞｯｸｱｯﾌﾟ
+	.AENDI
+
+
+	FAR_JSR	#_CPU_DEBUG_MONITOR,R0	;2013-06-20
+
+
+;	======== 2013-07-18 ﾒｲﾝｽｷｬﾝ測定(CPUBの表示処理時間用) ====
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	FAR_JSR	#_CPU_MAIN_SCAN_CALC,R0	;cpubのﾒｲﾝ時間測定
+	.AENDI
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;di1_cb_ctl1[4];//+0:DI(使用)+1　+2()　+3(生) 運転釦(200.*)
+;di2_cb_ctl2[4];//+0:DI(使用)+1　+2()　+3(生) LSA,WT1~3(201.*)
+;di3_cb_inp1;//+0:遮光、ﾌｨｰﾄﾞﾊﾞｯｸ(202)
+;dq1_cb_out1;//+0:制御出力(203)
+
+;	*******************************************
+;	***					***
+;	***	クラッチ定周期タイマ		***
+;	***					***
+;	*******************************************
+	.EXPORT	_CB_TIME_CNT		;
+_CB_TIME_CNT:
+	SUB_START
+
+;	===== ﾘｾｯﾄ処理 =====
+	DN_TIME LG=W,MEM_ADR=_reset_dly_tim	,WKREG1=R1,WKREG2=R2	;
+
+;	==== 起動部===
+	DN_TIME LG=W,MEM_ADR=_SAME_TIM		,WKREG1=R1,WKREG2=R2	;運転同時釦
+	DN_TIME LG=W,MEM_ADR=_SET_UP_TIM	,WKREG1=R1,WKREG2=R2	;ｾｯﾄｱｯﾌﾟ
+
+;	==== 位置決め部 ====
+;;;;2014-05-30 個別	DN_TIME LG=L,MEM_ADR=_SDAT_WAIT_PVTIM	,WKREG1=R1,WKREG2=R2	;次運転
+
+
+;	=== SEQ部 2006-11-21==
+;2015-09-06_BRK_SADOU_CHG EQ _CMPILE_YES
+;;2015-09-6廃止	DN_TIME LG=W,MEM_ADR=_SFTY_LOCK_DLYTM		,WKREG1=R1,WKREG2=R2	;(上昇ﾎｰﾙﾄﾞ無効)
+
+
+;2015-09-06_BRK_SADOU_CHG EQ _CMPILE_YES
+;	-------- 2015-07-14 ----------
+;	-------- 位置決め完了[ｲﾝﾎﾟｼﾞ～ﾌﾞﾚ-ｷﾛｯｸ]を遅延させる---
+	DN_TIME LG=W,MEM_ADR=_POS_END_WAIT_TIM		,WKREG1=R1,WKREG2=R2	;
+	DN_TIME LG=W,MEM_ADR=_POS_END_MYUTIG_STOPTIM	,WKREG1=R1,WKREG2=R2	;終了後この時間であれば動力遮断する時間
+	DN_TIME LG=W,MEM_ADR=_POS_END_MYUTIG_KEEPTIM	,WKREG1=R1,WKREG2=R2	;終了後上昇無効を継続する時間
+
+
+;	==== 表示===
+	MOV.L	#_CYCLE_TIME_FLG,R1	;//(ﾌﾗｸﾞON)
+	MOV.W	@R1,R0			;
+	TST	#BIT0,R0		;
+	TST_BIT_OF CB_TIME_CYCL50	;
+	UP_TIME LG=L,MEM_ADR=_CYCLE_TIME_DAT,WKREG1=R1,WKREG2=R2
+CB_TIME_CYCL50:
+
+
+	DN_TIME LG=L,MEM_ADR=_CONT_MOD_TIM_PV	,WKREG1=R1,WKREG2=R2	;連続ﾀｲﾏ1msec
+
+	DN_TIME LG=W,MEM_ADR=_PVX_INPPOS_TIM1	,WKREG1=R1,WKREG2=R2	;連続ﾀｲﾏ1msec
+
+
+;	====== ｾﾙﾌﾁｪｯｸ ====
+	DN_TIME LG=W,MEM_ADR=_SELF_START_WAIT_TM	,WKREG1=R1,WKREG2=R2	;ｾﾙﾌﾁｪｯｸWAIT
+
+;	--- 2006-04-10
+	DN_TIME LG=W,MEM_ADR=_RDY_SFTY_WAIT_TIM	,WKREG1=R1,WKREG2=R2	;
+
+
+	SUB_END
+	M_RTS
+
+	.EXPORT	_CB_010MSEC_TIME_CNT
+_CB_010MSEC_TIME_CNT:
+	SUB_START
+
+	DN_TIME LG=W,MEM_ADR=_TEPA_PLS_ZERO_TIM	,WKREG1=R1,WKREG2=R2	;2011-07-04手パ時間
+
+
+	SUB_END
+	M_RTS
+
+	.EXPORT	_CB_100MSEC_TIME_CNT
+_CB_100MSEC_TIME_CNT:
+	SUB_START
+	DN_TIME LG=W,MEM_ADR=_PVX_AMPERR_TIM1	,WKREG1=R1,WKREG2=R2	;過負荷時間1
+	DN_TIME LG=W,MEM_ADR=_PVX_AMPERR_TIM2	,WKREG1=R1,WKREG2=R2	;過負荷時間2
+	DN_TIME LG=W,MEM_ADR=_PVX_AMPERR_TIM3	,WKREG1=R1,WKREG2=R2	;過負荷時間3
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	二重回路信号ヤリトリ	***
+;	***				***
+;	***********************************   
+	.GLOBAL	_SQ_CBWK_TOP
+
+_CPU_A_B_STS_IF:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_STEP_NO,R6		;
+	MOV.L	#_SH4_POS_STS1,R7		;上記信号 SH4==> WRITE SH2 ==>BIT7 CLR
+	MOV.L	#_SH4_CMP_STS1,R8		;(二重化異常信号 203同様      生)
+	MOV.L	#_SH4_CMP_STS2,R9		;(二重化異常信号 BIT0位置決中 生)
+	.AELSE
+	MOV.L	#_SH2_STEP_NO,R6		;工程二重回路ﾁｪｯｸ用
+	MOV.L	#_SH2_POS_STS1,R7		;上記信号 SH2==> WRITE SH4 ==>BIT7 CLR
+	MOV.L	#_SH2_CMP_STS1,R8		;(二重化異常信号 273同様      生)
+	MOV.L	#_SH2_CMP_STS2,R9		;(二重化異常信号 BIT8位置決中 生)
+	.AENDI
+	MOV.L	#_INT_POS_CTL_STEP,R1		;
+	MOV.W	@R1,R0				;
+	MOV.L	R0,@R6				;SH4/2 STEP_NO
+
+	MOV.L	#_dq1_cb_out1,R1		;
+	MOV.W	@R1,R0				;
+	MOV.W	R0,@R8				;CMP_STS1
+
+
+	XOR	R0,R0				;
+;		0000,0000:IDEL()
+;			BIT0:(INITAL完了)
+;			      BIT0=1で払いﾃﾞｰﾀ作成,起動中
+;			BIT2:減速停止ﾗｯﾁ(払出停止待ち)
+;			BIT3:急停止ﾗｯﾁ(払出停止待ち)
+;			BIT4:
+;			BIT6:位置決め完了(ﾆｱｾﾞﾛ)--->IDELへ
+
+	MOV.L	#_DRV_ACT_FLG,R1		;//運転動作ﾌﾗｸﾞ BIT0:運転中
+	MOV.W	@R1,R0				;
+	AND	#BIT0,R0			;
+
+
+	MOV.L	#_INT_POS_STEP_FLG,R1		;
+	MOV.W	@R1,R2				;BIT0==>BIT8
+	EXTU.B	R2,R2				;
+	SWAP.B	R2,R2				;
+	OR	R2,R0				;
+
+;;;;;2012-10-01	MOV.L	#_SQ_CBWK_TOP+_WKSQCB232,R4	;
+;;;;;2012-10-01	MOV.W	R0,@R4				;上記信号 SH2==> WRITE SH4 ==>BIT7 CLR
+	MOV.W	R0,@R7				;
+	MOV.W	R0,@R9				;(二重化異常信号 BIT8位置決中 生)
+
+;	-------------------------------------
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB254,R4	;
+	MOV.W	R0,@R4				;
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	相手cpu情報の出力情報を読み出す	***
+;	***	2015-03-15			***
+;	*******************************************
+;	ans R0
+	.EXPORT	_API_OTHET_CPU_LOAD_cb_out1
+_API_OTHET_CPU_LOAD_cb_out1
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_CMP_STS1,R1		;(二重化異常信号 273同様      生)
+	.AELSE					;
+	MOV.L	#_SH4_CMP_STS1,R1		;(二重化異常信号 203同様      生)
+	.AENDI					;
+	MOV.W	@R1,R0				;
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	2013-07-22			***
+;	***					***
+;	***					***
+;	*******************************************
+;;まだやらない_SILD_SIG_MAK
+;;まだやらない	SUB_START
+;;まだやらない	XOR	R2,R2			;
+;;まだやらない	MOV.L	#_emg_err_flg,R1	;//異常ﾗｯﾁ
+;;まだやらない	MOV.W	@R1,R0			;
+;;まだやらない	TST	R0,R0			;
+;;まだやらない	TST_BIT_OF SILD_SIGMAK_END	;
+;;まだやらない
+;;まだやらない	MOV.L	#_CB_SEQ_CB_SEL341,R1		;341
+;;まだやらない	MOV.W	@R1,R0				;
+;;まだやらない	TST	#BIT3,R0			;
+;;まだやらない	TST_BIT_OF SILD_SIGMAK_END
+;;まだやらない
+;;まだやらない
+;;まだやらない	MOV.L	#_EMG_SCANCUT_FLG,R1	;
+;;まだやらない	MOV.W	@R1,R0			;BIT0･･1/2ｽｷｬﾝ
+;;まだやらない	ADD	#1,R0			;BIT1･･1/4
+;;まだやらない	AND	#H'0F,R0			;
+;;まだやらない	MOV	R0,R2			;
+;;まだやらない
+;;まだやらない
+;;まだやらないSILD_SIGMAK_END
+;;まだやらない	MOV.L	#_EMG_SCANCUT_FLG,R1	;
+;;まだやらない	MOV.W	R2,@R1			;
+;;まだやらない
+;;まだやらない	SUB_END
+;;まだやらない	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***	cpubのｽｷｬﾝ時間測定		***
+;	***	CPUAが測定する			***
+;	*******************************************
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+;_CPU_MAIN_SCAN_CALC	;
+	.INCLUDE	"ssa_scantim.inc"		; //
+	.AENDI
+
+
+
+	.END

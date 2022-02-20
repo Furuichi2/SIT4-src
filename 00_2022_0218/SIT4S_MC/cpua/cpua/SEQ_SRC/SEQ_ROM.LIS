@@ -1,0 +1,49 @@
+*** H8S,H8/300 ASSEMBLER Ver. 1.0 ***   06/29/02 03:28:21                                                                PAGE     1
+PROGRAM NAME =
+
+    1                             1             .CPU 300HA:20                   ;±ÄÞÊÞÝ½ÄÓ°ÄÞ[CONST],1MÓ°ÄÞASM
+    2 000000                      2             .SECTION        ROM,CODE
+    3                             3     
+    4                             4             .include        "seq_rom.inc"
+    5 000000                      1 I1  _SEQ_EXCEL:
+    6 000000 03010677             2 I1          .DATA.L H'03010677      ;
+    7 000004 06010677             3 I1          .DATA.L H'06010677      ;
+    8 000008 0A0F0677             4 I1          .DATA.L H'0A0F0677      ;
+    9 00000C 020F0677             5 I1          .DATA.L H'020F0677      ;
+   10 000010 30000000             6 I1          .DATA.L H'30000000      ;
+   11 000014 3E000008             7 I1          .DATA.L H'3E000008      ;
+   12 000018 020F0677             8 I1          .DATA.L H'020F0677      ;
+   13 00001C 30000001             9 I1          .DATA.L H'30000001      ;
+   14 000020 3E000009            10 I1          .DATA.L H'3E000009      ;
+   15 000024 02000004            11 I1          .DATA.L H'02000004      ;
+   16 000028 0A010346            12 I1          .DATA.L H'0A010346      ;
+   17 00002C 02010004            13 I1          .DATA.L H'02010004      ;
+   18 000030 0A020346            14 I1          .DATA.L H'0A020346      ;
+   19 000034 02020004            15 I1          .DATA.L H'02020004      ;
+   20 000038 0A030346            16 I1          .DATA.L H'0A030346      ;
+   21 00003C 02060004            17 I1          .DATA.L H'02060004      ;
+   22 000040 02070004            18 I1          .DATA.L H'02070004      ;
+   23 000044 1A0001F4            19 I1          .DATA.L H'1A0001F4      ;
+   24 000048 10000600            20 I1          .DATA.L H'10000600      ;
+   25 00004C 02000600            21 I1          .DATA.L H'02000600      ;
+   26 000050 0A06000C            22 I1          .DATA.L H'0A06000C      ;
+   27 000054 2A000000            23 I1          .DATA.L H'2A000000      ;
+   28                             5     
+   29                             6             .END
+  *****TOTAL ERRORS       0
+  *****TOTAL WARNINGS     0
+*** H8S,H8/300 ASSEMBLER Ver. 1.0 ***   06/29/02 03:28:21                                                                PAGE     2
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+ROM                              ROM      SCT  00000000      2*
+_SEQ_EXCEL                       ROM           00000000      5*
+*** H8S,H8/300 ASSEMBLER Ver. 1.0 ***   06/29/02 03:28:21                                                                PAGE     3
+
+*** SECTION DATA LIST
+
+SECTION                          ATTRIBUTE    SIZE             START
+
+ROM                              REL-CODE    0000058          

@@ -1,0 +1,267 @@
+;	***************************
+;	***	CONST		***
+;	***************************
+
+;	*****	ビット   *****
+BIT0		.EQU    B'00000001	;01H
+BIT1		.EQU	B'00000010   	;02H
+BIT2		.EQU    B'00000100      ;04H
+BIT3		.EQU    B'00001000      ;08H
+BIT4		.EQU    B'00010000      ;10H
+BIT5		.EQU    B'00100000      ;20H
+BIT6		.EQU    B'01000000      ;40H
+BIT7		.EQU    B'10000000      ;80H
+BIT8		.EQU    B'0000000100000000	;0100H
+BIT9		.EQU	B'0000001000000000   	;0200H
+BIT10		.EQU    B'0000010000000000      ;0400H
+BIT11		.EQU    B'0000100000000000      ;0800H
+BIT12		.EQU    B'0001000000000000      ;1000H
+BIT13		.EQU    B'0010000000000000      ;2000H
+BIT14		.EQU    B'0100000000000000      ;4000H
+BIT15		.EQU    B'1000000000000000      ;8000H
+BIT16		.EQU    H'00010000
+BIT17		.EQU    H'00020000
+BIT18		.EQU    H'00040000
+BIT19		.EQU    H'00080000
+BIT20		.EQU    H'00100000
+BIT21		.EQU    H'00200000
+BIT22		.EQU    H'00400000
+BIT23		.EQU    H'00800000
+BIT24		.EQU    H'01000000
+BIT25		.EQU    H'02000000
+BIT26		.EQU    H'04000000
+BIT27		.EQU    H'08000000
+BIT28		.EQU    H'10000000
+BIT29		.EQU    H'20000000
+BIT30		.EQU    H'40000000
+BIT31		.EQU    H'80000000
+
+;	*****	ビット   *****
+NBIT0		.EQU    B'11111110		;NOT 01H
+NBIT1		.EQU	B'11111101   		;02H
+NBIT2		.EQU    B'11111011      	;04H
+NBIT3		.EQU    B'11110111      	;08H
+NBIT4		.EQU    B'11101111      	;10H
+NBIT5		.EQU    B'11011111      	;20H
+NBIT6		.EQU    B'10111111     		;40H
+NBIT7		.EQU    B'01111111     		;80H
+
+NBIT8		.EQU    B'1111111011111111	;NOT 01H
+NBIT9		.EQU	B'1111110111111111	;02H
+NBIT10		.EQU    B'1111101111111111      ;04H
+NBIT11		.EQU    B'1111011111111111      ;08H
+NBIT12		.EQU    B'1110111111111111      ;10H
+NBIT13		.EQU    B'1101111111111111      ;20H
+NBIT14		.EQU    B'1011111111111111      ;40H
+NBIT15		.EQU    B'0111111111111111      ;80H
+
+;	**** ビット操作命令 *****
+XBIT0		.EQU	D'0		;
+XBIT1		.EQU	D'1		;
+XBIT2		.EQU	D'2		;
+XBIT3		.EQU	D'3		;
+XBIT4		.EQU	D'4		;
+XBIT5		.EQU	D'5		;
+XBIT6		.EQU	D'6		;
+XBIT7		.EQU	D'7		;
+
+;	*******************************************
+;	***		sh2/sh3			***
+;	*******************************************
+;	================ WORD ｱｸｾｽ//ﾊﾞｲﾄｱｸｾｽ切替 =========
+L_BYTE		.EQU	1		;
+H_BYTE		.EQU	0		;
+
+;/*	=================================	*/
+
+_CMPILE_YES	.DEFINE		"1"
+_CMPILE_NO	.DEFINE		"0"
+
+_Debug_YES	.DEFINE		"1"	;"_Debug_NO"
+_Debug_NO	.DEFINE		"0"	;yes then abs //no then inc "_Debug_NO"
+
+
+;	***************************************************
+;	***						***
+;	***		ﾊﾞｰｼﾞｮﾝUP完了ﾁｪｯｸﾃﾞｰﾀ		***
+;	***						***
+;	***************************************************
+_VUPCHECK_EQU		.EQU	D'0296433465
+
+;/*	***********************************	*/
+;/*	***				***	*/
+;/*	***	ROM SUM_CODE		***	*/
+;/*	***				***	*/
+;/*	***********************************	*/
+_DUMMY_SUM_CODE		.EQU	H'5AA53CC3
+
+
+
+;	*******************************************
+;	***	2003-07-01 C/B BAKUP		***
+;	*******************************************
+_CB_BAK_SUM_COD1	.EQU	H'5AA51234
+_CB_BAK_SUM_COD2	.EQU	H'A55A4321
+_CB_BAKUP_CMD1		.EQU	H'5678	;BAKUP
+_CB_BAKUP_CMD2		.EQU	H'1234	;1BLK MOVE
+
+_CB_STS_BUF_1BLK	.EQU	64					;1BLK=64byte
+_CB_STS_BUF_BLKMAX	.EQU	8					;8BLK
+_CB_STS_BUF_MAX		.EQU	_CB_STS_BUF_1BLK*_CB_STS_BUF_BLKMAX	;512byte 64*8
+
+
+;;_CB_TRD_DT_LNG		.EQU	4		;DATA LENGTH
+_CB_TRD_DP_CH			.EQU	4		;
+
+
+_CB_TRD_SMP_CNT		.EQU	128		;個数
+_CB_TRD_BEFORE		.EQU	96		;96点が前
+_CB_TRD_BUF_MAX		.EQU	4*4*128		;2048byte 4byte*4ch*128個
+
+_CB_TRD_DP_1CNT		.EQU	8		;8個 128/16
+_CB_TRD_BUF_DP_MAX	.EQU	4*4*8		;128byte 4byte*4CH*8個
+
+;	=== 2003-07-14 ===
+;;;_TRD_WORK_1CH_BUF	.EQU	_CB_TRD_BUF_MAX	;1CH で2048ﾊﾞｲﾄまで確保
+
+;	==== 2004-01-27 ===
+;;2018-11-11 _CB_ERR_INFO_MEM	.EQU	64		;64byte
+_CB_ERR_INFO_MEM	.EQU	128		;2018-11-11 128byte
+_CB_ERR_INFO_PSIZE	.EQU	8		;8 PAGE 2018-11-11
+
+;	***************************
+;	***	2004-02-19	***
+;	***************************
+;	製品出荷時はYESにすること
+;	不具合再現試験用にNOにする
+;
+;;;;_PLSI_WR_WT_CHG		.DEFINE		"_CMPILE_NO"	;YES:WR WAIT 4CLK(NO 3CLK)
+
+;	===== 出荷YES =====
+_PLSI_WR_WT_CHG		.DEFINE		"_CMPILE_YES"	;YES:WR WAIT 4CLK(NO 3CLK)
+_PLSI_WRITE_WORD	.DEFINE		"_CMPILE_YES"	;YES:LSI WORD(NO LONG)
+_PLSI_ERR_CHK1		.DEFINE		"_CMPILE_YES"	;YES:位置決めLSI異常検知有効
+_PLSI_ERR_CHK2		.DEFINE		"_CMPILE_YES"	;YES:位置決め演算異常検知有効
+_PLSI_ERR_STOP1		.DEFINE		"_CMPILE_YES"	;YES:新規異常検知有効(OVER RUN)
+
+
+;	====	出荷時YES 2004-03-29====
+_REST_PLS_MODFY		.DEFINE		"_CMPILE_YES"	;YES:CPUAに残ﾊﾟﾙｽをあわせる,異常
+;;;;;_MOTION_ERR_CPU_B	.DEFINE		"_CMPILE_YES"	;YES:CPU-Bのﾓｰｼｮﾝ異常関連(1対1にする)
+
+
+
+;	====	出荷時必ず・絶対 "NO" 2004-04-14(絶対NOで出荷)====
+_CPU_A_ERR_STOP		.DEFINE		"_CMPILE_NO"	;YES:CPU-A異常検出をやめる。Bのﾃﾞﾊﾞｯｸ用
+;;;;;_CPU_A_ERR_STOP		.DEFINE		"_CMPILE_YES"	;YES:CPU-A異常検出をやめる。Bのﾃﾞﾊﾞｯｸ用
+
+
+;	====	出荷時必ず・絶対 "NO" 2004-12-20(絶対NOで出荷)====
+_CPU_B_ERR_STOP		.DEFINE		"_CMPILE_NO"	;YES:CPU-B異常検出をやめる。Aのﾃﾞﾊﾞｯｸ用
+_CPU_B_CTRL_STOP	.DEFINE		"_CMPILE_NO"	;YES:CPU-B制御をやめる。Aのﾃﾞﾊﾞｯｸ用
+
+;	==== どうしても回避できない異常====
+_CPUAB_ERR_STOP_CNT	.DEFINE		"_CMPILE_YES"	;
+
+;	***************************
+;	***			***
+;	***	2006-09-19	***
+;	***			***
+;	***************************
+_LSI_SOFT_CAL_ENB	.DEFINE		"_CMPILE_YES"	
+;;_LSI_SOFT_CAL_ENB	.DEFINE		"_CMPILE_NO"	
+
+
+
+;	***************************
+;	***			***
+;	***	2008-09-16	***
+;	***			***
+;	***************************
+_EMG_MINI		.DEFINE		"_CMPILE_YES"	;YES:EMG処理の簡略化
+
+
+;	***************************
+;	***			***
+;	***			***
+;	***			***
+;	***************************
+_CPUB_TBLCURV		.DEFINE		"_CMPILE_YES"	;YES:曲線ﾃｰﾌﾞﾙ(CPUAと同じ) NO:直線タイプ
+;;_CPUB_TBLCURV		.DEFINE		"_CMPILE_NO"	;YES:曲線ﾃｰﾌﾞﾙ(CPUAと同じ) NO:直線タイプ
+
+
+
+
+;	***************************
+;	***			***
+;	***	2013-12-05	***
+;	***			***
+;	***************************
+_MC_FUNC1_NO		.DEFINE		"_CMPILE_NO"	;NO!:異常等の機能をはずす
+
+
+_START_REQ_COD		.EQU	H'9876	;CPUD=>CPUA
+_START_ACK_COD		.EQU	H'4321	;
+
+
+
+
+;	***************************
+;	***			***
+;	***	2014-03-20	***
+;	***			***
+;	***************************
+_KJYU_CLS		.DEFINE		"_CMPILE_YES"	;YES:反転ﾓｰﾄﾞで荷重でのｸﾛｰｽﾞを行う
+
+
+
+
+
+
+
+
+
+;//	***************************
+;//	***	2016-10-31	***
+;//	***************************
+;//	変更箇所確認用	CE2の2重回路対策の修正箇所のMCへの移植
+_PROC_CMPERR_CHG2016	.DEFINE		"_CMPILE_YES"
+
+;//	***********************************
+;//	***	2016-10-31(2016-07-28)	***
+;//	***********************************
+;	[行程異常検知による二重回路異常　早めの検知]
+;;;_DEBUG_CMPERR_DEBUG	.DEFINE		"_CMPILE_YES"	;出荷時は必ずNO!
+_DEBUG_CMPERR_DEBUG	.DEFINE		"_CMPILE_NO"	;出荷時は必ずNO!
+
+;//	***********************************
+;//	***	2016-10-31(2016-07-28)	***
+;//	***********************************
+;;;_DEBUG_AUTO_START	.DEFINE		"_CMPILE_YES"	;出荷時はできればnoとする
+_DEBUG_AUTO_START	.DEFINE		"_CMPILE_NO"	;出荷時はできればnoとする
+
+;//	***************************
+;//	***	2015-07-08	***
+;//	***************************
+;;_DEBUG_SERVO_PLS_OFF	.DEFINE		"_CMPILE_YES"	;出荷時は必ずNO!
+_DEBUG_SERVO_PLS_OFF	.DEFINE		"_CMPILE_NO"	;出荷時は必ずNO!
+
+
+
+;	***************************************************
+;	***	出荷してはいけないデバック情報		***
+;	***	バージョン表示をわざと変にする		***
+;	***************************************************
+;	MC:S01a ->X
+
+ .AIF	_DEBUG_CMPERR_DEBUG EQ _CMPILE_YES	;出荷時は必ずNO!
+_DEBUG_SET_ERR_VER	.DEFINE		"_CMPILE_YES"
+ .AELSE
+    .AIF	_DEBUG_AUTO_START EQ _CMPILE_YES	;出荷時はできればno
+_DEBUG_SET_ERR_VER	.DEFINE		"_CMPILE_YES"
+    .AELSE
+_DEBUG_SET_ERR_VER	.DEFINE		"_CMPILE_NO"
+    .AENDI
+
+
+ .AENDI

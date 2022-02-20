@@ -1,0 +1,259 @@
+;	***************************************************
+;	***						***
+;	***						***
+;	***	ET1-SOFT(Ý’è“]‘—,ÄÚÝÄÞ“]‘—,mem,dp)	***
+;	***						***
+;	***						***
+;	***************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"		; //‹¤’Ê’è‹`:•K‚¸ŽÀsÌßÛ¸Þ×Ñ‚É²Ý¸Ù°ÄÞ‚·‚éŽ–
+	.INCLUDE	"ssa_ver1.equ"		; //
+	.INCLUDE	"ssa_ver2.equ"		; //
+	.INCLUDE	"shn_cmd1.mac"		; 
+	.INCLUDE	"ssa_kmc1.mac"		; //
+	.INCLUDE	"com_et1.equ"		; //
+	.LIST	ON
+
+;	===========================================
+;	===		ET1 TOREND DATA		===
+;	===========================================
+	.IMPORT		_CPUA_SND_INI_ET1	;INITAL CODE REQ
+	.IMPORT		_CPUA_RCV_INI_ET1	;INITAL CODE ACK
+	.IMPORT		_CPUA_SND_REQ_ET1	;H'12345678(req)
+	.IMPORT		_CPUA_RCV_ACK_ET1	;H'87654321(ack)
+	.IMPORT		_CPUA_SND_REQ_ADR	;TOPADRESS (192K+32K 256Kbyte)
+	.IMPORT		_CPUA_SND_REQ_CNT	;1~128ŒÂ
+	.IMPORT		_CPUA_SND_DAT		;(256byte MAX)
+	.IMPORT		_CPUA_SND_END		;
+
+
+	.EXPORT		_ET1_CPU_MAIN_MOV
+	.EXPORT		_ET1_CPU_HIGH_MOV
+
+
+;	***************************************************
+;	***						***
+;	***						***
+;	***	ET1-SOFT(Ý’è“]‘—,ÄÚÝÄÞ“]‘—)		***
+;	***	(high:TREND)				***
+;	***						***
+;	***						***
+;	***************************************************
+	.SECTION	P,CODE			;
+	.ALIGN	4					;
+_ET1_CPU_HIGH_MOV
+	SUB_START
+	MOV.L	#_ET1_INITAL_FLG,R1			;
+	MOV.W	@R1,R0					;
+	TST	#BIT6,R0				;
+	TST_BIT_OF ET1_CPU_HIGHMV_END			;
+
+;	---------- ET1/CPUA ÃÞ°À“]‘—--------------
+	FAR_JSR	#_ET1_TRD_DATA_SEND,R0
+
+ET1_CPU_HIGHMV_END
+	SUB_END
+	M_RTS
+
+;	***************************************************
+;	***						***
+;	***						***
+;	***	ET1-SOFT(Ý’è“]‘—,ÄÚÝÄÞ“]‘—)		***
+;	***	(MAIN:SV)				***
+;	***						***
+;	***************************************************
+_ET1_CPU_MAIN_MOV
+	SUB_START
+
+	MOV.L	#_ET1_INITAL_FLG,R1			;
+	MOV.W	@R1,R0					;
+	TST	#BIT6,R0				;
+	TST_BIT_ON ET1_CPU_MNMV_100			;
+	FAR_JSR	#_ET1_INITAL_CHK,R0			;
+	M_BRA	ET1_CPU_MNMV_END			;
+ET1_CPU_MNMV_100:
+	FAR_JSR	#_ET1_INIEND_MOVE,R0			;
+
+
+	MOV.L	#_CPU_REQ_DAT_FLG,R1			;
+	MOV.W	@R1,R0					;
+	TST	R0,R0					;
+	TST_BIT_ON ET1_CPU_MNMV_200			;
+	MOV.L	#_CPU_REQ_DAT_FLG,R1			;
+	MOV.W	#BIT0,R0				;
+	MOV.W	R0,@R1					;
+ET1_CPU_MNMV_200:					;
+	NOP
+
+ET1_CPU_MNMV_END:
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***						***
+;	***	INITAL					***
+;	***	(MAIN)					***
+;	***						***
+;	***************************************************
+_ET1_INITAL_CHK:
+	SUB_START
+	MOV.L	#_ET1_INITAL_FLG,R1			;
+	MOV.W	@R1,R0					;
+	TST	#BIT6,R0				;
+	TST_BIT_ON ET1_INIT_CHK_END			;
+
+	MOV.L	#_CPUA_RCV_INI_ET1,R1		;
+	MOV.L	@R1,R0					;
+	MOV.L	#_ET1_INIT_ACK,R4			;
+	CMP/EQ	R4,R0					;
+	BF	ET1_INIT_CHK_END			;–¢Š®—¹
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_ET1_INITAL_FLG,LG=W,BIT=BIT6,WKREG=R1	;bit-set
+
+ET1_INIT_CHK_END:
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	INITAL-CODE		***
+;	***				***
+;	***********************************
+_ET1_INIEND_MOVE:
+	SUB_START
+
+	MOV.L	#_ET1_INIT_REQ,R0
+	REG_MOV_TO_MEM	DST_ADR=_CPUA_SND_INI_ET1,L1=L,DT_REG=R0,WKREG1=R1
+
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	Input R2		***
+;	***				***
+;	***********************************
+
+
+;	***********************************
+;	***				***
+;	***	CPUA-->ET1		***
+;	***		DATA,TRIG	***
+;	***				***
+;	***********************************
+;	128byte’PˆÊ‚Å7FFF‚Ü‚Å“]‘—‚·‚é
+	.IMPORT	_TREND_INFO_TOP
+	.IMPORT	_TREND_DATA_END
+
+_CPUA_ET1_BLK		.EQU	_ET1_CPUAB_BUF_MAX			;
+_CPUA_ET1_ADRMAX	.DEFINE	"(_TREND_DATA_END-_TREND_INFO_TOP)"	;
+_CPUA_ET1_OFFSET	.EQU	H'8000					;
+
+_ET1_TRD_DATA_SEND:
+	SUB_START
+	MOV.L	#_CPU_REQ_DAT_FLG,R1			;
+	MOV.W	@R1,R0					;
+	TST	R0,R0					;
+	TST_BIT_ON ET1_TRD_DATASEND_100			;
+	M_BRA	ET1_TRD_DATASEND_EXT			;
+ET1_TRD_DATASEND_100:
+	TST	#BIT1,R0				;
+	TST_BIT_ON ET1_TRD_DATASEND_150			;
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_CPU_REQ_DAT_FLG,LG=W,BIT=BIT1,WKREG=R1	;bit-set
+	XOR	R0,R0
+	REG_MOV_TO_MEM	DST_ADR=_CPU_REQ_DAT_CNT,L1=L,DT_REG=R0,WKREG1=R1
+	M_BRA	ET1_TRD_DATASEND_EXT			;
+
+ET1_TRD_DATASEND_150:
+	MOV.L	#_CPUA_SND_REQ_ET1,R8			;
+	MOV.L	#_CPUA_RCV_ACK_ET1,R9			;
+	MOV.L	@R8,R0					;
+	MOV.L	@R9,R1					;
+	CMP/EQ	R1,R0					;
+	BF	ET1_TRD_DATASEND_EXT			;NOT EQ.WAIT
+;	-----------------------------------------------
+	MOV.L	#_CPU_REQ_DAT_CNT,R5			;
+	MOV.L	@R5,R2					;
+	MOV.L	#(_CPUA_ET1_ADRMAX/_CPUA_ET1_BLK)+1,R3	;
+	CMP/HI	R2,R3					;R2 < R3
+	BT	ET1_TRD_DATASEND_200			;
+	XOR	R2,R2					;
+	MOV.L	R2,@R5					;
+	M_BRA	ET1_TRD_DATASEND_900			;
+
+ET1_TRD_DATASEND_200:					;Input R2
+	MOV.L	#_TREND_INFO_TOP,R5			;
+	MOV.W	#_CPUA_ET1_BLK,R3			;256
+	DMULS.L	R2,R3					;CNT*128byte
+	STS.L	MACL,R6					;
+
+	SHLR	R3
+	MOV.L	#_CPUA_SND_REQ_CNT,R1			;
+	MOV.L	R3,@R1					;WORDŒÂ”
+	MOV.L	#_CPUA_SND_REQ_ADR,R1			;
+	MOV.L	#_CPUA_ET1_OFFSET,R4			;
+	ADD	R6,R4					;
+	MOV.L	R4,@R1					;SAVE.ADRESS +8000
+	ADD	R6,R5					;
+	MOV.L	#_CPUA_SND_DAT,R7			;
+
+ET1_TRD_DATASEND_LOP:
+	TST	R3,R3					;
+	TST_BIT_OF ET1_TRD_DATASEND_800			
+	MOV.W	@R5+,R1					;
+	MOV.W	R1,@R7
+	ADD	#2,R7
+	ADD	#-1,R3
+	M_BRA	ET1_TRD_DATASEND_LOP
+
+;	-------------(HAND)---------------------------------
+ET1_TRD_DATASEND_800:
+	XOR	R1,R1
+	MOV.L	@R8,R0					;
+	TST	R0,R0					;
+	TST_BIT_ON ET1_TRD_DATASEND_820			;
+	MOV.L	#_ET1_DATA_COD,R1			;
+ET1_TRD_DATASEND_820:					;
+	MOV.L	R1,@R8					;NEW REQ
+
+	MOV.L	#_CPU_REQ_DAT_CNT,R1			;
+	MOV.L	@R1,R0					;
+	ADD	#1,R0					;
+	MOV.L	R0,@R1					;
+	M_BRA	ET1_TRD_DATASEND_EXT
+
+;	-------------(END)---------------------------------
+ET1_TRD_DATASEND_900:
+	XOR	R0,R0								;
+	REG_MOV_TO_MEM	DST_ADR=_CPU_REQ_DAT_FLG,L1=W,DT_REG=R0,WKREG1=R1	;
+	XOR	R0,R0								;
+	REG_MOV_TO_MEM	DST_ADR=_CPU_REQ_DAT_CNT,L1=L,DT_REG=R0,WKREG1=R1	;
+										;
+ET1_TRD_DATASEND_EXT:
+	SUB_END
+	M_RTS
+
+
+
+;	***************************************************
+;	***						***
+;	***						***
+;	***		wkram’è‹`			***
+;	***						***
+;	***						***
+;	***************************************************
+	.SECTION	Bwkram1,DATA			;
+	.ALIGN	4					;
+	.EXPORT		_ET1_INITAL_FLG			; SHIMA(h1f‚Í2009-08-13)
+_ET1_INITAL_FLG		.SRES	2			;
+
+	.ALIGN	4					;
+_CPU_REQ_DAT_CNT	.SRES	4			;
+_CPU_REQ_DAT_FLG	.SRES	2			;
+_CPUA_REQ_OLD		.SRES	4			;
+
+	.END

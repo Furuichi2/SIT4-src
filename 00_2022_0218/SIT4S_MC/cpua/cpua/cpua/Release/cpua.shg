@@ -1,0 +1,5 @@
+-cpu=sh4
+-output="D:\SIT4S_MC\cpua\cpua\cpua\Release\cpua.lib"
+-noinline
+-gbr=auto
+-head=runtime,new,ctype,math,mathf,stdarg,stdio,stdlib,string,ios,complex,cppstring

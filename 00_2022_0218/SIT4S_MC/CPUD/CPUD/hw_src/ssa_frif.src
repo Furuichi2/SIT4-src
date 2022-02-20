@@ -1,0 +1,296 @@
+;	*************************************************************************************
+;	*****										*****
+;	*****	フラッシュＲＯＭインターフェース					*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+	.LIST	OFF
+	.include	"cm_equ1.equ"
+	.include	"CPU_REG.EXT"
+	.include	"shn_cmd1.mac"
+	.include	"ssa_com1.mac"
+	.include	"dp_cpuab.ext"
+	.include	"ssa_svup.equ"
+	.INCLUDE	"ssa_had1.equ"		;2006-10-19 SAITO WDTﾏｸﾛ変更に伴い追加
+	.INCLUDE	"ssa_wrmy.ext"		;2006-10-19 SAITO WDTﾏｸﾛ変更に伴い追加
+	.import		_dio_top2		;2006-10-19 SAITO WDTﾏｸﾛ変更に伴い追加
+	.LIST	ON
+
+	.import		_from_top;
+	.import		_CB_TABLE;
+;//SHIMA02/09/26	.import		_SCI0_MAIN;
+
+	.import		_VUP_PRG_NG_DAT
+
+
+	.SECTION	PvupsciROM,CODE,ALIGN=4
+
+;	-------------------------------------------------------------------------------------
+;	-----										-----
+;	-----	ＦＲＯＭへ消去コマンド発行						-----
+;	-----										-----
+;	-----	Input	: R13 <- _from_top						-----
+;	-----	Input	: R8 <- 消去するｾｸﾀの先頭ｱﾄﾞﾚｽ					-----
+;	-----										-----
+;	-------------------------------------------------------------------------------------
+	.EXPORT	_FROM_ERASE_CMND
+_FROM_ERASE_CMND:
+	SUB_START
+
+	MOV.W	#FROM_ERS_CMND_DAT0,R1
+	MOV.L	#FROM_ERS_CMND_ADR0,R2
+	SHLL	R2
+	ADD	R13,R2
+	MOV.W	R1,@R2					; 消去ｺﾏﾝﾄﾞ1(AAH)
+	NOP
+
+	MOV.W	#FROM_ERS_CMND_DAT1,R1
+	MOV.L	#FROM_ERS_CMND_ADR1,R2
+	SHLL	R2
+	ADD	R13,R2
+	MOV.W	R1,@R2					; 消去ｺﾏﾝﾄﾞ2(55H)
+	NOP
+
+	MOV.W	#FROM_ERS_CMND_DAT2,R1
+	MOV.L	#FROM_ERS_CMND_ADR2,R2
+	SHLL	R2
+	ADD	R13,R2
+	MOV.W	R1,@R2					; 消去ｺﾏﾝﾄﾞ3(80H)
+	NOP
+
+	MOV.W	#FROM_ERS_CMND_DAT3,R1
+	MOV.L	#FROM_ERS_CMND_ADR3,R2
+	SHLL	R2
+	ADD	R13,R2
+	MOV.W	R1,@R2					; 消去ｺﾏﾝﾄﾞ4(AAH)
+	NOP
+
+	MOV.W	#FROM_ERS_CMND_DAT4,R1
+	MOV.L	#FROM_ERS_CMND_ADR4,R2
+	SHLL	R2
+	ADD	R13,R2
+	MOV.W	R1,@R2					; 消去ｺﾏﾝﾄﾞ5(55H)
+	NOP
+
+	MOV.W	#FROM_ERS_DAT11,R1			; 
+	MOV.W	R1,@R8					; 消すｾｸﾀの先頭ｱﾄﾞﾚｽに消去ｺﾏﾝﾄﾞﾗｲﾄ
+	NOP
+
+	SUB_END
+	M_RTS
+
+
+;	-------------------------------------------------------------------------------------
+;	-----										-----
+;	-----	ＦＲＯＭ消去時のポーリング						-----
+;	-----										-----
+;	-----	Input	: R8 <- 消去先頭ｱﾄﾞﾚｽ						-----
+;	-----										-----
+;	-------------------------------------------------------------------------------------
+	.EXPORT	_FROM_ERASE_POLLINKG
+_FROM_ERASE_POLLINKG:
+	SUB_START
+
+_FEP_050:
+	_WDT_CLR					; R0,R10 USED
+
+	MOV.W	@R8,R0
+	MOV	R0,R1
+	AND	#BIT7,R0
+	TST	R0,R0
+	BF	_FEP_END
+
+	MOV	R1,R0
+	AND	#BIT5,R0
+	TST	R0,R0
+;///////	BT	_FEP_050
+	BF	_FEP_100
+
+;//SHIMA02/09/26	PUSH_ALL
+;//SHIMA02/09/26	FAR_JSR	#_SCI0_MAIN,R0				; 常時通信ができるように！！
+;//SHIMA02/09/26	POP_ALL
+	M_BRA	_FEP_050
+
+_FEP_100:
+	MOV.W	@R8,R0
+	AND	#BIT7,R0
+	TST	R0,R0
+	BF	_FEP_END
+
+_FEP_ERR:						; FROM消去ｴﾗｰ
+;//SIT4-MC	_WDT_CLR					; R0,R10 USED
+;//SIT4-MC	M_BRA	_FEP_ERR
+	MOV.L	#1,R0
+	MOV.L	#_VUP_PRG_NG_DAT,R10
+	MOV.W	R0,@R10
+
+_FEP_END:
+	SUB_END
+	M_RTS
+
+
+;	-------------------------------------------------------------------------------------
+;	-----										-----
+;	-----	ＦＲＯＭへ書込みコマンド発行						-----
+;	-----										-----
+;	-----	Input	: R13 <- _from_top						-----
+;	-----										-----
+;	-------------------------------------------------------------------------------------
+	.EXPORT	_FROM_WRITE_CMND
+_FROM_WRITE_CMND:
+	SUB_START
+
+	MOV.W	#FROM_WR_CMND_DAT0,R1
+	MOV.L	#FROM_WR_CMND_ADR0,R2
+	SHLL	R2
+	ADD	R13,R2
+	MOV.W	R1,@R2
+	NOP
+
+	MOV.W	#FROM_WR_CMND_DAT1,R1
+	MOV.L	#FROM_WR_CMND_ADR1,R2
+	SHLL	R2
+	ADD	R13,R2
+	MOV.W	R1,@R2
+	NOP
+
+	MOV.W	#FROM_WR_CMND_DAT2,R1
+	MOV.L	#FROM_WR_CMND_ADR2,R2
+	SHLL	R2
+	ADD	R13,R2
+	MOV.W	R1,@R2
+	NOP
+
+	SUB_END
+	M_RTS
+
+
+;	-------------------------------------------------------------------------------------
+;	-----										-----
+;	-----										-----
+;	-----	ＦＲＯＭ書込み時のポーリング						-----
+;	-----										-----
+;	-----										-----
+;	-------------------------------------------------------------------------------------
+	.EXPORT	_FROM_WRITE_POLLINKG
+_FROM_WRITE_POLLINKG:
+	SUB_START
+
+_FWP_050:
+	_WDT_CLR					; R0,R10 USED
+
+	MOV.L	#H'80,R4
+;///////	MOV.W	@R7,R1
+	MOV.W	@R8,R1
+	MOV	R1,R3
+	AND	R4,R3					; 読んだD7
+
+	MOV	R0,R2
+	AND	R4,R2					; 書込んだD7
+
+	CMP/EQ	R2,R3					; 書込んだD7と読んだD7同じ？
+	BT	_FWP_END				; はい
+
+	MOV.L	#H'20,R4
+	MOV	R1,R3
+	AND	R4,R3					; 読んだD5
+	TST	R3,R3					; 読んだD5が１？
+	BF	_FWP_100				; はい
+
+;//SHIMA02/09/26	PUSH_ALL
+;//SHIMA02/09/26	FAR_JSR	#_SCI0_MAIN,R0				; 常時通信ができるように！！
+;//SHIMA02/09/26	POP_ALL
+	M_BRA	_FWP_050				; いいえ
+
+_FWP_100:
+	MOV.L	#H'80,R4
+;///////	MOV.W	@R7,R1
+	MOV.W	@R8,R1
+	MOV	R1,R3
+	AND	R4,R3					; 読んだD7
+
+	CMP/EQ	R2,R3					; 書込んだD7と読んだD7同じ？（再チェック）
+	BT	_FWP_END				; はい
+
+_FWP_ERR:						; WRITEｴﾗｰ
+;//SIT4-MC	_WDT_CLR					; R0,R10 USED
+;//SIT4-MC	M_BRA	_FWP_ERR
+	MOV.L	#2,R0
+	MOV.L	#_VUP_PRG_NG_DAT,R10
+	MOV.W	R0,@R10
+
+_FWP_END:
+	SUB_END
+	M_RTS
+
+
+;	-------------------------------------------------------------------------------------
+;	-----										-----
+;	-----										-----
+;	-----	ＦＲＯＭセクタテーブル							-----
+;	-----										-----
+;	-----										-----
+;	-------------------------------------------------------------------------------------
+	.ALIGN	4
+	.EXPORT	_FROM_SECT_TBL_SIZE
+_FROM_SECT_TBL_SIZE:
+	.DATA.L		H'4
+
+	.ALIGN	4
+	.EXPORT	_FROM_SECT_TBL
+	.EXPORT	_FROM_SECT_TBL00
+	.EXPORT	_FROM_SECT_TBL_KATA
+	.EXPORT	_FROM_SECT_TBL_SYSB
+	.EXPORT	_FROM_SECT_TBL_SENB
+	.EXPORT	_FROM_SECT_TBL_CHAR
+	.EXPORT	_FROM_SECT_TBL_GAIZ
+	.EXPORT	_FROM_SECT_TBL_GAM2	; V06
+_FROM_SECT_TBL:
+_FROM_SECT_TBL00:
+	.DATA.L		H'B9000000			; ｾｸﾀ0	16kb
+	.DATA.L		H'B9004000			; ｾｸﾀ1	8kb
+	.DATA.L		H'B9006000			; ｾｸﾀ2	8kb
+	.DATA.L		H'B9008000			; ｾｸﾀ3	32kb
+	.DATA.L		H'B9010000			; ｾｸﾀ4	64kb
+	.DATA.L		H'B9020000			; ｾｸﾀ5	64kb
+	.DATA.L		H'B9030000			; ｾｸﾀ6	64kb
+_FROM_SECT_TBL_KATA:
+	.DATA.L		H'B9040000			; ｾｸﾀ7	64kb
+	.DATA.L		H'B9050000			; ｾｸﾀ8	64kb
+	.DATA.L		H'B9060000			; ｾｸﾀ9	64kb
+	.DATA.L		H'B9070000			; ｾｸﾀ10	64kb
+_FROM_SECT_TBL_GAIZ:
+	.DATA.L		H'B9080000			; ｾｸﾀ11	64kb
+;;;_FROM_SECT_TBL_CHAR:
+	.DATA.L		H'B9090000			; ｾｸﾀ12	64kb
+	.DATA.L		H'B90a0000			; ｾｸﾀ13	64kb
+_FROM_SECT_TBL_SYSB:
+	.DATA.L		H'B90b0000			; ｾｸﾀ14	64kb
+_FROM_SECT_TBL_SENB:
+	.DATA.L		H'B90c0000			; ｾｸﾀ15	64kb
+	.DATA.L		H'B90d0000			; ｾｸﾀ16	64kb
+	.DATA.L		H'B90e0000			; ｾｸﾀ17	64kb
+	.DATA.L		H'B90f0000			; ｾｸﾀ18	64kb
+;------- 以降V05で拡張 -------
+_FROM_SECT_TBL_CHAR:
+	.DATA.L		H'B9100000			;
+	.DATA.L		H'B9110000			;
+	.DATA.L		H'B9120000			;
+	.DATA.L		H'B9130000			;
+_FROM_SECT_TBL_GAM2:			; V06
+	.DATA.L		H'B9140000			;
+	.DATA.L		H'B9150000			;
+	.DATA.L		H'B9160000			;
+	.DATA.L		H'B9170000			;
+	.DATA.L		H'B9180000			;
+	.DATA.L		H'B9190000			;
+	.DATA.L		H'B91A0000			;
+	.DATA.L		H'B91B0000			;
+	.DATA.L		H'B91C0000			;
+	.DATA.L		H'B91D0000			;
+	.DATA.L		H'B91E0000			;
+	.DATA.L		H'B91F0000			;
+
+
+
+	.END

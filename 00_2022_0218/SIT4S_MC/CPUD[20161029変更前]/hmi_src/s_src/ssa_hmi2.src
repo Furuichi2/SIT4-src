@@ -1,0 +1,1595 @@
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***		ÇgÇlÇhäeÉCÉìÉ^Å[ÉtÉFÉCÉXÉ\ÉtÉg			***
+;	***								***
+;	***								***
+;	*******************************************************************
+	.LIST	OFF
+	.include	"cm_equ1.equ"
+	.include	"ssa_ver1.equ"
+	.include	"CPU_REG.EXT"
+	.include	"shn_cmd1.mac"
+	.include	"ssa_out1.mac"				; 
+	.include	"ssa_had1.equ"				; 
+	.include	"ssa_wrms.ext"
+	.include	"ssa_wrmy.ext"
+	.include	"ssc_fram.ext"
+	.INCLUDE	"ssa_com1.MAC"		; 
+	.INCLUDE	"vect.inc"		; 
+	.LIST	ON
+
+	.IMPORT		_LCD_CTRL
+	.IMPORT		_KATA_WORK_TOP;
+	.import		_from_top;
+	.import		_SEQ_DP_TOP;
+	.import		_KEY_USE_SEL	;2013-12-11 [mc]
+	.import		_PANEL_LED_DAT	; ﬂ»ŸLED SQ->CPUB->
+	.import		_PANEL_FRQ_DAT	;í≤êﬂ    SQ->CPUB->1~249,255
+	.import		_OPE_LED_DAT
+
+	.IMPORT		_hmi2_test
+	.IMPORT		_KEY_READ
+	.IMPORT		_DSET_FLG_MAKE		; SIT4-MC
+	.IMPORT		_VUP_5MS_INT
+	.IMPORT		_OPE_SCI_MAIN
+
+	.IMPORT		_FROM_ERASE_CMND
+	.IMPORT		_FROM_ERASE_POLLINKG
+	.IMPORT		_FROM_WRITE_CMND
+	.IMPORT		_FROM_WRITE_POLLINKG
+	.IMPORT		_Power_down
+
+	.IMPORT		_dio_top1
+	.IMPORT		_dio_top2
+
+	.EXPORT		_hmi2_init1
+	.EXPORT		_hmi2_init2
+	.EXPORT		_hmi2_init3
+	.EXPORT		_hmi2_main
+	.EXPORT		_hmi2_int3
+	.EXPORT		_KATA_SAVE_ASM
+	.EXPORT		_KATA_LOAD_ASM
+
+;	=== MEMORY ===
+	.IMPORT		_cop_wait_tim;
+	.IMPORT		_REAL_OUT0;
+
+	.IMPORT		_SEQ_PAR_057;
+
+	.IMPORT		_CLO_GAIN_BAK1L
+	.IMPORT		_CLO_GAIN_BAK1R
+	.IMPORT		_CLO_GAIN_BAK2L
+	.IMPORT		_CLO_GAIN_BAK2R
+	.IMPORT		_CLO_GAIN_BAK3L
+	.IMPORT		_CLO_GAIN_BAK3R
+	.IMPORT		_CLO_GAIN_BAK4L
+	.IMPORT		_CLO_GAIN_BAK4R
+	.IMPORT		_CLO_GAIN_BAK5L
+	.IMPORT		_CLO_GAIN_BAK5R
+	.IMPORT		_CLO_OF_BAKL
+	.IMPORT		_CLO_OF_BAKR
+	.IMPORT		_CLO_OF_AVE_BAKL
+	.IMPORT		_CLO_OF_AVE_BAKR
+	.IMPORT		_CLO_OF_AVE_BAKT
+	.IMPORT		_CLO_GAIN_SET1L
+	.IMPORT		_CLO_GAIN_SET1R
+	.IMPORT		_CLO_GAIN_SET2L
+	.IMPORT		_CLO_GAIN_SET2R
+	.IMPORT		_CLO_GAIN_SET3L
+	.IMPORT		_CLO_GAIN_SET3R
+	.IMPORT		_CLO_GAIN_SET4L
+	.IMPORT		_CLO_GAIN_SET4R
+	.IMPORT		_CLO_GAIN_SET5L
+	.IMPORT		_CLO_GAIN_SET5R
+	.IMPORT		_CLO_OF_SETL
+	.IMPORT		_CLO_OF_SETR
+	.IMPORT		_CLO_OF_AVE_SETL
+	.IMPORT		_CLO_OF_AVE_SETR
+	.IMPORT		_CLO_OF_AVE_SETT
+
+	.IMPORT		_SH2_PDOWN_FLG
+	.IMPORT		_SH4_PDOWN_FLG
+
+
+
+
+	.AIF	_SIT_TYPE_SEL EQ _TYPE_SIT3
+_KATA_DATA_ADR_TOP	.EQU	H'00540000
+	.AELSE
+;//SIT4-MC	_KATA_DATA_ADR_TOP	.EQU	H'B9040000
+_KATA_DATA_ADR_TOP	.EQU	H'A0240000
+	.AENDI
+_KATA_DATA_SIZE		.EQU	H'07F0
+_KATA_DATA_FROM_WK	.EQU	H'07F0
+
+;	***********************************************************
+;	***							***
+;	***		HMIäÑçûÇ›âèúëO1âÒ			***
+;	***							***
+;	***********************************************************
+_hmi2_init1:
+	SUB_START
+	PUSH_ALL
+;//2002/06/28reset.srcÇ÷à⁄ìÆ(“”ÿ¡™Ø∏ÇÃëOÇ…Ç‚ÇÈ)	FAR_JSR	#_init_LCD,R0
+
+	MOV.L	#_PV_GAIN_BAK1L,R1;		//ç≈ëÂòcÇ›ÇQÇOÇOÇOç∂ÉQÉCÉì(1word)	V05i
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK1L_INI,R1;		//ç≈ëÂòcÇ›ÇQÇOÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	R0,@R1
+	MOV.L	#_PV_GAIN_BAK1R,R1;		//ç≈ëÂòcÇ›ÇQÇOÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK1R_INI,R1;		//ç≈ëÂòcÇ›ÇQÇOÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	R0,@R1
+	MOV.L	#_PV_GAIN_BAK2L,R1;		//ç≈ëÂòcÇ›ÇPÇTÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK2L_INI,R1;		//ç≈ëÂòcÇ›ÇPÇTÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	R0,@R1
+	MOV.L	#_PV_GAIN_BAK2R,R1;		//ç≈ëÂòcÇ›ÇPÇTÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK2R_INI,R1;		//ç≈ëÂòcÇ›ÇPÇTÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	R0,@R1
+	MOV.L	#_PV_GAIN_BAK3L,R1;		//ç≈ëÂòcÇ›Å@ÇWÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK3L_INI,R1;		//ç≈ëÂòcÇ›Å@ÇWÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	R0,@R1
+	MOV.L	#_PV_GAIN_BAK3R,R1;		//ç≈ëÂòcÇ›Å@ÇWÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK3R_INI,R1;		//ç≈ëÂòcÇ›Å@ÇWÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	R0,@R1
+	MOV.L	#_PV_GAIN_BAK4L,R1;		//ç≈ëÂòcÇ›Å@ÇSÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK4L_INI,R1;		//ç≈ëÂòcÇ›Å@ÇSÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	R0,@R1
+	MOV.L	#_PV_GAIN_BAK4R,R1;		//ç≈ëÂòcÇ›Å@ÇSÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK4R_INI,R1;		//ç≈ëÂòcÇ›Å@ÇSÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	R0,@R1
+	MOV.L	#_PV_GAIN_BAK5L,R1;		//ç≈ëÂòcÇ›Å@ÇQÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK5L_INI,R1;		//ç≈ëÂòcÇ›Å@ÇQÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	R0,@R1
+	MOV.L	#_PV_GAIN_BAK5R,R1;		//ç≈ëÂòcÇ›Å@ÇQÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK5R_INI,R1;		//ç≈ëÂòcÇ›Å@ÇQÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	R0,@R1
+	MOV.L	#_PV_OF_BAKL,R1;		//ÉIÉtÉZÉbÉgílç∂(1byte)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_OF_BAKL_INI,R1;		//ÉIÉtÉZÉbÉgílç∂(1byte)
+	MOV.W	R0,@R1
+	MOV.L	#_PV_OF_BAKR,R1;		//ÉIÉtÉZÉbÉgílâE(1byte)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_OF_BAKR_INI,R1;		//ÉIÉtÉZÉbÉgílâE(1byte)
+	MOV.W	R0,@R1
+	MOV.L	#_PV_OF_AVE_BAKL,R1;		//ÉIÉtÉZÉbÉgï‚ê≥ç∂(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_OF_AVE_BAKL_INI,R1;		//ÉIÉtÉZÉbÉgï‚ê≥ç∂(1word)
+	MOV.W	R0,@R1
+	MOV.L	#_PV_OF_AVE_BAKR,R1;		//ÉIÉtÉZÉbÉgï‚ê≥âE(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_OF_AVE_BAKR_INI,R1;		//ÉIÉtÉZÉbÉgï‚ê≥âE(1word)
+	MOV.W	R0,@R1
+	MOV.L	#_PV_OF_AVE_BAKT,R1;		//ÉIÉtÉZÉbÉgï‚ê≥çáåv(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_OF_AVE_BAKT_INI,R1;		//ÉIÉtÉZÉbÉgï‚ê≥çáåv(1word)
+	MOV.W	R0,@R1
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***		HMIäÑçûÇ›âèúå„1âÒ			***
+;	***							***
+;	***********************************************************
+;;;;;;;;	.IMPORT		_PV_DEB_WORD_WK14
+_hmi2_init2:
+	SUB_START
+	PUSH_ALL
+
+;	------------------------------------------------- 2006/12/26 V05
+	MOV.L	#_PV_DEB_WORD_WK14,R1
+	MOV.W	@R1,R0
+	MOV.W	#H'5AA5,R2
+	CMP/EQ	R0,R2
+	BT	_STACK_FLG_050				; YES?
+	MOV.W	R2,@R1
+	M_BRA	_STACK_FLG_100
+_STACK_FLG_050:
+	MOV.L	#_STACK_CHK_FLG,R1
+	MOV.W	#1,R2
+	MOV.W	R2,@R1
+_STACK_FLG_100:
+;	-------------------------------------------------
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***		HMI≤∆º¨Ÿ√ﬁ∞¿éÛêMå„1âÒ			***
+;	***							***
+;	***********************************************************
+_hmi2_init3:
+	SUB_START
+	PUSH_ALL
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***		HMI“≤›Ω∑¨›				***
+;	***							***
+;	***********************************************************
+;;;;;;;;	.IMPORT		_PV_DEB_WORD_WK15
+	.IMPORT		StackEND
+	.IMPORT		_SEQ_PAR_079
+_hmi2_main:
+	SUB_START
+	PUSH_ALL
+
+;//DEBUG	FAR_JSR	#_hmi2_test,R0
+
+;	------------------------------------------------- 2006/12/26 V05
+	MOV.L	#StackEND,R1
+	MOV.W	@R1,R0
+	TST	R0,R0
+	BT	_STACK_CHK_020
+	MOV.L	#_SEQ_PAR_079,R1
+	MOV.W	@R1,R0
+	MOV.W	#BIT1,R2
+	OR	R2,R0
+	MOV.W	R0,@R1
+_STACK_CHK_020:
+
+	MOV.L	#H'A5017000,R1				;
+	MOV.L	#(H'2000-H'40)/2,R4			;SIZE BYTE-->WORD
+_STACK_CHK_050:
+	TST	R4,R4
+	BT	_STACK_CHK_100
+	MOV.W	@R1,R0
+	TST	R0,R0
+	BF	_STACK_CHK_100
+	ADD	#2,R1
+	ADD	#-1,R4
+	M_BRA	_STACK_CHK_050
+_STACK_CHK_100:
+
+	MOV.L	#_STACK_CHK_FLG,R2
+	MOV.W	@R2,R0
+	TST	R0,R0					;Ã◊∏ﬁONÅH 
+	BT	_STACK_CHK_150				;Ç¢Ç¢Ç¶
+	MOV.L	#_PV_DEB_WORD_WK15,R0
+	MOV.L	@R0,R2					;
+	CMP/HS	R2,R1					;ç°Ç‹Ç≈ÇÊÇËëÂÇ´Ç¢ÅH
+	BT	_STACK_CHK_200
+_STACK_CHK_150:
+	MOV.L	#_PV_DEB_WORD_WK15,R0
+	MOV.L	R1,@R0					;Ω¿Ø∏óöóçXêV
+_STACK_CHK_200:
+;	-------------------------------------------------
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	***********************************************************
+;	***							***
+;	***		HMIíËé¸ä˙5ms				***
+;	***							***
+;	***********************************************************
+_hmi2_int3:
+	SUB_START
+
+	MOV.L	#_KEY_USE_SEL,R1	;2013-12-11[MC]
+	MOV.W	@R1,R0			;
+	CMP/EQ	#1,R0			;0(1à»äO):CPUBÇÃKEYÇégópÇ∑ÇÈ
+	BT	CPUB_KEY_READ_EXT	;1:í êMÇÃKEYÇégópÇ∑ÇÈÅ@EXT
+
+;	----------- KEY ì«çûÇ› --------------------------
+	MOV.L	#_KEY_READ,R10
+	JSR	@R10
+	NOP
+CPUB_KEY_READ_EXT
+
+
+	MOV.L	#_DSET_FLG_MAKE,R10		; SIT4-MC
+	JSR	@R10
+	NOP
+
+	MOV.L	#_POWER_DOWN_ACT,R10		; SIT4-MC	2014/02/06
+	JSR	@R10
+	NOP
+
+;	===================================
+;	===	COPÇÃ≤∆º¨Ÿë“Çø¿≤œ	===
+;	===================================
+;	2002-12-16 S01a
+	MOV.L	#_cop_wait_tim,R1
+	MOV.W	@R1,R0			;
+	TST	R0,R0			;
+	BT	COP_WAIT_CHK100		;
+	ADD	#-1,R0			;
+	MOV.W	R0,@R1			;
+COP_WAIT_CHK100:
+
+
+	FAR_JSR	#_VUP_5MS_INT,R1			; V01l(INS)
+
+
+	MOV.L	#_KEY_USE_SEL,R1	;2013-12-11[MC]
+	MOV.W	@R1,R0			;
+	CMP/EQ	#1,R0			;1:í êMÇÃKEYÇégópÇ∑ÇÈ
+	BF	SCI_KEY_READ_EXT	;0(1à»äO):EXT
+
+	MOV.L	#_PANEL_LED_DAT,R1	; ﬂ»ŸLED SQ->CPUB->
+	MOV.W	@R1,R0			;
+	MOV.L	#_OPE_LED_DAT,R3	;
+	MOV.B	R0,@R3			;
+
+	MOV.L	#_PANEL_FRQ_DAT,R1	;í≤êﬂ    SQ->CPUB->1~249,255
+	MOV.W	@R1,R0			;
+	MOV.L	#_OPE_LED_DAT+1,R3	;
+	MOV.B	R0,@R3			;
+
+	FAR_JSR	#_OPE_SCI_MAIN,R1			; SIT4=MC [í êMÉ^ÉCÉvÇÃÇjÇdÇx]
+
+SCI_KEY_READ_EXT	;1:í êMÇÃKEYÇégópÇ∑ÇÈÅ@EXT
+
+	SUB_END
+	M_RTS
+
+
+;	***********************************************************
+;	***							***
+;	***		ÇkÇbÇcï\é¶éûÇÃWAIT			***
+;	***							***
+;	***********************************************************
+	.ALIGN	4
+	.EXPORT		_GLC_BUSY
+_GLC_BUSY:
+	SUB_START
+	PUSH_ALL
+	MOV.L	#_LCD_CTRL+0,R5
+	MOV.B	@R5,R0
+	TST	#H'40,R0
+	BF	_GLC_BSY10
+_GLC_BSY5:
+	MOV.B	@R5,R0
+	TST	#H'40,R0
+	BT	_GLC_BSY5
+_GLC_BSY10:
+	MOV.B	@R5,R0
+	TST	#H'40,R0
+	BF	_GLC_BSY10
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;//GLC_BUSY	PROC NEAR
+;//	test	byte ptr es:LCD_1, 040h		; STATUS bit READ
+;//	jnz	GLC_BSY10			; <HIGH> -> GLC_BSY10
+;//GLC_BSY5:
+;//	; LOWèÛë‘äƒéã
+;//	test	byte ptr es:LCD_1, 040h		; STATUS bit READ
+;//	jz	GLC_BSY5
+;//GLC_BSY10:
+;//	; HIGHèÛë‘äƒéã
+;//	test	byte ptr es:LCD_1, 040h		; STATUS bit READ
+;//	jnz	GLC_BSY10
+;//	ret
+;//GLC_BUSY	ENDP
+
+
+;	***************************************************
+;	***						***
+;	***		âÊñ ∑¨◊ï\é¶			***	V01b
+;	***						***
+;	***************************************************
+	.MACRO	_DUMMY_WAIT
+	MOV.L	#_hmi2_test_wk1,R13
+	MOV.W	@R13,R14
+	ADD	#1,R14
+	MOV.W	R14,@R13
+	.ENDM
+
+	.MACRO	_WRTIM_SOKUTEI_BIT_ON
+;;	MOV.L	#_cpuab_hs_out0,R10
+;;	MOV.W	@R10,R0
+;;	MOV.W	#H'40,R11
+;;	OR	R11,R0
+;;	MOV.W	R0,@R10
+;;	MOV.L	#_REAL_OUT0,R10
+;;	MOV.B	R0,@R10
+	.ENDM
+
+	.MACRO	_WRTIM_SOKUTEI_BIT_OFF
+;;	MOV.L	#_cpuab_hs_out0,R10
+;;	MOV.W	@R10,R0
+;;	MOV.W	#H'40,R11
+;;	NOT	R11,R11
+;;	AND	R11,R0
+;;	MOV.W	R0,@R10
+;;	MOV.L	#_REAL_OUT0,R10
+;;	MOV.B	R0,@R10
+	.ENDM
+
+	.EXPORT		_LCD_CR_ASM
+_LCD_CR_ASM:
+	SUB_START
+	PUSH_ALL
+
+	MOV.L	#_aLCD_MOZI_SUU,R10
+	MOV.W	@R10,R8
+	TST	R8,R8				; ï∂éöêîÅÑ0ÅH
+	BF	_LCD_CR_ASTR			; ÇÕÇ¢
+	M_BRA	_LCD_CR_AEXT
+
+_LCD_CR_ASTR:
+	MOV.L	#_aLCD_WR_ADR,R0		;
+	MOV.W	@R0,R1				; R1:1byteâ∫à 
+	MOV	R1,R2				;
+	SHLR8	R2				; R2:1byteè„à 
+
+	MOV.W	#H'46,R3			; R3=Ω¿∞ƒà íuê›íË∫œ›ƒﬁ
+	MOV.W	#H'42,R4			; R4=ï\é¶“”ÿÇ÷ÇÃèëÇ´çûÇ›∫œ›ƒﬁ
+
+	MOV.L	#_LCD_CTRL+0,R5			;
+	MOV.L	#_LCD_CTRL+1,R6			;
+
+	DI_PUSH_SR_SH3	R13,R14
+
+	FAR_JSR	#_GLC_BUSY_WAIT,R10
+
+	_WRTIM_SOKUTEI_BIT_ON
+
+	MOV.B	R3,@R6				;CMD WR 0x46 CTRL[1]
+	_DUMMY_WAIT
+	MOV.B	R1,@R5				;CMD WR i    CTRL[0]
+	_DUMMY_WAIT
+	MOV.B	R2,@R5				;CMD WR i>>8 CTRL[0]
+	_DUMMY_WAIT
+	MOV.B	R4,@R6				;CMD WR 0x42 CTRL[1]
+
+	_WRTIM_SOKUTEI_BIT_OFF
+
+	EI_POP_SR_SH3
+
+	MOV.L	#_aLCD_NO,R10
+	MOV.W	@R10,R7
+	MOV.L	#_aLCD_BUFF,R10
+	MOV.L	@R10,R9
+
+_LCD_CR_A020:
+	DI_PUSH_SR_SH3	R13,R14
+
+	MOV.L	#16,R2				; 16ï∂éöñàÇ…BUSYÇë“Ç¬
+
+	FAR_JSR	#_GLC_BUSY_WAIT,R10
+
+	_WRTIM_SOKUTEI_BIT_ON
+
+_LCD_CR_A050:
+	MOV.W	@R9,R0				; èëÇ´çûÇ›ÉfÅ[É^
+	TST	R7,R7				; LCD_NO=0ÅH
+	BF	_LCD_CR_A100			; Ç¢Ç¢Ç¶
+	NOT	R0,R0				; LCD_NO=0Ç»ÇÁèëÇ´çûÇ›ÉfÅ[É^îΩì]
+_LCD_CR_A100:
+	MOV.B	R0,@R5
+
+	ADD	#2,R9
+	ADD	#-1,R8
+	TST	R8,R8				; ï∂éöêîï™èëÇ¢ÇΩÅH
+	BT	_LCD_CR_A200			; ÇÕÇ¢
+
+	ADD	#-1,R2				
+	TST	R2,R2				; 16ï∂éöèëÇ¢ÇΩÅH
+	BF	_LCD_CR_A050			; Ç¢Ç¢Ç¶
+
+	_WRTIM_SOKUTEI_BIT_OFF
+
+	EI_POP_SR_SH3
+	NOP
+	NOP
+	NOP
+	M_BRA	_LCD_CR_A020			; ÇÕÇ¢
+
+_LCD_CR_A200:
+
+	_WRTIM_SOKUTEI_BIT_OFF
+
+	EI_POP_SR_SH3
+
+_LCD_CR_AEXT:
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;-----------------------------------------------
+
+_GLC_BUSY_WAIT:
+	SUB_START
+_GLC_BSYW05:
+	MOV.B	@R5,R0				;
+	TST	#H'40,R0			;
+	BT	_GLC_BSYW05			;OFF JUMP WAIT ON:OK
+
+;	=== ON ==
+_GLC_BSYW10:
+	MOV.B	@R5,R0
+	TST	#H'40,R0
+	BF	_GLC_BSYW10			;ON JUMP WAIT OFF:OK
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***		å^ÉfÅ[É^Å®ÇeÇqÇnÇl		***
+;	***						***
+;	***************************************************
+_KATA_SAVE_ASM:
+	SUB_START
+	PUSH_ALL
+;//	kata_no_sv == no;
+;//	*kata_adr_sv == *poi1;
+
+;//V06n	MOV.L	#_kata_no_sv,R1
+;//V06n	MOV.W	@R1,R0					; å^No.
+	MOV.L	#_KATA_DATA_ADR_TOP,R11
+	MOV.L	#_kata_no_sv,R1
+	MOV.W	@R1,R0					; å^No.
+	MOV.L	#100,R12
+	CMP/HI	R12,R0
+	BF	_KATA_SV_ASM_050
+	SUB	R12,R0
+	MOV.L	#H'180000,R12
+	ADD	R12,R11
+_KATA_SV_ASM_050:
+
+	EXTU.W	R0,R0
+	ADD	#-1,R0
+	MOV.L	#H'800,R2
+	MULU.W	R2,R0
+	STS.L	MACL,R0
+
+;//V06n	MOV.L	#_KATA_DATA_ADR_TOP,R2
+	MOV.L	R11,R2
+	ADD	R0,R2					; R2 <- å^ÉfÅ[É^èëçûÇ›ÉAÉhÉåÉX
+
+;//V06n	MOV.L	#_KATA_DATA_ADR_TOP,R4
+	MOV.L	R11,R4
+	MOV.L	#H'10000,R5
+_KATA_SV_ASM_100:
+	MOV	R4,R6					;
+	ADD	R5,R6
+	CMP/HS	R6,R2					;
+	BF	_KATA_SV_ASM_200
+	ADD	R5,R4
+	M_BRA	_KATA_SV_ASM_100
+
+;	-------- FROM -> SRAM --------
+_KATA_SV_ASM_200:
+	MOV	R4,R3					; R3 <- è¡ãéÅ^èëçû êÊì™±ƒﬁ⁄Ω   R4:KEEP
+	MOV.L	#_KATA_WORK_TOP,R1			; R1 <- FROMï€ë∂ópêÊì™±ƒﬁ⁄Ω
+	MOV.L	#(H'10000/2),R5
+_KATA_SV_ASM_300:
+	MOV.W	@R3+,R0
+	NOP
+	NOP
+	MOV.W	R0,@R1
+	ADD	#2,R1
+	ADD	#-1,R5
+	TST	R5,R5
+	BF	_KATA_SV_ASM_300
+
+;	-------- å^√ﬁ∞¿ -> SRAM --------
+	MOV.L	#H'0000FFFF,R3
+	AND	R3,R2					;
+	MOV.L	#_KATA_WORK_TOP,R3			;
+	ADD	R3,R2					; R2 <- å^√ﬁ∞¿ÇèëÇ´çûÇﬁSRAMêÊì™±ƒﬁ⁄Ω
+	MOV.L	#_kata_adr_sv,R0
+	MOV.L	@R0,R1					; R1 <- å^√ﬁ∞¿èëçûÇ›å≥êÊì™±ƒﬁ⁄Ω
+	MOV.L	#(_KATA_DATA_SIZE/2),R5			; R5 <- å^ÉfÅ[É^ÉTÉCÉY
+	XOR	R6,R6					; R6 <- BCC
+_KATA_SV_ASM_400:
+	MOV.W	@R1+,R0
+	NOP
+	NOP
+	MOV.W	R0,@R2
+	ADD	R0,R6					; BCC
+	ADD	#2,R2
+	ADD	#-1,R5
+	TST	R5,R5
+	BF	_KATA_SV_ASM_400
+
+	XOR	R0,R0
+	MOV.W	R0,@R2					; 7F0(Ç∆ÇËÇ†Ç¶Ç∏0)
+	ADD	#2,R2
+	ADD	R0,R6					; BCC
+
+	MOV.W	R0,@R2					; 7F2(Ç∆ÇËÇ†Ç¶Ç∏0)
+	ADD	#2,R2
+	ADD	R0,R6					; BCC
+
+	MOV.W	R0,@R2					; 7F4(Ç∆ÇËÇ†Ç¶Ç∏0)
+	ADD	#2,R2
+	ADD	R0,R6					; BCC
+
+	MOV.W	R0,@R2					; 7F6(Ç∆ÇËÇ†Ç¶Ç∏0)
+	ADD	#2,R2
+	ADD	R0,R6					; BCC
+
+	MOV.W	R0,@R2					; 7F8(Ç∆ÇËÇ†Ç¶Ç∏0)
+	ADD	#2,R2
+	ADD	R0,R6					; BCC
+
+	MOV.W	R0,@R2					; 7FA(Ç∆ÇËÇ†Ç¶Ç∏0)
+	ADD	#2,R2
+	ADD	R0,R6					; BCC
+
+	MOV.W	R6,@R2					; 7FC(BCC)
+	ADD	#2,R2
+
+	NOT	R6,R6
+	MOV.W	R6,@R2					; 7FE(îΩì]BCC)
+
+;	-------- FROM <- SRAM --------
+	MOV	R4,R8					; R8 <- è¡ãéÅ^èëçû êÊì™±ƒﬁ⁄Ω
+;//SIT4-MC	MOV.L	#_from_top,R13
+	MOV.L	R8,R13
+	FAR_JSR	#_FROM_ERASE_CMND,R10			; Input	: R8 <- è¡ãéÇ∑ÇÈæ∏¿ÇÃêÊì™±ƒﬁ⁄Ω
+							; Input	: R13 <- _from_top
+
+	FAR_JSR	#_FROM_ERASE_POLLINKG,R10		; Input	: R8 <- è¡ãéÇ∑ÇÈæ∏¿ÇÃêÊì™±ƒﬁ⁄Ω
+
+	MOV.L	#_KATA_WORK_TOP,R9			;
+	MOV.L	#(H'10000/2),R6				; FROMæ∏¿ª≤Ωﬁ
+_KATA_SV_ASM_500:
+	FAR_JSR	#_FROM_WRITE_CMND,R10			; Input	: R13 <- _from_top
+
+	MOV.W	@R9+,R0
+	MOV.W	R0,@R8
+
+	FAR_JSR	#_FROM_WRITE_POLLINKG,R10
+
+	ADD	#2,R8
+	ADD	#-1,R6
+	TST	R6,R6					; ëSèëçûÇ›äÆóπÅH
+	BF	_KATA_SV_ASM_500			; Ç¢Ç¢Ç¶
+
+_KATA_SV_ASM_END:
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***		å^ÉfÅ[É^Å©ÇeÇqÇnÇl		***
+;	***						***
+;	***************************************************
+_KATA_LOAD_ASM:
+	SUB_START
+	PUSH_ALL
+
+;//V06n	MOV.L	#_kata_no_ld,R1
+;//V06n	MOV.W	@R1,R0					; å^No.
+	MOV.L	#_KATA_DATA_ADR_TOP,R11
+	MOV.L	#_kata_no_ld,R1
+	MOV.W	@R1,R0					; å^No.
+	MOV.L	#100,R12
+	CMP/HI	R12,R0
+	BF	_KATA_LD_ASM_050
+	SUB	R12,R0
+	MOV.L	#H'180000,R12
+	ADD	R12,R11
+_KATA_LD_ASM_050:
+
+	EXTU.W	R0,R0
+	ADD	#-1,R0
+	MOV.L	#H'800,R2
+	MULU.W	R2,R0
+	STS.L	MACL,R0
+
+;//V06n	MOV.L	#_KATA_DATA_ADR_TOP,R2
+	MOV.L	R11,R2
+	ADD	R0,R2					; R2 <- å^ÉfÅ[É^ì«çûÇ›ÉAÉhÉåÉX
+	MOV.L	#_kata_adr_ld,R0
+	MOV.L	@R0,R1					; R1 <- å^ÉfÅ[É^èëçûÇ›ÉAÉhÉåÉX
+	MOV.L	#(_KATA_DATA_SIZE/2),R3			; R3 <- å^ÉfÅ[É^ÉTÉCÉY
+	XOR	R6,R6					; BCC MAKE
+
+_KATA_LD_ASM_LOOP:
+	MOV.W	@R2+,R0
+	NOP
+	NOP
+	MOV.W	R0,@R1
+	NOP
+	NOP
+	ADD	R0,R6					; BCC MAKE
+	ADD	#2,R1
+	ADD	#-1,R3
+	TST	R3,R3
+	BF	_KATA_LD_ASM_LOOP
+
+	MOV.W	@R2+,R0					; 7F0
+	ADD	R0,R6					; BCC MAKE
+	MOV.W	@R2+,R0					; 7F2
+	ADD	R0,R6					; BCC MAKE
+	MOV.W	@R2+,R0					; 7F4
+	ADD	R0,R6					; BCC MAKE
+	MOV.W	@R2+,R0					; 7F6
+	ADD	R0,R6					; BCC MAKE
+	MOV.W	@R2+,R0					; 7F8
+	ADD	R0,R6					; BCC MAKE
+	MOV.W	@R2+,R0					; 7FA
+	ADD	R0,R6					; BCC MAKE
+
+	MOV.W	@R2+,R1					; 7FC
+	EXTU.W	R1,R1
+	EXTU.W	R6,R6
+	CMP/EQ	R6,R1					; BCC OK?
+	BF	_KATA_SUM_ERR				; NO
+
+	MOV.W	@R2+,R1					; 7FE
+	NOT	R6,R6
+	EXTU.W	R1,R1
+	EXTU.W	R6,R6
+	CMP/EQ	R6,R1					; BCC OK?
+	BF	_KATA_SUM_ERR				; NO
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+_KATA_SUM_ERR:
+;	***** SIT3_CPUB PROGRAM *****
+	.AIF	_SIT_CPU_SEL	EQ	_SIT3_CPUB
+	MOV.L	#_PADR,R5
+	MOV.W	@R5,R0
+	MOV.W	#H'1000,R1				; CPUBER
+	OR	R1,R0					; ON
+	MOV.W	R0,@R5
+
+;	***** SIT4_CPUB PROGRAM *****
+	.AELIF	_SIT_CPU_SEL	EQ	_SIT4_CPUB
+
+	MOV.L	#_IOGA1_CTRL_DAT1+_IOGAo_PF,R1		;
+	MOV.W	@R1,R0
+	OR	#BIT7,R0				; WORK SET
+	MOV.W	R0,@R1					; CPUBER SET
+	_MC_GA1PF_OUT1	R0,R1,R2			; WORK -> PORT
+
+	.AELSE
+	.AENDI
+
+	MOV.L	#_SEQ_DP_TOP+78*2,R5
+	MOV.W	@R5,R0
+	OR	#BIT0,R0				; å^√ﬁ∞¿ì«èoÇµSUMàŸèÌ
+	MOV.W	R0,@R5
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	*******************************************************************
+;	***								***
+;	***	â◊èdåvÉoÉbÉNÉAÉbÉvâªÇØïsãÔçáí≤ç∏ÉvÉçÉOÉâÉÄ		***	2007/10/05 V05i
+;	***								***
+;	*******************************************************************
+	.EXPORT		_KJ_CHK_SUB
+_KJ_CHK_SUB:
+	SUB_START
+	PUSH_ALL
+
+;	================================================
+	MOV.L	#_KJ_CHK_CNT1,R1
+	MOV.W	@R1+,R2					; ∂≥›¿1
+	MOV.W	@R1+,R0
+	ADD	R0,R2					; +∂≥›¿2
+	MOV.W	@R1+,R0
+	ADD	R0,R2					; +∂≥›¿3
+	MOV.W	@R1+,R0
+	ADD	R0,R2					; +∂≥›¿4
+	MOV.W	@R1+,R0
+	ADD	R0,R2					; +∂≥›¿5
+	MOV.W	@R1+,R0
+	ADD	R0,R2					; +∂≥›¿6
+	MOV.W	@R1+,R0
+	ADD	R0,R2					; +∂≥›¿7
+	MOV.W	@R1+,R0
+	ADD	R0,R2					; +∂≥›¿8
+	MOV.W	@R1+,R0
+	ADD	R0,R2					; +∂≥›¿9
+	MOV.W	@R1+,R0
+	ADD	R0,R2					; +∂≥›¿10
+	MOV.W	@R1+,R0
+	ADD	R0,R2					; +∂≥›¿11
+	MOV.W	@R1+,R0
+	ADD	R0,R2					; +∂≥›¿12
+	MOV.W	@R1+,R0
+	ADD	R0,R2					; +∂≥›¿13
+	MOV.W	@R1+,R0
+	ADD	R0,R2					; +∂≥›¿14
+	MOV.W	@R1+,R0
+	ADD	R0,R2					; +∂≥›¿15
+	MOV.L	#_KJ_CHK_CNT0,R1
+	MOV.W	R2,@R1					; ∂≥›¿0ÅÅ∂≥›¿1Å`15ÇÃòa
+
+	M_BRA	_KJ_DEB_030
+_KJ_DEB_030:
+
+;	================================================
+
+	MOV.L	#_SEQ_PAR_057,R1
+	MOV.W	@R1,R3
+	MOV.W	#H'0001,R4
+	MOV	R2,R0
+	CMP/EQ	#0,R0
+	BF	_KJ_DEB_050
+	NOT	R4,R4
+	AND	R4,R3
+	M_BRA	_KJ_DEB_055
+_KJ_DEB_050:
+	OR	R4,R3
+_KJ_DEB_055:
+	MOV.W	R3,@R1
+
+;	================================================
+
+	XOR	R7,R7
+	MOV.L	#_SEQ_PAR_451,R1
+	MOV.W	@R1,R0
+	MOV	R0,R8
+	TST	#H'03,R0				; 451.0/1
+	BT	_KJ_DEB_100
+	MOV.W	#1,R7
+_KJ_DEB_100:
+	MOV.L	#_SEQ_PAR_385,R1
+	MOV.W	@R1,R0
+	MOV	R0,R9
+	TST	#H'03,R0				; 385.0/1
+	BT	_KJ_DEB_200
+	MOV.W	#2,R7
+_KJ_DEB_200:
+	MOV.L	#_SEQ_PAR_382,R1
+	MOV.W	@R1,R0
+	MOV	R0,R10
+	TST	#H'0A,R0				; 382.1/3
+	BT	_KJ_DEB_300
+	MOV.W	#3,R7
+_KJ_DEB_300:
+	MOV	R7,R0
+	CMP/EQ	#0,R0
+	BT	_KJ_DEB_400
+	MOV.L	#_KJ_CHK_CNT3,R1
+	MOV.W	@R1,R0
+	ADD	#1,R0
+	MOV.W	R0,@R1
+	MOV.L	#_KJ_CHK_DAT0,R1
+	MOV.W	R7,@R1					; ¥◊∞î≠ê∂éûÇÃEVENT
+	MOV.L	#_KJ_CHK_DAT1,R1
+	MOV.W	R8,@R1					; ¥◊∞î≠ê∂éûÇÃSEQ451
+	MOV.L	#_KJ_CHK_DAT2,R1
+	MOV.W	R9,@R1					; ¥◊∞î≠ê∂éûÇÃSEQ385
+	MOV.L	#_KJ_CHK_DAT3,R1
+	MOV.W	R10,@R1					; ¥◊∞î≠ê∂éûÇÃSEQ382
+_KJ_DEB_400:
+
+	M_BRA	_KJ_DEB_420
+_KJ_DEB_420:
+;	================================================
+
+	XOR	R7,R7
+	MOV.L	#_PV_GAIN_BAK1L,R1			; //ç≈ëÂòcÇ›ÇQÇOÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK1L_X,R1
+	MOV.W	@R1,R2
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_510
+	MOV.W	#1,R7
+_KJ_DEB_510:
+	MOV.L	#_PV_GAIN_BAK1R,R1			; //ç≈ëÂòcÇ›ÇQÇOÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK1R_X,R1
+	MOV.W	@R1,R2
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_520
+	MOV.W	#2,R7
+_KJ_DEB_520:
+	MOV.L	#_PV_GAIN_BAK2L,R1			; //ç≈ëÂòcÇ›ÇPÇTÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK2L_X,R1
+	MOV.W	@R1,R2
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_530
+	MOV.W	#3,R7
+_KJ_DEB_530:
+	MOV.L	#_PV_GAIN_BAK2R,R1			; //ç≈ëÂòcÇ›ÇPÇTÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK2R_X,R1
+	MOV.W	@R1,R2
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_540
+	MOV.W	#4,R7
+_KJ_DEB_540:
+	MOV.L	#_PV_GAIN_BAK3L,R1			; //ç≈ëÂòcÇ›Å@ÇWÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK3L_X,R1
+	MOV.W	@R1,R2
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_550
+	MOV.W	#5,R7
+_KJ_DEB_550:
+	MOV.L	#_PV_GAIN_BAK3R,R1			; //ç≈ëÂòcÇ›Å@ÇWÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK3R_X,R1
+	MOV.W	@R1,R2
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_560
+	MOV.W	#6,R7
+_KJ_DEB_560:
+	MOV.L	#_PV_GAIN_BAK4L,R1			; //ç≈ëÂòcÇ›Å@ÇSÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK4L_X,R1
+	MOV.W	@R1,R2
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_570
+	MOV.W	#7,R7
+_KJ_DEB_570:
+	MOV.L	#_PV_GAIN_BAK4R,R1			; //ç≈ëÂòcÇ›Å@ÇSÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK4R_X,R1
+	MOV.W	@R1,R2
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_580
+	MOV.W	#8,R7
+_KJ_DEB_580:
+	MOV.L	#_PV_GAIN_BAK5L,R1			; //ç≈ëÂòcÇ›Å@ÇQÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK5L_X,R1
+	MOV.W	@R1,R2
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_590
+	MOV.W	#9,R7
+_KJ_DEB_590:
+	MOV.L	#_PV_GAIN_BAK5R,R1			; //ç≈ëÂòcÇ›Å@ÇQÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK5R_X,R1
+	MOV.W	@R1,R2
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_600
+	MOV.W	#10,R7
+_KJ_DEB_600:
+	MOV.L	#_PV_OF_BAKL,R1				; //ÉIÉtÉZÉbÉgílç∂(1byte)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_OF_BAKL_X,R1
+	MOV.W	@R1,R2
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_610
+	MOV.W	#11,R7
+_KJ_DEB_610:
+	MOV.L	#_PV_OF_BAKR,R1				; //ÉIÉtÉZÉbÉgílâE(1byte)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_OF_BAKR_X,R1
+	MOV.W	@R1,R2
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_620
+	MOV.W	#12,R7
+_KJ_DEB_620:
+	MOV.L	#_PV_OF_AVE_BAKL,R1			; //ÉIÉtÉZÉbÉgï‚ê≥ç∂(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_OF_AVE_BAKL_X,R1
+	MOV.W	@R1,R2
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_630
+	MOV.W	#13,R7
+_KJ_DEB_630:
+	MOV.L	#_PV_OF_AVE_BAKR,R1			; //ÉIÉtÉZÉbÉgï‚ê≥âE(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_OF_AVE_BAKR_X,R1
+	MOV.W	@R1,R2
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_640
+	MOV.W	#14,R7
+_KJ_DEB_640:
+	MOV.L	#_PV_OF_AVE_BAKT,R1			; //ÉIÉtÉZÉbÉgï‚ê≥çáåv(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_OF_AVE_BAKT_X,R1
+	MOV.W	@R1,R2
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_650
+	MOV.W	#15,R7
+_KJ_DEB_650:
+	MOV	R7,R0
+	CMP/EQ	#0,R0
+	BT	_KJ_DEB_660
+	MOV.L	#_KJ_CHK_CNT6,R1
+	MOV.W	@R1,R0
+	ADD	#1,R0
+	MOV.W	R0,@R1
+	MOV.L	#_KJ_CHK_DAT4,R1
+	MOV.W	R7,@R1					; ¥◊∞î≠ê∂éûÇÃ∫∞ƒﬁ
+_KJ_DEB_660:
+
+	M_BRA	_KJ_DEB_680
+_KJ_DEB_680:
+;	================================================
+
+	MOV.L	#_KJ_INI_CHK_WAIT,R1
+	MOV.W	@R1,R0
+	MOV.W	#10,R4
+	CMP/HI	R4,R0
+	BT	_KJ_DEB_705
+	ADD	#1,R0
+	MOV.W	R0,@R1
+	M_BRA	_KJ_DEB_1100
+
+_KJ_DEB_705:
+	XOR	R7,R7
+	MOV.L	#_PV_GAIN_BAK1L_INI,R1		;		//ç≈ëÂòcÇ›ÇQÇOÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK1L,R1		;		//ç≈ëÂòcÇ›ÇQÇOÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	@R1,R4
+	MOV.L	#_CLO_GAIN_BAK1L,R1
+	MOV.W	@R1,R2
+	EXTU.W	R2,R2
+	SWAP.B	R2,R2
+	MOV.L	#_CLO_GAIN_SET1L,R1
+	MOV.W	@R1,R3
+	EXTU.W	R3,R3
+	SWAP.B	R3,R3
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_710
+	MOV.W	#1,R7
+_KJ_DEB_710:
+	CMP/EQ	R3,R0
+	BT	_KJ_DEB_720
+	MOV.W	#2,R7
+_KJ_DEB_720:
+	CMP/EQ	R4,R0
+	BT	_KJ_DEB_725
+	MOV.W	#3,R7
+_KJ_DEB_725:
+	M_BRA	_KJ_DEB_726
+_KJ_DEB_726:
+	MOV.L	#_PV_GAIN_BAK1R_INI,R1		;		//ç≈ëÂòcÇ›ÇQÇOÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK1R,R1		;		//ç≈ëÂòcÇ›ÇQÇOÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R4
+	MOV.L	#_CLO_GAIN_BAK1R,R1
+	MOV.W	@R1,R2
+	EXTU.W	R2,R2
+	SWAP.B	R2,R2
+	MOV.L	#_CLO_GAIN_SET1R,R1
+	MOV.W	@R1,R3
+	EXTU.W	R3,R3
+	SWAP.B	R3,R3
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_730
+	MOV.W	#4,R7
+_KJ_DEB_730:
+	CMP/EQ	R3,R0
+	BT	_KJ_DEB_740
+	MOV.W	#5,R7
+_KJ_DEB_740:
+	CMP/EQ	R4,R0
+	BT	_KJ_DEB_745
+	MOV.W	#6,R7
+_KJ_DEB_745:
+	M_BRA	_KJ_DEB_746
+_KJ_DEB_746:
+	MOV.L	#_PV_GAIN_BAK2L_INI,R1		;		//ç≈ëÂòcÇ›ÇPÇTÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK2L,R1		;		//ç≈ëÂòcÇ›ÇPÇTÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	@R1,R4
+	MOV.L	#_CLO_GAIN_BAK2L,R1
+	MOV.W	@R1,R2
+	EXTU.W	R2,R2
+	SWAP.B	R2,R2
+	MOV.L	#_CLO_GAIN_SET2L,R1
+	MOV.W	@R1,R3
+	EXTU.W	R3,R3
+	SWAP.B	R3,R3
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_750
+	MOV.W	#7,R7
+_KJ_DEB_750:
+	CMP/EQ	R3,R0
+	BT	_KJ_DEB_760
+	MOV.W	#8,R7
+_KJ_DEB_760:
+	CMP/EQ	R4,R0
+	BT	_KJ_DEB_765
+	MOV.W	#9,R7
+_KJ_DEB_765:
+	M_BRA	_KJ_DEB_766
+_KJ_DEB_766:
+	MOV.L	#_PV_GAIN_BAK2R_INI,R1		;		//ç≈ëÂòcÇ›ÇPÇTÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK2R,R1		;		//ç≈ëÂòcÇ›ÇPÇTÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R4
+	MOV.L	#_CLO_GAIN_BAK2R,R1
+	MOV.W	@R1,R2
+	EXTU.W	R2,R2
+	SWAP.B	R2,R2
+	MOV.L	#_CLO_GAIN_SET2R,R1
+	MOV.W	@R1,R3
+	EXTU.W	R3,R3
+	SWAP.B	R3,R3
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_770
+	MOV.W	#10,R7
+_KJ_DEB_770:
+	CMP/EQ	R3,R0
+	BT	_KJ_DEB_780
+	MOV.W	#11,R7
+_KJ_DEB_780:
+	CMP/EQ	R4,R0
+	BT	_KJ_DEB_785
+	MOV.W	#12,R7
+_KJ_DEB_785:
+	M_BRA	_KJ_DEB_786
+_KJ_DEB_786:
+	MOV.L	#_PV_GAIN_BAK3L_INI,R1		;		//ç≈ëÂòcÇ›Å@ÇWÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK3L,R1		;		//ç≈ëÂòcÇ›Å@ÇWÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	@R1,R4
+	MOV.L	#_CLO_GAIN_BAK3L,R1
+	MOV.W	@R1,R2
+	EXTU.W	R2,R2
+	SWAP.B	R2,R2
+	MOV.L	#_CLO_GAIN_SET3L,R1
+	MOV.W	@R1,R3
+	EXTU.W	R3,R3
+	SWAP.B	R3,R3
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_790
+	MOV.W	#13,R7
+_KJ_DEB_790:
+	CMP/EQ	R3,R0
+	BT	_KJ_DEB_800
+	MOV.W	#14,R7
+_KJ_DEB_800:
+	CMP/EQ	R4,R0
+	BT	_KJ_DEB_805
+	MOV.W	#15,R7
+_KJ_DEB_805:
+	M_BRA	_KJ_DEB_806
+_KJ_DEB_806:
+	MOV.L	#_PV_GAIN_BAK3R_INI,R1		;		//ç≈ëÂòcÇ›Å@ÇWÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK3R,R1		;		//ç≈ëÂòcÇ›Å@ÇWÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R4
+	MOV.L	#_CLO_GAIN_BAK3R,R1
+	MOV.W	@R1,R2
+	EXTU.W	R2,R2
+	SWAP.B	R2,R2
+	MOV.L	#_CLO_GAIN_SET3R,R1
+	MOV.W	@R1,R3
+	EXTU.W	R3,R3
+	SWAP.B	R3,R3
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_810
+	MOV.W	#16,R7
+_KJ_DEB_810:
+	CMP/EQ	R3,R0
+	BT	_KJ_DEB_820
+	MOV.W	#17,R7
+_KJ_DEB_820:
+	CMP/EQ	R4,R0
+	BT	_KJ_DEB_825
+	MOV.W	#18,R7
+_KJ_DEB_825:
+	M_BRA	_KJ_DEB_826
+_KJ_DEB_826:
+	MOV.L	#_PV_GAIN_BAK4L_INI,R1		;		//ç≈ëÂòcÇ›Å@ÇSÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK4L,R1		;		//ç≈ëÂòcÇ›Å@ÇSÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	@R1,R4
+	MOV.L	#_CLO_GAIN_BAK4L,R1
+	MOV.W	@R1,R2
+	EXTU.W	R2,R2
+	SWAP.B	R2,R2
+	MOV.L	#_CLO_GAIN_SET4L,R1
+	MOV.W	@R1,R3
+	EXTU.W	R3,R3
+	SWAP.B	R3,R3
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_830
+	MOV.W	#19,R7
+_KJ_DEB_830:
+	CMP/EQ	R3,R0
+	BT	_KJ_DEB_840
+	MOV.W	#20,R7
+_KJ_DEB_840:
+	CMP/EQ	R4,R0
+	BT	_KJ_DEB_845
+	MOV.W	#21,R7
+_KJ_DEB_845:
+	M_BRA	_KJ_DEB_846
+_KJ_DEB_846:
+	MOV.L	#_PV_GAIN_BAK4R_INI,R1		;		//ç≈ëÂòcÇ›Å@ÇSÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK4R,R1		;		//ç≈ëÂòcÇ›Å@ÇSÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R4
+	MOV.L	#_CLO_GAIN_BAK4R,R1
+	MOV.W	@R1,R2
+	EXTU.W	R2,R2
+	SWAP.B	R2,R2
+	MOV.L	#_CLO_GAIN_SET4R,R1
+	MOV.W	@R1,R3
+	EXTU.W	R3,R3
+	SWAP.B	R3,R3
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_850
+	MOV.W	#22,R7
+_KJ_DEB_850:
+	CMP/EQ	R3,R0
+	BT	_KJ_DEB_860
+	MOV.W	#23,R7
+_KJ_DEB_860:
+	CMP/EQ	R4,R0
+	BT	_KJ_DEB_865
+	MOV.W	#24,R7
+_KJ_DEB_865:
+	M_BRA	_KJ_DEB_866
+_KJ_DEB_866:
+	MOV.L	#_PV_GAIN_BAK5L_INI,R1		;		//ç≈ëÂòcÇ›Å@ÇQÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK5L,R1		;		//ç≈ëÂòcÇ›Å@ÇQÇOÇOç∂ÉQÉCÉì(1word)
+	MOV.W	@R1,R4
+	MOV.L	#_CLO_GAIN_BAK5L,R1
+	MOV.W	@R1,R2
+	EXTU.W	R2,R2
+	SWAP.B	R2,R2
+	MOV.L	#_CLO_GAIN_SET5L,R1
+	MOV.W	@R1,R3
+	EXTU.W	R3,R3
+	SWAP.B	R3,R3
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_870
+	MOV.W	#25,R7
+_KJ_DEB_870:
+	CMP/EQ	R3,R0
+	BT	_KJ_DEB_880
+	MOV.W	#26,R7
+_KJ_DEB_880:
+	CMP/EQ	R4,R0
+	BT	_KJ_DEB_885
+	MOV.W	#27,R7
+_KJ_DEB_885:
+	M_BRA	_KJ_DEB_886
+_KJ_DEB_886:
+	MOV.L	#_PV_GAIN_BAK5R_INI,R1		;		//ç≈ëÂòcÇ›Å@ÇQÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_GAIN_BAK5R,R1		;		//ç≈ëÂòcÇ›Å@ÇQÇOÇOâEÉQÉCÉì(1word)
+	MOV.W	@R1,R4
+	MOV.L	#_CLO_GAIN_BAK5R,R1
+	MOV.W	@R1,R2
+	EXTU.W	R2,R2
+	SWAP.B	R2,R2
+	MOV.L	#_CLO_GAIN_SET5R,R1
+	MOV.W	@R1,R3
+	EXTU.W	R3,R3
+	SWAP.B	R3,R3
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_890
+	MOV.W	#28,R7
+_KJ_DEB_890:
+	CMP/EQ	R3,R0
+	BT	_KJ_DEB_900
+	MOV.W	#29,R7
+_KJ_DEB_900:
+	CMP/EQ	R4,R0
+	BT	_KJ_DEB_905
+	MOV.W	#30,R7
+_KJ_DEB_905:
+	M_BRA	_KJ_DEB_906
+_KJ_DEB_906:
+	MOV.L	#_PV_OF_BAKL_INI,R1		;		//ÉIÉtÉZÉbÉgílç∂(1byte)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_OF_BAKL,R1		;		//ÉIÉtÉZÉbÉgílç∂(1byte)
+	MOV.W	@R1,R4
+	MOV.L	#_CLO_OF_BAKL,R1
+	MOV.B	@R1,R2
+	EXTU.B	R2,R2
+	MOV.L	#_CLO_OF_SETL,R1
+	MOV.B	@R1,R3
+	EXTU.B	R3,R3
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_910
+	MOV.W	#31,R7
+_KJ_DEB_910:
+	CMP/EQ	R3,R0
+	BT	_KJ_DEB_920
+	MOV.W	#32,R7
+_KJ_DEB_920:
+	CMP/EQ	R4,R0
+	BT	_KJ_DEB_925
+	MOV.W	#33,R7
+_KJ_DEB_925:
+	M_BRA	_KJ_DEB_926
+_KJ_DEB_926:
+	MOV.L	#_PV_OF_BAKR_INI,R1		;		//ÉIÉtÉZÉbÉgílç∂(1byte)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_OF_BAKR,R1		;		//ÉIÉtÉZÉbÉgílç∂(1byte)
+	MOV.W	@R1,R4
+	MOV.L	#_CLO_OF_BAKR,R1
+	MOV.B	@R1,R2
+	EXTU.B	R2,R2
+	MOV.L	#_CLO_OF_SETR,R1
+	MOV.B	@R1,R3
+	EXTU.B	R3,R3
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_930
+	MOV.W	#34,R7
+_KJ_DEB_930:
+	CMP/EQ	R3,R0
+	BT	_KJ_DEB_940
+	MOV.W	#35,R7
+_KJ_DEB_940:
+	CMP/EQ	R4,R0
+	BT	_KJ_DEB_945
+	MOV.W	#36,R7
+_KJ_DEB_945:
+	M_BRA	_KJ_DEB_946
+_KJ_DEB_946:
+	MOV.L	#_PV_OF_AVE_BAKL_INI,R1		;		//ÉIÉtÉZÉbÉgílç∂(1byte)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_OF_AVE_BAKL,R1		;		//ÉIÉtÉZÉbÉgílç∂(1byte)
+	MOV.W	@R1,R4
+	MOV.L	#_CLO_OF_AVE_BAKL,R1
+	MOV.W	@R1,R2
+	EXTU.W	R2,R2
+	SWAP.B	R2,R2
+	MOV.L	#_CLO_OF_AVE_SETL,R1
+	MOV.W	@R1,R3
+	EXTU.W	R3,R3
+	SWAP.B	R3,R3
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_950
+	MOV.W	#37,R7
+_KJ_DEB_950:
+	CMP/EQ	R3,R0
+	BT	_KJ_DEB_960
+	MOV.W	#38,R7
+_KJ_DEB_960:
+	CMP/EQ	R4,R0
+	BT	_KJ_DEB_965
+	MOV.W	#39,R7
+_KJ_DEB_965:
+	M_BRA	_KJ_DEB_966
+_KJ_DEB_966:
+	MOV.L	#_PV_OF_AVE_BAKR_INI,R1		;		//ÉIÉtÉZÉbÉgï‚ê≥âE(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_OF_AVE_BAKR,R1		;		//ÉIÉtÉZÉbÉgï‚ê≥âE(1word)
+	MOV.W	@R1,R4
+	MOV.L	#_CLO_OF_AVE_BAKR,R1
+	MOV.W	@R1,R2
+	EXTU.W	R2,R2
+	SWAP.B	R2,R2
+	MOV.L	#_CLO_OF_AVE_SETR,R1
+	MOV.W	@R1,R3
+	EXTU.W	R3,R3
+	SWAP.B	R3,R3
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_970
+	MOV.W	#40,R7
+_KJ_DEB_970:
+	CMP/EQ	R3,R0
+	BT	_KJ_DEB_980
+	MOV.W	#41,R7
+_KJ_DEB_980:
+	CMP/EQ	R4,R0
+	BT	_KJ_DEB_985
+	MOV.W	#42,R7
+_KJ_DEB_985:
+	M_BRA	_KJ_DEB_986
+_KJ_DEB_986:
+	MOV.L	#_PV_OF_AVE_BAKT_INI,R1		;		//ÉIÉtÉZÉbÉgï‚ê≥çáåv(1word)
+	MOV.W	@R1,R0
+	MOV.L	#_PV_OF_AVE_BAKT,R1		;		//ÉIÉtÉZÉbÉgï‚ê≥çáåv(1word)
+	MOV.W	@R1,R4
+	MOV.L	#_CLO_OF_AVE_BAKT,R1
+	MOV.W	@R1,R2
+	EXTU.W	R2,R2
+	SWAP.B	R2,R2
+	MOV.L	#_CLO_OF_AVE_SETT,R1
+	MOV.W	@R1,R3
+	EXTU.W	R3,R3
+	SWAP.B	R3,R3
+	CMP/EQ	R2,R0
+	BT	_KJ_DEB_990
+	MOV.W	#43,R7
+_KJ_DEB_990:
+	CMP/EQ	R3,R0
+	BT	_KJ_DEB_1000
+	MOV.W	#44,R7
+_KJ_DEB_1000:
+	CMP/EQ	R4,R0
+	BT	_KJ_DEB_1005
+	MOV.W	#45,R7
+_KJ_DEB_1005:
+	M_BRA	_KJ_DEB_1006
+_KJ_DEB_1006:
+	MOV	R7,R0
+	CMP/EQ	#0,R0
+	BT	_KJ_DEB_1100
+	MOV.L	#_KJ_CHK_CNT7,R1
+	MOV.W	@R1,R0
+	ADD	#1,R0
+	MOV.W	R0,@R1
+	MOV.L	#_KJ_CHK_DAT5,R1
+	MOV.W	R7,@R1					; ¥◊∞î≠ê∂éûÇÃ∫∞ƒﬁ
+_KJ_DEB_1100:
+
+;	================================================
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	*******************************************************************
+;	***								***
+;	***	SIT-4 MC ÉpÉèÅ[É_ÉEÉìÉ`ÉFÉbÉN				***
+;	***		ÉpÉèÅ[É_ÉEÉìåüèoéûÇÕñ≥å¿ÉãÅ[Év			***
+;	***								***
+;	*******************************************************************
+_POWER_DOWN_ACT:
+	SUB_START
+
+	MOV.L	#_SCPDR,R1				; *PD CHECK
+	MOV.B	@R1,R0					;
+	MOV.W	#BIT7,R2				;
+	TST	R2,R0					;
+	BT	_P_DOWN_ACT_START			; *PD="L" THEN POWER DOWN START
+
+	MOV.W	#H'5A5A,R0				; SH4 ÉpÉèÅ[É_ÉEÉìÉ`ÉFÉbÉN
+	MOV.L	#_SH4_PDOWN_FLG,R1			;
+	MOV.W	@R1,R2					; FLG CHECK
+	CMP/EQ	R0,R2					;
+	BF	_P_DOWN_ACT_EXIT			; ÉpÉèÅ[É_ÉEÉìÇ∂Ç·Ç»Ç¢ THEN EXIT
+
+_P_DOWN_ACT_START:
+;	*** ëSÇƒÇÃäÑçûÇ›ã÷é~ ***
+	mov.l	#SR_Init_DI,r0
+	ldc	r0,sr					; SR set ëSÇƒÇÃäÑçûÇ›ã÷é~
+
+;	*** ÉpÉèÅ[É_ÉEÉìèàóùíÜ Å® ÇrÇgÇSÇ…ímÇÁÇπÇÈ ***
+	MOV.W	#H'5A5A,R0				;
+	MOV.L	#_SH2_PDOWN_FLG,R1			;
+	MOV.W	R0,@R1					; FLG_SET
+
+;	*** ÉpÉèÅ[É_ÉEÉìâÊñ ï\é¶ ***
+	FAR_JSR	#_Power_down,R0				; ÉpÉèÅ[É_ÉEÉìâÊñ ï\é¶
+
+;	*** ñ≥å¿ÉãÅ[Év ***
+_P_DOWN_MUGEN_LOOP:
+	_WDT_CLR					;
+	M_BRA	_P_DOWN_MUGEN_LOOP			;
+
+_P_DOWN_ACT_EXIT:
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***	KEYèÓïÒÇº∞π›ΩèoóÕópÇ…â¡çH	***
+;	***	2014/08/24	SIT4-MC		***
+;	***					***
+;	*******************************************
+	.EXPORT		_ASM_KEY_2_SEQ
+_ASM_KEY_2_SEQ:
+	SUB_START
+	PUSH_ALL
+
+	MOV.L	#_Key_Data_WK,R10
+	MOV.W	@R10,R1				; R1:Key_Data_WK[0]
+	ADD	#2,R10
+	MOV.W	@R10,R2				; R2:Key_Data_WK[1]
+	ADD	#2,R10
+	MOV.W	@R10,R3				; R3:Key_Data_WK[2]
+	ADD	#2,R10
+	MOV.W	@R10,R4				; R4:Key_Data_WK[3]
+
+	XOR	R7,R7
+	XOR	R8,R8
+	XOR	R9,R9
+
+	SHLR	R4
+	ROTCR	R9				; 0.12 : Å™
+	SHLR	R3
+	ROTCR	R9				; 0.13 : Å´
+	SHLR	R2
+	ROTCR	R9				; 0.14 : Å®
+	SHLR	R1
+	ROTCR	R9				; 0.15 : Å©
+
+	SHLR	R4
+	ROTCR	R8				; 1.8 : SW1
+	SHLR	R3
+	ROTCR	R8				; 1.9 : SW2
+	SHLR	R2
+	ROTCR	R8				; 1.10 : SW3
+	SHLR	R1
+	ROTCR	R8				; 1.11 : SW4
+
+	SHLR	R3
+	ROTCR	R8				; 1.12 : SW5
+	SHLR	R2
+	ROTCR	R8				; 1.13 : SW6
+	SHLR	R4
+	ROTCR	R8				; 1.14 : SW7
+	SHLR	R1
+	ROTCR	R8				; 1.15 : ENT
+
+	SHLR	R1
+	ROTCR	R7				; 0.0 : 0
+
+	SHLR	R2
+	ROTCR	R7				; 0.1 : 1
+	SHLR	R2
+	ROTCR	R7				; 0.2 : 2
+	SHLR	R2
+	ROTCR	R7				; 0.3 : 3
+
+	SHLR	R3
+	ROTCR	R7				; 0.4 : 4
+	SHLR	R3
+	ROTCR	R7				; 0.5 : 5
+	SHLR	R3
+	ROTCR	R7				; 0.6 : 6
+
+	SHLR	R4
+	ROTCR	R7				; 0.7 : 7
+	SHLR	R4
+	ROTCR	R7				; 0.8 : 8
+	SHLR	R4
+	ROTCR	R7				; 0.9: 9
+
+	SHLR	R1
+	ROTCR	R7				; 0.10 : .
+
+	SHLR	R1
+	ROTCR	R7				; 0.11 : CL
+
+	SHLR	R7				; 0.12
+	SHLR	R7				; 0.13
+	SHLR	R7				; 0.14
+	SHLR	R7				; 0.15
+
+	SWAP.W	R7,R7
+	SWAP.W	R8,R8
+	SWAP.W	R9,R9
+
+	OR	R9,R7
+	MOV.L	#_KEY_INF_2_SEQ,R10
+	MOV.W	R7,@R10
+	ADD	#2,R10
+	MOV.W	R8,@R10
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+
+;	*******************************************
+;	***					***
+;	***	hmi/cop1z interface soft	***
+;	***	2002-12-06~			***
+;	***					***
+;	*******************************************
+	.include	"ssa_opmv.src"
+
+	.END

@@ -1,0 +1,853 @@
+;	***********************************************************
+;	***							***
+;	***	call table					***
+;	***	ﾊﾞｰｼﾞｮﾝｱｯﾌﾟのboot書き換えしない様に		***
+;	***	ｱﾄﾞﾚｽを変更したくないﾌﾟﾛｸﾞﾗﾑを間接でcallする	***
+;	***	h'10000~					***
+;	***							***
+;	***********************************************************
+	.LIST	OFF
+	.include	"sh7750rg.EXT"
+	.include	"ssa_ver1.equ"
+	.INCLUDE	"shn_cmd1.MAC"		; 
+	.INCLUDE	"cm_equ1.equ"		; EQU
+	.INCLUDE	"ssa_had1.equ"		; 
+	.INCLUDE	"ssa_wram.ext"		; 
+	.LIST	ON
+
+	.IMPORT		_ASM_K1_CTRL_INT1
+	.IMPORT		_ASM_Y1_CTRL_INT1
+	.IMPORT		_ASM_K1_CTRL_INT2
+	.IMPORT		_ASM_Y1_CTRL_INT2
+	.IMPORT		_ASM_K1_CTRL_INT3
+	.IMPORT		_ASM_Y1_CTRL_INT3
+
+;;;;;	.import		_enc_rcv_int
+;;;;;	.import		_enc_rcv_eint
+
+	.IMPORT		_INT_FIFO_ERI			; 受信異常割込み
+	.IMPORT		_INT_FIFO_RXI			; 受信ﾃﾞｰﾀﾌﾙ割込み
+	.IMPORT		_INT_FIFO_BRI			; 受信ﾌﾞﾚｰｸ割込み
+	.IMPORT		_INT_FIFO_TXI			; 送信ｴﾝﾌﾟﾃｨ割込み
+
+	.IMPORT		_dio_top
+
+	.IMPORT		_IOGA1_CTRL_DAT1		; 2006-08-05 SAITO
+	.IMPORT		_IOGA2_CTRL_DAT1		; 2006-08-05 SAITO
+
+	.IMPORT		_CPUA_IRQ_ERR_INT_CNT1
+	.IMPORT		_CPUA_IRQ_ERR_INT_CNT2
+	.IMPORT		_CPUA_IRQ_ERR_INT_CNT3
+	.IMPORT		_CPUA_IRQ_ERR_INT_CNT4
+	.IMPORT		_CPUA_IRQ_ERR_INT_CNT5
+	.IMPORT		_CPUA_IRQ_ERR_INT_CNT6
+	.IMPORT		_CPUA_IRQ_ERR_INT_CNT7
+	.IMPORT		_CPUA_IRQ_ERR_INT_CNT8
+	.IMPORT		_CPUA_IRQ_ERR_INT_CNT9
+
+;;;;;	.IMPORT		_TMP_SCIF_INT			;WDTは温調で使用約5msecﾀｲﾏ
+
+
+	.EXPORT		_BOOT_CALL			;
+
+
+;	あとでちゃんと見ること！
+	.MACRO	_TIM2msINT_SCAN_ON
+	DI_PUSH_SR_SH3	WK_REG1=R0, WK_REG2=R1
+	MOV.L	#_GA_DI_CTRL_DAT1+_IOGAo_PH,R1
+	MOV.W	@R1,R0
+	OR	#BIT3,R0
+	MOV.W	R0,@R1					;
+	MOV.L	#_dio_top+_IOGAo_PH,R1
+	MOV.W	R0,@R1					;
+	EI_POP_SR_SH3 			;
+	.ENDM
+
+
+	.MACRO	_TIM2msINT_SCAN_OFF
+	DI_PUSH_SR_SH3	WK_REG1=R0, WK_REG2=R1
+	MOV.L	#_GA_DI_CTRL_DAT1+_IOGAo_PH,R1
+	MOV.W	@R1,R0
+	AND	#NBIT3,R0
+	MOV.W	R0,@R1					;
+	MOV.L	#_dio_top+_IOGAo_PH,R1
+	MOV.W	R0,@R1					;
+	EI_POP_SR_SH3 			;
+	.ENDM
+
+
+
+	.MACRO	_WDTINT_SCAN_ON
+	DI_PUSH_SR_SH3	WK_REG1=R0, WK_REG2=R1
+	MOV.L	#_GA_DI_CTRL_DAT1+_IOGAo_PF,R1
+	MOV.W	@R1,R0
+	OR	#BIT0,R0
+	MOV.W	R0,@R1					;
+	MOV.L	#_dio_top+_IOGAo_PF,R1
+	MOV.W	R0,@R1					;
+	EI_POP_SR_SH3 			;
+	.ENDM
+
+
+	.MACRO	_WDTINT_SCAN_OFF
+	DI_PUSH_SR_SH3	WK_REG1=R0, WK_REG2=R1
+	MOV.L	#_GA_DI_CTRL_DAT1+_IOGAo_PF,R1
+	MOV.W	@R1,R0
+	AND	#NBIT0,R0
+	MOV.W	R0,@R1					;
+	MOV.L	#_dio_top+_IOGAo_PF,R1
+	MOV.W	R0,@R1					;
+	EI_POP_SR_SH3 			;
+	.ENDM
+
+
+	.SECTION	Pcall,CODE			;
+
+_BOOT_CALL:
+	SHLL	R0
+	SHLL	R0
+	MOV.L	#_BOOT_CALL_TBL_TOP,R1
+	ADD	R0,R1
+	MOV	@R1,R0
+
+	JSR	@R0
+	NOP
+
+	POP_REG1 R1
+	POP_REG1 R0
+
+	SUB_END			;
+	M_RTS
+
+
+;H'040 TLB miss/invalid (load)
+_INT_CALL_TLBMiss_Load:
+;H'060 TLB miss/invalid (store)
+_INT_CALL_TLBMiss_Store
+;H'080 Initial page write
+_INT_CALL_TLBInitial_Page
+;H'0A0 TLB protect (load)
+_INT_CALL_TLBProtect_Load
+;H'0C0 TLB protect (store)
+_INT_CALL_TLBProtect_Store
+;H'0E0 Address error (load)
+_INT_CALL_Address_load
+    nop
+;H'100 Address error (store)
+_INT_CALL_Address_store
+    nop
+;H'120 FPU invalid
+_INT_CALL_FPU
+	NOP
+	NOP
+	nop
+;H'140 Reserved
+_INT_CALL_Reserved140
+    nop
+;H'160 TRAPA
+_INT_CALL_TRAPA
+    nop
+;H'180 Illegal code
+_INT_CALL_Illegal_code
+	NOP
+    nop
+;H'1A0 Illegal slot
+_INT_CALL_Illegal_slot
+	NOP
+	NOP
+	SLEEP
+    nop
+
+	.IMPORT	_ENC_BUSY_INT
+	.IMPORT	_CB_INT_START_OK;
+	.IMPORT	_IRQ_EMG_STOP
+	.IMPORT	_IRQ_SFTY_STOP
+	.IMPORT	_IRQ_STP_STOP
+
+	.IMPORT	_dio_top1
+	.IMPORT	_dio_top2
+
+GA1_PHEX	.EQU	B'00000000
+
+;H'1C0 NMI
+_INT_CALL_NMI
+;H'1E0 User Break
+_INT_CALL_User_Break
+;H'200 External hardware interrupt
+_INT_CALL_Extern_0000
+;H'220 External hardware interrupt
+_INT_CALL_Extern_0001
+	PUSH_REG1 R1
+	PUSH_REG1 R2
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_CPUA_IRQ_ERR_INT_CNT1,WKREG1=R1,WKREG2=R2,LATE=1
+	POP_REG1 R2
+	POP_REG1 R1
+    sleep
+    nop
+
+;H'240 External hardware interrupt
+_INT_CALL_Extern_0010
+	SUB_START
+	PUSH_ALL
+
+;;;;	ＥＭＧの割り込み
+	FAR_JSR	#_IRQ_EMG_STOP,R0
+
+	MOV.L	#H'A8000318,R1
+	XOR	R0,R0
+	MOV.W	R0,@R1
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;H'260 External hardware interrupt
+_INT_CALL_Extern_0011
+;H'280 External hardware interrupt
+_INT_CALL_Extern_0100
+	PUSH_REG1 R1
+	PUSH_REG1 R2
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_CPUA_IRQ_ERR_INT_CNT2,WKREG1=R1,WKREG2=R2,LATE=1
+	POP_REG1 R2
+	POP_REG1 R1
+    sleep
+    nop
+
+
+;H'2A0 External hardware interrupt
+_INT_CALL_Extern_0101:		; ENCODER BUSY INT
+	SUB_START
+	PUSH_ALL
+
+	.AIF	_SCAN_DEBUG_ENB	EQ _DEBUG_ENB
+		.AIF	_SIT_CPU_SEL	EQ	_SIT3_CPUA
+
+;	=== SCAN TIM CHECK SIT3_CPUA ===
+	MOV.L	#_IOGA1_CTRL_DAT1+_IOGAo_PH,R2		;
+	MOV.W	@R2,R1					;
+	MOV.W	#BIT7,R3				;
+	OR	R3,R1					;
+	MOV.W	R1,@R2					; WORK
+
+	MOV.B	#GA1_PHEX,R3				;
+	XOR	R3,R1					;
+	MOV.L	#_dio_top1+_IOGAo_PH,R2			; IOGA PF ADDRESS
+	MOV.W	R1,@R2					; 実出力SET
+;	======================
+		.AELSE
+;	=== SCAN TIM CHECK SIT4_CPUA ===
+	MOV.L	#_IOGA1_CTRL_DAT1+_IOGA_P4,R2		;
+	MOV.W	@R2,R1					;
+	MOV.W	#BIT5,R3				;
+	OR	R3,R1					;
+	MOV.W	R1,@R2					; WORK
+
+	MOV.B	#_IO1A_P4EX,R3				;
+	XOR	R3,R1					;
+	MOV.L	#_dio_top1+_IOGA_PDR4,R2		; IOGA1 PORT4 ADDRESS
+	MOV.W	R1,@R2					; 実出力SET
+;	======================
+
+		.AENDI
+	.AENDI
+
+
+
+	MOV.L	#_CB_INT_START_OK,R1	;
+	MOV.W	@R1,R0			;
+	TST	R0,R0			;
+	TST_BIT_OF _INT_CHK020		;
+
+	FAR_JSR	#_ENC_BUSY_INT,R0
+
+_INT_CHK020
+	MOV.L	#H'A800031C,R1
+	XOR	R0,R0
+	MOV.W	R0,@R1
+
+
+	.AIF	_SCAN_DEBUG_ENB	EQ _DEBUG_ENB
+		.AIF	_SIT_CPU_SEL	EQ	_SIT3_CPUA
+;	=== SCAN TIM CHECK SIT3_CPUA ===
+	MOV.L	#_IOGA1_CTRL_DAT1+_IOGAo_PH,R2		;
+	MOV.W	@R2,R1					;
+	MOV.W	#BIT7,R3				;
+	NOT	R3,R3					;
+	AND	R3,R1					;
+	MOV.W	R1,@R2					; WORK
+
+	MOV.B	#GA1_PHEX,R3				;
+	XOR	R3,R1					;
+	MOV.L	#_dio_top1+_IOGAo_PH,R2			; IOGA PF ADDRESS
+	MOV.W	R1,@R2					; 実出力SET
+;	======================
+		.AELSE
+;	=== SCAN TIM CHECK SIT4_CPUA ===
+	MOV.L	#_IOGA1_CTRL_DAT1+_IOGA_P4,R2		;
+	MOV.W	@R2,R1					;
+	MOV.W	#BIT5,R3				;
+	NOT	R3,R3					;
+	AND	R3,R1					;
+	MOV.W	R1,@R2					; WORK
+
+	MOV.B	#_IO1A_P4EX,R3				;
+	XOR	R3,R1					;
+	MOV.L	#_dio_top1+_IOGA_PDR4,R2		; IOGA PORT4 ADDRESS
+	MOV.W	R1,@R2					; 実出力SET
+;	======================
+
+		.AENDI
+	.AENDI
+
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;H'2C0 External hardware interrupt
+_INT_CALL_Extern_0110
+;H'2E0 External hardware interrupt
+_INT_CALL_Extern_0111
+	PUSH_REG1 R1
+	PUSH_REG1 R2
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_CPUA_IRQ_ERR_INT_CNT3,WKREG1=R1,WKREG2=R2,LATE=1
+	POP_REG1 R2
+	POP_REG1 R1
+
+
+    sleep
+    nop
+
+;H'300 External hardware interrupt
+_INT_CALL_Extern_1000:		; 安全装置遮光の割り込み
+	SUB_START
+	PUSH_ALL
+
+;;;;;	FAR_JSR	 安全装置遮光の割り込み,R0
+
+	FAR_JSR	#_IRQ_SFTY_STOP,R0
+
+	MOV.L	#H'A800031A,R1
+	XOR	R0,R0
+	MOV.W	R0,@R1
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;H'320 External hardware interrupt
+_INT_CALL_Extern_1001
+;H'340 External hardware interrupt
+_INT_CALL_Extern_1010
+	PUSH_REG1 R1
+	PUSH_REG1 R2
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_CPUA_IRQ_ERR_INT_CNT4,WKREG1=R1,WKREG2=R2,LATE=1
+	POP_REG1 R2
+	POP_REG1 R1
+    sleep
+    nop
+
+;H'360 External hardware interrupt
+_INT_CALL_Extern_1011:		; ハードウェアのＳＴＰの割り込み
+	SUB_START
+	PUSH_ALL
+
+;;;;;	FAR_JSR	 ハードウェアのＳＴＰの割り込み,R0
+
+	FAR_JSR	#_IRQ_STP_STOP,R0
+
+	MOV.L	#H'A800031E,R1
+	XOR	R0,R0
+	MOV.W	R0,@R1
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;H'380 External hardware interrupt
+_INT_CALL_Extern_1100
+;H'3A0 External hardware interrupt
+_INT_CALL_Extern_1101
+;H'3C0 External hardware interrupt
+_INT_CALL_Extern_1110
+;H'3E0 Reserved
+_INT_CALL_Reserved3E0
+	PUSH_REG1 R1
+	PUSH_REG1 R2
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_CPUA_IRQ_ERR_INT_CNT5,WKREG1=R1,WKREG2=R2,LATE=1
+	POP_REG1 R2
+	POP_REG1 R1
+    sleep
+    nop
+
+
+GA2_PGEX	.EQU	B'01100001
+
+;H'400 TMU0 TUNI0
+	.align 4
+_INT_CALL_Timer_Under_0:	; 1ms [C/B MAIN]
+	SUB_START
+	PUSH_ALL
+
+;	----------ﾃｽﾄ-----------
+;;	MOV.L	#_PDTRB,R10
+;;	MOV.W	@R10,R0
+;;	MOV.W	#BIT2,R4
+;;	OR	R4,R0
+;;	MOV.W	R0,@R10
+
+	.AIF	_SCAN_DEBUG_ENB	EQ _DEBUG_ENB
+;	=== SCAN TIM CHECK SIT4_CPUA ===
+	MOV.L	#_IOGA1_CTRL_DAT1+_IOGA_P7,R2		;
+	MOV.W	@R2,R1					;
+	MOV.W	#BIT0,R3				;
+	OR	R3,R1					;
+	MOV.W	#H'00F0,R4				;
+	OR	R4,R1					;
+	MOV.W	R1,@R2					; WORK
+
+	MOV.B	#_IO1A_P7EX,R3				;
+	XOR	R3,R1					;
+	MOV.W	#H'00F0,R4				;
+	OR	R4,R1					;
+	MOV.L	#_dio_top1+_IOGA_PDR7,R2		; IOGA1 PORT7 ADDRESS
+	MOV.W	R1,@R2					; 実出力SET
+	.AENDI
+
+	MOV.L	#_TCR0,R1			;UNF ｸﾘｱ
+	MOV.W	@R1,R0				;
+	MOV.W	#NBIT8,R2			;
+	AND	R2,R0				;
+	MOV.W	R0,@R1				;
+
+	FAR_JSR	#_ASM_K1_CTRL_INT2,R0
+	FAR_JSR	#_ASM_Y1_CTRL_INT2,R0
+
+
+	.AIF	_SCAN_DEBUG_ENB	EQ _DEBUG_ENB
+;	=== SCAN TIM CHECK SIT4_CPUA ===
+	MOV.L	#_IOGA1_CTRL_DAT1+_IOGA_P7,R2		;
+	MOV.W	@R2,R1					;
+	MOV.W	#BIT0,R3				;
+	NOT	R3,R3					;
+	AND	R3,R1					;
+	MOV.W	#H'00F0,R4				;
+	OR	R4,R1					;
+	MOV.W	R1,@R2					; WORK
+
+	MOV.B	#_IO1A_P7EX,R3				;
+	XOR	R3,R1					;
+	MOV.W	#H'00F0,R4				;
+	OR	R4,R1					;
+	MOV.L	#_dio_top1+_IOGA_PDR7,R2		; IOGA PORT7 ADDRESS
+	MOV.W	R1,@R2					; 実出力SET
+	.AENDI
+
+;;	----------ﾃｽﾄ-----------
+;;	MOV.L	#_PDTRB,R10
+;;	MOV.W	@R10,R0
+;;	MOV.W	#BIT2,R4
+;;	NOT	R4,R4
+;;	AND	R4,R0
+;;	MOV.W	R0,@R10
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+GA2_PHEX	.EQU	B'00000000
+
+;H'420 TMU1 TUNI1
+	.align 4
+_INT_CALL_Timer_Under_1:	; 200us	[未使用]
+	SUB_START
+	PUSH_ALL
+
+	MOV.L	#_TCR1,R1			;UNF ｸﾘｱ
+	MOV.W	@R1,R0				;
+	MOV.W	#NBIT8,R2			;
+	AND	R2,R0				;
+	MOV.W	R0,@R1				;
+
+;;;	FAR_JSR	#_ASM_K1_CTRL_INT1,R0
+;;;;	FAR_JSR	#_ASM_Y1_CTRL_INT1,R0
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;H'440 TMU2 TUNI2
+	.align 4
+_INT_CALL_Timer_Under_2:	;3.3msec[SEQ]
+	SUB_START
+	PUSH_ALL
+
+;;	----------ﾃｽﾄ兼CPUA本ちゃん-----------
+	MOV.L	#_PDTRB,R10
+	MOV.W	@R10,R0
+	MOV.W	#BIT2,R4
+	OR	R4,R0
+	MOV.W	R0,@R10
+
+	MOV.L	#_TCR2,R1			;UNF ｸﾘｱ
+	MOV.W	@R1,R0				;
+	MOV.W	#NBIT8,R2			;
+	AND	R2,R0				;
+	MOV.W	R0,@R1				;
+
+
+	FAR_JSR	#_ASM_Y1_CTRL_INT3,R0
+
+
+;	----------ﾃｽﾄ兼CPUA本ちゃん-----------
+	MOV.L	#_PDTRB,R10
+	MOV.W	@R10,R0
+	MOV.W	#BIT2,R4
+	NOT	R4,R4
+	AND	R4,R0
+	MOV.W	R0,@R10
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;H'460 TMU2 TICPI2
+_INT_CALL_Input_Capture
+;H'480 RTC ATI
+_INT_CALL_RTC_ATI
+;H'4A0 RTC PRI
+_INT_CALL_RTC_PRI
+;H'4C0 RTC CUI
+_INT_CALL_RTC_CUI
+	PUSH_REG1 R1
+	PUSH_REG1 R2
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_CPUA_IRQ_ERR_INT_CNT6,WKREG1=R1,WKREG2=R2,LATE=1
+	POP_REG1 R2
+	POP_REG1 R1
+	sleep
+	nop
+
+
+;H'4E0 SCI ERI
+_INT_CALL_SCI_ERI:
+	SUB_START
+	PUSH_ALL
+
+;;;;;	FAR_JSR	#_enc_rcv_eint,R0
+
+	MOV.L	#_SCSSR1,R1			;
+	MOV.B	@R1,R0				;
+	MOV.B	#(BIT5+BIT4+BIT3),R2
+	NOT	R2,R2
+	AND	R2,R0				;
+	MOV.B	R0,@R1				;
+
+	POP_ALL					;
+	SUB_END
+	M_RTS
+
+
+;H'500 SCI RXI
+_INT_CALL_SCI_RXI:
+	SUB_START
+	PUSH_ALL
+
+;;;;;	FAR_JSR	#_enc_rcv_int,R0		;
+
+	MOV.L	#_SCSSR1,R1			;
+	MOV.B	@R1,R0				;
+	AND	#NBIT6,R0				;
+	MOV.B	R0,@R1				;
+
+	POP_ALL					;
+	SUB_END
+	M_RTS
+
+
+;H'520 SCI TXI
+_INT_CALL_SCI_TXI
+;H'540 SCI TEI
+_INT_CALL_SCI_TEI
+	PUSH_REG1 R1
+	PUSH_REG1 R2
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_CPUA_IRQ_ERR_INT_CNT7,WKREG1=R1,WKREG2=R2,LATE=1
+	POP_REG1 R2
+	POP_REG1 R1
+    sleep
+    nop
+
+;H'560 WDT ITI
+_INT_CALL_WDT
+	SUB_START
+	PUSH_ALL
+
+;;;;;	_WDTINT_SCAN_ON
+
+	MOV.L	#_WTCNT,R1			; COUNTER PRESET
+	MOV.B	@R1,R0				;
+	MOV.W	#H'5A48,R0			; 255-183=72 183ｶｳﾝﾄでｵｰﾊﾞｰﾌﾛｰ
+	MOV.W	R0,@R1				;
+
+	MOV.W	#H'A500,R3			;
+	MOV.L	#_WTCSR,R1			; IVOF CLEAR
+	MOV.B	@R1,R0				;
+	MOV.W	#B'0000000011110111,R2		;
+	AND	R2,R0				; IVOF CLEAR
+	OR	R3,R0				; 上位=5A
+	MOV.W	R0,@R1				;
+
+;;;;;	FAR_JSR	#_TMP_SCIF_INT,R0		;WDTは温調で使用約5msecﾀｲﾏ
+
+;;;;;	_WDTINT_SCAN_OFF
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;H'580 REF RCMI
+_INT_CALL_REF_RCMI
+;H'5A0 REF ROVI
+_INT_CALL_REF_ROVI
+;H'5C0 Reserved
+_INT_CALL_Reserved5C0
+;H'5E0 Reserved
+_INT_CALL_Reserved5E0
+;H'600 Hitachi-UDI 
+_INT_CALL_HUDI                               
+;H'620 Reserved
+_INT_CALL_Reserved620
+;H'640 DMAC DMTE0
+_INT_CALL_DMAC_DMTE0
+;H'660 DMAC DMTE1
+_INT_CALL_DMAC_DMTE1
+;H'680 DMAC DMTE2
+_INT_CALL_DMAC_DMTE2
+;H'6A0 DMAC DMTE3
+_INT_CALL_DMAC_DMTE3
+;H'6C0 DMAC DMAE
+_INT_CALL_DMAC_DMAE
+;H'6E0 Reserved
+_INT_CALL_Reserved6E0
+	PUSH_REG1 R1
+	PUSH_REG1 R2
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_CPUA_IRQ_ERR_INT_CNT8,WKREG1=R1,WKREG2=R2,LATE=1
+	POP_REG1 R2
+	POP_REG1 R1
+    sleep
+    nop
+
+;H'700 SCIF ERI 
+_INT_CALL_SCIF_ERI:
+	SUB_START
+	PUSH_ALL
+
+	FAR_JSR	#_INT_FIFO_ERI,R0			; 受信異常割込み
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;H'720 SCIF RXI
+_INT_CALL_SCIF_RXI:
+	SUB_START
+	PUSH_ALL
+
+	FAR_JSR	#_INT_FIFO_RXI,R0			; 受信ﾃﾞｰﾀﾌﾙ割込み
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;H'740 SCIF BRI
+_INT_CALL_SCIF_BRI:
+	SUB_START
+	PUSH_ALL
+
+	FAR_JSR	#_INT_FIFO_BRI,R0			; 受信ﾌﾞﾚｰｸ割込み
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;H'760 SCIF TXI
+_INT_CALL_SCIF_TXI:
+	SUB_START
+	PUSH_ALL
+
+	FAR_JSR	#_INT_FIFO_TXI,R0			; 送信ｴﾝﾌﾟﾃｨ割込み
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;H'780 Reserved
+_INT_CALL_Reserved780
+;H'7A0 Reserved
+_INT_CALL_Reserved7A0
+;H'7C0 Reserved
+_INT_CALL_Reserved7C0
+;H'7E0 Reserved
+_INT_CALL_Reserved7E0
+;H'800 Illegal FPU
+_INT_CALL_Illegal_FPU
+;H'820 Illegal slot FPU
+_INT_CALL_Illegal_slot_FPU
+	PUSH_REG1 R1
+	PUSH_REG1 R2
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_CPUA_IRQ_ERR_INT_CNT9,WKREG1=R1,WKREG2=R2,LATE=1
+	POP_REG1 R2
+	POP_REG1 R1
+    sleep
+    nop
+;	====== これがないとWARNING ===
+LOOP_X:
+	M_BRA	LOOP_X
+
+
+	.SECTION	P,CODE			;
+_BOOT_CALL_TBL_TOP:
+	.data.l		H'0				; DUMMY
+	.data.l		H'0				; DUMMY
+
+	;H'040 TLB miss/invalid (load)
+	.data.l		_INT_CALL_TLBMiss_Load		
+	;H'060 TLB miss/invalid (store)
+	.data.l		_INT_CALL_TLBMiss_Store		
+	;H'080 Initial page write
+	.data.l		_INT_CALL_TLBInitial_Page	
+	;H'0A0 TLB protect (load)
+	.data.l		_INT_CALL_TLBProtect_Load	
+	;H'0C0 TLB protect (store)
+	.data.l		_INT_CALL_TLBProtect_Store	
+	;H'0E0 Address error (load)
+	.data.l		_INT_CALL_Address_load		
+	;H'100 Address error (store)
+	.data.l		_INT_CALL_Address_store
+	;H'120 FPU invalid
+	.data.l		_INT_CALL_FPU
+	;H'140 Reserved
+	.data.l		_INT_CALL_Reserved140			
+	;H'160 TRAPA
+	.data.l		_INT_CALL_TRAPA				
+	;H'180 Illegal code
+	.data.l		_INT_CALL_Illegal_code		
+	;H'1A0 Illegal slot
+	.data.l		_INT_CALL_Illegal_slot		
+	;H'1C0 NMI
+	.data.l		_INT_CALL_NMI				
+	;H'1E0 User Break
+	.data.l		_INT_CALL_User_Break		
+	;H'200 External hardware interrupt
+	.data.l		_INT_CALL_Extern_0000		
+	;H'220 External hardware interrupt
+	.data.l		_INT_CALL_Extern_0001		
+	;H'240 External hardware interrupt
+	.data.l		_INT_CALL_Extern_0010		
+	;H'260 External hardware interrupt
+	.data.l		_INT_CALL_Extern_0011		
+	;H'280 External hardware interrupt
+	.data.l		_INT_CALL_Extern_0100		
+	;H'2A0 External hardware interrupt
+	.data.l		_INT_CALL_Extern_0101		
+	;H'2C0 External hardware interrupt
+	.data.l		_INT_CALL_Extern_0110		
+	;H'2E0 External hardware interrupt
+	.data.l		_INT_CALL_Extern_0111		
+	;H'300 External hardware interrupt
+	.data.l		_INT_CALL_Extern_1000		
+	;H'320 External hardware interrupt
+	.data.l		_INT_CALL_Extern_1001		
+	;H'340 External hardware interrupt
+	.data.l		_INT_CALL_Extern_1010		
+	;H'360 External hardware interrupt
+	.data.l		_INT_CALL_Extern_1011		
+	;H'380 External hardware interrupt
+	.data.l		_INT_CALL_Extern_1100		
+	;H'3A0 External hardware interrupt
+	.data.l		_INT_CALL_Extern_1101		
+	;H'3C0 External hardware interrupt
+	.data.l		_INT_CALL_Extern_1110		
+	;H'3E0 Reserved
+	.data.l		_INT_CALL_Reserved3E0		
+	;H'400 TMU0 TUNI0
+	.data.l		_INT_CALL_Timer_Under_0		
+	;H'420 TMU1 TUNI1
+	.data.l		_INT_CALL_Timer_Under_1		
+	;H'440 TMU2 TUNI2
+	.data.l		_INT_CALL_Timer_Under_2		
+	;H'460 TMU2 TICPI2
+	.data.l		_INT_CALL_Input_Capture		
+	;H'480 RTC ATI
+	.data.l		_INT_CALL_RTC_ATI			
+	;H'4A0 RTC PRI
+	.data.l		_INT_CALL_RTC_PRI			
+	;H'4C0 RTC CUI
+	.data.l		_INT_CALL_RTC_CUI			
+	;H'4E0 SCI ERI
+	.data.l		_INT_CALL_SCI_ERI			
+	;H'500 SCI RXI
+	.data.l		_INT_CALL_SCI_RXI			
+	;H'520 SCI TXI
+	.data.l		_INT_CALL_SCI_TXI			
+	;H'540 SCI TEI
+	.data.l		_INT_CALL_SCI_TEI			
+	;H'560 WDT ITI
+	.data.l		_INT_CALL_WDT				
+	;H'580 REF RCMI
+	.data.l		_INT_CALL_REF_RCMI			
+	;H'5A0 REF ROVI
+	.data.l		_INT_CALL_REF_ROVI			
+	;H'5C0 Reserved
+	.data.l		_INT_CALL_Reserved5C0		
+	;H'5E0 Reserved
+	.data.l		_INT_CALL_Reserved5E0
+	;H'600 Hitachi-UDI 
+	.data.l		_INT_CALL_HUDI                               
+	;H'620 Reserved
+	.data.l		_INT_CALL_Reserved620
+	;H'640 DMAC DMTE0
+	.data.l		_INT_CALL_DMAC_DMTE0
+	;H'660 DMAC DMTE1
+	.data.l		_INT_CALL_DMAC_DMTE1
+	;H'680 DMAC DMTE2
+	.data.l		_INT_CALL_DMAC_DMTE2
+	;H'6A0 DMAC DMTE3
+	.data.l		_INT_CALL_DMAC_DMTE3
+	;H'6C0 DMAC DMAE
+	.data.l		_INT_CALL_DMAC_DMAE
+	;H'6E0 Reserved
+	.data.l		_INT_CALL_Reserved6E0
+	;H'700 SCIF ERI 
+	.data.l		_INT_CALL_SCIF_ERI                               
+	;H'720 SCIF RXI
+	.data.l		_INT_CALL_SCIF_RXI
+	;H'740 SCIF BRI
+	.data.l		_INT_CALL_SCIF_BRI
+	;H'760 SCIF TXI
+	.data.l		_INT_CALL_SCIF_TXI
+	;H'780 Reserved
+	.data.l		_INT_CALL_Reserved780
+	;H'7A0 Reserved
+	.data.l		_INT_CALL_Reserved7A0
+	;H'7C0 Reserved
+	.data.l		_INT_CALL_Reserved7C0
+	;H'7E0 Reserved
+	.data.l		_INT_CALL_Reserved7E0
+	;H'800 Illegal FPU
+	.data.l		_INT_CALL_Illegal_FPU
+	;H'820 Illegal slot FPU
+	.data.l		_INT_CALL_Illegal_slot_FPU
+
+
+	.END
+

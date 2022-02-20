@@ -1,0 +1,258 @@
+;	***************************************************
+;	***						***
+;	***						***
+;	***	各インターフェイスソフト		***
+;	***						***
+;	***						***
+;	***************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"		; EQU
+	.include	"ssa_ver1.equ"
+	.INCLUDE	"CPU_REG.EXT"		; 
+	.INCLUDE	"shn_cmd1.mac"		; 
+	.INCLUDE	"ssa_pfom.equ"		; //equ定義
+	.INCLUDE	"ssa_khad.equ"		; //equ定義
+	.INCLUDE	"ssa_wram.ext"		; 
+	.INCLUDE	"ssa_wrmy.ext"		; 
+
+	.LIST	ON
+
+
+	.SECTION	P,CODE			;
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 PROGRAM	***
+;	//	***********************************
+
+	.IMPORT		_SEQ_RUN_CHG_MAIN		; ｼｰｹﾝｽFROM->SDRAM命令変換
+	.IMPORT		_IOGA_DI_LOAD			;
+
+	.IMPORT		_DSET_FLG_MAKE			; 画面切り替えに使うDSET信号をフラグにする
+
+	.IMPORT		_SEQ_CB_WKINRAM_SET		;
+	.IMPORT		_REMOTE_INDT_READ		;
+	.IMPORT		_REMOTE_OUTDT_STORE		;
+;;;;;	.IMPORT		_CTRL_OUTPUT	;
+
+;;;;;2014-02-14	.IMPORT		_AD_LOAD			;
+	.IMPORT	_AD_LOADX
+	.IMPORT		_DA_CNVOUT			;
+	.IMPORT		_HANYOU_IN_SEQ_SET		; 汎用入力ｼｰｹﾝｽｾｯﾄ
+	.IMPORT		_HANYOU_OUT_SEQ_SET		; 汎用出力ｼｰｹﾝｽｾｯﾄ
+	.IMPORT		_SEQ_RUN_MAIN			; ｼｰｹﾝｽ処理
+
+	.IMPORT		_RENIA_SENCER			; ﾘﾆｱｾﾝｻ処理
+	.IMPORT		_RCIVE2_READ			;2msec(受信ﾃﾞｰﾀ)
+	.IMPORT		_SEND2_SEND			;2msec(送信)
+
+	.IMPORT		_SEQ203_OUT_CHG			;
+
+	.IMPORT		_EMG_INPUT_FLG_MAKE		;
+
+	.IMPORT		_FSFTY_INDT_MAKE		; 前安全装置生データ作成
+	.IMPORT		_RSFTY_INDT_MAKE		; 後安全装置生データ作成
+
+	.IMPORT		_SEQ_CB_DP_WR			;//クラッチで使用しているデータをDPRAMへ転送
+
+	.IMPORT		_POWER_DOWN_ACT			; パワーダウンの処理
+
+;	======================================== SAITO INS 2002-09-12
+;	==== ｾﾙﾌﾁｪｯｸ実処理 ====
+	.IMPORT	_SLF_HNDFLG_LOAD			; CPUA,B FLG入れ替えLOAD
+	.IMPORT	_SELF_CHECK_ACT				; セルフチェック実処理
+	.IMPORT	_SLF_HNDFLG_STORE			; CPUA,B FLG入れ替えSTORE
+;	========================================
+
+	.IMPORT	_SYUKKA_HANDPLS_SMP_START		; 位置決めＬＳＩから位置取込 手パ カウント開始
+	.IMPORT	_SYUKKA_HANDPLS_SMP			; 位置決めＬＳＩから位置取込 手パ
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 MEMORY,HARD	***
+;	//	***********************************
+
+	.IMPORT		_dio_top1			; IOGA PF ADDRESS
+
+	.IMPORT		_SEQ_CARD_RAM			;
+
+;	==== コマツ追加 ===
+	.IMPORT		_ENC360_BITFLW_CNT			;
+	.IMPORT		_ENC360_BITERR_CNT			;
+	.IMPORT		_CB_SEQ_SW_SEL028			;
+	.IMPORT		_CB_SEQ_SW_SEL029			;
+
+	.IMPORT		_ENC360_INOLD				;
+	.IMPORT		_ENC360_INDT				;
+
+;	//	***********************************
+;	//	***	PUBLIC 宣言 PROGRAM	***
+;	//	***********************************
+	.EXPORT		_ASM_DMY1_SOFT_INIT		;
+	.EXPORT		_ASM_DMY1_DATA_INIT		;isa-->SH4または SH4(ﾏｽﾀ→ｽﾚｰﾌﾞ)
+	.EXPORT		_ASM_DMY1_DATA_MAIN		;//ﾃﾞｰﾀ受信後毎スキャン
+	.EXPORT		_ASM_Y1_CTRL_MAIN		;//メインスキャン
+
+	.EXPORT		_ASM_Y1_CTRL_INT1		;200us
+	.EXPORT		_ASM_Y1_CTRL_INT2		;1ms
+	.EXPORT		_ASM_Y1_CTRL_INT3		;2ms
+
+	.IMPORT		_SCIF_REG_INIT			; 通信ﾚｼﾞｽﾀ初期化
+	.IMPORT		_TMP_INT_INIT			;
+
+	.IMPORT		_INIT_ERR_SYSP_SET		; ｲﾆｼｬﾙ時にｼｽﾊﾟﾗ→WORKRAM
+	.IMPORT		_CMP2_ERR_DATA_MAKE		; 二重回路異常検知で参照する相手信号データ作成
+
+	.IMPORT		_FROM_PRG_DATA_CHK		; フラッシュＲＯＭ内プログラムチェック
+	.IMPORT		_CPUAB_ERR_SEQOFF		; CPUAER,CPUBER THEN シーケンス実出力領域ALLOFF(SEQ8～12)
+
+;	==== コマツ追加 ===
+	.IMPORT		_ENC_BUSY_INT				;dioy
+
+
+;	==== 共通化 2006-07-25 SAITO ====
+	.IMPORT		_AD_CNV_INIT			; ＡＤコンバータ初期化
+
+
+
+;	***********************************************************
+;	***							***
+;	***		ｲﾆｼｬﾙﾃﾞｰﾀ受信前１回			***
+;	***							***
+;	***********************************************************
+_ASM_DMY1_SOFT_INIT:	;
+	SUB_START
+	PUSH_ALL
+
+
+	FAR_JSR	#_AD_CNV_INIT,R0		; ＡＤコンバータ初期化
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***			ｲﾆｼｬﾙ処理	１回		***
+;	***							***
+;	***********************************************************
+	.IMPORT	_ADCHGREQ_INIT_START		;
+
+_ASM_DMY1_DATA_INIT:		;isa-->SH4または SH4(ﾏｽﾀ→ｽﾚｰﾌﾞ)
+	SUB_START
+	PUSH_ALL
+
+	FAR_JSR	#_ADCHGREQ_INIT_START,R0	;2014-10-11
+
+;	--------- できれば3CH×8(移動平均)=24回読ませたい
+;
+;;;;;;;;;;;;;;;	FAR_JSR	#_AD_LOADX,R0				;
+
+;100usec wait
+;;;;;;;;;;;;;;;	FAR_JSR	#_AD_LOADX,R0				;
+
+;100usec wait
+
+;;;;;;;;;;;;;;;	FAR_JSR	#_AD_LOADX,R0				;
+;100usec wait
+
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***		ﾃﾞｰﾀ受信後毎スキャン			***
+;	***							***
+;	***********************************************************
+;	PUSH_ALL不要
+;	ｱｾﾝﾌﾞﾗから呼ばれる
+;
+_ASM_DMY1_DATA_MAIN:	;//ﾃﾞｰﾀ受信後毎スキャン
+	SUB_START
+
+
+	SUB_END
+	M_RTS
+
+
+
+;	***********************************************************
+;	***							***
+;	***		制御用メインスキャン			***
+;	***							***
+;	***********************************************************
+	.IMPORT	_MAIN_START_OK
+
+_ASM_Y1_CTRL_MAIN:	;//メインスキャン
+	SUB_START
+	PUSH_ALL
+
+
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***		定周期200usec(100usec)			***
+;	***							***
+;	***********************************************************
+_ASM_Y1_CTRL_INT1:	;//200usec割込(100usec)使わないと思う
+	SUB_START
+
+
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***		定周期1msec(1msec)			***
+;	***							***
+;	***********************************************************
+;	----- 2014-08-31----------
+	.IMPORT		_KEEPRY_DATA_BAKUP	;
+
+_ASM_Y1_CTRL_INT2:	;//1msec割込
+	SUB_START
+
+
+;	----	- 2011-03-18 -	-----------
+	FAR_JSR	#_AD_LOADX,R0				;CH4
+
+;	----- 2014-08-31----------
+	FAR_JSR	#_KEEPRY_DATA_BAKUP,R0
+
+	FAR_JSR	#_AD_LOADX,R0				;CH3
+
+;
+	FAR_JSR	#_AD_LOADX,R0				;CH2:読めるかなあ
+
+
+	SUB_END
+	M_RTS
+
+
+
+;;;;_TINT10MS	.EQU	2			; 5ms*2=10mS
+_TINT10MS	.EQU	4			; 2.5ms*4=10mS
+
+;	***********************************************************
+;	***							***
+;	***		定周期2msec				***
+;	***		==>2.5msec				***
+;	***********************************************************
+
+_ASM_Y1_CTRL_INT3:	;//2msec
+	SUB_START
+
+
+	SUB_END
+	M_RTS
+
+
+
+	.END

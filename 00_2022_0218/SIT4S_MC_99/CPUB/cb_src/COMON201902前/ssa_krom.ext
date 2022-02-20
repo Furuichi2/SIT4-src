@@ -1,0 +1,171 @@
+;	***************************
+;	***	汎用ルーチン	***
+;	***************************
+	.GLOBAL		_EMG_OUT		;ssa_khad.src
+	.GLOBAL		_EXQ_OUT		;ssa_khad.src
+	.GLOBAL		_RESET_OUT		;ssa_khad.src
+	.GLOBAL		_RESET_END_OUT		;ssa_khad.src
+	.GLOBAL		_VON1_ON		;ssa_khad.src
+	.GLOBAL		_VON1_OF		;ssa_khad.src
+	.GLOBAL		_VON2_ON		;ssa_khad.src
+	.GLOBAL		_VON2_OF		;ssa_khad.src
+	.GLOBAL		_VON3_ON		;ssa_khad.src
+	.GLOBAL		_VON3_OF		;ssa_khad.src
+	.GLOBAL		_RDY_ON			;ssa_khad.src
+	.GLOBAL		_RDY_OF			;ssa_khad.src
+	.GLOBAL		_ANTI_ON		;ssa_khad.src
+	.GLOBAL		_ANTI_OF		;ssa_khad.src
+	.GLOBAL		_AUTO_ON		;ssa_khad.src
+	.GLOBAL		_AUTO_OF		;ssa_khad.src
+	.GLOBAL		_FRCYCL_OF		;ssa_khad.src
+	.GLOBAL		_FRCYCL_ON		;ssa_khad.src
+
+;	*******************************************
+;	***					***
+;	***	各状態ハンドシェイクと処理	***
+;	***					***
+;	*******************************************
+;_SH4_HD_CTRL_REDY	.SRES	2	;準備完了にしたい
+;_SH2_HD_CTRL_REDY	.SRES	2	;準備完了にしたい
+;_SH4_HD_CTRL_BUSY	.SRES	2	;準備未完了にしたい
+;_SH2_HD_CTRL_BUSY	.SRES	2	;準備未完了にしたい
+;_SH4_HD_POS_START	.SRES	2	;起動したい
+;_SH2_HD_POS_START	.SRES	2	;起動したい
+;_SH4_HD_SFTY_AUTO	.SRES	2	;AUTOにしたい/安全一工程,連続ｶｳﾝﾀ
+;_SH2_HD_SFTY_AUTO	.SRES	2	;AUTOにしたい/安全一工程,連続ｶｳﾝﾀ
+;_SH4_HD_NEAR_ZERO	.SRES	2	;ﾆｱｾﾞﾛ処理を行いたい
+;_SH2_HD_NEAR_ZERO	.SRES	2	;ﾆｱｾﾞﾛ処理を行いたい
+;_SH4_HD_CNT_STOP	.SRES	2	;連続停止
+;_SH2_HD_CNT_STOP	.SRES	2	;連続停止
+;_SH4_HD_STEP_END	.SRES	2	;位置決め完了としたい
+;_SH2_HD_STEP_END	.SRES	2	;位置決め完了としたい
+
+
+;	***********************************
+;	***				***
+;	***	READY 準備完了		***
+;	***				***
+;	***********************************
+	.GLOBAL	_CPU_AB_RDY_OF_OUT
+	.GLOBAL	_CPU_BA_RDY_OF_OUT
+	.GLOBAL	_CPU_AB_RDY_ON_OUT
+	.GLOBAL	_CPU_BA_RDY_ON_JG
+	.GLOBAL	_CPU_AB_RDY_OF_JG
+
+;	***********************************
+;	***				***
+;	***	BUSY 準備未完了		***
+;	***				***
+;	***********************************
+	.GLOBAL	_CPU_AB_BSY_OF_OUT
+	.GLOBAL	_CPU_BA_BSY_OF_OUT
+	.GLOBAL	_CPU_AB_BSY_ON_OUT
+	.GLOBAL	_CPU_BA_BSY_ON_JG
+	.GLOBAL	_CPU_AB_BSY_OF_JG
+
+;	***********************************
+;	***				***
+;	***	STR 運転開始		***
+;	***				***
+;	***********************************
+	.GLOBAL	_CPU_AB_STR_OF_OUT
+	.GLOBAL	_CPU_BA_STR_OF_OUT
+	.GLOBAL	_CPU_AB_STR_ON_OUT
+	.GLOBAL	_CPU_BA_STR_ON_JG
+	.GLOBAL	_CPU_AB_STR_OF_JG
+
+;	***********************************
+;	***				***
+;	***	AUTO	開始		***
+;	***				***
+;	***********************************
+	.GLOBAL	_CPU_AB_DRVSTOP_OF_OUT
+	.GLOBAL	_CPU_AB_DRVSTOP_ON_OUT	;
+	.GLOBAL	_CPU_BA_DRVSTOP_ON_JG	;
+	.GLOBAL	_CPU_BA_DRVSTOP_OF_OUT	;
+
+;;2007-03-02	.GLOBAL	_CPU_AB_ATO_OF_OUT
+;;2007-03-02	.GLOBAL	_CPU_BA_ATO_OF_OUT
+;;2007-03-02	.GLOBAL	_CPU_AB_ATO_ON_OUT
+;;2007-03-02	.GLOBAL	_CPU_BA_ATO_ON_JG
+;;2007-03-02	.GLOBAL	_CPU_AB_ATO_OF_JG
+
+;	***********************************
+;	***				***
+;	***	ニアゼロ開始		***
+;	***				***
+;	***********************************
+	.GLOBAL	_CPU_AB_NZR_OF_OUT
+	.GLOBAL	_CPU_BA_NZR_OF_OUT
+	.GLOBAL	_CPU_AB_NZR_ON_OUT
+	.GLOBAL	_CPU_BA_NZR_ON_JG
+	.GLOBAL	_CPU_AB_NZR_OF_JG
+
+
+;	***********************************
+;	***				***
+;	***	連続停止		***
+;	***				***
+;	***********************************
+	.GLOBAL	_CPU_AB_CST_OF_OUT1	;
+	.GLOBAL	_CPU_AB_CST_OF_OUT2	;
+	.GLOBAL	_CPU_BA_CST_OF_OUT
+	.GLOBAL	_CPU_AB_CST_ON_OUT1
+	.GLOBAL	_CPU_AB_CST_ON_OUT2
+	.GLOBAL	_CPU_BA_CST_ON_JG
+	.GLOBAL	_CPU_AB_CST_OF_JG
+
+;	***********************************
+;	***				***
+;	***	ステップ停止		***
+;	***				***
+;	***********************************
+	.GLOBAL	_CPU_AB_CED_OF_OUT
+	.GLOBAL	_CPU_BA_CED_OF_OUT
+	.GLOBAL	_CPU_AB_CED_ON_OUT
+	.GLOBAL	_CPU_BA_CED_ON_JG
+	.GLOBAL	_CPU_AB_CED_OF_JG
+
+;	***********************************
+;	***				***
+;	***	相手CPUの工程をROへ	***
+;	***				***
+;	***********************************
+	.GLOBAL	_CPU_BA_STEP_LOAD
+
+;	***********************************
+;	***				***
+;	***	ｽﾗｲﾄﾞ自動待機(hold)	***
+;	***				***
+;	***********************************
+	.GLOBAL	_CPU_AB_DRVHLDSTOP_ON_OUT	;
+	.GLOBAL	_CPU_AB_DRVHLDSTOP_OF_OUT	;
+	.GLOBAL	_CPU_BA_DRVHLDSTOP_ON_JG	;
+	.GLOBAL	_CPU_BA_DRVHLDSTOP_OF_JG	;
+
+;	*******************************************
+;	***		ssa_com1.src 		***
+;	*******************************************
+	.GLOBAL		_DIVS_32REG2_32REG1_R4_32REG2_R2	;(R2/R4-->R2)
+	.GLOBAL		_DIVS_64R1R2_32R4_32R2			;(R1,R2/R4-->R2)
+	.GLOBAL		_DIVU_64R1R2_32R4_32R2			;
+	.GLOBAL		_HIGH_DIVS_32REG2_16REG1_R4_16REG2_R2	;(R2/R4-->R2)
+	.GLOBAL		_HIGH_S32R2_MUL_S32R1_DIV_S32R4_S32R2	;(R2*R1/R4-->R2)
+	.GLOBAL		_FPU_R2_MUL_R1_DIV_R4			;
+	.GLOBAL		_FPU_R2_MUL_R1_R3_DIV_R4		;
+	.GLOBAL		_FPU_DIVS_32REG2_32REG1_R4_32REG2_R2	;
+	.GLOBAL		_FPU_DIVS_32REG2_DIV_32REG4_R2_MOD_R1	;
+
+	.GLOBAL		_MULDIV_R2S32mR1S32dR4S32aR1R2S64;
+	.GLOBAL		_MULDIV_R1R2S64mR3S32dR4S32aR1R2S64
+	.GLOBAL		_MUL_R1R2S64mR3S32aR1R2S64		;
+	
+	.GLOBAL		_DIVS_64R1R2_32R4_64R1R2	;
+	.GLOBAL		_DIVU_64R1R2_32R4_64R1R2	;
+
+	.GLOBAL		_DIG_AREA_CHK0
+	.GLOBAL		_DIG_AREA_CHK1
+
+	.GLOBAL		_FPU_POS_HOKAN1
+	.GLOBAL		_FPU_TIM_HOKAN1
+	.GLOBAL		_X_R2_MUL_R1_DIV_R4

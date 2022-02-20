@@ -1,0 +1,78 @@
+;	***************************************************
+;	***						***
+;	***		外部ＳＲＡＭ定義		***
+;	***						***
+;	***************************************************
+	.GLOBAL		_shima_sram_top;
+
+	.global		_cpuab_hs_out0;
+
+;	***********************************
+;	***	HMI			***
+;	***	FIT_SRC <- S_SRC	***
+;	***********************************
+	.GLOBAL		_Key_Data_Flg;
+	.GLOBAL		_Key_Data_No;
+	.GLOBAL		_Key_Data_WK;	//V05q
+
+;	***********************************
+;	***	HMI			***
+;	***	FIT_SRC -> S_SRC	***
+;	***********************************
+	.GLOBAL		_Lcd_Contrast;
+;//	.GLOBAL		_LCD_WORK1;
+;//	.GLOBAL		_LCD_WORK2;
+
+;	***********************************
+;	***	HMI			***
+;	***	S_SRCだけ		***
+;	***********************************
+	.GLOBAL		_KEY_SCAN;
+	.GLOBAL		_GAMEN_ON_FLG;
+	.GLOBAL		_kan_bank_dat;
+	.GLOBAL		_hmi2_test_wk1;
+	.GLOBAL		_hmi2_test_wk2;
+	.GLOBAL		_hmi2_test_type;
+
+;	***********************************
+;	***	HMI			***
+;	***	S_SRCだけ		***
+;	***********************************
+	.GLOBAL		_kata_no_sv;
+	.GLOBAL		_kata_no_ld;
+	.GLOBAL		_kata_adr_sv;
+	.GLOBAL		_kata_adr_ld;
+
+;	***********************************
+;	***	HMI			***
+;	***	S_SRCだけ		***
+;	***********************************
+	.GLOBAL		_aLCD_NO;
+	.GLOBAL		_aLCD_WR_ADR;
+	.GLOBAL		_aLCD_MOZI_SUU;
+	.GLOBAL		_aLCD_BUFF;
+
+	.GLOBAL		_STACK_CHK_FLG;		// V05
+
+;	*******************************************************************
+;	***								***
+;	***	荷重計バックアップ化け不具合調査用プログラム		***	2007/10/05 V05i
+;	***								***
+;	*******************************************************************
+	.GLOBAL		_PV_GAIN_BAK1L_INI;		//最大歪み２０００左ゲイン(1word)
+	.GLOBAL		_PV_GAIN_BAK1R_INI;		//最大歪み２０００右ゲイン(1word)
+	.GLOBAL		_PV_GAIN_BAK2L_INI;		//最大歪み１５００左ゲイン(1word)
+	.GLOBAL		_PV_GAIN_BAK2R_INI;		//最大歪み１５００右ゲイン(1word)
+	.GLOBAL		_PV_GAIN_BAK3L_INI;		//最大歪み　８００左ゲイン(1word)
+	.GLOBAL		_PV_GAIN_BAK3R_INI;		//最大歪み　８００右ゲイン(1word)
+	.GLOBAL		_PV_GAIN_BAK4L_INI;		//最大歪み　４００左ゲイン(1word)
+	.GLOBAL		_PV_GAIN_BAK4R_INI;		//最大歪み　４００右ゲイン(1word)
+	.GLOBAL		_PV_GAIN_BAK5L_INI;		//最大歪み　２００左ゲイン(1word)
+	.GLOBAL		_PV_GAIN_BAK5R_INI;		//最大歪み　２００右ゲイン(1word)
+	.GLOBAL		_PV_OF_BAKL_INI;		//オフセット値左(1byte)
+	.GLOBAL		_PV_OF_BAKR_INI;		//オフセット値右(1byte)
+	.GLOBAL		_PV_OF_AVE_BAKL_INI;		//オフセット補正左(1word)
+	.GLOBAL		_PV_OF_AVE_BAKR_INI;		//オフセット補正右(1word)
+	.GLOBAL		_PV_OF_AVE_BAKT_INI;		//オフセット補正合計(1word)
+	.GLOBAL		_KJ_INI_CHK_WAIT;		//
+

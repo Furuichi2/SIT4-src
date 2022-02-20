@@ -1,0 +1,269 @@
+;****************************************************************************************
+;* File Name	: ssa_IntProc.src
+;* Function	: シーケンス 割込み処理
+;* Author	: Designed by T.Akiba, Coded by T.Akiba
+;* Date		: 2009-11-20 Akiba
+;* Update	: 2010-08-11 Y.Kobayashi(コード整理)
+;****************************************************************************************
+
+;********************************************************************
+;* INCLUDE
+;********************************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"
+	.INCLUDE	"shn_cmd1.mac" 
+	.INCLUDE	"sqa_MemDef.ext" 
+	.INCLUDE	"sqa_CmdDef.ext" 
+	.INCLUDE	"sqa_Config.equ" 
+	.LIST	ON
+
+	.SECTION	P,CODE
+
+;********************************************************************
+;* PUBLIC 宣言 PROGRAM
+;********************************************************************
+	.IMPORT		_SEQ_RUN_MAIN1
+	.IMPORT		_SeqRunFlg
+	.EXPORT		_SEQ_INT_TIM10MS
+
+
+;********************************************************************
+;* FUNCTION	: 10msタイマ割込み
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+_SEQ_INT_TIM10MS:
+	SUB_START
+	
+	FAR_JSR	#_SEQ_TIM_10MS,R0
+	
+;;	10ms割込みが10回で100msﾀｲﾏ起動に変更 ADD 100114 AKIBA
+;;	FAR_JSR	#_SEQ_TIM_100MS,R0		;
+	MOV.L	#_SEQ_TIM_WK100M,R1		;
+	MOV.W	@R1,R0				;
+	CMP/EQ	#0,R0				;
+	BT	SEQ_INT_TIM10MS_100		; 10ms割込確認(10回で100msﾀｲﾏ起動)
+	ADD	#-1,R0				;
+	MOV.W	R0,@R1				;
+	M_BRA	SEQ_INT_TIM10MS_101		;
+	
+SEQ_INT_TIM10MS_100:
+	FAR_JSR	#_SEQ_TIM_100MS,R0		; 100msﾀｲﾏ起動
+	MOV.W	#D'9,R0				;
+	MOV.W	R0,@R1				;
+
+SEQ_INT_TIM10MS_101:
+;;	10ms割込みが100回で1000msﾀｲﾏ起動に変更 ADD 100114 AKIBA
+;;	FAR_JSR	#_SEQ_TIM_1000MS,R0
+	MOV.L	#_SEQ_TIM_WK1000M,R1		;
+	MOV.W	@R1,R0				;
+	CMP/EQ	#0,R0				;
+	BT	SEQ_INT_TIM10MS_200		; 10ms割込確認(100回で1000msﾀｲﾏ起動)
+	ADD	#-1,R0				;
+	MOV.W	R0,@R1				;
+	M_BRA	SEQ_INT_TIM10MS_201		;
+	
+SEQ_INT_TIM10MS_200:
+	FAR_JSR	#_SEQ_TIM_1000MS,R0		; 1000msﾀｲﾏ起動
+	MOV.W	#D'99,R0			;
+	MOV.W	R0,@R1				;
+
+SEQ_INT_TIM10MS_201:
+	FAR_JSR	#_SEQ_TIM1S_LD,R0		; ﾗﾀﾞｰﾂｰﾙ 受信ﾀｲﾑｱｳﾄﾀｲﾏ add 091215 akiba
+
+;;----- ｼｰｹﾝｽﾒｲﾝﾙｰﾁﾝ1実行 Add 100106 AKIBA -----
+	MOV.L	#_SeqRunFlg,R1			; 運転ﾌﾗｸﾞ確認
+	MOV.W	@R1,R0
+	CMP/EQ	#0,R0
+	BT	SEQ_INT_TIM10MS_300
+	MOV.L	#_SEQ_CMP_START,R1		; ｺﾝﾊﾟｲﾙ中ﾌﾗｸﾞ確認
+	MOV.W	@R1,R0
+	CMP/EQ	#0,R0
+	BT	SEQ_INT_TIM10MS_300
+	FAR_JSR	#_SEQ_RUN_MAIN1,R0
+
+SEQ_INT_TIM10MS_300:
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: 1msタイマ割込み
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+	.IMPORT		_SEQ_RUN_MAIN3
+	.EXPORT		_SEQ_INT_TIM1MS
+
+_SEQ_INT_TIM1MS:
+	SUB_START
+
+	FAR_JSR	#_SEQ_TIM_1MS,R0
+
+;;----- ｼｰｹﾝｽﾒｲﾝﾙｰﾁﾝ3実行 Add 100106 AKIBA -----
+	MOV.L	#_SeqRunFlg,R1			; 運転ﾌﾗｸﾞ確認
+	MOV.W	@R1,R0
+	CMP/EQ	#0,R0
+	BT	SEQ_INT_TIM1MS_100
+	MOV.L	#_SEQ_CMP_START,R1		; ｺﾝﾊﾟｲﾙ中ﾌﾗｸﾞ確認
+	MOV.W	@R1,R0
+	CMP/EQ	#0,R0
+	BT	SEQ_INT_TIM1MS_100
+	FAR_JSR	#_SEQ_RUN_MAIN3,R0
+
+SEQ_INT_TIM1MS_100:
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: タイマカウント マクロ
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+	.MACRO	SEQ_TIM_CNT1 ADR_REG,LATE
+	
+	MOV.L	@(__TMCT_FLG,\ADR_REG),R0	;
+	AND	#(BIT2+BIT1+BIT0),R0		;
+	CMP/EQ	#(BIT1+BIT0),R0			;
+	BF	JMP01\@				;
+	MOV.L	@(__TMCT_PV,\ADR_REG),R0	;
+	ADD	#\LATE,R0
+	MOV.L	R0,@(__TMCT_PV,\ADR_REG)	;
+
+JMP01\@:
+	ADD	#__TMCT_ST_CNT,\ADR_REG	;
+	
+	.ENDM
+
+;********************************************************************
+;* FUNCTION	: 1msタイマ処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+_SEQ_TIM_1MS
+	SUB_START
+
+;	---------------- 1msecﾀｲﾏｶｳﾝﾄ-----------
+	MOV.L	#_SEQ_TMR_DATA+(_T_0001MS_TOP*__TMCT_ST_CNT),R10	;416~
+	MOV.W	#_T_0001MS_CNT,R3
+
+SEQ_TIM1MS_100
+	TST	R3,R3					;
+	TST_BIT_OF SEQ_TIM1MS_200
+	
+	SEQ_TIM_CNT1 ADR_REG=R10,LATE=1			;
+	ADD	#-1,R3
+	M_BRA	SEQ_TIM1MS_100
+	
+SEQ_TIM1MS_200
+
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: 10msタイマ処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+_SEQ_TIM_10MS
+	SUB_START
+
+;	---------------- 10msecﾀｲﾏｶｳﾝﾄ-----------
+	MOV.L	#_SEQ_TMR_DATA+_T_0010MS_TOP*__TMCT_ST_CNT,R10		;416~
+	MOV.W	#_T_0010MS_CNT,R3
+
+SEQ_TIM10MS_100
+	TST	R3,R3					;
+	TST_BIT_OF SEQ_TIM10MS_200
+
+	SEQ_TIM_CNT1 ADR_REG=R10,LATE=1			;
+	ADD	#-1,R3
+	M_BRA	SEQ_TIM10MS_100
+
+SEQ_TIM10MS_200
+
+;	---------------- 100msecﾀｲﾏｶｳﾝﾄ-----------
+	MOV.L	#_SEQ_TMR_DATA+_T_0100MS_TOP*__TMCT_ST_CNT,R10		;416~
+	MOV.W	#_T_0100MS_CNT,R3
+
+SEQ_TIM10MS_300
+	TST	R3,R3					;
+	TST_BIT_OF SEQ_TIM10MS_400
+
+	SEQ_TIM_CNT1 ADR_REG=R10,LATE=1			;
+	ADD	#-1,R3
+	M_BRA	SEQ_TIM10MS_300
+
+SEQ_TIM10MS_400
+
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: 100msタイマ処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+_SEQ_TIM_100MS
+	SUB_START
+
+;	---------------- 1000msecﾀｲﾏｶｳﾝﾄ-----------
+	MOV.L	#_SEQ_TMR_DATA+_T_1000MS_TOP*__TMCT_ST_CNT,R10		;416~
+	MOV.W	#_T_1000MS_CNT,R3
+
+SEQ_TIM100MS_100
+	TST	R3,R3					;
+	TST_BIT_OF SEQ_TIM100MS_200
+
+	SEQ_TIM_CNT1 ADR_REG=R10,LATE=1			;
+	ADD	#-1,R3
+	M_BRA	SEQ_TIM100MS_100
+
+SEQ_TIM100MS_200
+
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: 1000msタイマ処理
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+_SEQ_TIM_1000MS
+	SUB_START
+;	---------------- 1000msecﾀｲﾏｶｳﾝﾄ-----------
+	MOV.L	#_SEQ_TMR_DATA+_T_0001HR_TOP*__TMCT_ST_CNT,R10		;416~
+	MOV.W	#_T_0001HR_CNT,R3
+
+SEQ_TIM1000MS_100
+	TST	R3,R3					;
+	TST_BIT_OF SEQ_TIM1000MS_200
+
+	SEQ_TIM_CNT1 ADR_REG=R10,LATE=1			;
+	ADD	#-1,R3
+	M_BRA	SEQ_TIM1000MS_100
+
+SEQ_TIM1000MS_200
+
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* FUNCTION	: ラダーツール タイマ処理(タイムアウト)
+;* DATE		: 09/11/20 Akiba
+;* UPDATE	: 
+;********************************************************************
+_SEQ_TIM1S_LD
+	SUB_START
+
+	MOV.L	#_SEQ_LD_TIMOUT,R3
+	MOV.W	@R3,R0
+	TST	R0,R0
+	TST_BIT_OF SEQ_TIM1S_LD_100
+	ADD	#-1,R0
+	MOV.W	R0,@R3
+
+SEQ_TIM1S_LD_100
+	SUB_END
+	M_RTS
+
+	.END

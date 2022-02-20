@@ -1,0 +1,868 @@
+;****************************************************************************************
+;* File Name	: ssa_TblDef.src
+;* Function	: シーケンス テーブル定義
+;* Author	: Designed by T.Akiba, Coded by T.Akiba
+;* Date		: 2009-11-20 Akiba
+;* Update	: 2010-08-11 Y.Kobayashi(コード整理)
+;****************************************************************************************
+
+;********************************************************************
+;* INCLUDE
+;********************************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"
+	.INCLUDE	"sqa_Config.equ" 
+	.INCLUDE	"sqa_CmdDef.ext" 
+	.INCLUDE	"sqa_MemDef.ext" 
+;	.INCLUDE	"seq_code.mac"
+	.LIST	ON
+
+	.SECTION	P,CODE
+
+;********************************************************************
+;* CODE CHANGE JUMP TABLE(SEQUENCE COMMAND) 
+;********************************************************************
+;	USED/SIT4-CE3
+	.ALIGN	4				;
+_SEQ_CHG_TBL0:					; SEQUENCE COMMAND
+						; OP. CODE
+	.DATA.L	_NOP_CHG			; 00000000B	0
+	.DATA.L	_LDON_CHG			; 00000001B	1
+	.DATA.L	_LD_CHG				; 00000010B	2
+	.DATA.L	_LDN_CHG			; 00000011B	3
+	.DATA.L	_AND_CHG			; 00000100B	4
+	.DATA.L	_ANDN_CHG			; 00000101B	5
+	.DATA.L	_OR_CHG				; 00000110B	6
+	.DATA.L	_ORN_CHG			; 00000111B	7
+	.DATA.L	_PLS_CHG			; 00001000B	8
+	.DATA.L	_PLF_CHG			; 00001001B	9
+	.DATA.L	_ST_CHG				; 00001010B	A
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00001011B	B
+	.DATA.L	_WSC_CHG			; 00001100B	C
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00001101B	D
+	.DATA.L	_SET_CHG			; 00001110B	E
+	.DATA.L	_RST_CHG			; 00001111B	F
+
+	.DATA.L	_WTMR_CHG			; 00010000B	10
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00010001B	11
+	.DATA.L	_WCTR_CHG			; 00010010B	12
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00010011B	13
+	.DATA.L	_WSR_CHG			; 00010100B	14
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00010101B	15
+	.DATA.L	_CLR_CHG			; 00010110B	16
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00010111B	17
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00011000B	18
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00011001B	19
+	.DATA.L	_DSETWI_CHG			; 00011010B	1A
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00011011B	1B
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00011100B	1C
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00011101B	1D
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00011110B	1E
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00011111B	1F
+
+	.DATA.L	_AMRG_CHG			; 00100000B	20
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00100001B	21
+	.DATA.L	_OMRG_CHG			; 00100010B	22
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00100011B	23
+	.DATA.L	_PUSH_CHG			; 00100100B	24
+	.DATA.L	_POP_CHG			; 00100101B	25
+	.DATA.L	_LDNRG_CHG			; 00100110B	26
+	.DATA.L	_ENDNRG_CHG			; 00100111B	27
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00101000B	28
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00101001B	29
+	.DATA.L	_END_CHG			; 00101010B	2A
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00101011B	2B
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00101100B	2C
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00101101B	2D
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00101110B	2E
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00101111B	2F
+
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00110000B	30
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00110001B	31
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00110010B	32
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00110011B	33
+	.DATA.L	_LDW_CHG			; 00110100B	34
+	.DATA.L	_LDL_CHG			; 00110101B	35
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00110110B	36
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00110111B	37
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00111000B	38
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00111001B	39
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00111010B	3A
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00111011B	3B
+	.DATA.L	_STW_CHG			; 00111100B	3C
+	.DATA.L	_STL_CHG			; 00111101B	3D
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00111110B	3E
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 00111111B	3F
+
+	.DATA.L	_EQW_CHG			; 01000000B	40
+	.DATA.L	_EQL_CHG			; 01000001B	41
+	.DATA.L	_EQWI_CHG			; 01000010B	42
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01000011B	43
+	.DATA.L	_NEW_CHG			; 01000100B	44
+	.DATA.L	_NEL_CHG			; 01000101B	45
+	.DATA.L	_NEWI_CHG			; 01000110B	46
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01000111B	47
+	.DATA.L	_GTW_CHG			; 01001000B	48
+	.DATA.L	_GTL_CHG			; 01001001B	49
+	.DATA.L	_GTWI_CHG			; 01001010B	4A
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01001011B	4B
+	.DATA.L	_GEW_CHG			; 01001100B	4C
+	.DATA.L	_GEL_CHG			; 01001101B	4D
+	.DATA.L	_GEWI_CHG			; 01001110B	4E
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01001111B	4F
+
+	.DATA.L	_LTW_CHG			; 01010000B	50
+	.DATA.L	_LTL_CHG			; 01010001B	51
+	.DATA.L	_LTWI_CHG			; 01010010B	52
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01010011B	53
+	.DATA.L	_LEW_CHG			; 01010100B	54
+	.DATA.L	_LEL_CHG			; 01010101B	55
+	.DATA.L	_LEWI_CHG			; 01010110B	56
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01010111B	57
+	.DATA.L	_ADDW_CHG			; 01011000B	58
+	.DATA.L	_ADDL_CHG			; 01011001B	59
+	.DATA.L	_ADDWI_CHG			; 01011010B	5A
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01011011B	5B
+	.DATA.L	_SUBW_CHG			; 01011100B	5C
+	.DATA.L	_SUBL_CHG			; 01011101B	5D
+	.DATA.L	_SUBWI_CHG			; 01011110B	5E
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01011111B	5F
+
+	.DATA.L	_ANDW_CHG			; 01100000B	60
+	.DATA.L	_ANDL_CHG			; 01100001B	61
+	.DATA.L	_ANDWI_CHG			; 01100010B	62
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01100011B	63
+	.DATA.L	_ORW_CHG			; 01100100B	64
+	.DATA.L	_ORL_CHG			; 01100101B	65
+	.DATA.L	_ORWI_CHG			; 01100110B	66
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01100111B	67
+	.DATA.L	_XORW_CHG			; 01101000B	68
+	.DATA.L	_XORL_CHG			; 01101001B	69
+	.DATA.L	_XORWI_CHG			; 01101010B	6A
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01101011B	6B
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01101100B	6C
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01101101B	6D
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01101110B	6E
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01101111B	6F
+
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110000B	70
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110001B	71
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110010B	72
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110011B	73
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110100B	74
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110101B	75
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110110B	76
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110111B	77
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111000B	78
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111001B	79
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111010B	7A
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111011B	7B
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111100B	7C
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111101B	7D
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111110B	7E
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111111B	7F
+
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110000B	80
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110001B	81
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110010B	82
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110011B	83
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110100B	84
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110101B	85
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110110B	86
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110111B	87
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111000B	88
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111001B	89
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111010B	8A
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111011B	8B
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111100B	8C
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111101B	8D
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111110B	8E
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111111B	8F
+
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110000B	90
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110001B	91
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110010B	92
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110011B	93
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110100B	94
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110101B	95
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110110B	96
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110111B	97
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111000B	98
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111001B	99
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111010B	9A
+	.DATA.L	_DSETLI_CHG			; 01111011B	9B
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111100B	9C
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111101B	9D
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111110B	9E
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111111B	9F
+
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110000B	A0
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110001B	A1
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110010B	A2
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110011B	A3
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110100B	A4
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110101B	A5
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110110B	A6
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110111B	A7
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111000B	A8
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111001B	A9
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111010B	AA
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111011B	AB
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111100B	AC
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111101B	AD
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111110B	AE
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111111B	AF
+
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110000B	B0
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110001B	B1
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110010B	B2
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110011B	B3
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110100B	B4
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110101B	B5
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110110B	B6
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110111B	B7
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111000B	B8
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111001B	B9
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111010B	BA
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111011B	BB
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111100B	BC
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111101B	BD
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111110B	BE
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111111B	BF
+
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110000B	C0
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110001B	C1
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110010B	C2
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110011B	C3
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110100B	C4
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110101B	C5
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110110B	C6
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110111B	C7
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111000B	C8
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111001B	C9
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111010B	CA
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111011B	CB
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111100B	CC
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111101B	CD
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111110B	CE
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111111B	CF
+
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110000B	D0
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110001B	D1
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110010B	D2
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110011B	D3
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110100B	D4
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110101B	D5
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110110B	D6
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110111B	D7
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111000B	D8
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111001B	D9
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111010B	DA
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111011B	DB
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111100B	DC
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111101B	DD
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111110B	DE
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111111B	DF
+
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110000B	E0
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110001B	E1
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110010B	E2
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110011B	E3
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110100B	E4
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110101B	E5
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110110B	E6
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110111B	E7
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111000B	E8
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111001B	E9
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111010B	EA
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111011B	EB
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111100B	EC
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111101B	ED
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111110B	EE
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111111B	EF
+
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110000B	F0
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110001B	F1
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110010B	F2
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110011B	F3
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110100B	F4
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110101B	F5
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110110B	F6
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01110111B	F7
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111000B	F8
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111001B	F9
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111010B	FA
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111011B	FB
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111100B	FC
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111101B	FD
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111110B	FE
+	.DATA.L	_SEQ_RUN_CHG1_ERR_END		; 01111111B	FF
+
+;********************************************************************
+;* BIT TABLE 1
+;********************************************************************
+;	USED/SIT4-CE3
+	.ALIGN	4				;
+_SEQ_BBIT_CHG_TBL:
+	.DATA.W	BIT0				;0
+	.DATA.W	BIT1				;1
+	.DATA.W	BIT2				;2
+	.DATA.W	BIT3				;3
+	.DATA.W	BIT4				;4
+	.DATA.W	BIT5				;5
+	.DATA.W	BIT6				;6
+	.DATA.W	BIT7				;7
+
+	.DATA.W	BIT0				;8
+	.DATA.W	BIT1				;9
+	.DATA.W	BIT2				;A
+	.DATA.W	BIT3				;B
+	.DATA.W	BIT4				;C
+	.DATA.W	BIT5				;D
+	.DATA.W	BIT6				;E
+	.DATA.W	BIT7				;F
+
+;********************************************************************
+;* BIT TABLE 2
+;********************************************************************
+	.ALIGN	4				;
+;NO-USED /SIT4/CE3 _BBIT_CHG_TBL:
+	.DATA.B	BIT0				;0
+	.DATA.B	BIT1				;1
+	.DATA.B	BIT2				;2
+	.DATA.B	BIT3				;3
+	.DATA.B	BIT4				;4
+	.DATA.B	BIT5				;5
+	.DATA.B	BIT6				;6
+	.DATA.B	BIT7				;7
+
+	.DATA.B	BIT0				;8
+	.DATA.B	BIT1				;9
+	.DATA.B	BIT2				;A
+	.DATA.B	BIT3				;B
+	.DATA.B	BIT4				;C
+	.DATA.B	BIT5				;D
+	.DATA.B	BIT6				;E
+	.DATA.B	BIT7				;F
+
+;********************************************************************
+;* MOV COMMAND R0 READ
+;********************************************************************
+	.ALIGN	4				;
+;NO-USED /SIT4/CE3_SEQ_MOVCMD_R0RD_TBL:
+						;OFFSET
+	MOV.W	@(R0,R8),R0			;0
+	MOV.W	@(R0,R9),R0			;1
+	MOV.W	@(R0,R10),R0			;2
+	MOV.W	@(R0,R11),R0			;3
+	MOV.W	@(R0,R12),R0			;4
+	MOV.W	@(R0,R13),R0			;5
+	MOV.W	@(R0,R14),R0			;6
+
+;********************************************************************
+;* MOV COMMAND R1 READ
+;********************************************************************
+	.ALIGN	4				;
+;NO-USED /SIT4/CE3_SEQ_MOVCMD_R1RD_TBL:
+						;OFFSET
+	MOV.W	@(R0,R8),R1			;0
+	MOV.W	@(R0,R9),R1			;1
+	MOV.W	@(R0,R10),R1			;2
+	MOV.W	@(R0,R11),R1			;3
+	MOV.W	@(R0,R12),R1			;4
+	MOV.W	@(R0,R13),R1			;5
+	MOV.W	@(R0,R14),R1			;6
+
+;********************************************************************
+;* MOV COMMAND R1 WRITE
+;********************************************************************
+	.ALIGN	4				;
+;NO-USED /SIT4/CE3_SEQ_MOVCMD_R1WR_TBL:
+						;OFFSET
+	MOV.W	R1,@(R0,R8)			;0
+	MOV.W	R1,@(R0,R9)			;1
+	MOV.W	R1,@(R0,R10)			;2
+	MOV.W	R1,@(R0,R11)			;3
+	MOV.W	R1,@(R0,R12)			;4
+	MOV.W	R1,@(R0,R13)			;5
+	MOV.W	R1,@(R0,R14)			;6
+
+;********************************************************************
+;* MOV COMMAND R3 READ
+;********************************************************************
+	.ALIGN	4				;
+;NO-USED /SIT4/CE3_SEQ_MOVCMD_R3RD_TBL:
+						;OFFSET
+	MOV.W	@(R0,R8),R3			;0
+	MOV.W	@(R0,R9),R3			;1
+	MOV.W	@(R0,R10),R3			;2
+	MOV.W	@(R0,R11),R3			;3
+	MOV.W	@(R0,R12),R3			;4
+	MOV.W	@(R0,R13),R3			;5
+	MOV.W	@(R0,R14),R3			;6
+
+;********************************************************************
+;* MOV COMMAND R3 WRITE
+;********************************************************************
+	.ALIGN	4				;
+;NO-USED /SIT4/CE3_SEQ_MOVCMD_R3WR_TBL:
+						;OFFSET
+	MOV.W	R3,@(R0,R8)			;0
+	MOV.W	R3,@(R0,R9)			;1
+	MOV.W	R3,@(R0,R10)			;2
+	MOV.W	R3,@(R0,R11)			;3
+	MOV.W	R3,@(R0,R12)			;4
+	MOV.W	R3,@(R0,R13)			;5
+	MOV.W	R3,@(R0,R14)			;6
+
+;********************************************************************
+;* ADD COMMAND R0
+;********************************************************************
+	.ALIGN	4				;
+;NO-USED /SIT4/CE3_SEQ_ADDCMD_R0_TBL:
+						;OFFSET
+	ADD	R8,R0				;0
+	ADD	R9,R0				;1
+	ADD	R10,R0				;2
+	ADD	R11,R0				;3
+	ADD	R12,R0				;4
+	ADD	R13,R0				;5
+	ADD	R14,R0				;6
+
+;********************************************************************
+;* NOP SWAP
+;********************************************************************
+	.ALIGN	4				;
+;NO-USED /SIT4/CE3_NOP_SWAP_TBL0:
+						;BIT CODE
+	NOP					;0
+	NOP					;1
+	NOP					;2
+	NOP					;3
+	NOP					;4
+	NOP					;5
+	NOP					;6
+	NOP					;7
+	SWAP.B	R0,R0				;8
+	SWAP.B	R0,R0				;9
+	SWAP.B	R0,R0				;10
+	SWAP.B	R0,R0				;11
+	SWAP.B	R0,R0				;12
+	SWAP.B	R0,R0				;13
+	SWAP.B	R0,R0				;14
+	SWAP.B	R0,R0				;15
+
+;********************************************************************
+;* NOP SHLL8 R0
+;********************************************************************
+	.ALIGN	4				;
+;NO-USED /SIT4/CE3_NOP_SHLL8_R0_TBL0:
+	NOP					;0
+	NOP					;1
+	NOP					;2
+	NOP					;3
+	NOP					;4
+	NOP					;5
+	NOP					;6
+	NOP					;7
+	SHLL8	R0				;8
+	SHLL8	R0				;9
+	SHLL8	R0				;10
+	SHLL8	R0				;11
+	SHLL8	R0				;12
+	SHLL8	R0				;13
+	SHLL8	R0				;14
+	SHLL8	R0				;15
+
+;********************************************************************
+;* NOP SHLL8 R1
+;********************************************************************
+	.ALIGN	4				;
+;NO-USED /SIT4/CE3_NOP_SHLL8_R1_TBL0:
+	NOP					;0
+	NOP					;1
+	NOP					;2
+	NOP					;3
+	NOP					;4
+	NOP					;5
+	NOP					;6
+	NOP					;7
+	SHLL8	R1				;8
+	SHLL8	R1				;9
+	SHLL8	R1				;10
+	SHLL8	R1				;11
+	SHLL8	R1				;12
+	SHLL8	R1				;13
+	SHLL8	R1				;14
+	SHLL8	R1				;15
+
+;********************************************************************
+;* NOP SHLL8 R2
+;********************************************************************
+	.ALIGN	4				;
+;NO-USED /SIT4/CE3_NOP_SHLL8_R2_TBL0:
+	NOP					;0
+	NOP					;1
+	NOP					;2
+	NOP					;3
+	NOP					;4
+	NOP					;5
+	NOP					;6
+	NOP					;7
+	SHLL8	R2				;8
+	SHLL8	R2				;9
+	SHLL8	R2				;10
+	SHLL8	R2				;11
+	SHLL8	R2				;12
+	SHLL8	R2				;13
+	SHLL8	R2				;14
+	SHLL8	R2				;15
+
+;********************************************************************
+;* NOP SHLL8 R3
+;********************************************************************
+	.ALIGN	4				;
+;NO-USED /SIT4/CE3_NOP_SHLL8_R3_TBL0:
+	NOP					;0
+	NOP					;1
+	NOP					;2
+	NOP					;3
+	NOP					;4
+	NOP					;5
+	NOP					;6
+	NOP					;7
+	SHLL8	R3				;8
+	SHLL8	R3				;9
+	SHLL8	R3				;10
+	SHLL8	R3				;11
+	SHLL8	R3				;12
+	SHLL8	R3				;13
+	SHLL8	R3				;14
+	SHLL8	R3				;15
+
+;********************************************************************
+;* NOP SHLL8 R4
+;********************************************************************
+	.ALIGN	4				;
+;NO-USED /SIT4/CE3_NOP_SHLL8_R4_TBL0:
+	NOP					;0
+	NOP					;1
+	NOP					;2
+	NOP					;3
+	NOP					;4
+	NOP					;5
+	NOP					;6
+	NOP					;7
+	SHLL8	R4				;8
+	SHLL8	R4				;9
+	SHLL8	R4				;10
+	SHLL8	R4				;11
+	SHLL8	R4				;12
+	SHLL8	R4				;13
+	SHLL8	R4				;14
+	SHLL8	R4				;15
+
+;********************************************************************
+;* SEEK CARD
+;********************************************************************
+	.ALIGN	4				;
+;NO-USED /SIT4/CE3_SEQ_SEEK_CARD_TBL:
+	.DATA.W		0*2			;0
+	.DATA.W		0*2			;1
+	.DATA.W		0*2			;2
+	.DATA.W		0*2			;3
+	.DATA.W		0*2			;4
+	.DATA.W		0*2			;5
+	.DATA.W		0*2			;6
+	.DATA.W		0*2			;7
+	.DATA.W		0*2			;8
+	.DATA.W		0*2			;9
+	.DATA.W		0*2			;10
+	.DATA.W		0*2			;11
+	.DATA.W		0*2			;12
+	.DATA.W		0*2			;13
+	.DATA.W		0*2			;14
+	.DATA.W		0*2			;15
+
+	.DATA.W		1*2			;16
+	.DATA.W		1*2			;17
+	.DATA.W		1*2			;18
+	.DATA.W		1*2			;19
+	.DATA.W		1*2			;20
+	.DATA.W		1*2			;21
+	.DATA.W		1*2			;22
+	.DATA.W		1*2			;23
+	.DATA.W		1*2			;24
+	.DATA.W		1*2			;25
+	.DATA.W		1*2			;26
+	.DATA.W		1*2			;27
+	.DATA.W		1*2			;28
+	.DATA.W		1*2			;29
+	.DATA.W		1*2			;30
+	.DATA.W		1*2			;31
+
+	.DATA.W		2*2			;32
+	.DATA.W		2*2			;33
+	.DATA.W		2*2			;34
+	.DATA.W		2*2			;35
+	.DATA.W		2*2			;36
+	.DATA.W		2*2			;37
+	.DATA.W		2*2			;38
+	.DATA.W		2*2			;39
+	.DATA.W		2*2			;40
+	.DATA.W		2*2			;41
+	.DATA.W		2*2			;42
+	.DATA.W		2*2			;43
+	.DATA.W		2*2			;44
+	.DATA.W		2*2			;45
+	.DATA.W		2*2			;46
+	.DATA.W		2*2			;47
+
+	.DATA.W		3*2			;48
+	.DATA.W		3*2			;49
+	.DATA.W		3*2			;50
+	.DATA.W		3*2			;51
+	.DATA.W		3*2			;52
+	.DATA.W		3*2			;53
+	.DATA.W		3*2			;54
+	.DATA.W		3*2			;55
+	.DATA.W		3*2			;56
+	.DATA.W		3*2			;57
+	.DATA.W		3*2			;58
+	.DATA.W		3*2			;59
+	.DATA.W		3*2			;60
+	.DATA.W		3*2			;61
+	.DATA.W		3*2			;62
+	.DATA.W		3*2			;63
+
+	.DATA.W		4*2			;64
+	.DATA.W		4*2			;65
+	.DATA.W		4*2			;66
+	.DATA.W		4*2			;67
+	.DATA.W		4*2			;68
+	.DATA.W		4*2			;69
+	.DATA.W		4*2			;70
+	.DATA.W		4*2			;71
+	.DATA.W		4*2			;72
+	.DATA.W		4*2			;73
+	.DATA.W		4*2			;74
+	.DATA.W		4*2			;75
+	.DATA.W		4*2			;76
+	.DATA.W		4*2			;77
+	.DATA.W		4*2			;78
+	.DATA.W		4*2			;79
+
+	.DATA.W		5*2			;80
+	.DATA.W		5*2			;81
+	.DATA.W		5*2			;82
+	.DATA.W		5*2			;83
+	.DATA.W		5*2			;84
+	.DATA.W		5*2			;85
+	.DATA.W		5*2			;86
+	.DATA.W		5*2			;87
+	.DATA.W		5*2			;88
+	.DATA.W		5*2			;89
+	.DATA.W		5*2			;90
+	.DATA.W		5*2			;91
+	.DATA.W		5*2			;92
+	.DATA.W		5*2			;93
+	.DATA.W		5*2			;94
+	.DATA.W		5*2			;95
+
+;********************************************************************
+;* SEEK WBIT
+;********************************************************************
+	.ALIGN	4
+;NO-USED /SIT4/CE3_SEQ_SEEK_WBIT_TBL:
+	.DATA.W		BIT0			;1
+	.DATA.W		BIT1			;2
+	.DATA.W		BIT2			;3
+	.DATA.W		BIT3			;4
+	.DATA.W		BIT4			;5
+	.DATA.W		BIT5			;6
+	.DATA.W		BIT6			;7
+	.DATA.W		BIT7			;8
+	.DATA.W		BIT8			;9
+	.DATA.W		BIT9			;10
+	.DATA.W		BIT10			;11
+	.DATA.W		BIT11			;12
+	.DATA.W		BIT12			;13
+	.DATA.W		BIT13			;14
+	.DATA.W		BIT14			;15
+	.DATA.W		BIT15			;16
+
+	.DATA.W		BIT0			;17
+	.DATA.W		BIT1			;18
+	.DATA.W		BIT2			;19
+	.DATA.W		BIT3			;20
+	.DATA.W		BIT4			;21
+	.DATA.W		BIT5			;22
+	.DATA.W		BIT6			;23
+	.DATA.W		BIT7			;24
+	.DATA.W		BIT8			;25
+	.DATA.W		BIT9			;26
+	.DATA.W		BIT10			;27
+	.DATA.W		BIT11			;28
+	.DATA.W		BIT12			;29
+	.DATA.W		BIT13			;30
+	.DATA.W		BIT14			;31
+	.DATA.W		BIT15			;32
+
+	.DATA.W		BIT0			;33
+	.DATA.W		BIT1			;34
+	.DATA.W		BIT2			;35
+	.DATA.W		BIT3			;36
+	.DATA.W		BIT4			;37
+	.DATA.W		BIT5			;38
+	.DATA.W		BIT6			;39
+	.DATA.W		BIT7			;40
+	.DATA.W		BIT8			;41
+	.DATA.W		BIT9			;42
+	.DATA.W		BIT10			;43
+	.DATA.W		BIT11			;44
+	.DATA.W		BIT12			;45
+	.DATA.W		BIT13			;46
+	.DATA.W		BIT14			;47
+	.DATA.W		BIT15			;48
+
+	.DATA.W		BIT0			;49
+	.DATA.W		BIT1			;50
+	.DATA.W		BIT2			;51
+	.DATA.W		BIT3			;52
+	.DATA.W		BIT4			;53
+	.DATA.W		BIT5			;54
+	.DATA.W		BIT6			;55
+	.DATA.W		BIT7			;56
+	.DATA.W		BIT8			;57
+	.DATA.W		BIT9			;58
+	.DATA.W		BIT10			;59
+	.DATA.W		BIT11			;60
+	.DATA.W		BIT12			;61
+	.DATA.W		BIT13			;62
+	.DATA.W		BIT14			;63
+	.DATA.W		BIT15			;64
+
+	.DATA.W		BIT0			;65
+	.DATA.W		BIT1			;66
+	.DATA.W		BIT2			;67
+	.DATA.W		BIT3			;68
+	.DATA.W		BIT4			;69
+	.DATA.W		BIT5			;70
+	.DATA.W		BIT6			;71
+	.DATA.W		BIT7			;72
+	.DATA.W		BIT8			;73
+	.DATA.W		BIT9			;74
+	.DATA.W		BIT10			;75
+	.DATA.W		BIT11			;76
+	.DATA.W		BIT12			;77
+	.DATA.W		BIT13			;78
+	.DATA.W		BIT14			;79
+	.DATA.W		BIT15			;80
+
+	.DATA.W		BIT0			;81
+	.DATA.W		BIT1			;82
+	.DATA.W		BIT2			;83
+	.DATA.W		BIT3			;84
+	.DATA.W		BIT4			;85
+	.DATA.W		BIT5			;86
+	.DATA.W		BIT6			;87
+	.DATA.W		BIT7			;88
+	.DATA.W		BIT8			;89
+	.DATA.W		BIT9			;90
+	.DATA.W		BIT10			;91
+	.DATA.W		BIT11			;92
+	.DATA.W		BIT12			;93
+	.DATA.W		BIT13			;94
+	.DATA.W		BIT14			;95
+	.DATA.W		BIT15			;96
+
+;********************************************************************
+;* MKIND CNT TABLE
+;* メモリ種別からBYTE数を取り出すためのテーブル
+;********************************************************************
+	.ALIGN	4				;
+_MKIND_TBL:
+	.DATA.L		_MKIND_W0		;0  ﾒﾓﾘ種別 PLC部以外での使用ﾒﾓﾘ
+	.DATA.L		_MKIND_X		;1  ﾒﾓﾘ種別 実入力領域
+	.DATA.L		_MKIND_Y		;2  ﾒﾓﾘ種別 実出力領域
+	.DATA.L		_MKIND_M		;3  ﾒﾓﾘ種別 補助ﾒﾓﾘ(非保持)
+	.DATA.L		_MKIND_L		;4  ﾒﾓﾘ種別 補助ﾒﾓﾘ(保持)
+	.DATA.L		_MKIND_T		;5  ﾒﾓﾘ種別 ﾀｲﾏ
+	.DATA.L		_MKIND_C		;6  ﾒﾓﾘ種別 ｶｳﾝﾀ
+	.DATA.L		_MKIND_TD		;7  ﾒﾓﾘ種別 ﾀｲﾏ実測
+	.DATA.L		_MKIND_CD		;8  ﾒﾓﾘ種別 ﾀｲﾏｶｳﾝﾀ
+	.DATA.L		_MKIND_W1		;9  ﾒﾓﾘ種別 未使用
+	.DATA.L		_MKIND_W2		;10 ﾒﾓﾘ種別 未使用
+	.DATA.L		_MKIND_W3		;11 ﾒﾓﾘ種別 未使用
+	.DATA.L		_MKIND_W4		;12 ﾒﾓﾘ種別 未使用
+	.DATA.L		_MKIND_F		;13 ﾒﾓﾘ種別 機能領域(位置決め)
+	.DATA.L		_MKIND_S		;14 ﾒﾓﾘ種別 ｼｽﾃﾑ
+	.DATA.L		_MKIND_A		;15 ﾒﾓﾘ種別 ｱﾅｳﾝｽ
+
+;********************************************************************
+;* MKIND ADDR TABLE
+;* メモリ種別からTOPアドレスを取り出すためのテーブル(オフセットアドレス)
+;********************************************************************
+	.ALIGN	4				;
+_MKIND_TBL_TOP:
+		.DATA.L		0		;0  ﾒﾓﾘ種別 PLC部以外での使用ﾒﾓﾘ TOPｱﾄﾞﾚｽ
+_MKIND_X_TOP	.DATA.L		_MKIND_X_ADR	;1  ﾒﾓﾘ種別 実入力領域 TOPｱﾄﾞﾚｽ
+_MKIND_Y_TOP	.DATA.L		_MKIND_Y_ADR	;2  ﾒﾓﾘ種別 実出力領域 TOPｱﾄﾞﾚｽ
+_MKIND_M_TOP	.DATA.L		_MKIND_M_ADR	;3  ﾒﾓﾘ種別 補助ﾒﾓﾘ(非保持) TOPｱﾄﾞﾚｽ
+_MKIND_L_TOP	.DATA.L		_MKIND_L_ADR	;4  ﾒﾓﾘ種別 補助ﾒﾓﾘ(保持) TOPｱﾄﾞﾚｽ
+_MKIND_T_TOP	.DATA.L		_MKIND_T_ADR	;5  ﾒﾓﾘ種別 ﾀｲﾏ TOPｱﾄﾞﾚｽ
+_MKIND_C_TOP	.DATA.L		_MKIND_C_ADR	;6  ﾒﾓﾘ種別 ｶｳﾝﾀ TOPｱﾄﾞﾚｽ
+_MKIND_TD_TOP	.DATA.L		_MKIND_TD_ADR	;7  ﾒﾓﾘ種別 ﾀｲﾏ実測 TOPｱﾄﾞﾚｽ
+_MKIND_CD_TOP	.DATA.L		_MKIND_CD_ADR	;8  ﾒﾓﾘ種別 ﾀｲﾏｶｳﾝﾀ TOPｱﾄﾞﾚｽ
+		.DATA.L		_MKIND_W1_ADR	;9  ﾒﾓﾘ種別 未使用 TOPｱﾄﾞﾚｽ
+		.DATA.L		_MKIND_W2_ADR	;10 ﾒﾓﾘ種別 未使用 TOPｱﾄﾞﾚｽ
+		.DATA.L		_MKIND_W3_ADR	;11 ﾒﾓﾘ種別 未使用 TOPｱﾄﾞﾚｽ
+		.DATA.L		_MKIND_W4_ADR	;12 ﾒﾓﾘ種別 未使用 TOPｱﾄﾞﾚｽ
+_MKIND_F_TOP	.DATA.L		_MKIND_F_ADR	;13 ﾒﾓﾘ種別 機能領域(位置決め) TOPｱﾄﾞﾚｽ
+_MKIND_S_TOP	.DATA.L		_MKIND_S_ADR	;14 ﾒﾓﾘ種別 ｼｽﾃﾑ TOPｱﾄﾞﾚｽ
+_MKIND_A_TOP	.DATA.L		_MKIND_A_ADR	;15 ﾒﾓﾘ種別 ｱﾅｳﾝｽ TOPｱﾄﾞﾚｽ
+
+;********************************************************************
+;* MKIND ADDR TABLE
+;* メモリ種別からTOPアドレスを取り出すためのテーブル(実アドレス)
+;********************************************************************
+	.ALIGN	4				;
+_SeqLd_MKIND_TBL_TOP:
+		.DATA.L		0				;0  ﾒﾓﾘ種別 PLC部以外での使用ﾒﾓﾘ TOPｱﾄﾞﾚｽ
+		.DATA.L		_SEQ_CARD_RAM + _MKIND_X_ADR	;1  ﾒﾓﾘ種別 実入力領域 TOPｱﾄﾞﾚｽ
+		.DATA.L		_SEQ_CARD_RAM + _MKIND_Y_ADR	;2  ﾒﾓﾘ種別 実出力領域 TOPｱﾄﾞﾚｽ
+		.DATA.L		_SEQ_CARD_RAM + _MKIND_M_ADR	;3  ﾒﾓﾘ種別 補助ﾒﾓﾘ(非保持) TOPｱﾄﾞﾚｽ
+		.DATA.L		_SEQ_CARD_RAM + _MKIND_L_ADR	;4  ﾒﾓﾘ種別 補助ﾒﾓﾘ(保持) TOPｱﾄﾞﾚｽ
+		.DATA.L		_SEQ_CARD_RAM + _MKIND_T_ADR	;5  ﾒﾓﾘ種別 ﾀｲﾏ TOPｱﾄﾞﾚｽ
+		.DATA.L		_SEQ_CARD_RAM + _MKIND_C_ADR	;6  ﾒﾓﾘ種別 ｶｳﾝﾀ TOPｱﾄﾞﾚｽ
+		.DATA.L		_SEQ_CARD_RAM + _MKIND_TD_ADR	;7  ﾒﾓﾘ種別 ﾀｲﾏ実測 TOPｱﾄﾞﾚｽ
+		.DATA.L		_SEQ_CARD_RAM + _MKIND_CD_ADR	;8  ﾒﾓﾘ種別 ﾀｲﾏｶｳﾝﾀ TOPｱﾄﾞﾚｽ
+		.DATA.L		_SEQ_CARD_RAM + _MKIND_W1_ADR	;9  ﾒﾓﾘ種別 未使用 TOPｱﾄﾞﾚｽ
+		.DATA.L		_SEQ_CARD_RAM + _MKIND_W2_ADR	;10 ﾒﾓﾘ種別 未使用 TOPｱﾄﾞﾚｽ
+		.DATA.L		_SEQ_CARD_RAM + _MKIND_W3_ADR	;11 ﾒﾓﾘ種別 未使用 TOPｱﾄﾞﾚｽ
+		.DATA.L		_SEQ_CARD_RAM + _MKIND_W4_ADR	;12 ﾒﾓﾘ種別 未使用 TOPｱﾄﾞﾚｽ
+		.DATA.L		_SEQ_CARD_RAM + _MKIND_F_ADR	;13 ﾒﾓﾘ種別 機能領域(位置決め) TOPｱﾄﾞﾚｽ
+		.DATA.L		_SEQ_CARD_RAM + _MKIND_S_ADR	;14 ﾒﾓﾘ種別 ｼｽﾃﾑ TOPｱﾄﾞﾚｽ
+		.DATA.L		_SEQ_CARD_RAM + _MKIND_A_ADR	;15 ﾒﾓﾘ種別 ｱﾅｳﾝｽ TOPｱﾄﾞﾚｽ
+
+;********************************************************************
+;* FLASH ROM SEQ CODE ADDR TABLE
+;* SEQコードの格納先アドレス
+;********************************************************************
+	.EXPORT		_SEQ_COM1_TOP	     	;
+	.EXPORT		_SEQ_COM2_TOP	     	;
+	.EXPORT		_SEQ_COM3_TOP	     	;
+
+	.SECTION	P_seqcode1,code		;
+	.ALIGN	4				;	
+_SEQ_COM1_TOP:					;64Kbyte(16Kｽﾃｯﾌﾟ)
+
+	.SECTION	P_seqcode2,code		;
+	.ALIGN	4				;
+_SEQ_COM2_TOP:					;64Kbyte(16Kｽﾃｯﾌﾟ)
+
+	.SECTION	P_seqcode3,code		;
+	.ALIGN	4				;
+_SEQ_COM3_TOP:					;64Kbyte(16Kｽﾃｯﾌﾟ)
+	
+	.END

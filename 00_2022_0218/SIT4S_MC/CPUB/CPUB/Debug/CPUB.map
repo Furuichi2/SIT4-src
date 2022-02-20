@@ -1,0 +1,155 @@
+Optimizing Linkage Editor (V.10.01.00.000)        11-Apr-2016 18:53:55
+
+*** Options ***
+
+-subcommand=D:\SIT4S_MC\CPUB\CPUB\Debug\CPUB.hlk
+-noprelink
+-rom=D=R,P=PRAM,PvupsciROM=PvupsciRAM,Pcall=PcallRAM,INTHandler=INTHdlrRAM,INTTBL=INTTBLRAM,IntPRG=IntPRGRAM,PHiROM=PHiRAM
+-nomessage
+-list="D:\SIT4S_MC\CPUB\CPUB\Debug\CPUB.map"
+-nooptimize
+-start=INTHdlrRAM,INTTBLRAM,IntPRGRAM/0C000800,PcallRAM/0C002000,PRAM/0C004000,Bwkram1,B,R/0C090000,PvupsciRAM/0C180000,Bvupwkram/0C1A0000,REG1/0A4000000,PHiRAM/0A5007000,Bwkiram1/0A5017000,Stack/0A50187F0,RSTHandler/0AC600000,INTHandler,INTTBL,IntPRG/0AC600800,VECTTBL/0AC602000,ResetPRG/0AC602400,Phwsetup1,Chwsetup1/0AC602800,PvupsciROM/0AC604000,Pcall/0AC608000,Pstart,Pstart1/0AC60A000,P,PHiROM,C,D/0AC60B000,Psum_code/0AC67FF00,Psum_code2/0AC69FF00,Bfram/0B4000000,BframSEQ/0B4007000,Bopram/0B5000000,BdpramAB/0B8000000,Bdpram/0B8800000,Bfrom/0B9000000,Pcbsys/0B90B0000,Pcb_TBL1X/0B90C0000,Bposlsi1/0BA000000,Bdio/0BB000000,REG2/0FFFFF000
+-nologo
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\CPU_REG.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\CPUB.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\dbsct.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\hwsetup.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\initsct.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\intprg.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\resetprg.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\sbrk.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_acrm.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_cblp.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_cbmn.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_com1.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_ctbl.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_ctrl.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_dio1.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_dioy.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_dtmk.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_dummymem.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_else.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_err1.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_et1b.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_frif.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_had1.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_hmi2.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_k.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_khad.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_mem1.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_opram.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_pcal.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_pos1.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_scal.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_self.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_tbl1.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_tbl2.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_wrmk.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssa_y.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssc_dif1.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssc_k.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssc_work.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssc_wrmh.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssc_wrmk.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssc_wrms.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\ssc_wrmy.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\stacksct.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\vecttbl.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Debug\vhandler.obj"
+-library="c:\program files\renesas\hew4\tools\renesas\sh\9_4_1\lib\sh3dspnb.lib"
+-library="D:\SIT4S_MC\CPUB\CPUB\Debug\CPUB.lib"
+-output="D:\SIT4S_MC\CPUB\CPUB\Debug\CPUB.abs"
+-end
+
+*** Error information ***
+
+*** Mapping List ***
+
+SECTION                            START      END         SIZE   ALIGN
+
+INTHdlrRAM
+                                  0c000800  0c000d53       554   4
+INTTBLRAM
+                                  0c000d54  0c000f33       1e0   4
+IntPRGRAM
+                                  0c000f34  0c00176b       838   4
+PcallRAM
+                                  0c002000  0c00244f       450   4
+PRAM
+                                  0c004000  0c021b07     1db08   4
+Bwkram1
+                                  0c090000  0c0fd52b     6d52c   4
+B
+                                  0c0fd52c  0c100b35      360a   4
+R
+                                  0c100b38  0c100b3b         4   4
+PvupsciRAM
+                                  0c180000  0c1807f7       7f8   4
+Bvupwkram
+                                  0c1a0000  0c1a003d        3e   4
+REG1
+                                  a4000000  a4000c29       c2a   4
+PHiRAM
+                                  a5007000  a5008e7b      1e7c   4
+Bwkiram1
+                                  a5017000  a5017411       412   4
+Stack
+                                  a50187f0  a5018fef       800   4
+RSTHandler
+                                  ac600000  ac60001b        1c   4
+INTHandler
+                                  ac600800  ac600d53       554   4
+INTTBL
+                                  ac600d54  ac600f33       1e0   4
+IntPRG
+                                  ac600f34  ac60176b       838   4
+VECTTBL
+                                  ac602000  ac602007         8   4
+ResetPRG
+                                  ac602400  ac60252b       12c   4
+Phwsetup1
+                                  ac602800  ac603157       958   4
+Chwsetup1
+                                  ac603158  ac603193        3c   4
+PvupsciROM
+                                  ac604000  ac6047f7       7f8   4
+Pcall
+                                  ac608000  ac60844f       450   4
+Pstart
+                                  ac60a000  ac60a077        78   4
+Pstart1
+                                  ac60a078  ac60a22b       1b4   4
+P
+                                  ac60b000  ac628b07     1db08   4
+PHiROM
+                                  ac628b08  ac62a983      1e7c   4
+C
+                                  ac62a984  ac62a9d3        50   4
+D
+                                  ac62a9d4  ac62a9d7         4   4
+Psum_code
+                                  ac67ff00  ac67ff07         8   4
+Psum_code2
+                                  ac69ff00  ac69ff03         4   4
+Bfram
+                                  b4000000  b4000000         0   4
+BframSEQ
+                                  b4007000  b4007cff       d00   4
+Bopram
+                                  b5000000  b5000fff      1000   4
+BdpramAB
+                                  b8000000  b8003fff      4000   4
+Bdpram
+                                  b8800000  b8803fff      4000   4
+Bfrom
+                                  b9000000  b9000000         0   4
+Pcbsys
+                                  b90b0000  b90b306f      3070   4
+Pcb_TBL1X
+                                  b90c0000  b90d3c23     13c24   4
+Bposlsi1
+                                  ba000000  ba000000         0   4
+Bdio
+                                  bb000000  bb000205       206   4
+REG2
+                                  fffff000  ffffffff      1000   4

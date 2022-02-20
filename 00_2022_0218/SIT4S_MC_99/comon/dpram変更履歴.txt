@@ -1,0 +1,84 @@
+_SVP_LFEED_GMNSQ1		.SRES	2	;ｼｰｹﾝｽ396
+_SVP_LFEED_GMNSQ2		.SRES	2	;ｼｰｹﾝｽ397
+_SVP_LFEED_GMNSQ3		.SRES	2	;ｼｰｹﾝｽ398
+_SVP_LFEED_GMNSQ4		.SRES	2	;ｼｰｹﾝｽ399
+
+;	----------------------------------------------------------------
+;	---------- 2016-11-15~ ﾛｰﾀﾘｶﾑのﾀｲﾏｶﾑ部追加----------------------
+;	----------------------------------------------------------------
+_SVP_RCAMON_P110		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用000　ＯＮ工程
+_SVP_RCAMON_D110		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用000　ＯＮ角度
+_SVP_RCAMOF_P110		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用000　ＯＦ工程
+_SVP_RCAMOF_D110		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用000　OF時間・角度
+_SVP_RCAMON_P111		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用001　ＯＮ工程
+_SVP_RCAMON_D111		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用001　ＯＮ角度
+_SVP_RCAMOF_P111		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用001　ＯＦ工程
+_SVP_RCAMOF_D111		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用001　OF時間・角度
+_SVP_RCAMON_P112		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用002　ＯＮ工程
+_SVP_RCAMON_D112		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用002　ＯＮ角度
+_SVP_RCAMOF_P112		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用002　ＯＦ工程
+_SVP_RCAMOF_D112		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用002　OF時間・角度
+_SVP_RCAMON_P113		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用003　ＯＮ工程
+_SVP_RCAMON_D113		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用003　ＯＮ角度
+_SVP_RCAMOF_P113		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用003　ＯＦ工程
+_SVP_RCAMOF_D113		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用003　OF時間・角度
+_SVP_RCAMON_P114		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用004　ＯＮ工程
+_SVP_RCAMON_D114		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用004　ＯＮ角度
+_SVP_RCAMOF_P114		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用004　ＯＦ工程
+_SVP_RCAMOF_D114		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用004　OF時間・角度
+_SVP_RCAMON_P115		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用005　ＯＮ工程
+_SVP_RCAMON_D115		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用005　ＯＮ角度
+_SVP_RCAMOF_P115		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用005　ＯＦ工程
+_SVP_RCAMOF_D115		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用005　OF時間・角度
+_SVP_RCAMON_P116		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用006　ＯＮ工程
+_SVP_RCAMON_D116		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用006　ＯＮ角度
+_SVP_RCAMOF_P116		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用006　ＯＦ工程
+_SVP_RCAMOF_D116		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用006　OF時間・角度
+_SVP_RCAMON_P117		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用007　ＯＮ工程
+_SVP_RCAMON_D117		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用007　ＯＮ角度
+_SVP_RCAMOF_P117		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用007　ＯＦ工程
+_SVP_RCAMOF_D117		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用007　OF時間・角度
+_SVP_RCAMON_P118		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用008　ＯＮ工程
+_SVP_RCAMON_D118		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用008　ＯＮ角度
+_SVP_RCAMOF_P118		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用008　ＯＦ工程
+_SVP_RCAMOF_D118		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用008　OF時間・角度
+_SVP_RCAMON_P119		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用009　ＯＮ工程
+_SVP_RCAMON_D119		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用009　ＯＮ角度
+_SVP_RCAMOF_P119		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用009　ＯＦ工程
+_SVP_RCAMOF_D119		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用009　OF時間・角度
+_SVP_RCAMON_P11A		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00A　ＯＮ工程
+_SVP_RCAMON_D11A		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00A　ＯＮ角度
+_SVP_RCAMOF_P11A		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00A　ＯＦ工程
+_SVP_RCAMOF_D11A		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00A　OF時間・角度
+_SVP_RCAMON_P11B		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00B　ＯＮ工程
+_SVP_RCAMON_D11B		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00B　ＯＮ角度
+_SVP_RCAMOF_P11B		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00B　ＯＦ工程
+_SVP_RCAMOF_D11B		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00B　OF時間・角度
+_SVP_RCAMON_P11C		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00C　ＯＮ工程
+_SVP_RCAMON_D11C		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00C　ＯＮ角度
+_SVP_RCAMOF_P11C		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00C　ＯＦ工程
+_SVP_RCAMOF_D11C		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00C　OF時間・角度
+_SVP_RCAMON_P11D		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00D　ＯＮ工程
+_SVP_RCAMON_D11D		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00D　ＯＮ角度
+_SVP_RCAMOF_P11D		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00D　ＯＦ工程
+_SVP_RCAMOF_D11D		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00D　OF時間・角度
+_SVP_RCAMON_P11E		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00E　ＯＮ工程
+_SVP_RCAMON_D11E		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00E　ＯＮ角度
+_SVP_RCAMOF_P11E		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00E　ＯＦ工程
+_SVP_RCAMOF_D11E		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00E　OF時間・角度
+_SVP_RCAMON_P11F		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00F　ＯＮ工程
+_SVP_RCAMON_D11F		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00F　ＯＮ角度
+_SVP_RCAMOF_P11F		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00F　ＯＦ工程
+_SVP_RCAMOF_D11F		.SRES	2	;ﾛｰﾀﾘｶﾑﾀｲﾏ用00F　ＯＦ時間・角
+
+
+;	***********************************************************
+;	***		実測関連				***
+;	***********************************************************
+	.ORG	H'1A00					;
+
+;	=== 2014/04/16 SHIMA ===
+_PVP_CKAGL_OVBIT	.SRES	2		;赤表示(BIT0~BIT9)
+_PVP_CKLMT_AGLTOP:
+_PVP_CKLMT_AGL01	.SRES	2		;1段目
+_PVP_CKLMT_AGL02	.SRES	2		;2段目

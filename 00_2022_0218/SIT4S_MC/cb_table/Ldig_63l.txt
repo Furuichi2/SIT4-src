@@ -1,0 +1,3602 @@
+		;ØÝ¸(360)=>¸×Ý¸ŽÀ‘ª			2005-06-10
+	.DATA.W		388        ;00	
+	.DATA.W		390        ;01	
+	.DATA.W		391        ;02	
+	.DATA.W		393        ;03	
+	.DATA.W		394        ;04	
+	.DATA.W		396        ;05	
+	.DATA.W		397        ;06	
+	.DATA.W		399        ;07	
+	.DATA.W		400        ;08	
+	.DATA.W		401        ;09	
+	.DATA.W		403        ;10	
+	.DATA.W		404        ;11	
+	.DATA.W		406        ;12	
+	.DATA.W		407        ;13	
+	.DATA.W		409        ;14	
+	.DATA.W		410        ;15	
+	.DATA.W		412        ;16	
+	.DATA.W		413        ;17	
+	.DATA.W		415        ;18	
+	.DATA.W		416        ;19	
+	.DATA.W		417        ;20	
+	.DATA.W		419        ;21	
+	.DATA.W		420        ;22	
+	.DATA.W		422        ;23	
+	.DATA.W		423        ;24	
+	.DATA.W		425        ;25	
+	.DATA.W		426        ;26	
+	.DATA.W		428        ;27	
+	.DATA.W		429        ;28	
+	.DATA.W		430        ;29	
+	.DATA.W		432        ;30	
+	.DATA.W		433        ;31	
+	.DATA.W		435        ;32	
+	.DATA.W		436        ;33	
+	.DATA.W		438        ;34	
+	.DATA.W		439        ;35	
+	.DATA.W		441        ;36	
+	.DATA.W		442        ;37	
+	.DATA.W		443        ;38	
+	.DATA.W		445        ;39	
+	.DATA.W		446        ;40	
+	.DATA.W		448        ;41	
+	.DATA.W		449        ;42	
+	.DATA.W		451        ;43	
+	.DATA.W		452        ;44	
+	.DATA.W		453        ;45	
+	.DATA.W		455        ;46	
+	.DATA.W		456        ;47	
+	.DATA.W		458        ;48	
+	.DATA.W		459        ;49	
+	.DATA.W		461        ;50	
+	.DATA.W		462        ;51	
+	.DATA.W		463        ;52	
+	.DATA.W		465        ;53	
+	.DATA.W		466        ;54	
+	.DATA.W		468        ;55	
+	.DATA.W		469        ;56	
+	.DATA.W		471        ;57	
+	.DATA.W		472        ;58	
+	.DATA.W		473        ;59	
+	.DATA.W		475        ;60	
+	.DATA.W		476        ;61	
+	.DATA.W		478        ;62	
+	.DATA.W		479        ;63	
+	.DATA.W		481        ;64	
+	.DATA.W		482        ;65	
+	.DATA.W		483        ;66	
+	.DATA.W		485        ;67	
+	.DATA.W		486        ;68	
+	.DATA.W		488        ;69	
+	.DATA.W		489        ;70	
+	.DATA.W		491        ;71	
+	.DATA.W		492        ;72	
+	.DATA.W		493        ;73	
+	.DATA.W		495        ;74	
+	.DATA.W		496        ;75	
+	.DATA.W		498        ;76	
+	.DATA.W		499        ;77	
+	.DATA.W		500        ;78	
+	.DATA.W		502        ;79	
+	.DATA.W		503        ;80	
+	.DATA.W		505        ;81	
+	.DATA.W		506        ;82	
+	.DATA.W		507        ;83	
+	.DATA.W		509        ;84	
+	.DATA.W		510        ;85	
+	.DATA.W		512        ;86	
+	.DATA.W		513        ;87	
+	.DATA.W		514        ;88	
+	.DATA.W		516        ;89	
+	.DATA.W		517        ;90	
+	.DATA.W		519        ;91	
+	.DATA.W		520        ;92	
+	.DATA.W		521        ;93	
+	.DATA.W		523        ;94	
+	.DATA.W		524        ;95	
+	.DATA.W		526        ;96	
+	.DATA.W		527        ;97	
+	.DATA.W		528        ;98	
+	.DATA.W		530        ;99	
+	.DATA.W		531        ;100	
+	.DATA.W		533        ;101	
+	.DATA.W		534        ;102	
+	.DATA.W		535        ;103	
+	.DATA.W		537        ;104	
+	.DATA.W		538        ;105	
+	.DATA.W		540        ;106	
+	.DATA.W		541        ;107	
+	.DATA.W		542        ;108	
+	.DATA.W		544        ;109	
+	.DATA.W		545        ;110	
+	.DATA.W		547        ;111	
+	.DATA.W		548        ;112	
+	.DATA.W		549        ;113	
+	.DATA.W		551        ;114	
+	.DATA.W		552        ;115	
+	.DATA.W		554        ;116	
+	.DATA.W		555        ;117	
+	.DATA.W		556        ;118	
+	.DATA.W		558        ;119	
+	.DATA.W		559        ;120	
+	.DATA.W		560        ;121	
+	.DATA.W		562        ;122	
+	.DATA.W		563        ;123	
+	.DATA.W		565        ;124	
+	.DATA.W		566        ;125	
+	.DATA.W		567        ;126	
+	.DATA.W		569        ;127	
+	.DATA.W		570        ;128	
+	.DATA.W		571        ;129	
+	.DATA.W		573        ;130	
+	.DATA.W		574        ;131	
+	.DATA.W		576        ;132	
+	.DATA.W		577        ;133	
+	.DATA.W		578        ;134	
+	.DATA.W		580        ;135	
+	.DATA.W		581        ;136	
+	.DATA.W		582        ;137	
+	.DATA.W		584        ;138	
+	.DATA.W		585        ;139	
+	.DATA.W		587        ;140	
+	.DATA.W		588        ;141	
+	.DATA.W		589        ;142	
+	.DATA.W		591        ;143	
+	.DATA.W		592        ;144	
+	.DATA.W		593        ;145	
+	.DATA.W		595        ;146	
+	.DATA.W		596        ;147	
+	.DATA.W		597        ;148	
+	.DATA.W		599        ;149	
+	.DATA.W		600        ;150	
+	.DATA.W		602        ;151	
+	.DATA.W		603        ;152	
+	.DATA.W		604        ;153	
+	.DATA.W		606        ;154	
+	.DATA.W		607        ;155	
+	.DATA.W		608        ;156	
+	.DATA.W		610        ;157	
+	.DATA.W		611        ;158	
+	.DATA.W		612        ;159	
+	.DATA.W		614        ;160	
+	.DATA.W		615        ;161	
+	.DATA.W		616        ;162	
+	.DATA.W		618        ;163	
+	.DATA.W		619        ;164	
+	.DATA.W		621        ;165	
+	.DATA.W		622        ;166	
+	.DATA.W		623        ;167	
+	.DATA.W		625        ;168	
+	.DATA.W		626        ;169	
+	.DATA.W		627        ;170	
+	.DATA.W		629        ;171	
+	.DATA.W		630        ;172	
+	.DATA.W		631        ;173	
+	.DATA.W		633        ;174	
+	.DATA.W		634        ;175	
+	.DATA.W		635        ;176	
+	.DATA.W		637        ;177	
+	.DATA.W		638        ;178	
+	.DATA.W		639        ;179	
+	.DATA.W		641        ;180	
+	.DATA.W		642        ;181	
+	.DATA.W		643        ;182	
+	.DATA.W		645        ;183	
+	.DATA.W		646        ;184	
+	.DATA.W		647        ;185	
+	.DATA.W		649        ;186	
+	.DATA.W		650        ;187	
+	.DATA.W		651        ;188	
+	.DATA.W		653        ;189	
+	.DATA.W		654        ;190	
+	.DATA.W		655        ;191	
+	.DATA.W		657        ;192	
+	.DATA.W		658        ;193	
+	.DATA.W		659        ;194	
+	.DATA.W		661        ;195	
+	.DATA.W		662        ;196	
+	.DATA.W		663        ;197	
+	.DATA.W		665        ;198	
+	.DATA.W		666        ;199	
+	.DATA.W		667        ;200	
+	.DATA.W		669        ;201	
+	.DATA.W		670        ;202	
+	.DATA.W		671        ;203	
+	.DATA.W		673        ;204	
+	.DATA.W		674        ;205	
+	.DATA.W		675        ;206	
+	.DATA.W		677        ;207	
+	.DATA.W		678        ;208	
+	.DATA.W		679        ;209	
+	.DATA.W		681        ;210	
+	.DATA.W		682        ;211	
+	.DATA.W		683        ;212	
+	.DATA.W		685        ;213	
+	.DATA.W		686        ;214	
+	.DATA.W		687        ;215	
+	.DATA.W		688        ;216	
+	.DATA.W		690        ;217	
+	.DATA.W		691        ;218	
+	.DATA.W		692        ;219	
+	.DATA.W		694        ;220	
+	.DATA.W		695        ;221	
+	.DATA.W		696        ;222	
+	.DATA.W		698        ;223	
+	.DATA.W		699        ;224	
+	.DATA.W		700        ;225	
+	.DATA.W		702        ;226	
+	.DATA.W		703        ;227	
+	.DATA.W		704        ;228	
+	.DATA.W		705        ;229	
+	.DATA.W		707        ;230	
+	.DATA.W		708        ;231	
+	.DATA.W		709        ;232	
+	.DATA.W		711        ;233	
+	.DATA.W		712        ;234	
+	.DATA.W		713        ;235	
+	.DATA.W		715        ;236	
+	.DATA.W		716        ;237	
+	.DATA.W		717        ;238	
+	.DATA.W		719        ;239	
+	.DATA.W		720        ;240	
+	.DATA.W		721        ;241	
+	.DATA.W		722        ;242	
+	.DATA.W		724        ;243	
+	.DATA.W		725        ;244	
+	.DATA.W		726        ;245	
+	.DATA.W		728        ;246	
+	.DATA.W		729        ;247	
+	.DATA.W		730        ;248	
+	.DATA.W		731        ;249	
+	.DATA.W		733        ;250	
+	.DATA.W		734        ;251	
+	.DATA.W		735        ;252	
+	.DATA.W		737        ;253	
+	.DATA.W		738        ;254	
+	.DATA.W		739        ;255	
+	.DATA.W		740        ;256	
+	.DATA.W		742        ;257	
+	.DATA.W		743        ;258	
+	.DATA.W		744        ;259	
+	.DATA.W		746        ;260	
+	.DATA.W		747        ;261	
+	.DATA.W		748        ;262	
+	.DATA.W		749        ;263	
+	.DATA.W		751        ;264	
+	.DATA.W		752        ;265	
+	.DATA.W		753        ;266	
+	.DATA.W		755        ;267	
+	.DATA.W		756        ;268	
+	.DATA.W		757        ;269	
+	.DATA.W		758        ;270	
+	.DATA.W		760        ;271	
+	.DATA.W		761        ;272	
+	.DATA.W		762        ;273	
+	.DATA.W		763        ;274	
+	.DATA.W		765        ;275	
+	.DATA.W		766        ;276	
+	.DATA.W		767        ;277	
+	.DATA.W		769        ;278	
+	.DATA.W		770        ;279	
+	.DATA.W		771        ;280	
+	.DATA.W		772        ;281	
+	.DATA.W		774        ;282	
+	.DATA.W		775        ;283	
+	.DATA.W		776        ;284	
+	.DATA.W		777        ;285	
+	.DATA.W		779        ;286	
+	.DATA.W		780        ;287	
+	.DATA.W		781        ;288	
+	.DATA.W		782        ;289	
+	.DATA.W		784        ;290	
+	.DATA.W		785        ;291	
+	.DATA.W		786        ;292	
+	.DATA.W		787        ;293	
+	.DATA.W		789        ;294	
+	.DATA.W		790        ;295	
+	.DATA.W		791        ;296	
+	.DATA.W		793        ;297	
+	.DATA.W		794        ;298	
+	.DATA.W		795        ;299	
+	.DATA.W		796        ;300	
+	.DATA.W		798        ;301	
+	.DATA.W		799        ;302	
+	.DATA.W		800        ;303	
+	.DATA.W		801        ;304	
+	.DATA.W		803        ;305	
+	.DATA.W		804        ;306	
+	.DATA.W		805        ;307	
+	.DATA.W		806        ;308	
+	.DATA.W		808        ;309	
+	.DATA.W		809        ;310	
+	.DATA.W		810        ;311	
+	.DATA.W		811        ;312	
+	.DATA.W		813        ;313	
+	.DATA.W		814        ;314	
+	.DATA.W		815        ;315	
+	.DATA.W		816        ;316	
+	.DATA.W		817        ;317	
+	.DATA.W		819        ;318	
+	.DATA.W		820        ;319	
+	.DATA.W		821        ;320	
+	.DATA.W		822        ;321	
+	.DATA.W		824        ;322	
+	.DATA.W		825        ;323	
+	.DATA.W		826        ;324	
+	.DATA.W		827        ;325	
+	.DATA.W		829        ;326	
+	.DATA.W		830        ;327	
+	.DATA.W		831        ;328	
+	.DATA.W		832        ;329	
+	.DATA.W		834        ;330	
+	.DATA.W		835        ;331	
+	.DATA.W		836        ;332	
+	.DATA.W		837        ;333	
+	.DATA.W		838        ;334	
+	.DATA.W		840        ;335	
+	.DATA.W		841        ;336	
+	.DATA.W		842        ;337	
+	.DATA.W		843        ;338	
+	.DATA.W		845        ;339	
+	.DATA.W		846        ;340	
+	.DATA.W		847        ;341	
+	.DATA.W		848        ;342	
+	.DATA.W		849        ;343	
+	.DATA.W		851        ;344	
+	.DATA.W		852        ;345	
+	.DATA.W		853        ;346	
+	.DATA.W		854        ;347	
+	.DATA.W		856        ;348	
+	.DATA.W		857        ;349	
+	.DATA.W		858        ;350	
+	.DATA.W		859        ;351	
+	.DATA.W		860        ;352	
+	.DATA.W		862        ;353	
+	.DATA.W		863        ;354	
+	.DATA.W		864        ;355	
+	.DATA.W		865        ;356	
+	.DATA.W		866        ;357	
+	.DATA.W		868        ;358	
+	.DATA.W		869        ;359	
+	.DATA.W		870        ;360	
+	.DATA.W		871        ;361	
+	.DATA.W		873        ;362	
+	.DATA.W		874        ;363	
+	.DATA.W		875        ;364	
+	.DATA.W		876        ;365	
+	.DATA.W		877        ;366	
+	.DATA.W		879        ;367	
+	.DATA.W		880        ;368	
+	.DATA.W		881        ;369	
+	.DATA.W		882        ;370	
+	.DATA.W		883        ;371	
+	.DATA.W		885        ;372	
+	.DATA.W		886        ;373	
+	.DATA.W		887        ;374	
+	.DATA.W		888        ;375	
+	.DATA.W		889        ;376	
+	.DATA.W		891        ;377	
+	.DATA.W		892        ;378	
+	.DATA.W		893        ;379	
+	.DATA.W		894        ;380	
+	.DATA.W		895        ;381	
+	.DATA.W		897        ;382	
+	.DATA.W		898        ;383	
+	.DATA.W		899        ;384	
+	.DATA.W		900        ;385	
+	.DATA.W		901        ;386	
+	.DATA.W		902        ;387	
+	.DATA.W		904        ;388	
+	.DATA.W		905        ;389	
+	.DATA.W		906        ;390	
+	.DATA.W		907        ;391	
+	.DATA.W		908        ;392	
+	.DATA.W		910        ;393	
+	.DATA.W		911        ;394	
+	.DATA.W		912        ;395	
+	.DATA.W		913        ;396	
+	.DATA.W		914        ;397	
+	.DATA.W		916        ;398	
+	.DATA.W		917        ;399	
+	.DATA.W		918        ;400	
+	.DATA.W		919        ;401	
+	.DATA.W		920        ;402	
+	.DATA.W		921        ;403	
+	.DATA.W		923        ;404	
+	.DATA.W		924        ;405	
+	.DATA.W		925        ;406	
+	.DATA.W		926        ;407	
+	.DATA.W		927        ;408	
+	.DATA.W		928        ;409	
+	.DATA.W		930        ;410	
+	.DATA.W		931        ;411	
+	.DATA.W		932        ;412	
+	.DATA.W		933        ;413	
+	.DATA.W		934        ;414	
+	.DATA.W		935        ;415	
+	.DATA.W		937        ;416	
+	.DATA.W		938        ;417	
+	.DATA.W		939        ;418	
+	.DATA.W		940        ;419	
+	.DATA.W		941        ;420	
+	.DATA.W		942        ;421	
+	.DATA.W		944        ;422	
+	.DATA.W		945        ;423	
+	.DATA.W		946        ;424	
+	.DATA.W		947        ;425	
+	.DATA.W		948        ;426	
+	.DATA.W		949        ;427	
+	.DATA.W		951        ;428	
+	.DATA.W		952        ;429	
+	.DATA.W		953        ;430	
+	.DATA.W		954        ;431	
+	.DATA.W		955        ;432	
+	.DATA.W		956        ;433	
+	.DATA.W		958        ;434	
+	.DATA.W		959        ;435	
+	.DATA.W		960        ;436	
+	.DATA.W		961        ;437	
+	.DATA.W		962        ;438	
+	.DATA.W		963        ;439	
+	.DATA.W		964        ;440	
+	.DATA.W		966        ;441	
+	.DATA.W		967        ;442	
+	.DATA.W		968        ;443	
+	.DATA.W		969        ;444	
+	.DATA.W		970        ;445	
+	.DATA.W		971        ;446	
+	.DATA.W		972        ;447	
+	.DATA.W		974        ;448	
+	.DATA.W		975        ;449	
+	.DATA.W		976        ;450	
+	.DATA.W		977        ;451	
+	.DATA.W		978        ;452	
+	.DATA.W		979        ;453	
+	.DATA.W		980        ;454	
+	.DATA.W		982        ;455	
+	.DATA.W		983        ;456	
+	.DATA.W		984        ;457	
+	.DATA.W		985        ;458	
+	.DATA.W		986        ;459	
+	.DATA.W		987        ;460	
+	.DATA.W		988        ;461	
+	.DATA.W		989        ;462	
+	.DATA.W		991        ;463	
+	.DATA.W		992        ;464	
+	.DATA.W		993        ;465	
+	.DATA.W		994        ;466	
+	.DATA.W		995        ;467	
+	.DATA.W		996        ;468	
+	.DATA.W		997        ;469	
+	.DATA.W		999        ;470	
+	.DATA.W		1000       ; 471	
+	.DATA.W		1001       ; 472	
+	.DATA.W		1002       ; 473	
+	.DATA.W		1003       ; 474	
+	.DATA.W		1004       ; 475	
+	.DATA.W		1005       ; 476	
+	.DATA.W		1006       ; 477	
+	.DATA.W		1007       ; 478	
+	.DATA.W		1009       ; 479	
+	.DATA.W		1010       ; 480	
+	.DATA.W		1011       ; 481	
+	.DATA.W		1012       ; 482	
+	.DATA.W		1013       ; 483	
+	.DATA.W		1014       ; 484	
+	.DATA.W		1015       ; 485	
+	.DATA.W		1016       ; 486	
+	.DATA.W		1018       ; 487	
+	.DATA.W		1019       ; 488	
+	.DATA.W		1020       ; 489	
+	.DATA.W		1021       ; 490	
+	.DATA.W		1022       ; 491	
+	.DATA.W		1023       ; 492	
+	.DATA.W		1024       ; 493	
+	.DATA.W		1025       ; 494	
+	.DATA.W		1026       ; 495	
+	.DATA.W		1027       ; 496	
+	.DATA.W		1029       ; 497	
+	.DATA.W		1030       ; 498	
+	.DATA.W		1031       ; 499	
+	.DATA.W		1032       ; 500	
+	.DATA.W		1033       ; 501	
+	.DATA.W		1034       ; 502	
+	.DATA.W		1035       ; 503	
+	.DATA.W		1036       ; 504	
+	.DATA.W		1037       ; 505	
+	.DATA.W		1039       ; 506	
+	.DATA.W		1040       ; 507	
+	.DATA.W		1041       ; 508	
+	.DATA.W		1042       ; 509	
+	.DATA.W		1043       ; 510	
+	.DATA.W		1044       ; 511	
+	.DATA.W		1045       ; 512	
+	.DATA.W		1046       ; 513	
+	.DATA.W		1047       ; 514	
+	.DATA.W		1048       ; 515	
+	.DATA.W		1049       ; 516	
+	.DATA.W		1051       ; 517	
+	.DATA.W		1052       ; 518	
+	.DATA.W		1053       ; 519	
+	.DATA.W		1054       ; 520	
+	.DATA.W		1055       ; 521	
+	.DATA.W		1056       ; 522	
+	.DATA.W		1057       ; 523	
+	.DATA.W		1058       ; 524	
+	.DATA.W		1059       ; 525	
+	.DATA.W		1060       ; 526	
+	.DATA.W		1061       ; 527	
+	.DATA.W		1062       ; 528	
+	.DATA.W		1064       ; 529	
+	.DATA.W		1065       ; 530	
+	.DATA.W		1066       ; 531	
+	.DATA.W		1067       ; 532	
+	.DATA.W		1068       ; 533	
+	.DATA.W		1069       ; 534	
+	.DATA.W		1070       ; 535	
+	.DATA.W		1071       ; 536	
+	.DATA.W		1072       ; 537	
+	.DATA.W		1073       ; 538	
+	.DATA.W		1074       ; 539	
+	.DATA.W		1075       ; 540	
+	.DATA.W		1076       ; 541	
+	.DATA.W		1078       ; 542	
+	.DATA.W		1079       ; 543	
+	.DATA.W		1080       ; 544	
+	.DATA.W		1081       ; 545	
+	.DATA.W		1082       ; 546	
+	.DATA.W		1083       ; 547	
+	.DATA.W		1084       ; 548	
+	.DATA.W		1085       ; 549	
+	.DATA.W		1086       ; 550	
+	.DATA.W		1087       ; 551	
+	.DATA.W		1088       ; 552	
+	.DATA.W		1089       ; 553	
+	.DATA.W		1090       ; 554	
+	.DATA.W		1091       ; 555	
+	.DATA.W		1092       ; 556	
+	.DATA.W		1093       ; 557	
+	.DATA.W		1095       ; 558	
+	.DATA.W		1096       ; 559	
+	.DATA.W		1097       ; 560	
+	.DATA.W		1098       ; 561	
+	.DATA.W		1099       ; 562	
+	.DATA.W		1100       ; 563	
+	.DATA.W		1101       ; 564	
+	.DATA.W		1102       ; 565	
+	.DATA.W		1103       ; 566	
+	.DATA.W		1104       ; 567	
+	.DATA.W		1105       ; 568	
+	.DATA.W		1106       ; 569	
+	.DATA.W		1107       ; 570	
+	.DATA.W		1108       ; 571	
+	.DATA.W		1109       ; 572	
+	.DATA.W		1110       ; 573	
+	.DATA.W		1111       ; 574	
+	.DATA.W		1112       ; 575	
+	.DATA.W		1113       ; 576	
+	.DATA.W		1114       ; 577	
+	.DATA.W		1115       ; 578	
+	.DATA.W		1117       ; 579	
+	.DATA.W		1118       ; 580	
+	.DATA.W		1119       ; 581	
+	.DATA.W		1120       ; 582	
+	.DATA.W		1121       ; 583	
+	.DATA.W		1122       ; 584	
+	.DATA.W		1123       ; 585	
+	.DATA.W		1124       ; 586	
+	.DATA.W		1125       ; 587	
+	.DATA.W		1126       ; 588	
+	.DATA.W		1127       ; 589	
+	.DATA.W		1128       ; 590	
+	.DATA.W		1129       ; 591	
+	.DATA.W		1130       ; 592	
+	.DATA.W		1131       ; 593	
+	.DATA.W		1132       ; 594	
+	.DATA.W		1133       ; 595	
+	.DATA.W		1134       ; 596	
+	.DATA.W		1135       ; 597	
+	.DATA.W		1136       ; 598	
+	.DATA.W		1137       ; 599	
+	.DATA.W		1138       ; 600	
+	.DATA.W		1139       ; 601	
+	.DATA.W		1140       ; 602	
+	.DATA.W		1141       ; 603	
+	.DATA.W		1142       ; 604	
+	.DATA.W		1143       ; 605	
+	.DATA.W		1144       ; 606	
+	.DATA.W		1145       ; 607	
+	.DATA.W		1146       ; 608	
+	.DATA.W		1147       ; 609	
+	.DATA.W		1148       ; 610	
+	.DATA.W		1149       ; 611	
+	.DATA.W		1150       ; 612	
+	.DATA.W		1151       ; 613	
+	.DATA.W		1152       ; 614	
+	.DATA.W		1153       ; 615	
+	.DATA.W		1154       ; 616	
+	.DATA.W		1155       ; 617	
+	.DATA.W		1156       ; 618	
+	.DATA.W		1157       ; 619	
+	.DATA.W		1158       ; 620	
+	.DATA.W		1159       ; 621	
+	.DATA.W		1160       ; 622	
+	.DATA.W		1161       ; 623	
+	.DATA.W		1162       ; 624	
+	.DATA.W		1163       ; 625	
+	.DATA.W		1164       ; 626	
+	.DATA.W		1165       ; 627	
+	.DATA.W		1166       ; 628	
+	.DATA.W		1167       ; 629	
+	.DATA.W		1168       ; 630	
+	.DATA.W		1169       ; 631	
+	.DATA.W		1170       ; 632	
+	.DATA.W		1171       ; 633	
+	.DATA.W		1172       ; 634	
+	.DATA.W		1173       ; 635	
+	.DATA.W		1174       ; 636	
+	.DATA.W		1175       ; 637	
+	.DATA.W		1176       ; 638	
+	.DATA.W		1177       ; 639	
+	.DATA.W		1178       ; 640	
+	.DATA.W		1179       ; 641	
+	.DATA.W		1180       ; 642	
+	.DATA.W		1181       ; 643	
+	.DATA.W		1182       ; 644	
+	.DATA.W		1183       ; 645	
+	.DATA.W		1184       ; 646	
+	.DATA.W		1185       ; 647	
+	.DATA.W		1186       ; 648	
+	.DATA.W		1187       ; 649	
+	.DATA.W		1188       ; 650	
+	.DATA.W		1189       ; 651	
+	.DATA.W		1190       ; 652	
+	.DATA.W		1191       ; 653	
+	.DATA.W		1192       ; 654	
+	.DATA.W		1193       ; 655	
+	.DATA.W		1194       ; 656	
+	.DATA.W		1195       ; 657	
+	.DATA.W		1196       ; 658	
+	.DATA.W		1197       ; 659	
+	.DATA.W		1198       ; 660	
+	.DATA.W		1199       ; 661	
+	.DATA.W		1200       ; 662	
+	.DATA.W		1201       ; 663	
+	.DATA.W		1202       ; 664	
+	.DATA.W		1203       ; 665	
+	.DATA.W		1204       ; 666	
+	.DATA.W		1205       ; 667	
+	.DATA.W		1206       ; 668	
+	.DATA.W		1207       ; 669	
+	.DATA.W		1208       ; 670	
+	.DATA.W		1209       ; 671	
+	.DATA.W		1210       ; 672	
+	.DATA.W		1211       ; 673	
+	.DATA.W		1212       ; 674	
+	.DATA.W		1213       ; 675	
+	.DATA.W		1213       ; 676	
+	.DATA.W		1214       ; 677	
+	.DATA.W		1215       ; 678	
+	.DATA.W		1216       ; 679	
+	.DATA.W		1217       ; 680	
+	.DATA.W		1218       ; 681	
+	.DATA.W		1219       ; 682	
+	.DATA.W		1220       ; 683	
+	.DATA.W		1221       ; 684	
+	.DATA.W		1222       ; 685	
+	.DATA.W		1223       ; 686	
+	.DATA.W		1224       ; 687	
+	.DATA.W		1225       ; 688	
+	.DATA.W		1226       ; 689	
+	.DATA.W		1227       ; 690	
+	.DATA.W		1228       ; 691	
+	.DATA.W		1229       ; 692	
+	.DATA.W		1230       ; 693	
+	.DATA.W		1231       ; 694	
+	.DATA.W		1232       ; 695	
+	.DATA.W		1232       ; 696	
+	.DATA.W		1233       ; 697	
+	.DATA.W		1234       ; 698	
+	.DATA.W		1235       ; 699	
+	.DATA.W		1236       ; 700	
+	.DATA.W		1237       ; 701	
+	.DATA.W		1238       ; 702	
+	.DATA.W		1239       ; 703	
+	.DATA.W		1240       ; 704	
+	.DATA.W		1241       ; 705	
+	.DATA.W		1242       ; 706	
+	.DATA.W		1243       ; 707	
+	.DATA.W		1244       ; 708	
+	.DATA.W		1245       ; 709	
+	.DATA.W		1246       ; 710	
+	.DATA.W		1247       ; 711	
+	.DATA.W		1247       ; 712	
+	.DATA.W		1248       ; 713	
+	.DATA.W		1249       ; 714	
+	.DATA.W		1250       ; 715	
+	.DATA.W		1251       ; 716	
+	.DATA.W		1252       ; 717	
+	.DATA.W		1253       ; 718	
+	.DATA.W		1254       ; 719	
+	.DATA.W		1255       ; 720	
+	.DATA.W		1256       ; 721	
+	.DATA.W		1257       ; 722	
+	.DATA.W		1258       ; 723	
+	.DATA.W		1259       ; 724	
+	.DATA.W		1259       ; 725	
+	.DATA.W		1260       ; 726	
+	.DATA.W		1261       ; 727	
+	.DATA.W		1262       ; 728	
+	.DATA.W		1263       ; 729	
+	.DATA.W		1264       ; 730	
+	.DATA.W		1265       ; 731	
+	.DATA.W		1266       ; 732	
+	.DATA.W		1267       ; 733	
+	.DATA.W		1268       ; 734	
+	.DATA.W		1269       ; 735	
+	.DATA.W		1269       ; 736	
+	.DATA.W		1270       ; 737	
+	.DATA.W		1271       ; 738	
+	.DATA.W		1272       ; 739	
+	.DATA.W		1273       ; 740	
+	.DATA.W		1274       ; 741	
+	.DATA.W		1275       ; 742	
+	.DATA.W		1276       ; 743	
+	.DATA.W		1277       ; 744	
+	.DATA.W		1278       ; 745	
+	.DATA.W		1279       ; 746	
+	.DATA.W		1279       ; 747	
+	.DATA.W		1280       ; 748	
+	.DATA.W		1281       ; 749	
+	.DATA.W		1282       ; 750	
+	.DATA.W		1283       ; 751	
+	.DATA.W		1284       ; 752	
+	.DATA.W		1285       ; 753	
+	.DATA.W		1286       ; 754	
+	.DATA.W		1287       ; 755	
+	.DATA.W		1287       ; 756	
+	.DATA.W		1288       ; 757	
+	.DATA.W		1289       ; 758	
+	.DATA.W		1290       ; 759	
+	.DATA.W		1291       ; 760	
+	.DATA.W		1292       ; 761	
+	.DATA.W		1293       ; 762	
+	.DATA.W		1294       ; 763	
+	.DATA.W		1295       ; 764	
+	.DATA.W		1295       ; 765	
+	.DATA.W		1296       ; 766	
+	.DATA.W		1297       ; 767	
+	.DATA.W		1298       ; 768	
+	.DATA.W		1299       ; 769	
+	.DATA.W		1300       ; 770	
+	.DATA.W		1301       ; 771	
+	.DATA.W		1302       ; 772	
+	.DATA.W		1302       ; 773	
+	.DATA.W		1303       ; 774	
+	.DATA.W		1304       ; 775	
+	.DATA.W		1305       ; 776	
+	.DATA.W		1306       ; 777	
+	.DATA.W		1307       ; 778	
+	.DATA.W		1308       ; 779	
+	.DATA.W		1309       ; 780	
+	.DATA.W		1309       ; 781	
+	.DATA.W		1310       ; 782	
+	.DATA.W		1311       ; 783	
+	.DATA.W		1312       ; 784	
+	.DATA.W		1313       ; 785	
+	.DATA.W		1314       ; 786	
+	.DATA.W		1315       ; 787	
+	.DATA.W		1315       ; 788	
+	.DATA.W		1316       ; 789	
+	.DATA.W		1317       ; 790	
+	.DATA.W		1318       ; 791	
+	.DATA.W		1319       ; 792	
+	.DATA.W		1320       ; 793	
+	.DATA.W		1321       ; 794	
+	.DATA.W		1321       ; 795	
+	.DATA.W		1322       ; 796	
+	.DATA.W		1323       ; 797	
+	.DATA.W		1324       ; 798	
+	.DATA.W		1325       ; 799	
+	.DATA.W		1326       ; 800	
+	.DATA.W		1327       ; 801	
+	.DATA.W		1327       ; 802	
+	.DATA.W		1328       ; 803	
+	.DATA.W		1329       ; 804	
+	.DATA.W		1330       ; 805	
+	.DATA.W		1331       ; 806	
+	.DATA.W		1332       ; 807	
+	.DATA.W		1333       ; 808	
+	.DATA.W		1333       ; 809	
+	.DATA.W		1334       ; 810	
+	.DATA.W		1335       ; 811	
+	.DATA.W		1336       ; 812	
+	.DATA.W		1337       ; 813	
+	.DATA.W		1338       ; 814	
+	.DATA.W		1338       ; 815	
+	.DATA.W		1339       ; 816	
+	.DATA.W		1340       ; 817	
+	.DATA.W		1341       ; 818	
+	.DATA.W		1342       ; 819	
+	.DATA.W		1343       ; 820	
+	.DATA.W		1343       ; 821	
+	.DATA.W		1344       ; 822	
+	.DATA.W		1345       ; 823	
+	.DATA.W		1346       ; 824	
+	.DATA.W		1347       ; 825	
+	.DATA.W		1348       ; 826	
+	.DATA.W		1348       ; 827	
+	.DATA.W		1349       ; 828	
+	.DATA.W		1350       ; 829	
+	.DATA.W		1351       ; 830	
+	.DATA.W		1352       ; 831	
+	.DATA.W		1353       ; 832	
+	.DATA.W		1353       ; 833	
+	.DATA.W		1354       ; 834	
+	.DATA.W		1355       ; 835	
+	.DATA.W		1356       ; 836	
+	.DATA.W		1357       ; 837	
+	.DATA.W		1357       ; 838	
+	.DATA.W		1358       ; 839	
+	.DATA.W		1359       ; 840	
+	.DATA.W		1360       ; 841	
+	.DATA.W		1361       ; 842	
+	.DATA.W		1362       ; 843	
+	.DATA.W		1362       ; 844	
+	.DATA.W		1363       ; 845	
+	.DATA.W		1364       ; 846	
+	.DATA.W		1365       ; 847	
+	.DATA.W		1366       ; 848	
+	.DATA.W		1366       ; 849	
+	.DATA.W		1367       ; 850	
+	.DATA.W		1368       ; 851	
+	.DATA.W		1369       ; 852	
+	.DATA.W		1370       ; 853	
+	.DATA.W		1370       ; 854	
+	.DATA.W		1371       ; 855	
+	.DATA.W		1372       ; 856	
+	.DATA.W		1373       ; 857	
+	.DATA.W		1374       ; 858	
+	.DATA.W		1374       ; 859	
+	.DATA.W		1375       ; 860	
+	.DATA.W		1376       ; 861	
+	.DATA.W		1377       ; 862	
+	.DATA.W		1378       ; 863	
+	.DATA.W		1378       ; 864	
+	.DATA.W		1379       ; 865	
+	.DATA.W		1380       ; 866	
+	.DATA.W		1381       ; 867	
+	.DATA.W		1382       ; 868	
+	.DATA.W		1382       ; 869	
+	.DATA.W		1383       ; 870	
+	.DATA.W		1384       ; 871	
+	.DATA.W		1385       ; 872	
+	.DATA.W		1385       ; 873	
+	.DATA.W		1386       ; 874	
+	.DATA.W		1387       ; 875	
+	.DATA.W		1388       ; 876	
+	.DATA.W		1389       ; 877	
+	.DATA.W		1389       ; 878	
+	.DATA.W		1390       ; 879	
+	.DATA.W		1391       ; 880	
+	.DATA.W		1392       ; 881	
+	.DATA.W		1392       ; 882	
+	.DATA.W		1393       ; 883	
+	.DATA.W		1394       ; 884	
+	.DATA.W		1395       ; 885	
+	.DATA.W		1396       ; 886	
+	.DATA.W		1396       ; 887	
+	.DATA.W		1397       ; 888	
+	.DATA.W		1398       ; 889	
+	.DATA.W		1399       ; 890	
+	.DATA.W		1399       ; 891	
+	.DATA.W		1400       ; 892	
+	.DATA.W		1401       ; 893	
+	.DATA.W		1402       ; 894	
+	.DATA.W		1402       ; 895	
+	.DATA.W		1403       ; 896	
+	.DATA.W		1404       ; 897	
+	.DATA.W		1405       ; 898	
+	.DATA.W		1406       ; 899	
+	.DATA.W		1406       ; 900	
+	.DATA.W		1407       ; 901	
+	.DATA.W		1408       ; 902	
+	.DATA.W		1409       ; 903	
+	.DATA.W		1409       ; 904	
+	.DATA.W		1410       ; 905	
+	.DATA.W		1411       ; 906	
+	.DATA.W		1412       ; 907	
+	.DATA.W		1412       ; 908	
+	.DATA.W		1413       ; 909	
+	.DATA.W		1414       ; 910	
+	.DATA.W		1415       ; 911	
+	.DATA.W		1415       ; 912	
+	.DATA.W		1416       ; 913	
+	.DATA.W		1417       ; 914	
+	.DATA.W		1418       ; 915	
+	.DATA.W		1418       ; 916	
+	.DATA.W		1419       ; 917	
+	.DATA.W		1420       ; 918	
+	.DATA.W		1421       ; 919	
+	.DATA.W		1421       ; 920	
+	.DATA.W		1422       ; 921	
+	.DATA.W		1423       ; 922	
+	.DATA.W		1423       ; 923	
+	.DATA.W		1424       ; 924	
+	.DATA.W		1425       ; 925	
+	.DATA.W		1426       ; 926	
+	.DATA.W		1426       ; 927	
+	.DATA.W		1427       ; 928	
+	.DATA.W		1428       ; 929	
+	.DATA.W		1429       ; 930	
+	.DATA.W		1429       ; 931	
+	.DATA.W		1430       ; 932	
+	.DATA.W		1431       ; 933	
+	.DATA.W		1432       ; 934	
+	.DATA.W		1432       ; 935	
+	.DATA.W		1433       ; 936	
+	.DATA.W		1434       ; 937	
+	.DATA.W		1434       ; 938	
+	.DATA.W		1435       ; 939	
+	.DATA.W		1436       ; 940	
+	.DATA.W		1437       ; 941	
+	.DATA.W		1437       ; 942	
+	.DATA.W		1438       ; 943	
+	.DATA.W		1439       ; 944	
+	.DATA.W		1439       ; 945	
+	.DATA.W		1440       ; 946	
+	.DATA.W		1441       ; 947	
+	.DATA.W		1442       ; 948	
+	.DATA.W		1442       ; 949	
+	.DATA.W		1443       ; 950	
+	.DATA.W		1444       ; 951	
+	.DATA.W		1444       ; 952	
+	.DATA.W		1445       ; 953	
+	.DATA.W		1446       ; 954	
+	.DATA.W		1447       ; 955	
+	.DATA.W		1447       ; 956	
+	.DATA.W		1448       ; 957	
+	.DATA.W		1449       ; 958	
+	.DATA.W		1449       ; 959	
+	.DATA.W		1450       ; 960	
+	.DATA.W		1451       ; 961	
+	.DATA.W		1451       ; 962	
+	.DATA.W		1452       ; 963	
+	.DATA.W		1453       ; 964	
+	.DATA.W		1454       ; 965	
+	.DATA.W		1454       ; 966	
+	.DATA.W		1455       ; 967	
+	.DATA.W		1456       ; 968	
+	.DATA.W		1456       ; 969	
+	.DATA.W		1457       ; 970	
+	.DATA.W		1458       ; 971	
+	.DATA.W		1458       ; 972	
+	.DATA.W		1459       ; 973	
+	.DATA.W		1460       ; 974	
+	.DATA.W		1460       ; 975	
+	.DATA.W		1461       ; 976	
+	.DATA.W		1462       ; 977	
+	.DATA.W		1463       ; 978	
+	.DATA.W		1463       ; 979	
+	.DATA.W		1464       ; 980	
+	.DATA.W		1465       ; 981	
+	.DATA.W		1465       ; 982	
+	.DATA.W		1466       ; 983	
+	.DATA.W		1467       ; 984	
+	.DATA.W		1467       ; 985	
+	.DATA.W		1468       ; 986	
+	.DATA.W		1469       ; 987	
+	.DATA.W		1469       ; 988	
+	.DATA.W		1470       ; 989	
+	.DATA.W		1471       ; 990	
+	.DATA.W		1471       ; 991	
+	.DATA.W		1472       ; 992	
+	.DATA.W		1473       ; 993	
+	.DATA.W		1473       ; 994	
+	.DATA.W		1474       ; 995	
+	.DATA.W		1475       ; 996	
+	.DATA.W		1475       ; 997	
+	.DATA.W		1476       ; 998	
+	.DATA.W		1477       ; 999	
+	.DATA.W		1477       ; 1000	
+	.DATA.W		1478       ; 1001	
+	.DATA.W		1479       ; 1002	
+	.DATA.W		1479       ; 1003	
+	.DATA.W		1480       ; 1004	
+	.DATA.W		1481       ; 1005	
+	.DATA.W		1481       ; 1006	
+	.DATA.W		1482       ; 1007	
+	.DATA.W		1483       ; 1008	
+	.DATA.W		1483       ; 1009	
+	.DATA.W		1484       ; 1010	
+	.DATA.W		1485       ; 1011	
+	.DATA.W		1485       ; 1012	
+	.DATA.W		1486       ; 1013	
+	.DATA.W		1487       ; 1014	
+	.DATA.W		1487       ; 1015	
+	.DATA.W		1488       ; 1016	
+	.DATA.W		1489       ; 1017	
+	.DATA.W		1489       ; 1018	
+	.DATA.W		1490       ; 1019	
+	.DATA.W		1490       ; 1020	
+	.DATA.W		1491       ; 1021	
+	.DATA.W		1492       ; 1022	
+	.DATA.W		1492       ; 1023	
+	.DATA.W		1493       ; 1024	
+	.DATA.W		1494       ; 1025	
+	.DATA.W		1494       ; 1026	
+	.DATA.W		1495       ; 1027	
+	.DATA.W		1496       ; 1028	
+	.DATA.W		1496       ; 1029	
+	.DATA.W		1497       ; 1030	
+	.DATA.W		1497       ; 1031	
+	.DATA.W		1498       ; 1032	
+	.DATA.W		1499       ; 1033	
+	.DATA.W		1499       ; 1034	
+	.DATA.W		1500       ; 1035	
+	.DATA.W		1501       ; 1036	
+	.DATA.W		1501       ; 1037	
+	.DATA.W		1502       ; 1038	
+	.DATA.W		1503       ; 1039	
+	.DATA.W		1503       ; 1040	
+	.DATA.W		1504       ; 1041	
+	.DATA.W		1504       ; 1042	
+	.DATA.W		1505       ; 1043	
+	.DATA.W		1506       ; 1044	
+	.DATA.W		1506       ; 1045	
+	.DATA.W		1507       ; 1046	
+	.DATA.W		1507       ; 1047	
+	.DATA.W		1508       ; 1048	
+	.DATA.W		1509       ; 1049	
+	.DATA.W		1509       ; 1050	
+	.DATA.W		1510       ; 1051	
+	.DATA.W		1511       ; 1052	
+	.DATA.W		1511       ; 1053	
+	.DATA.W		1512       ; 1054	
+	.DATA.W		1512       ; 1055	
+	.DATA.W		1513       ; 1056	
+	.DATA.W		1514       ; 1057	
+	.DATA.W		1514       ; 1058	
+	.DATA.W		1515       ; 1059	
+	.DATA.W		1515       ; 1060	
+	.DATA.W		1516       ; 1061	
+	.DATA.W		1517       ; 1062	
+	.DATA.W		1517       ; 1063	
+	.DATA.W		1518       ; 1064	
+	.DATA.W		1518       ; 1065	
+	.DATA.W		1519       ; 1066	
+	.DATA.W		1520       ; 1067	
+	.DATA.W		1520       ; 1068	
+	.DATA.W		1521       ; 1069	
+	.DATA.W		1521       ; 1070	
+	.DATA.W		1522       ; 1071	
+	.DATA.W		1523       ; 1072	
+	.DATA.W		1523       ; 1073	
+	.DATA.W		1524       ; 1074	
+	.DATA.W		1524       ; 1075	
+	.DATA.W		1525       ; 1076	
+	.DATA.W		1526       ; 1077	
+	.DATA.W		1526       ; 1078	
+	.DATA.W		1527       ; 1079	
+	.DATA.W		1527       ; 1080	
+	.DATA.W		1528       ; 1081	
+	.DATA.W		1529       ; 1082	
+	.DATA.W		1529       ; 1083	
+	.DATA.W		1530       ; 1084	
+	.DATA.W		1530       ; 1085	
+	.DATA.W		1531       ; 1086	
+	.DATA.W		1531       ; 1087	
+	.DATA.W		1532       ; 1088	
+	.DATA.W		1533       ; 1089	
+	.DATA.W		1533       ; 1090	
+	.DATA.W		1534       ; 1091	
+	.DATA.W		1534       ; 1092	
+	.DATA.W		1535       ; 1093	
+	.DATA.W		1535       ; 1094	
+	.DATA.W		1536       ; 1095	
+	.DATA.W		1537       ; 1096	
+	.DATA.W		1537       ; 1097	
+	.DATA.W		1538       ; 1098	
+	.DATA.W		1538       ; 1099	
+	.DATA.W		1539       ; 1100	
+	.DATA.W		1539       ; 1101	
+	.DATA.W		1540       ; 1102	
+	.DATA.W		1541       ; 1103	
+	.DATA.W		1541       ; 1104	
+	.DATA.W		1542       ; 1105	
+	.DATA.W		1542       ; 1106	
+	.DATA.W		1543       ; 1107	
+	.DATA.W		1543       ; 1108	
+	.DATA.W		1544       ; 1109	
+	.DATA.W		1545       ; 1110	
+	.DATA.W		1545       ; 1111	
+	.DATA.W		1546       ; 1112	
+	.DATA.W		1546       ; 1113	
+	.DATA.W		1547       ; 1114	
+	.DATA.W		1547       ; 1115	
+	.DATA.W		1548       ; 1116	
+	.DATA.W		1548       ; 1117	
+	.DATA.W		1549       ; 1118	
+	.DATA.W		1550       ; 1119	
+	.DATA.W		1550       ; 1120	
+	.DATA.W		1551       ; 1121	
+	.DATA.W		1551       ; 1122	
+	.DATA.W		1552       ; 1123	
+	.DATA.W		1552       ; 1124	
+	.DATA.W		1553       ; 1125	
+	.DATA.W		1553       ; 1126	
+	.DATA.W		1554       ; 1127	
+	.DATA.W		1554       ; 1128	
+	.DATA.W		1555       ; 1129	
+	.DATA.W		1556       ; 1130	
+	.DATA.W		1556       ; 1131	
+	.DATA.W		1557       ; 1132	
+	.DATA.W		1557       ; 1133	
+	.DATA.W		1558       ; 1134	
+	.DATA.W		1558       ; 1135	
+	.DATA.W		1559       ; 1136	
+	.DATA.W		1559       ; 1137	
+	.DATA.W		1560       ; 1138	
+	.DATA.W		1560       ; 1139	
+	.DATA.W		1561       ; 1140	
+	.DATA.W		1561       ; 1141	
+	.DATA.W		1562       ; 1142	
+	.DATA.W		1562       ; 1143	
+	.DATA.W		1563       ; 1144	
+	.DATA.W		1564       ; 1145	
+	.DATA.W		1564       ; 1146	
+	.DATA.W		1565       ; 1147	
+	.DATA.W		1565       ; 1148	
+	.DATA.W		1566       ; 1149	
+	.DATA.W		1566       ; 1150	
+	.DATA.W		1567       ; 1151	
+	.DATA.W		1567       ; 1152	
+	.DATA.W		1568       ; 1153	
+	.DATA.W		1568       ; 1154	
+	.DATA.W		1569       ; 1155	
+	.DATA.W		1569       ; 1156	
+	.DATA.W		1570       ; 1157	
+	.DATA.W		1570       ; 1158	
+	.DATA.W		1571       ; 1159	
+	.DATA.W		1571       ; 1160	
+	.DATA.W		1572       ; 1161	
+	.DATA.W		1572       ; 1162	
+	.DATA.W		1573       ; 1163	
+	.DATA.W		1573       ; 1164	
+	.DATA.W		1574       ; 1165	
+	.DATA.W		1574       ; 1166	
+	.DATA.W		1575       ; 1167	
+	.DATA.W		1575       ; 1168	
+	.DATA.W		1576       ; 1169	
+	.DATA.W		1576       ; 1170	
+	.DATA.W		1577       ; 1171	
+	.DATA.W		1577       ; 1172	
+	.DATA.W		1578       ; 1173	
+	.DATA.W		1578       ; 1174	
+	.DATA.W		1579       ; 1175	
+	.DATA.W		1579       ; 1176	
+	.DATA.W		1580       ; 1177	
+	.DATA.W		1580       ; 1178	
+	.DATA.W		1581       ; 1179	
+	.DATA.W		1581       ; 1180	
+	.DATA.W		1582       ; 1181	
+	.DATA.W		1582       ; 1182	
+	.DATA.W		1583       ; 1183	
+	.DATA.W		1583       ; 1184	
+	.DATA.W		1584       ; 1185	
+	.DATA.W		1584       ; 1186	
+	.DATA.W		1585       ; 1187	
+	.DATA.W		1585       ; 1188	
+	.DATA.W		1586       ; 1189	
+	.DATA.W		1586       ; 1190	
+	.DATA.W		1587       ; 1191	
+	.DATA.W		1587       ; 1192	
+	.DATA.W		1588       ; 1193	
+	.DATA.W		1588       ; 1194	
+	.DATA.W		1589       ; 1195	
+	.DATA.W		1589       ; 1196	
+	.DATA.W		1590       ; 1197	
+	.DATA.W		1590       ; 1198	
+	.DATA.W		1591       ; 1199	
+	.DATA.W		1591       ; 1200	
+	.DATA.W		1592       ; 1201	
+	.DATA.W		1592       ; 1202	
+	.DATA.W		1592       ; 1203	
+	.DATA.W		1593       ; 1204	
+	.DATA.W		1593       ; 1205	
+	.DATA.W		1594       ; 1206	
+	.DATA.W		1594       ; 1207	
+	.DATA.W		1595       ; 1208	
+	.DATA.W		1595       ; 1209	
+	.DATA.W		1596       ; 1210	
+	.DATA.W		1596       ; 1211	
+	.DATA.W		1597       ; 1212	
+	.DATA.W		1597       ; 1213	
+	.DATA.W		1598       ; 1214	
+	.DATA.W		1598       ; 1215	
+	.DATA.W		1599       ; 1216	
+	.DATA.W		1599       ; 1217	
+	.DATA.W		1599       ; 1218	
+	.DATA.W		1600       ; 1219	
+	.DATA.W		1600       ; 1220	
+	.DATA.W		1601       ; 1221	
+	.DATA.W		1601       ; 1222	
+	.DATA.W		1602       ; 1223	
+	.DATA.W		1602       ; 1224	
+	.DATA.W		1603       ; 1225	
+	.DATA.W		1603       ; 1226	
+	.DATA.W		1604       ; 1227	
+	.DATA.W		1604       ; 1228	
+	.DATA.W		1605       ; 1229	
+	.DATA.W		1605       ; 1230	
+	.DATA.W		1605       ; 1231	
+	.DATA.W		1606       ; 1232	
+	.DATA.W		1606       ; 1233	
+	.DATA.W		1607       ; 1234	
+	.DATA.W		1607       ; 1235	
+	.DATA.W		1608       ; 1236	
+	.DATA.W		1608       ; 1237	
+	.DATA.W		1609       ; 1238	
+	.DATA.W		1609       ; 1239	
+	.DATA.W		1609       ; 1240	
+	.DATA.W		1610       ; 1241	
+	.DATA.W		1610       ; 1242	
+	.DATA.W		1611       ; 1243	
+	.DATA.W		1611       ; 1244	
+	.DATA.W		1612       ; 1245	
+	.DATA.W		1612       ; 1246	
+	.DATA.W		1613       ; 1247	
+	.DATA.W		1613       ; 1248	
+	.DATA.W		1613       ; 1249	
+	.DATA.W		1614       ; 1250	
+	.DATA.W		1614       ; 1251	
+	.DATA.W		1615       ; 1252	
+	.DATA.W		1615       ; 1253	
+	.DATA.W		1616       ; 1254	
+	.DATA.W		1616       ; 1255	
+	.DATA.W		1616       ; 1256	
+	.DATA.W		1617       ; 1257	
+	.DATA.W		1617       ; 1258	
+	.DATA.W		1618       ; 1259	
+	.DATA.W		1618       ; 1260	
+	.DATA.W		1619       ; 1261	
+	.DATA.W		1619       ; 1262	
+	.DATA.W		1619       ; 1263	
+	.DATA.W		1620       ; 1264	
+	.DATA.W		1620       ; 1265	
+	.DATA.W		1621       ; 1266	
+	.DATA.W		1621       ; 1267	
+	.DATA.W		1622       ; 1268	
+	.DATA.W		1622       ; 1269	
+	.DATA.W		1622       ; 1270	
+	.DATA.W		1623       ; 1271	
+	.DATA.W		1623       ; 1272	
+	.DATA.W		1624       ; 1273	
+	.DATA.W		1624       ; 1274	
+	.DATA.W		1624       ; 1275	
+	.DATA.W		1625       ; 1276	
+	.DATA.W		1625       ; 1277	
+	.DATA.W		1626       ; 1278	
+	.DATA.W		1626       ; 1279	
+	.DATA.W		1626       ; 1280	
+	.DATA.W		1627       ; 1281	
+	.DATA.W		1627       ; 1282	
+	.DATA.W		1628       ; 1283	
+	.DATA.W		1628       ; 1284	
+	.DATA.W		1629       ; 1285	
+	.DATA.W		1629       ; 1286	
+	.DATA.W		1629       ; 1287	
+	.DATA.W		1630       ; 1288	
+	.DATA.W		1630       ; 1289	
+	.DATA.W		1631       ; 1290	
+	.DATA.W		1631       ; 1291	
+	.DATA.W		1631       ; 1292	
+	.DATA.W		1632       ; 1293	
+	.DATA.W		1632       ; 1294	
+	.DATA.W		1633       ; 1295	
+	.DATA.W		1633       ; 1296	
+	.DATA.W		1633       ; 1297	
+	.DATA.W		1634       ; 1298	
+	.DATA.W		1634       ; 1299	
+	.DATA.W		1635       ; 1300	
+	.DATA.W		1635       ; 1301	
+	.DATA.W		1635       ; 1302	
+	.DATA.W		1636       ; 1303	
+	.DATA.W		1636       ; 1304	
+	.DATA.W		1637       ; 1305	
+	.DATA.W		1637       ; 1306	
+	.DATA.W		1637       ; 1307	
+	.DATA.W		1638       ; 1308	
+	.DATA.W		1638       ; 1309	
+	.DATA.W		1639       ; 1310	
+	.DATA.W		1639       ; 1311	
+	.DATA.W		1639       ; 1312	
+	.DATA.W		1640       ; 1313	
+	.DATA.W		1640       ; 1314	
+	.DATA.W		1640       ; 1315	
+	.DATA.W		1641       ; 1316	
+	.DATA.W		1641       ; 1317	
+	.DATA.W		1642       ; 1318	
+	.DATA.W		1642       ; 1319	
+	.DATA.W		1642       ; 1320	
+	.DATA.W		1643       ; 1321	
+	.DATA.W		1643       ; 1322	
+	.DATA.W		1644       ; 1323	
+	.DATA.W		1644       ; 1324	
+	.DATA.W		1644       ; 1325	
+	.DATA.W		1645       ; 1326	
+	.DATA.W		1645       ; 1327	
+	.DATA.W		1645       ; 1328	
+	.DATA.W		1646       ; 1329	
+	.DATA.W		1646       ; 1330	
+	.DATA.W		1647       ; 1331	
+	.DATA.W		1647       ; 1332	
+	.DATA.W		1647       ; 1333	
+	.DATA.W		1648       ; 1334	
+	.DATA.W		1648       ; 1335	
+	.DATA.W		1648       ; 1336	
+	.DATA.W		1649       ; 1337	
+	.DATA.W		1649       ; 1338	
+	.DATA.W		1650       ; 1339	
+	.DATA.W		1650       ; 1340	
+	.DATA.W		1650       ; 1341	
+	.DATA.W		1651       ; 1342	
+	.DATA.W		1651       ; 1343	
+	.DATA.W		1651       ; 1344	
+	.DATA.W		1652       ; 1345	
+	.DATA.W		1652       ; 1346	
+	.DATA.W		1652       ; 1347	
+	.DATA.W		1653       ; 1348	
+	.DATA.W		1653       ; 1349	
+	.DATA.W		1654       ; 1350	
+	.DATA.W		1654       ; 1351	
+	.DATA.W		1654       ; 1352	
+	.DATA.W		1655       ; 1353	
+	.DATA.W		1655       ; 1354	
+	.DATA.W		1655       ; 1355	
+	.DATA.W		1656       ; 1356	
+	.DATA.W		1656       ; 1357	
+	.DATA.W		1656       ; 1358	
+	.DATA.W		1657       ; 1359	
+	.DATA.W		1657       ; 1360	
+	.DATA.W		1658       ; 1361	
+	.DATA.W		1658       ; 1362	
+	.DATA.W		1658       ; 1363	
+	.DATA.W		1659       ; 1364	
+	.DATA.W		1659       ; 1365	
+	.DATA.W		1659       ; 1366	
+	.DATA.W		1660       ; 1367	
+	.DATA.W		1660       ; 1368	
+	.DATA.W		1660       ; 1369	
+	.DATA.W		1661       ; 1370	
+	.DATA.W		1661       ; 1371	
+	.DATA.W		1661       ; 1372	
+	.DATA.W		1662       ; 1373	
+	.DATA.W		1662       ; 1374	
+	.DATA.W		1662       ; 1375	
+	.DATA.W		1663       ; 1376	
+	.DATA.W		1663       ; 1377	
+	.DATA.W		1664       ; 1378	
+	.DATA.W		1664       ; 1379	
+	.DATA.W		1664       ; 1380	
+	.DATA.W		1665       ; 1381	
+	.DATA.W		1665       ; 1382	
+	.DATA.W		1665       ; 1383	
+	.DATA.W		1666       ; 1384	
+	.DATA.W		1666       ; 1385	
+	.DATA.W		1666       ; 1386	
+	.DATA.W		1667       ; 1387	
+	.DATA.W		1667       ; 1388	
+	.DATA.W		1667       ; 1389	
+	.DATA.W		1668       ; 1390	
+	.DATA.W		1668       ; 1391	
+	.DATA.W		1668       ; 1392	
+	.DATA.W		1669       ; 1393	
+	.DATA.W		1669       ; 1394	
+	.DATA.W		1669       ; 1395	
+	.DATA.W		1670       ; 1396	
+	.DATA.W		1670       ; 1397	
+	.DATA.W		1670       ; 1398	
+	.DATA.W		1671       ; 1399	
+	.DATA.W		1671       ; 1400	
+	.DATA.W		1671       ; 1401	
+	.DATA.W		1672       ; 1402	
+	.DATA.W		1672       ; 1403	
+	.DATA.W		1672       ; 1404	
+	.DATA.W		1673       ; 1405	
+	.DATA.W		1673       ; 1406	
+	.DATA.W		1673       ; 1407	
+	.DATA.W		1674       ; 1408	
+	.DATA.W		1674       ; 1409	
+	.DATA.W		1674       ; 1410	
+	.DATA.W		1675       ; 1411	
+	.DATA.W		1675       ; 1412	
+	.DATA.W		1675       ; 1413	
+	.DATA.W		1676       ; 1414	
+	.DATA.W		1676       ; 1415	
+	.DATA.W		1676       ; 1416	
+	.DATA.W		1677       ; 1417	
+	.DATA.W		1677       ; 1418	
+	.DATA.W		1677       ; 1419	
+	.DATA.W		1678       ; 1420	
+	.DATA.W		1678       ; 1421	
+	.DATA.W		1678       ; 1422	
+	.DATA.W		1679       ; 1423	
+	.DATA.W		1679       ; 1424	
+	.DATA.W		1679       ; 1425	
+	.DATA.W		1680       ; 1426	
+	.DATA.W		1680       ; 1427	
+	.DATA.W		1680       ; 1428	
+	.DATA.W		1681       ; 1429	
+	.DATA.W		1681       ; 1430	
+	.DATA.W		1681       ; 1431	
+	.DATA.W		1682       ; 1432	
+	.DATA.W		1682       ; 1433	
+	.DATA.W		1682       ; 1434	
+	.DATA.W		1683       ; 1435	
+	.DATA.W		1683       ; 1436	
+	.DATA.W		1683       ; 1437	
+	.DATA.W		1684       ; 1438	
+	.DATA.W		1684       ; 1439	
+	.DATA.W		1684       ; 1440	
+	.DATA.W		1685       ; 1441	
+	.DATA.W		1685       ; 1442	
+	.DATA.W		1685       ; 1443	
+	.DATA.W		1685       ; 1444	
+	.DATA.W		1686       ; 1445	
+	.DATA.W		1686       ; 1446	
+	.DATA.W		1686       ; 1447	
+	.DATA.W		1687       ; 1448	
+	.DATA.W		1687       ; 1449	
+	.DATA.W		1687       ; 1450	
+	.DATA.W		1688       ; 1451	
+	.DATA.W		1688       ; 1452	
+	.DATA.W		1688       ; 1453	
+	.DATA.W		1689       ; 1454	
+	.DATA.W		1689       ; 1455	
+	.DATA.W		1689       ; 1456	
+	.DATA.W		1690       ; 1457	
+	.DATA.W		1690       ; 1458	
+	.DATA.W		1690       ; 1459	
+	.DATA.W		1691       ; 1460	
+	.DATA.W		1691       ; 1461	
+	.DATA.W		1691       ; 1462	
+	.DATA.W		1691       ; 1463	
+	.DATA.W		1692       ; 1464	
+	.DATA.W		1692       ; 1465	
+	.DATA.W		1692       ; 1466	
+	.DATA.W		1693       ; 1467	
+	.DATA.W		1693       ; 1468	
+	.DATA.W		1693       ; 1469	
+	.DATA.W		1694       ; 1470	
+	.DATA.W		1694       ; 1471	
+	.DATA.W		1694       ; 1472	
+	.DATA.W		1695       ; 1473	
+	.DATA.W		1695       ; 1474	
+	.DATA.W		1695       ; 1475	
+	.DATA.W		1696       ; 1476	
+	.DATA.W		1696       ; 1477	
+	.DATA.W		1696       ; 1478	
+	.DATA.W		1696       ; 1479	
+	.DATA.W		1697       ; 1480	
+	.DATA.W		1697       ; 1481	
+	.DATA.W		1697       ; 1482	
+	.DATA.W		1698       ; 1483	
+	.DATA.W		1698       ; 1484	
+	.DATA.W		1698       ; 1485	
+	.DATA.W		1699       ; 1486	
+	.DATA.W		1699       ; 1487	
+	.DATA.W		1699       ; 1488	
+	.DATA.W		1700       ; 1489	
+	.DATA.W		1700       ; 1490	
+	.DATA.W		1700       ; 1491	
+	.DATA.W		1700       ; 1492	
+	.DATA.W		1701       ; 1493	
+	.DATA.W		1701       ; 1494	
+	.DATA.W		1701       ; 1495	
+	.DATA.W		1702       ; 1496	
+	.DATA.W		1702       ; 1497	
+	.DATA.W		1702       ; 1498	
+	.DATA.W		1703       ; 1499	
+	.DATA.W		1703       ; 1500	
+	.DATA.W		1703       ; 1501	
+	.DATA.W		1703       ; 1502	
+	.DATA.W		1704       ; 1503	
+	.DATA.W		1704       ; 1504	
+	.DATA.W		1704       ; 1505	
+	.DATA.W		1705       ; 1506	
+	.DATA.W		1705       ; 1507	
+	.DATA.W		1705       ; 1508	
+	.DATA.W		1706       ; 1509	
+	.DATA.W		1706       ; 1510	
+	.DATA.W		1706       ; 1511	
+	.DATA.W		1707       ; 1512	
+	.DATA.W		1707       ; 1513	
+	.DATA.W		1707       ; 1514	
+	.DATA.W		1707       ; 1515	
+	.DATA.W		1708       ; 1516	
+	.DATA.W		1708       ; 1517	
+	.DATA.W		1708       ; 1518	
+	.DATA.W		1709       ; 1519	
+	.DATA.W		1709       ; 1520	
+	.DATA.W		1709       ; 1521	
+	.DATA.W		1710       ; 1522	
+	.DATA.W		1710       ; 1523	
+	.DATA.W		1710       ; 1524	
+	.DATA.W		1710       ; 1525	
+	.DATA.W		1711       ; 1526	
+	.DATA.W		1711       ; 1527	
+	.DATA.W		1711       ; 1528	
+	.DATA.W		1712       ; 1529	
+	.DATA.W		1712       ; 1530	
+	.DATA.W		1712       ; 1531	
+	.DATA.W		1713       ; 1532	
+	.DATA.W		1713       ; 1533	
+	.DATA.W		1713       ; 1534	
+	.DATA.W		1713       ; 1535	
+	.DATA.W		1714       ; 1536	
+	.DATA.W		1714       ; 1537	
+	.DATA.W		1714       ; 1538	
+	.DATA.W		1715       ; 1539	
+	.DATA.W		1715       ; 1540	
+	.DATA.W		1715       ; 1541	
+	.DATA.W		1716       ; 1542	
+	.DATA.W		1716       ; 1543	
+	.DATA.W		1716       ; 1544	
+	.DATA.W		1716       ; 1545	
+	.DATA.W		1717       ; 1546	
+	.DATA.W		1717       ; 1547	
+	.DATA.W		1717       ; 1548	
+	.DATA.W		1718       ; 1549	
+	.DATA.W		1718       ; 1550	
+	.DATA.W		1718       ; 1551	
+	.DATA.W		1719       ; 1552	
+	.DATA.W		1719       ; 1553	
+	.DATA.W		1719       ; 1554	
+	.DATA.W		1719       ; 1555	
+	.DATA.W		1720       ; 1556	
+	.DATA.W		1720       ; 1557	
+	.DATA.W		1720       ; 1558	
+	.DATA.W		1721       ; 1559	
+	.DATA.W		1721       ; 1560	
+	.DATA.W		1721       ; 1561	
+	.DATA.W		1722       ; 1562	
+	.DATA.W		1722       ; 1563	
+	.DATA.W		1722       ; 1564	
+	.DATA.W		1722       ; 1565	
+	.DATA.W		1723       ; 1566	
+	.DATA.W		1723       ; 1567	
+	.DATA.W		1723       ; 1568	
+	.DATA.W		1724       ; 1569	
+	.DATA.W		1724       ; 1570	
+	.DATA.W		1724       ; 1571	
+	.DATA.W		1725       ; 1572	
+	.DATA.W		1725       ; 1573	
+	.DATA.W		1725       ; 1574	
+	.DATA.W		1725       ; 1575	
+	.DATA.W		1726       ; 1576	
+	.DATA.W		1726       ; 1577	
+	.DATA.W		1726       ; 1578	
+	.DATA.W		1727       ; 1579	
+	.DATA.W		1727       ; 1580	
+	.DATA.W		1727       ; 1581	
+	.DATA.W		1728       ; 1582	
+	.DATA.W		1728       ; 1583	
+	.DATA.W		1728       ; 1584	
+	.DATA.W		1728       ; 1585	
+	.DATA.W		1729       ; 1586	
+	.DATA.W		1729       ; 1587	
+	.DATA.W		1729       ; 1588	
+	.DATA.W		1730       ; 1589	
+	.DATA.W		1730       ; 1590	
+	.DATA.W		1730       ; 1591	
+	.DATA.W		1731       ; 1592	
+	.DATA.W		1731       ; 1593	
+	.DATA.W		1731       ; 1594	
+	.DATA.W		1731       ; 1595	
+	.DATA.W		1732       ; 1596	
+	.DATA.W		1732       ; 1597	
+	.DATA.W		1732       ; 1598	
+	.DATA.W		1733       ; 1599	
+	.DATA.W		1733       ; 1600	
+	.DATA.W		1733       ; 1601	
+	.DATA.W		1734       ; 1602	
+	.DATA.W		1734       ; 1603	
+	.DATA.W		1734       ; 1604	
+	.DATA.W		1734       ; 1605	
+	.DATA.W		1735       ; 1606	
+	.DATA.W		1735       ; 1607	
+	.DATA.W		1735       ; 1608	
+	.DATA.W		1736       ; 1609	
+	.DATA.W		1736       ; 1610	
+	.DATA.W		1736       ; 1611	
+	.DATA.W		1737       ; 1612	
+	.DATA.W		1737       ; 1613	
+	.DATA.W		1737       ; 1614	
+	.DATA.W		1738       ; 1615	
+	.DATA.W		1738       ; 1616	
+	.DATA.W		1738       ; 1617	
+	.DATA.W		1738       ; 1618	
+	.DATA.W		1739       ; 1619	
+	.DATA.W		1739       ; 1620	
+	.DATA.W		1739       ; 1621	
+	.DATA.W		1740       ; 1622	
+	.DATA.W		1740       ; 1623	
+	.DATA.W		1740       ; 1624	
+	.DATA.W		1741       ; 1625	
+	.DATA.W		1741       ; 1626	
+	.DATA.W		1741       ; 1627	
+	.DATA.W		1741       ; 1628	
+	.DATA.W		1742       ; 1629	
+	.DATA.W		1742       ; 1630	
+	.DATA.W		1742       ; 1631	
+	.DATA.W		1743       ; 1632	
+	.DATA.W		1743       ; 1633	
+	.DATA.W		1743       ; 1634	
+	.DATA.W		1744       ; 1635	
+	.DATA.W		1744       ; 1636	
+	.DATA.W		1744       ; 1637	
+	.DATA.W		1745       ; 1638	
+	.DATA.W		1745       ; 1639	
+	.DATA.W		1745       ; 1640	
+	.DATA.W		1746       ; 1641	
+	.DATA.W		1746       ; 1642	
+	.DATA.W		1746       ; 1643	
+	.DATA.W		1746       ; 1644	
+	.DATA.W		1747       ; 1645	
+	.DATA.W		1747       ; 1646	
+	.DATA.W		1747       ; 1647	
+	.DATA.W		1748       ; 1648	
+	.DATA.W		1748       ; 1649	
+	.DATA.W		1748       ; 1650	
+	.DATA.W		1749       ; 1651	
+	.DATA.W		1749       ; 1652	
+	.DATA.W		1749       ; 1653	
+	.DATA.W		1750       ; 1654	
+	.DATA.W		1750       ; 1655	
+	.DATA.W		1750       ; 1656	
+	.DATA.W		1751       ; 1657	
+	.DATA.W		1751       ; 1658	
+	.DATA.W		1751       ; 1659	
+	.DATA.W		1751       ; 1660	
+	.DATA.W		1752       ; 1661	
+	.DATA.W		1752       ; 1662	
+	.DATA.W		1752       ; 1663	
+	.DATA.W		1753       ; 1664	
+	.DATA.W		1753       ; 1665	
+	.DATA.W		1753       ; 1666	
+	.DATA.W		1754       ; 1667	
+	.DATA.W		1754       ; 1668	
+	.DATA.W		1754       ; 1669	
+	.DATA.W		1755       ; 1670	
+	.DATA.W		1755       ; 1671	
+	.DATA.W		1755       ; 1672	
+	.DATA.W		1756       ; 1673	
+	.DATA.W		1756       ; 1674	
+	.DATA.W		1756       ; 1675	
+	.DATA.W		1757       ; 1676	
+	.DATA.W		1757       ; 1677	
+	.DATA.W		1757       ; 1678	
+	.DATA.W		1758       ; 1679	
+	.DATA.W		1758       ; 1680	
+	.DATA.W		1758       ; 1681	
+	.DATA.W		1758       ; 1682	
+	.DATA.W		1759       ; 1683	
+	.DATA.W		1759       ; 1684	
+	.DATA.W		1759       ; 1685	
+	.DATA.W		1760       ; 1686	
+	.DATA.W		1760       ; 1687	
+	.DATA.W		1760       ; 1688	
+	.DATA.W		1761       ; 1689	
+	.DATA.W		1761       ; 1690	
+	.DATA.W		1761       ; 1691	
+	.DATA.W		1762       ; 1692	
+	.DATA.W		1762       ; 1693	
+	.DATA.W		1762       ; 1694	
+	.DATA.W		1763       ; 1695	
+	.DATA.W		1763       ; 1696	
+	.DATA.W		1763       ; 1697	
+	.DATA.W		1764       ; 1698	
+	.DATA.W		1764       ; 1699	
+	.DATA.W		1764       ; 1700	
+	.DATA.W		1765       ; 1701	
+	.DATA.W		1765       ; 1702	
+	.DATA.W		1765       ; 1703	
+	.DATA.W		1766       ; 1704	
+	.DATA.W		1766       ; 1705	
+	.DATA.W		1766       ; 1706	
+	.DATA.W		1767       ; 1707	
+	.DATA.W		1767       ; 1708	
+	.DATA.W		1767       ; 1709	
+	.DATA.W		1768       ; 1710	
+	.DATA.W		1768       ; 1711	
+	.DATA.W		1768       ; 1712	
+	.DATA.W		1769       ; 1713	
+	.DATA.W		1769       ; 1714	
+	.DATA.W		1769       ; 1715	
+	.DATA.W		1770       ; 1716	
+	.DATA.W		1770       ; 1717	
+	.DATA.W		1770       ; 1718	
+	.DATA.W		1771       ; 1719	
+	.DATA.W		1771       ; 1720	
+	.DATA.W		1771       ; 1721	
+	.DATA.W		1772       ; 1722	
+	.DATA.W		1772       ; 1723	
+	.DATA.W		1772       ; 1724	
+	.DATA.W		1773       ; 1725	
+	.DATA.W		1773       ; 1726	
+	.DATA.W		1773       ; 1727	
+	.DATA.W		1774       ; 1728	
+	.DATA.W		1774       ; 1729	
+	.DATA.W		1775       ; 1730	
+	.DATA.W		1775       ; 1731	
+	.DATA.W		1775       ; 1732	
+	.DATA.W		1776       ; 1733	
+	.DATA.W		1776       ; 1734	
+	.DATA.W		1776       ; 1735	
+	.DATA.W		1777       ; 1736	
+	.DATA.W		1777       ; 1737	
+	.DATA.W		1777       ; 1738	
+	.DATA.W		1778       ; 1739	
+	.DATA.W		1778       ; 1740	
+	.DATA.W		1778       ; 1741	
+	.DATA.W		1779       ; 1742	
+	.DATA.W		1779       ; 1743	
+	.DATA.W		1779       ; 1744	
+	.DATA.W		1780       ; 1745	
+	.DATA.W		1780       ; 1746	
+	.DATA.W		1780       ; 1747	
+	.DATA.W		1781       ; 1748	
+	.DATA.W		1781       ; 1749	
+	.DATA.W		1782       ; 1750	
+	.DATA.W		1782       ; 1751	
+	.DATA.W		1782       ; 1752	
+	.DATA.W		1783       ; 1753	
+	.DATA.W		1783       ; 1754	
+	.DATA.W		1783       ; 1755	
+	.DATA.W		1784       ; 1756	
+	.DATA.W		1784       ; 1757	
+	.DATA.W		1784       ; 1758	
+	.DATA.W		1785       ; 1759	
+	.DATA.W		1785       ; 1760	
+	.DATA.W		1785       ; 1761	
+	.DATA.W		1786       ; 1762	
+	.DATA.W		1786       ; 1763	
+	.DATA.W		1787       ; 1764	
+	.DATA.W		1787       ; 1765	
+	.DATA.W		1787       ; 1766	
+	.DATA.W		1788       ; 1767	
+	.DATA.W		1788       ; 1768	
+	.DATA.W		1788       ; 1769	
+	.DATA.W		1789       ; 1770	
+	.DATA.W		1789       ; 1771	
+	.DATA.W		1789       ; 1772	
+	.DATA.W		1790       ; 1773	
+	.DATA.W		1790       ; 1774	
+	.DATA.W		1791       ; 1775	
+	.DATA.W		1791       ; 1776	
+	.DATA.W		1791       ; 1777	
+	.DATA.W		1792       ; 1778	
+	.DATA.W		1792       ; 1779	
+	.DATA.W		1792       ; 1780	
+	.DATA.W		1793       ; 1781	
+	.DATA.W		1793       ; 1782	
+	.DATA.W		1794       ; 1783	
+	.DATA.W		1794       ; 1784	
+	.DATA.W		1794       ; 1785	
+	.DATA.W		1795       ; 1786	
+	.DATA.W		1795       ; 1787	
+	.DATA.W		1795       ; 1788	
+	.DATA.W		1796       ; 1789	
+	.DATA.W		1796       ; 1790	
+	.DATA.W		1797       ; 1791	
+	.DATA.W		1797       ; 1792	
+	.DATA.W		1797       ; 1793	
+	.DATA.W		1798       ; 1794	
+	.DATA.W		1798       ; 1795	
+	.DATA.W		1798       ; 1796	
+	.DATA.W		1799       ; 1797	
+	.DATA.W		1799       ; 1798	
+	.DATA.W		1800       ; 1799	
+	.DATA.W		1800       ; 1800	
+	.DATA.W		1800       ; 1801	
+	.DATA.W		1801       ; 1802	
+	.DATA.W		1801       ; 1803	
+	.DATA.W		1802       ; 1804	
+	.DATA.W		1802       ; 1805	
+	.DATA.W		1802       ; 1806	
+	.DATA.W		1803       ; 1807	
+	.DATA.W		1803       ; 1808	
+	.DATA.W		1804       ; 1809	
+	.DATA.W		1804       ; 1810	
+	.DATA.W		1804       ; 1811	
+	.DATA.W		1805       ; 1812	
+	.DATA.W		1805       ; 1813	
+	.DATA.W		1805       ; 1814	
+	.DATA.W		1806       ; 1815	
+	.DATA.W		1806       ; 1816	
+	.DATA.W		1807       ; 1817	
+	.DATA.W		1807       ; 1818	
+	.DATA.W		1807       ; 1819	
+	.DATA.W		1808       ; 1820	
+	.DATA.W		1808       ; 1821	
+	.DATA.W		1809       ; 1822	
+	.DATA.W		1809       ; 1823	
+	.DATA.W		1809       ; 1824	
+	.DATA.W		1810       ; 1825	
+	.DATA.W		1810       ; 1826	
+	.DATA.W		1811       ; 1827	
+	.DATA.W		1811       ; 1828	
+	.DATA.W		1811       ; 1829	
+	.DATA.W		1812       ; 1830	
+	.DATA.W		1812       ; 1831	
+	.DATA.W		1813       ; 1832	
+	.DATA.W		1813       ; 1833	
+	.DATA.W		1814       ; 1834	
+	.DATA.W		1814       ; 1835	
+	.DATA.W		1814       ; 1836	
+	.DATA.W		1815       ; 1837	
+	.DATA.W		1815       ; 1838	
+	.DATA.W		1816       ; 1839	
+	.DATA.W		1816       ; 1840	
+	.DATA.W		1816       ; 1841	
+	.DATA.W		1817       ; 1842	
+	.DATA.W		1817       ; 1843	
+	.DATA.W		1818       ; 1844	
+	.DATA.W		1818       ; 1845	
+	.DATA.W		1819       ; 1846	
+	.DATA.W		1819       ; 1847	
+	.DATA.W		1819       ; 1848	
+	.DATA.W		1820       ; 1849	
+	.DATA.W		1820       ; 1850	
+	.DATA.W		1821       ; 1851	
+	.DATA.W		1821       ; 1852	
+	.DATA.W		1821       ; 1853	
+	.DATA.W		1822       ; 1854	
+	.DATA.W		1822       ; 1855	
+	.DATA.W		1823       ; 1856	
+	.DATA.W		1823       ; 1857	
+	.DATA.W		1824       ; 1858	
+	.DATA.W		1824       ; 1859	
+	.DATA.W		1824       ; 1860	
+	.DATA.W		1825       ; 1861	
+	.DATA.W		1825       ; 1862	
+	.DATA.W		1826       ; 1863	
+	.DATA.W		1826       ; 1864	
+	.DATA.W		1827       ; 1865	
+	.DATA.W		1827       ; 1866	
+	.DATA.W		1827       ; 1867	
+	.DATA.W		1828       ; 1868	
+	.DATA.W		1828       ; 1869	
+	.DATA.W		1829       ; 1870	
+	.DATA.W		1829       ; 1871	
+	.DATA.W		1830       ; 1872	
+	.DATA.W		1830       ; 1873	
+	.DATA.W		1831       ; 1874	
+	.DATA.W		1831       ; 1875	
+	.DATA.W		1831       ; 1876	
+	.DATA.W		1832       ; 1877	
+	.DATA.W		1832       ; 1878	
+	.DATA.W		1833       ; 1879	
+	.DATA.W		1833       ; 1880	
+	.DATA.W		1834       ; 1881	
+	.DATA.W		1834       ; 1882	
+	.DATA.W		1835       ; 1883	
+	.DATA.W		1835       ; 1884	
+	.DATA.W		1835       ; 1885	
+	.DATA.W		1836       ; 1886	
+	.DATA.W		1836       ; 1887	
+	.DATA.W		1837       ; 1888	
+	.DATA.W		1837       ; 1889	
+	.DATA.W		1838       ; 1890	
+	.DATA.W		1838       ; 1891	
+	.DATA.W		1839       ; 1892	
+	.DATA.W		1839       ; 1893	
+	.DATA.W		1839       ; 1894	
+	.DATA.W		1840       ; 1895	
+	.DATA.W		1840       ; 1896	
+	.DATA.W		1841       ; 1897	
+	.DATA.W		1841       ; 1898	
+	.DATA.W		1842       ; 1899	
+	.DATA.W		1842       ; 1900	
+	.DATA.W		1843       ; 1901	
+	.DATA.W		1843       ; 1902	
+	.DATA.W		1844       ; 1903	
+	.DATA.W		1844       ; 1904	
+	.DATA.W		1845       ; 1905	
+	.DATA.W		1845       ; 1906	
+	.DATA.W		1845       ; 1907	
+	.DATA.W		1846       ; 1908	
+	.DATA.W		1846       ; 1909	
+	.DATA.W		1847       ; 1910	
+	.DATA.W		1847       ; 1911	
+	.DATA.W		1848       ; 1912	
+	.DATA.W		1848       ; 1913	
+	.DATA.W		1849       ; 1914	
+	.DATA.W		1849       ; 1915	
+	.DATA.W		1850       ; 1916	
+	.DATA.W		1850       ; 1917	
+	.DATA.W		1851       ; 1918	
+	.DATA.W		1851       ; 1919	
+	.DATA.W		1852       ; 1920	
+	.DATA.W		1852       ; 1921	
+	.DATA.W		1853       ; 1922	
+	.DATA.W		1853       ; 1923	
+	.DATA.W		1854       ; 1924	
+	.DATA.W		1854       ; 1925	
+	.DATA.W		1855       ; 1926	
+	.DATA.W		1855       ; 1927	
+	.DATA.W		1855       ; 1928	
+	.DATA.W		1856       ; 1929	
+	.DATA.W		1856       ; 1930	
+	.DATA.W		1857       ; 1931	
+	.DATA.W		1857       ; 1932	
+	.DATA.W		1858       ; 1933	
+	.DATA.W		1858       ; 1934	
+	.DATA.W		1859       ; 1935	
+	.DATA.W		1859       ; 1936	
+	.DATA.W		1860       ; 1937	
+	.DATA.W		1860       ; 1938	
+	.DATA.W		1861       ; 1939	
+	.DATA.W		1861       ; 1940	
+	.DATA.W		1862       ; 1941	
+	.DATA.W		1862       ; 1942	
+	.DATA.W		1863       ; 1943	
+	.DATA.W		1863       ; 1944	
+	.DATA.W		1864       ; 1945	
+	.DATA.W		1864       ; 1946	
+	.DATA.W		1865       ; 1947	
+	.DATA.W		1865       ; 1948	
+	.DATA.W		1866       ; 1949	
+	.DATA.W		1866       ; 1950	
+	.DATA.W		1867       ; 1951	
+	.DATA.W		1867       ; 1952	
+	.DATA.W		1868       ; 1953	
+	.DATA.W		1868       ; 1954	
+	.DATA.W		1869       ; 1955	
+	.DATA.W		1869       ; 1956	
+	.DATA.W		1870       ; 1957	
+	.DATA.W		1870       ; 1958	
+	.DATA.W		1871       ; 1959	
+	.DATA.W		1872       ; 1960	
+	.DATA.W		1872       ; 1961	
+	.DATA.W		1873       ; 1962	
+	.DATA.W		1873       ; 1963	
+	.DATA.W		1874       ; 1964	
+	.DATA.W		1874       ; 1965	
+	.DATA.W		1875       ; 1966	
+	.DATA.W		1875       ; 1967	
+	.DATA.W		1876       ; 1968	
+	.DATA.W		1876       ; 1969	
+	.DATA.W		1877       ; 1970	
+	.DATA.W		1877       ; 1971	
+	.DATA.W		1878       ; 1972	
+	.DATA.W		1878       ; 1973	
+	.DATA.W		1879       ; 1974	
+	.DATA.W		1879       ; 1975	
+	.DATA.W		1880       ; 1976	
+	.DATA.W		1880       ; 1977	
+	.DATA.W		1881       ; 1978	
+	.DATA.W		1881       ; 1979	
+	.DATA.W		1882       ; 1980	
+	.DATA.W		1883       ; 1981	
+	.DATA.W		1883       ; 1982	
+	.DATA.W		1884       ; 1983	
+	.DATA.W		1884       ; 1984	
+	.DATA.W		1885       ; 1985	
+	.DATA.W		1885       ; 1986	
+	.DATA.W		1886       ; 1987	
+	.DATA.W		1886       ; 1988	
+	.DATA.W		1887       ; 1989	
+	.DATA.W		1887       ; 1990	
+	.DATA.W		1888       ; 1991	
+	.DATA.W		1889       ; 1992	
+	.DATA.W		1889       ; 1993	
+	.DATA.W		1890       ; 1994	
+	.DATA.W		1890       ; 1995	
+	.DATA.W		1891       ; 1996	
+	.DATA.W		1891       ; 1997	
+	.DATA.W		1892       ; 1998	
+	.DATA.W		1892       ; 1999	
+	.DATA.W		1893       ; 2000	
+	.DATA.W		1893       ; 2001	
+	.DATA.W		1894       ; 2002	
+	.DATA.W		1895       ; 2003	
+	.DATA.W		1895       ; 2004	
+	.DATA.W		1896       ; 2005	
+	.DATA.W		1896       ; 2006	
+	.DATA.W		1897       ; 2007	
+	.DATA.W		1897       ; 2008	
+	.DATA.W		1898       ; 2009	
+	.DATA.W		1898       ; 2010	
+	.DATA.W		1899       ; 2011	
+	.DATA.W		1900       ; 2012	
+	.DATA.W		1900       ; 2013	
+	.DATA.W		1901       ; 2014	
+	.DATA.W		1901       ; 2015	
+	.DATA.W		1902       ; 2016	
+	.DATA.W		1902       ; 2017	
+	.DATA.W		1903       ; 2018	
+	.DATA.W		1904       ; 2019	
+	.DATA.W		1904       ; 2020	
+	.DATA.W		1905       ; 2021	
+	.DATA.W		1905       ; 2022	
+	.DATA.W		1906       ; 2023	
+	.DATA.W		1907       ; 2024	
+	.DATA.W		1907       ; 2025	
+	.DATA.W		1908       ; 2026	
+	.DATA.W		1908       ; 2027	
+	.DATA.W		1909       ; 2028	
+	.DATA.W		1909       ; 2029	
+	.DATA.W		1910       ; 2030	
+	.DATA.W		1911       ; 2031	
+	.DATA.W		1911       ; 2032	
+	.DATA.W		1912       ; 2033	
+	.DATA.W		1912       ; 2034	
+	.DATA.W		1913       ; 2035	
+	.DATA.W		1914       ; 2036	
+	.DATA.W		1914       ; 2037	
+	.DATA.W		1915       ; 2038	
+	.DATA.W		1915       ; 2039	
+	.DATA.W		1916       ; 2040	
+	.DATA.W		1916       ; 2041	
+	.DATA.W		1917       ; 2042	
+	.DATA.W		1918       ; 2043	
+	.DATA.W		1918       ; 2044	
+	.DATA.W		1919       ; 2045	
+	.DATA.W		1919       ; 2046	
+	.DATA.W		1920       ; 2047	
+	.DATA.W		1921       ; 2048	
+	.DATA.W		1921       ; 2049	
+	.DATA.W		1922       ; 2050	
+	.DATA.W		1923       ; 2051	
+	.DATA.W		1923       ; 2052	
+	.DATA.W		1924       ; 2053	
+	.DATA.W		1924       ; 2054	
+	.DATA.W		1925       ; 2055	
+	.DATA.W		1926       ; 2056	
+	.DATA.W		1926       ; 2057	
+	.DATA.W		1927       ; 2058	
+	.DATA.W		1927       ; 2059	
+	.DATA.W		1928       ; 2060	
+	.DATA.W		1929       ; 2061	
+	.DATA.W		1929       ; 2062	
+	.DATA.W		1930       ; 2063	
+	.DATA.W		1930       ; 2064	
+	.DATA.W		1931       ; 2065	
+	.DATA.W		1932       ; 2066	
+	.DATA.W		1932       ; 2067	
+	.DATA.W		1933       ; 2068	
+	.DATA.W		1934       ; 2069	
+	.DATA.W		1934       ; 2070	
+	.DATA.W		1935       ; 2071	
+	.DATA.W		1935       ; 2072	
+	.DATA.W		1936       ; 2073	
+	.DATA.W		1937       ; 2074	
+	.DATA.W		1937       ; 2075	
+	.DATA.W		1938       ; 2076	
+	.DATA.W		1939       ; 2077	
+	.DATA.W		1939       ; 2078	
+	.DATA.W		1940       ; 2079	
+	.DATA.W		1941       ; 2080	
+	.DATA.W		1941       ; 2081	
+	.DATA.W		1942       ; 2082	
+	.DATA.W		1942       ; 2083	
+	.DATA.W		1943       ; 2084	
+	.DATA.W		1944       ; 2085	
+	.DATA.W		1944       ; 2086	
+	.DATA.W		1945       ; 2087	
+	.DATA.W		1946       ; 2088	
+	.DATA.W		1946       ; 2089	
+	.DATA.W		1947       ; 2090	
+	.DATA.W		1948       ; 2091	
+	.DATA.W		1948       ; 2092	
+	.DATA.W		1949       ; 2093	
+	.DATA.W		1950       ; 2094	
+	.DATA.W		1950       ; 2095	
+	.DATA.W		1951       ; 2096	
+	.DATA.W		1952       ; 2097	
+	.DATA.W		1952       ; 2098	
+	.DATA.W		1953       ; 2099	
+	.DATA.W		1954       ; 2100	
+	.DATA.W		1954       ; 2101	
+	.DATA.W		1955       ; 2102	
+	.DATA.W		1956       ; 2103	
+	.DATA.W		1956       ; 2104	
+	.DATA.W		1957       ; 2105	
+	.DATA.W		1958       ; 2106	
+	.DATA.W		1958       ; 2107	
+	.DATA.W		1959       ; 2108	
+	.DATA.W		1960       ; 2109	
+	.DATA.W		1960       ; 2110	
+	.DATA.W		1961       ; 2111	
+	.DATA.W		1962       ; 2112	
+	.DATA.W		1962       ; 2113	
+	.DATA.W		1963       ; 2114	
+	.DATA.W		1964       ; 2115	
+	.DATA.W		1964       ; 2116	
+	.DATA.W		1965       ; 2117	
+	.DATA.W		1966       ; 2118	
+	.DATA.W		1966       ; 2119	
+	.DATA.W		1967       ; 2120	
+	.DATA.W		1968       ; 2121	
+	.DATA.W		1968       ; 2122	
+	.DATA.W		1969       ; 2123	
+	.DATA.W		1970       ; 2124	
+	.DATA.W		1970       ; 2125	
+	.DATA.W		1971       ; 2126	
+	.DATA.W		1972       ; 2127	
+	.DATA.W		1973       ; 2128	
+	.DATA.W		1973       ; 2129	
+	.DATA.W		1974       ; 2130	
+	.DATA.W		1975       ; 2131	
+	.DATA.W		1975       ; 2132	
+	.DATA.W		1976       ; 2133	
+	.DATA.W		1977       ; 2134	
+	.DATA.W		1977       ; 2135	
+	.DATA.W		1978       ; 2136	
+	.DATA.W		1979       ; 2137	
+	.DATA.W		1979       ; 2138	
+	.DATA.W		1980       ; 2139	
+	.DATA.W		1981       ; 2140	
+	.DATA.W		1982       ; 2141	
+	.DATA.W		1982       ; 2142	
+	.DATA.W		1983       ; 2143	
+	.DATA.W		1984       ; 2144	
+	.DATA.W		1984       ; 2145	
+	.DATA.W		1985       ; 2146	
+	.DATA.W		1986       ; 2147	
+	.DATA.W		1987       ; 2148	
+	.DATA.W		1987       ; 2149	
+	.DATA.W		1988       ; 2150	
+	.DATA.W		1989       ; 2151	
+	.DATA.W		1989       ; 2152	
+	.DATA.W		1990       ; 2153	
+	.DATA.W		1991       ; 2154	
+	.DATA.W		1992       ; 2155	
+	.DATA.W		1992       ; 2156	
+	.DATA.W		1993       ; 2157	
+	.DATA.W		1994       ; 2158	
+	.DATA.W		1995       ; 2159	
+	.DATA.W		1995       ; 2160	
+	.DATA.W		1996       ; 2161	
+	.DATA.W		1997       ; 2162	
+	.DATA.W		1997       ; 2163	
+	.DATA.W		1998       ; 2164	
+	.DATA.W		1999       ; 2165	
+	.DATA.W		2000       ; 2166	
+	.DATA.W		2000       ; 2167	
+	.DATA.W		2001       ; 2168	
+	.DATA.W		2002       ; 2169	
+	.DATA.W		2003       ; 2170	
+	.DATA.W		2003       ; 2171	
+	.DATA.W		2004       ; 2172	
+	.DATA.W		2005       ; 2173	
+	.DATA.W		2006       ; 2174	
+	.DATA.W		2006       ; 2175	
+	.DATA.W		2007       ; 2176	
+	.DATA.W		2008       ; 2177	
+	.DATA.W		2009       ; 2178	
+	.DATA.W		2009       ; 2179	
+	.DATA.W		2010       ; 2180	
+	.DATA.W		2011       ; 2181	
+	.DATA.W		2012       ; 2182	
+	.DATA.W		2012       ; 2183	
+	.DATA.W		2013       ; 2184	
+	.DATA.W		2014       ; 2185	
+	.DATA.W		2015       ; 2186	
+	.DATA.W		2015       ; 2187	
+	.DATA.W		2016       ; 2188	
+	.DATA.W		2017       ; 2189	
+	.DATA.W		2018       ; 2190	
+	.DATA.W		2018       ; 2191	
+	.DATA.W		2019       ; 2192	
+	.DATA.W		2020       ; 2193	
+	.DATA.W		2021       ; 2194	
+	.DATA.W		2022       ; 2195	
+	.DATA.W		2022       ; 2196	
+	.DATA.W		2023       ; 2197	
+	.DATA.W		2024       ; 2198	
+	.DATA.W		2025       ; 2199	
+	.DATA.W		2025       ; 2200	
+	.DATA.W		2026       ; 2201	
+	.DATA.W		2027       ; 2202	
+	.DATA.W		2028       ; 2203	
+	.DATA.W		2029       ; 2204	
+	.DATA.W		2029       ; 2205	
+	.DATA.W		2030       ; 2206	
+	.DATA.W		2031       ; 2207	
+	.DATA.W		2032       ; 2208	
+	.DATA.W		2032       ; 2209	
+	.DATA.W		2033       ; 2210	
+	.DATA.W		2034       ; 2211	
+	.DATA.W		2035       ; 2212	
+	.DATA.W		2036       ; 2213	
+	.DATA.W		2036       ; 2214	
+	.DATA.W		2037       ; 2215	
+	.DATA.W		2038       ; 2216	
+	.DATA.W		2039       ; 2217	
+	.DATA.W		2040       ; 2218	
+	.DATA.W		2040       ; 2219	
+	.DATA.W		2041       ; 2220	
+	.DATA.W		2042       ; 2221	
+	.DATA.W		2043       ; 2222	
+	.DATA.W		2044       ; 2223	
+	.DATA.W		2044       ; 2224	
+	.DATA.W		2045       ; 2225	
+	.DATA.W		2046       ; 2226	
+	.DATA.W		2047       ; 2227	
+	.DATA.W		2048       ; 2228	
+	.DATA.W		2048       ; 2229	
+	.DATA.W		2049       ; 2230	
+	.DATA.W		2050       ; 2231	
+	.DATA.W		2051       ; 2232	
+	.DATA.W		2052       ; 2233	
+	.DATA.W		2053       ; 2234	
+	.DATA.W		2053       ; 2235	
+	.DATA.W		2054       ; 2236	
+	.DATA.W		2055       ; 2237	
+	.DATA.W		2056       ; 2238	
+	.DATA.W		2057       ; 2239	
+	.DATA.W		2057       ; 2240	
+	.DATA.W		2058       ; 2241	
+	.DATA.W		2059       ; 2242	
+	.DATA.W		2060       ; 2243	
+	.DATA.W		2061       ; 2244	
+	.DATA.W		2062       ; 2245	
+	.DATA.W		2062       ; 2246	
+	.DATA.W		2063       ; 2247	
+	.DATA.W		2064       ; 2248	
+	.DATA.W		2065       ; 2249	
+	.DATA.W		2066       ; 2250	
+	.DATA.W		2067       ; 2251	
+	.DATA.W		2067       ; 2252	
+	.DATA.W		2068       ; 2253	
+	.DATA.W		2069       ; 2254	
+	.DATA.W		2070       ; 2255	
+	.DATA.W		2071       ; 2256	
+	.DATA.W		2072       ; 2257	
+	.DATA.W		2073       ; 2258	
+	.DATA.W		2073       ; 2259	
+	.DATA.W		2074       ; 2260	
+	.DATA.W		2075       ; 2261	
+	.DATA.W		2076       ; 2262	
+	.DATA.W		2077       ; 2263	
+	.DATA.W		2078       ; 2264	
+	.DATA.W		2079       ; 2265	
+	.DATA.W		2079       ; 2266	
+	.DATA.W		2080       ; 2267	
+	.DATA.W		2081       ; 2268	
+	.DATA.W		2082       ; 2269	
+	.DATA.W		2083       ; 2270	
+	.DATA.W		2084       ; 2271	
+	.DATA.W		2085       ; 2272	
+	.DATA.W		2085       ; 2273	
+	.DATA.W		2086       ; 2274	
+	.DATA.W		2087       ; 2275	
+	.DATA.W		2088       ; 2276	
+	.DATA.W		2089       ; 2277	
+	.DATA.W		2090       ; 2278	
+	.DATA.W		2091       ; 2279	
+	.DATA.W		2092       ; 2280	
+	.DATA.W		2092       ; 2281	
+	.DATA.W		2093       ; 2282	
+	.DATA.W		2094       ; 2283	
+	.DATA.W		2095       ; 2284	
+	.DATA.W		2096       ; 2285	
+	.DATA.W		2097       ; 2286	
+	.DATA.W		2098       ; 2287	
+	.DATA.W		2099       ; 2288	
+	.DATA.W		2099       ; 2289	
+	.DATA.W		2100       ; 2290	
+	.DATA.W		2101       ; 2291	
+	.DATA.W		2102       ; 2292	
+	.DATA.W		2103       ; 2293	
+	.DATA.W		2104       ; 2294	
+	.DATA.W		2105       ; 2295	
+	.DATA.W		2106       ; 2296	
+	.DATA.W		2107       ; 2297	
+	.DATA.W		2108       ; 2298	
+	.DATA.W		2108       ; 2299	
+	.DATA.W		2109       ; 2300	
+	.DATA.W		2110       ; 2301	
+	.DATA.W		2111       ; 2302	
+	.DATA.W		2112       ; 2303	
+	.DATA.W		2113       ; 2304	
+	.DATA.W		2114       ; 2305	
+	.DATA.W		2115       ; 2306	
+	.DATA.W		2116       ; 2307	
+	.DATA.W		2117       ; 2308	
+	.DATA.W		2117       ; 2309	
+	.DATA.W		2118       ; 2310	
+	.DATA.W		2119       ; 2311	
+	.DATA.W		2120       ; 2312	
+	.DATA.W		2121       ; 2313	
+	.DATA.W		2122       ; 2314	
+	.DATA.W		2123       ; 2315	
+	.DATA.W		2124       ; 2316	
+	.DATA.W		2125       ; 2317	
+	.DATA.W		2126       ; 2318	
+	.DATA.W		2127       ; 2319	
+	.DATA.W		2128       ; 2320	
+	.DATA.W		2129       ; 2321	
+	.DATA.W		2129       ; 2322	
+	.DATA.W		2130       ; 2323	
+	.DATA.W		2131       ; 2324	
+	.DATA.W		2132       ; 2325	
+	.DATA.W		2133       ; 2326	
+	.DATA.W		2134       ; 2327	
+	.DATA.W		2135       ; 2328	
+	.DATA.W		2136       ; 2329	
+	.DATA.W		2137       ; 2330	
+	.DATA.W		2138       ; 2331	
+	.DATA.W		2139       ; 2332	
+	.DATA.W		2140       ; 2333	
+	.DATA.W		2141       ; 2334	
+	.DATA.W		2142       ; 2335	
+	.DATA.W		2143       ; 2336	
+	.DATA.W		2144       ; 2337	
+	.DATA.W		2145       ; 2338	
+	.DATA.W		2145       ; 2339	
+	.DATA.W		2146       ; 2340	
+	.DATA.W		2147       ; 2341	
+	.DATA.W		2148       ; 2342	
+	.DATA.W		2149       ; 2343	
+	.DATA.W		2150       ; 2344	
+	.DATA.W		2151       ; 2345	
+	.DATA.W		2152       ; 2346	
+	.DATA.W		2153       ; 2347	
+	.DATA.W		2154       ; 2348	
+	.DATA.W		2155       ; 2349	
+	.DATA.W		2156       ; 2350	
+	.DATA.W		2157       ; 2351	
+	.DATA.W		2158       ; 2352	
+	.DATA.W		2159       ; 2353	
+	.DATA.W		2160       ; 2354	
+	.DATA.W		2161       ; 2355	
+	.DATA.W		2162       ; 2356	
+	.DATA.W		2163       ; 2357	
+	.DATA.W		2164       ; 2358	
+	.DATA.W		2165       ; 2359	
+	.DATA.W		2166       ; 2360	
+	.DATA.W		2167       ; 2361	
+	.DATA.W		2168       ; 2362	
+	.DATA.W		2169       ; 2363	
+	.DATA.W		2170       ; 2364	
+	.DATA.W		2171       ; 2365	
+	.DATA.W		2172       ; 2366	
+	.DATA.W		2173       ; 2367	
+	.DATA.W		2174       ; 2368	
+	.DATA.W		2175       ; 2369	
+	.DATA.W		2176       ; 2370	
+	.DATA.W		2177       ; 2371	
+	.DATA.W		2178       ; 2372	
+	.DATA.W		2179       ; 2373	
+	.DATA.W		2180       ; 2374	
+	.DATA.W		2181       ; 2375	
+	.DATA.W		2182       ; 2376	
+	.DATA.W		2183       ; 2377	
+	.DATA.W		2184       ; 2378	
+	.DATA.W		2185       ; 2379	
+	.DATA.W		2186       ; 2380	
+	.DATA.W		2187       ; 2381	
+	.DATA.W		2188       ; 2382	
+	.DATA.W		2189       ; 2383	
+	.DATA.W		2190       ; 2384	
+	.DATA.W		2191       ; 2385	
+	.DATA.W		2192       ; 2386	
+	.DATA.W		2193       ; 2387	
+	.DATA.W		2194       ; 2388	
+	.DATA.W		2195       ; 2389	
+	.DATA.W		2196       ; 2390	
+	.DATA.W		2197       ; 2391	
+	.DATA.W		2198       ; 2392	
+	.DATA.W		2199       ; 2393	
+	.DATA.W		2200       ; 2394	
+	.DATA.W		2201       ; 2395	
+	.DATA.W		2202       ; 2396	
+	.DATA.W		2203       ; 2397	
+	.DATA.W		2204       ; 2398	
+	.DATA.W		2205       ; 2399	
+	.DATA.W		2206       ; 2400	
+	.DATA.W		2207       ; 2401	
+	.DATA.W		2208       ; 2402	
+	.DATA.W		2209       ; 2403	
+	.DATA.W		2210       ; 2404	
+	.DATA.W		2211       ; 2405	
+	.DATA.W		2212       ; 2406	
+	.DATA.W		2213       ; 2407	
+	.DATA.W		2214       ; 2408	
+	.DATA.W		2215       ; 2409	
+	.DATA.W		2216       ; 2410	
+	.DATA.W		2217       ; 2411	
+	.DATA.W		2218       ; 2412	
+	.DATA.W		2219       ; 2413	
+	.DATA.W		2221       ; 2414	
+	.DATA.W		2222       ; 2415	
+	.DATA.W		2223       ; 2416	
+	.DATA.W		2224       ; 2417	
+	.DATA.W		2225       ; 2418	
+	.DATA.W		2226       ; 2419	
+	.DATA.W		2227       ; 2420	
+	.DATA.W		2228       ; 2421	
+	.DATA.W		2229       ; 2422	
+	.DATA.W		2230       ; 2423	
+	.DATA.W		2231       ; 2424	
+	.DATA.W		2232       ; 2425	
+	.DATA.W		2233       ; 2426	
+	.DATA.W		2234       ; 2427	
+	.DATA.W		2235       ; 2428	
+	.DATA.W		2236       ; 2429	
+	.DATA.W		2237       ; 2430	
+	.DATA.W		2239       ; 2431	
+	.DATA.W		2240       ; 2432	
+	.DATA.W		2241       ; 2433	
+	.DATA.W		2242       ; 2434	
+	.DATA.W		2243       ; 2435	
+	.DATA.W		2244       ; 2436	
+	.DATA.W		2245       ; 2437	
+	.DATA.W		2246       ; 2438	
+	.DATA.W		2247       ; 2439	
+	.DATA.W		2248       ; 2440	
+	.DATA.W		2249       ; 2441	
+	.DATA.W		2250       ; 2442	
+	.DATA.W		2251       ; 2443	
+	.DATA.W		2253       ; 2444	
+	.DATA.W		2254       ; 2445	
+	.DATA.W		2255       ; 2446	
+	.DATA.W		2256       ; 2447	
+	.DATA.W		2257       ; 2448	
+	.DATA.W		2258       ; 2449	
+	.DATA.W		2259       ; 2450	
+	.DATA.W		2260       ; 2451	
+	.DATA.W		2261       ; 2452	
+	.DATA.W		2262       ; 2453	
+	.DATA.W		2263       ; 2454	
+	.DATA.W		2265       ; 2455	
+	.DATA.W		2266       ; 2456	
+	.DATA.W		2267       ; 2457	
+	.DATA.W		2268       ; 2458	
+	.DATA.W		2269       ; 2459	
+	.DATA.W		2270       ; 2460	
+	.DATA.W		2271       ; 2461	
+	.DATA.W		2272       ; 2462	
+	.DATA.W		2273       ; 2463	
+	.DATA.W		2275       ; 2464	
+	.DATA.W		2276       ; 2465	
+	.DATA.W		2277       ; 2466	
+	.DATA.W		2278       ; 2467	
+	.DATA.W		2279       ; 2468	
+	.DATA.W		2280       ; 2469	
+	.DATA.W		2281       ; 2470	
+	.DATA.W		2282       ; 2471	
+	.DATA.W		2284       ; 2472	
+	.DATA.W		2285       ; 2473	
+	.DATA.W		2286       ; 2474	
+	.DATA.W		2287       ; 2475	
+	.DATA.W		2288       ; 2476	
+	.DATA.W		2289       ; 2477	
+	.DATA.W		2290       ; 2478	
+	.DATA.W		2291       ; 2479	
+	.DATA.W		2293       ; 2480	
+	.DATA.W		2294       ; 2481	
+	.DATA.W		2295       ; 2482	
+	.DATA.W		2296       ; 2483	
+	.DATA.W		2297       ; 2484	
+	.DATA.W		2298       ; 2485	
+	.DATA.W		2299       ; 2486	
+	.DATA.W		2301       ; 2487	
+	.DATA.W		2302       ; 2488	
+	.DATA.W		2303       ; 2489	
+	.DATA.W		2304       ; 2490	
+	.DATA.W		2305       ; 2491	
+	.DATA.W		2306       ; 2492	
+	.DATA.W		2307       ; 2493	
+	.DATA.W		2309       ; 2494	
+	.DATA.W		2310       ; 2495	
+	.DATA.W		2311       ; 2496	
+	.DATA.W		2312       ; 2497	
+	.DATA.W		2313       ; 2498	
+	.DATA.W		2314       ; 2499	
+	.DATA.W		2316       ; 2500	
+	.DATA.W		2317       ; 2501	
+	.DATA.W		2318       ; 2502	
+	.DATA.W		2319       ; 2503	
+	.DATA.W		2320       ; 2504	
+	.DATA.W		2321       ; 2505	
+	.DATA.W		2322       ; 2506	
+	.DATA.W		2324       ; 2507	
+	.DATA.W		2325       ; 2508	
+	.DATA.W		2326       ; 2509	
+	.DATA.W		2327       ; 2510	
+	.DATA.W		2328       ; 2511	
+	.DATA.W		2330       ; 2512	
+	.DATA.W		2331       ; 2513	
+	.DATA.W		2332       ; 2514	
+	.DATA.W		2333       ; 2515	
+	.DATA.W		2334       ; 2516	
+	.DATA.W		2335       ; 2517	
+	.DATA.W		2337       ; 2518	
+	.DATA.W		2338       ; 2519	
+	.DATA.W		2339       ; 2520	
+	.DATA.W		2340       ; 2521	
+	.DATA.W		2341       ; 2522	
+	.DATA.W		2343       ; 2523	
+	.DATA.W		2344       ; 2524	
+	.DATA.W		2345       ; 2525	
+	.DATA.W		2346       ; 2526	
+	.DATA.W		2347       ; 2527	
+	.DATA.W		2348       ; 2528	
+	.DATA.W		2350       ; 2529	
+	.DATA.W		2351       ; 2530	
+	.DATA.W		2352       ; 2531	
+	.DATA.W		2353       ; 2532	
+	.DATA.W		2354       ; 2533	
+	.DATA.W		2356       ; 2534	
+	.DATA.W		2357       ; 2535	
+	.DATA.W		2358       ; 2536	
+	.DATA.W		2359       ; 2537	
+	.DATA.W		2361       ; 2538	
+	.DATA.W		2362       ; 2539	
+	.DATA.W		2363       ; 2540	
+	.DATA.W		2364       ; 2541	
+	.DATA.W		2365       ; 2542	
+	.DATA.W		2367       ; 2543	
+	.DATA.W		2368       ; 2544	
+	.DATA.W		2369       ; 2545	
+	.DATA.W		2370       ; 2546	
+	.DATA.W		2371       ; 2547	
+	.DATA.W		2373       ; 2548	
+	.DATA.W		2374       ; 2549	
+	.DATA.W		2375       ; 2550	
+	.DATA.W		2376       ; 2551	
+	.DATA.W		2378       ; 2552	
+	.DATA.W		2379       ; 2553	
+	.DATA.W		2380       ; 2554	
+	.DATA.W		2381       ; 2555	
+	.DATA.W		2382       ; 2556	
+	.DATA.W		2384       ; 2557	
+	.DATA.W		2385       ; 2558	
+	.DATA.W		2386       ; 2559	
+	.DATA.W		2387       ; 2560	
+	.DATA.W		2389       ; 2561	
+	.DATA.W		2390       ; 2562	
+	.DATA.W		2391       ; 2563	
+	.DATA.W		2392       ; 2564	
+	.DATA.W		2394       ; 2565	
+	.DATA.W		2395       ; 2566	
+	.DATA.W		2396       ; 2567	
+	.DATA.W		2397       ; 2568	
+	.DATA.W		2399       ; 2569	
+	.DATA.W		2400       ; 2570	
+	.DATA.W		2401       ; 2571	
+	.DATA.W		2402       ; 2572	
+	.DATA.W		2404       ; 2573	
+	.DATA.W		2405       ; 2574	
+	.DATA.W		2406       ; 2575	
+	.DATA.W		2407       ; 2576	
+	.DATA.W		2409       ; 2577	
+	.DATA.W		2410       ; 2578	
+	.DATA.W		2411       ; 2579	
+	.DATA.W		2412       ; 2580	
+	.DATA.W		2414       ; 2581	
+	.DATA.W		2415       ; 2582	
+	.DATA.W		2416       ; 2583	
+	.DATA.W		2417       ; 2584	
+	.DATA.W		2419       ; 2585	
+	.DATA.W		2420       ; 2586	
+	.DATA.W		2421       ; 2587	
+	.DATA.W		2422       ; 2588	
+	.DATA.W		2424       ; 2589	
+	.DATA.W		2425       ; 2590	
+	.DATA.W		2426       ; 2591	
+	.DATA.W		2428       ; 2592	
+	.DATA.W		2429       ; 2593	
+	.DATA.W		2430       ; 2594	
+	.DATA.W		2431       ; 2595	
+	.DATA.W		2433       ; 2596	
+	.DATA.W		2434       ; 2597	
+	.DATA.W		2435       ; 2598	
+	.DATA.W		2437       ; 2599	
+	.DATA.W		2438       ; 2600	
+	.DATA.W		2439       ; 2601	
+	.DATA.W		2440       ; 2602	
+	.DATA.W		2442       ; 2603	
+	.DATA.W		2443       ; 2604	
+	.DATA.W		2444       ; 2605	
+	.DATA.W		2446       ; 2606	
+	.DATA.W		2447       ; 2607	
+	.DATA.W		2448       ; 2608	
+	.DATA.W		2449       ; 2609	
+	.DATA.W		2451       ; 2610	
+	.DATA.W		2452       ; 2611	
+	.DATA.W		2453       ; 2612	
+	.DATA.W		2455       ; 2613	
+	.DATA.W		2456       ; 2614	
+	.DATA.W		2457       ; 2615	
+	.DATA.W		2459       ; 2616	
+	.DATA.W		2460       ; 2617	
+	.DATA.W		2461       ; 2618	
+	.DATA.W		2462       ; 2619	
+	.DATA.W		2464       ; 2620	
+	.DATA.W		2465       ; 2621	
+	.DATA.W		2466       ; 2622	
+	.DATA.W		2468       ; 2623	
+	.DATA.W		2469       ; 2624	
+	.DATA.W		2470       ; 2625	
+	.DATA.W		2472       ; 2626	
+	.DATA.W		2473       ; 2627	
+	.DATA.W		2474       ; 2628	
+	.DATA.W		2476       ; 2629	
+	.DATA.W		2477       ; 2630	
+	.DATA.W		2478       ; 2631	
+	.DATA.W		2480       ; 2632	
+	.DATA.W		2481       ; 2633	
+	.DATA.W		2482       ; 2634	
+	.DATA.W		2484       ; 2635	
+	.DATA.W		2485       ; 2636	
+	.DATA.W		2486       ; 2637	
+	.DATA.W		2488       ; 2638	
+	.DATA.W		2489       ; 2639	
+	.DATA.W		2490       ; 2640	
+	.DATA.W		2492       ; 2641	
+	.DATA.W		2493       ; 2642	
+	.DATA.W		2494       ; 2643	
+	.DATA.W		2496       ; 2644	
+	.DATA.W		2497       ; 2645	
+	.DATA.W		2498       ; 2646	
+	.DATA.W		2500       ; 2647	
+	.DATA.W		2501       ; 2648	
+	.DATA.W		2502       ; 2649	
+	.DATA.W		2504       ; 2650	
+	.DATA.W		2505       ; 2651	
+	.DATA.W		2506       ; 2652	
+	.DATA.W		2508       ; 2653	
+	.DATA.W		2509       ; 2654	
+	.DATA.W		2510       ; 2655	
+	.DATA.W		2512       ; 2656	
+	.DATA.W		2513       ; 2657	
+	.DATA.W		2514       ; 2658	
+	.DATA.W		2516       ; 2659	
+	.DATA.W		2517       ; 2660	
+	.DATA.W		2518       ; 2661	
+	.DATA.W		2520       ; 2662	
+	.DATA.W		2521       ; 2663	
+	.DATA.W		2522       ; 2664	
+	.DATA.W		2524       ; 2665	
+	.DATA.W		2525       ; 2666	
+	.DATA.W		2527       ; 2667	
+	.DATA.W		2528       ; 2668	
+	.DATA.W		2529       ; 2669	
+	.DATA.W		2531       ; 2670	
+	.DATA.W		2532       ; 2671	
+	.DATA.W		2533       ; 2672	
+	.DATA.W		2535       ; 2673	
+	.DATA.W		2536       ; 2674	
+	.DATA.W		2538       ; 2675	
+	.DATA.W		2539       ; 2676	
+	.DATA.W		2540       ; 2677	
+	.DATA.W		2542       ; 2678	
+	.DATA.W		2543       ; 2679	
+	.DATA.W		2544       ; 2680	
+	.DATA.W		2546       ; 2681	
+	.DATA.W		2547       ; 2682	
+	.DATA.W		2549       ; 2683	
+	.DATA.W		2550       ; 2684	
+	.DATA.W		2551       ; 2685	
+	.DATA.W		2553       ; 2686	
+	.DATA.W		2554       ; 2687	
+	.DATA.W		2555       ; 2688	
+	.DATA.W		2557       ; 2689	
+	.DATA.W		2558       ; 2690	
+	.DATA.W		2560       ; 2691	
+	.DATA.W		2561       ; 2692	
+	.DATA.W		2562       ; 2693	
+	.DATA.W		2564       ; 2694	
+	.DATA.W		2565       ; 2695	
+	.DATA.W		2567       ; 2696	
+	.DATA.W		2568       ; 2697	
+	.DATA.W		2569       ; 2698	
+	.DATA.W		2571       ; 2699	
+	.DATA.W		2572       ; 2700	
+	.DATA.W		2574       ; 2701	
+	.DATA.W		2575       ; 2702	
+	.DATA.W		2576       ; 2703	
+	.DATA.W		2578       ; 2704	
+	.DATA.W		2579       ; 2705	
+	.DATA.W		2581       ; 2706	
+	.DATA.W		2582       ; 2707	
+	.DATA.W		2583       ; 2708	
+	.DATA.W		2585       ; 2709	
+	.DATA.W		2586       ; 2710	
+	.DATA.W		2588       ; 2711	
+	.DATA.W		2589       ; 2712	
+	.DATA.W		2590       ; 2713	
+	.DATA.W		2592       ; 2714	
+	.DATA.W		2593       ; 2715	
+	.DATA.W		2595       ; 2716	
+	.DATA.W		2596       ; 2717	
+	.DATA.W		2598       ; 2718	
+	.DATA.W		2599       ; 2719	
+	.DATA.W		2600       ; 2720	
+	.DATA.W		2602       ; 2721	
+	.DATA.W		2603       ; 2722	
+	.DATA.W		2605       ; 2723	
+	.DATA.W		2606       ; 2724	
+	.DATA.W		2608       ; 2725	
+	.DATA.W		2609       ; 2726	
+	.DATA.W		2610       ; 2727	
+	.DATA.W		2612       ; 2728	
+	.DATA.W		2613       ; 2729	
+	.DATA.W		2615       ; 2730	
+	.DATA.W		2616       ; 2731	
+	.DATA.W		2618       ; 2732	
+	.DATA.W		2619       ; 2733	
+	.DATA.W		2620       ; 2734	
+	.DATA.W		2622       ; 2735	
+	.DATA.W		2623       ; 2736	
+	.DATA.W		2625       ; 2737	
+	.DATA.W		2626       ; 2738	
+	.DATA.W		2628       ; 2739	
+	.DATA.W		2629       ; 2740	
+	.DATA.W		2630       ; 2741	
+	.DATA.W		2632       ; 2742	
+	.DATA.W		2633       ; 2743	
+	.DATA.W		2635       ; 2744	
+	.DATA.W		2636       ; 2745	
+	.DATA.W		2638       ; 2746	
+	.DATA.W		2639       ; 2747	
+	.DATA.W		2641       ; 2748	
+	.DATA.W		2642       ; 2749	
+	.DATA.W		2643       ; 2750	
+	.DATA.W		2645       ; 2751	
+	.DATA.W		2646       ; 2752	
+	.DATA.W		2648       ; 2753	
+	.DATA.W		2649       ; 2754	
+	.DATA.W		2651       ; 2755	
+	.DATA.W		2652       ; 2756	
+	.DATA.W		2654       ; 2757	
+	.DATA.W		2655       ; 2758	
+	.DATA.W		2657       ; 2759	
+	.DATA.W		2658       ; 2760	
+	.DATA.W		2660       ; 2761	
+	.DATA.W		2661       ; 2762	
+	.DATA.W		2662       ; 2763	
+	.DATA.W		2664       ; 2764	
+	.DATA.W		2665       ; 2765	
+	.DATA.W		2667       ; 2766	
+	.DATA.W		2668       ; 2767	
+	.DATA.W		2670       ; 2768	
+	.DATA.W		2671       ; 2769	
+	.DATA.W		2673       ; 2770	
+	.DATA.W		2674       ; 2771	
+	.DATA.W		2676       ; 2772	
+	.DATA.W		2677       ; 2773	
+	.DATA.W		2679       ; 2774	
+	.DATA.W		2680       ; 2775	
+	.DATA.W		2682       ; 2776	
+	.DATA.W		2683       ; 2777	
+	.DATA.W		2684       ; 2778	
+	.DATA.W		2686       ; 2779	
+	.DATA.W		2687       ; 2780	
+	.DATA.W		2689       ; 2781	
+	.DATA.W		2690       ; 2782	
+	.DATA.W		2692       ; 2783	
+	.DATA.W		2693       ; 2784	
+	.DATA.W		2695       ; 2785	
+	.DATA.W		2696       ; 2786	
+	.DATA.W		2698       ; 2787	
+	.DATA.W		2699       ; 2788	
+	.DATA.W		2701       ; 2789	
+	.DATA.W		2702       ; 2790	
+	.DATA.W		2704       ; 2791	
+	.DATA.W		2705       ; 2792	
+	.DATA.W		2707       ; 2793	
+	.DATA.W		2708       ; 2794	
+	.DATA.W		2710       ; 2795	
+	.DATA.W		2711       ; 2796	
+	.DATA.W		2713       ; 2797	
+	.DATA.W		2714       ; 2798	
+	.DATA.W		2716       ; 2799	
+	.DATA.W		2717       ; 2800	
+	.DATA.W		2719       ; 2801	
+	.DATA.W		2720       ; 2802	
+	.DATA.W		2722       ; 2803	
+	.DATA.W		2723       ; 2804	
+	.DATA.W		2725       ; 2805	
+	.DATA.W		2726       ; 2806	
+	.DATA.W		2728       ; 2807	
+	.DATA.W		2729       ; 2808	
+	.DATA.W		2731       ; 2809	
+	.DATA.W		2732       ; 2810	
+	.DATA.W		2734       ; 2811	
+	.DATA.W		2735       ; 2812	
+	.DATA.W		2737       ; 2813	
+	.DATA.W		2738       ; 2814	
+	.DATA.W		2740       ; 2815	
+	.DATA.W		2741       ; 2816	
+	.DATA.W		2743       ; 2817	
+	.DATA.W		2744       ; 2818	
+	.DATA.W		2746       ; 2819	
+	.DATA.W		2747       ; 2820	
+	.DATA.W		2749       ; 2821	
+	.DATA.W		2750       ; 2822	
+	.DATA.W		2752       ; 2823	
+	.DATA.W		2753       ; 2824	
+	.DATA.W		2755       ; 2825	
+	.DATA.W		2756       ; 2826	
+	.DATA.W		2758       ; 2827	
+	.DATA.W		2760       ; 2828	
+	.DATA.W		2761       ; 2829	
+	.DATA.W		2763       ; 2830	
+	.DATA.W		2764       ; 2831	
+	.DATA.W		2766       ; 2832	
+	.DATA.W		2767       ; 2833	
+	.DATA.W		2769       ; 2834	
+	.DATA.W		2770       ; 2835	
+	.DATA.W		2772       ; 2836	
+	.DATA.W		2773       ; 2837	
+	.DATA.W		2775       ; 2838	
+	.DATA.W		2776       ; 2839	
+	.DATA.W		2778       ; 2840	
+	.DATA.W		2779       ; 2841	
+	.DATA.W		2781       ; 2842	
+	.DATA.W		2782       ; 2843	
+	.DATA.W		2784       ; 2844	
+	.DATA.W		2786       ; 2845	
+	.DATA.W		2787       ; 2846	
+	.DATA.W		2789       ; 2847	
+	.DATA.W		2790       ; 2848	
+	.DATA.W		2792       ; 2849	
+	.DATA.W		2793       ; 2850	
+	.DATA.W		2795       ; 2851	
+	.DATA.W		2796       ; 2852	
+	.DATA.W		2798       ; 2853	
+	.DATA.W		2799       ; 2854	
+	.DATA.W		2801       ; 2855	
+	.DATA.W		2802       ; 2856	
+	.DATA.W		2804       ; 2857	
+	.DATA.W		2806       ; 2858	
+	.DATA.W		2807       ; 2859	
+	.DATA.W		2809       ; 2860	
+	.DATA.W		2810       ; 2861	
+	.DATA.W		2812       ; 2862	
+	.DATA.W		2813       ; 2863	
+	.DATA.W		2815       ; 2864	
+	.DATA.W		2816       ; 2865	
+	.DATA.W		2818       ; 2866	
+	.DATA.W		2819       ; 2867	
+	.DATA.W		2821       ; 2868	
+	.DATA.W		2823       ; 2869	
+	.DATA.W		2824       ; 2870	
+	.DATA.W		2826       ; 2871	
+	.DATA.W		2827       ; 2872	
+	.DATA.W		2829       ; 2873	
+	.DATA.W		2830       ; 2874	
+	.DATA.W		2832       ; 2875	
+	.DATA.W		2833       ; 2876	
+	.DATA.W		2835       ; 2877	
+	.DATA.W		2837       ; 2878	
+	.DATA.W		2838       ; 2879	
+	.DATA.W		2840       ; 2880	
+	.DATA.W		2841       ; 2881	
+	.DATA.W		2843       ; 2882	
+	.DATA.W		2844       ; 2883	
+	.DATA.W		2846       ; 2884	
+	.DATA.W		2848       ; 2885	
+	.DATA.W		2849       ; 2886	
+	.DATA.W		2851       ; 2887	
+	.DATA.W		2852       ; 2888	
+	.DATA.W		2854       ; 2889	
+	.DATA.W		2855       ; 2890	
+	.DATA.W		2857       ; 2891	
+	.DATA.W		2858       ; 2892	
+	.DATA.W		2860       ; 2893	
+	.DATA.W		2862       ; 2894	
+	.DATA.W		2863       ; 2895	
+	.DATA.W		2865       ; 2896	
+	.DATA.W		2866       ; 2897	
+	.DATA.W		2868       ; 2898	
+	.DATA.W		2869       ; 2899	
+	.DATA.W		2871       ; 2900	
+	.DATA.W		2873       ; 2901	
+	.DATA.W		2874       ; 2902	
+	.DATA.W		2876       ; 2903	
+	.DATA.W		2877       ; 2904	
+	.DATA.W		2879       ; 2905	
+	.DATA.W		2881       ; 2906	
+	.DATA.W		2882       ; 2907	
+	.DATA.W		2884       ; 2908	
+	.DATA.W		2885       ; 2909	
+	.DATA.W		2887       ; 2910	
+	.DATA.W		2888       ; 2911	
+	.DATA.W		2890       ; 2912	
+	.DATA.W		2892       ; 2913	
+	.DATA.W		2893       ; 2914	
+	.DATA.W		2895       ; 2915	
+	.DATA.W		2896       ; 2916	
+	.DATA.W		2898       ; 2917	
+	.DATA.W		2900       ; 2918	
+	.DATA.W		2901       ; 2919	
+	.DATA.W		2903       ; 2920	
+	.DATA.W		2904       ; 2921	
+	.DATA.W		2906       ; 2922	
+	.DATA.W		2907       ; 2923	
+	.DATA.W		2909       ; 2924	
+	.DATA.W		2911       ; 2925	
+	.DATA.W		2912       ; 2926	
+	.DATA.W		2914       ; 2927	
+	.DATA.W		2915       ; 2928	
+	.DATA.W		2917       ; 2929	
+	.DATA.W		2919       ; 2930	
+	.DATA.W		2920       ; 2931	
+	.DATA.W		2922       ; 2932	
+	.DATA.W		2923       ; 2933	
+	.DATA.W		2925       ; 2934	
+	.DATA.W		2927       ; 2935	
+	.DATA.W		2928       ; 2936	
+	.DATA.W		2930       ; 2937	
+	.DATA.W		2931       ; 2938	
+	.DATA.W		2933       ; 2939	
+	.DATA.W		2935       ; 2940	
+	.DATA.W		2936       ; 2941	
+	.DATA.W		2938       ; 2942	
+	.DATA.W		2939       ; 2943	
+	.DATA.W		2941       ; 2944	
+	.DATA.W		2943       ; 2945	
+	.DATA.W		2944       ; 2946	
+	.DATA.W		2946       ; 2947	
+	.DATA.W		2947       ; 2948	
+	.DATA.W		2949       ; 2949	
+	.DATA.W		2951       ; 2950	
+	.DATA.W		2952       ; 2951	
+	.DATA.W		2954       ; 2952	
+	.DATA.W		2955       ; 2953	
+	.DATA.W		2957       ; 2954	
+	.DATA.W		2959       ; 2955	
+	.DATA.W		2960       ; 2956	
+	.DATA.W		2962       ; 2957	
+	.DATA.W		2963       ; 2958	
+	.DATA.W		2965       ; 2959	
+	.DATA.W		2967       ; 2960	
+	.DATA.W		2968       ; 2961	
+	.DATA.W		2970       ; 2962	
+	.DATA.W		2971       ; 2963	
+	.DATA.W		2973       ; 2964	
+	.DATA.W		2975       ; 2965	
+	.DATA.W		2976       ; 2966	
+	.DATA.W		2978       ; 2967	
+	.DATA.W		2979       ; 2968	
+	.DATA.W		2981       ; 2969	
+	.DATA.W		2983       ; 2970	
+	.DATA.W		2984       ; 2971	
+	.DATA.W		2986       ; 2972	
+	.DATA.W		2988       ; 2973	
+	.DATA.W		2989       ; 2974	
+	.DATA.W		2991       ; 2975	
+	.DATA.W		2992       ; 2976	
+	.DATA.W		2994       ; 2977	
+	.DATA.W		2996       ; 2978	
+	.DATA.W		2997       ; 2979	
+	.DATA.W		2999       ; 2980	
+	.DATA.W		3000       ; 2981	
+	.DATA.W		3002       ; 2982	
+	.DATA.W		3004       ; 2983	
+	.DATA.W		3005       ; 2984	
+	.DATA.W		3007       ; 2985	
+	.DATA.W		3009       ; 2986	
+	.DATA.W		3010       ; 2987	
+	.DATA.W		3012       ; 2988	
+	.DATA.W		3013       ; 2989	
+	.DATA.W		3015       ; 2990	
+	.DATA.W		3017       ; 2991	
+	.DATA.W		3018       ; 2992	
+	.DATA.W		3020       ; 2993	
+	.DATA.W		3021       ; 2994	
+	.DATA.W		3023       ; 2995	
+	.DATA.W		3025       ; 2996	
+	.DATA.W		3026       ; 2997	
+	.DATA.W		3028       ; 2998	
+	.DATA.W		3030       ; 2999	
+	.DATA.W		3031       ; 3000	
+	.DATA.W		3033       ; 3001	
+	.DATA.W		3034       ; 3002	
+	.DATA.W		3036       ; 3003	
+	.DATA.W		3038       ; 3004	
+	.DATA.W		3039       ; 3005	
+	.DATA.W		3041       ; 3006	
+	.DATA.W		3043       ; 3007	
+	.DATA.W		3044       ; 3008	
+	.DATA.W		3046       ; 3009	
+	.DATA.W		3047       ; 3010	
+	.DATA.W		3049       ; 3011	
+	.DATA.W		3051       ; 3012	
+	.DATA.W		3052       ; 3013	
+	.DATA.W		3054       ; 3014	
+	.DATA.W		3056       ; 3015	
+	.DATA.W		3057       ; 3016	
+	.DATA.W		3059       ; 3017	
+	.DATA.W		3061       ; 3018	
+	.DATA.W		3062       ; 3019	
+	.DATA.W		3064       ; 3020	
+	.DATA.W		3065       ; 3021	
+	.DATA.W		3067       ; 3022	
+	.DATA.W		3069       ; 3023	
+	.DATA.W		3070       ; 3024	
+	.DATA.W		3072       ; 3025	
+	.DATA.W		3074       ; 3026	
+	.DATA.W		3075       ; 3027	
+	.DATA.W		3077       ; 3028	
+	.DATA.W		3078       ; 3029	
+	.DATA.W		3080       ; 3030	
+	.DATA.W		3082       ; 3031	
+	.DATA.W		3083       ; 3032	
+	.DATA.W		3085       ; 3033	
+	.DATA.W		3087       ; 3034	
+	.DATA.W		3088       ; 3035	
+	.DATA.W		3090       ; 3036	
+	.DATA.W		3092       ; 3037	
+	.DATA.W		3093       ; 3038	
+	.DATA.W		3095       ; 3039	
+	.DATA.W		3096       ; 3040	
+	.DATA.W		3098       ; 3041	
+	.DATA.W		3100       ; 3042	
+	.DATA.W		3101       ; 3043	
+	.DATA.W		3103       ; 3044	
+	.DATA.W		3105       ; 3045	
+	.DATA.W		3106       ; 3046	
+	.DATA.W		3108       ; 3047	
+	.DATA.W		3110       ; 3048	
+	.DATA.W		3111       ; 3049	
+	.DATA.W		3113       ; 3050	
+	.DATA.W		3114       ; 3051	
+	.DATA.W		3116       ; 3052	
+	.DATA.W		3118       ; 3053	
+	.DATA.W		3119       ; 3054	
+	.DATA.W		3121       ; 3055	
+	.DATA.W		3123       ; 3056	
+	.DATA.W		3124       ; 3057	
+	.DATA.W		3126       ; 3058	
+	.DATA.W		3128       ; 3059	
+	.DATA.W		3129       ; 3060	
+	.DATA.W		3131       ; 3061	
+	.DATA.W		3133       ; 3062	
+	.DATA.W		3134       ; 3063	
+	.DATA.W		3136       ; 3064	
+	.DATA.W		3137       ; 3065	
+	.DATA.W		3139       ; 3066	
+	.DATA.W		3141       ; 3067	
+	.DATA.W		3142       ; 3068	
+	.DATA.W		3144       ; 3069	
+	.DATA.W		3146       ; 3070	
+	.DATA.W		3147       ; 3071	
+	.DATA.W		3149       ; 3072	
+	.DATA.W		3151       ; 3073	
+	.DATA.W		3152       ; 3074	
+	.DATA.W		3154       ; 3075	
+	.DATA.W		3156       ; 3076	
+	.DATA.W		3157       ; 3077	
+	.DATA.W		3159       ; 3078	
+	.DATA.W		3160       ; 3079	
+	.DATA.W		3162       ; 3080	
+	.DATA.W		3164       ; 3081	
+	.DATA.W		3165       ; 3082	
+	.DATA.W		3167       ; 3083	
+	.DATA.W		3169       ; 3084	
+	.DATA.W		3170       ; 3085	
+	.DATA.W		3172       ; 3086	
+	.DATA.W		3174       ; 3087	
+	.DATA.W		3175       ; 3088	
+	.DATA.W		3177       ; 3089	
+	.DATA.W		3179       ; 3090	
+	.DATA.W		3180       ; 3091	
+	.DATA.W		3182       ; 3092	
+	.DATA.W		3183       ; 3093	
+	.DATA.W		3185       ; 3094	
+	.DATA.W		3187       ; 3095	
+	.DATA.W		3188       ; 3096	
+	.DATA.W		3190       ; 3097	
+	.DATA.W		3192       ; 3098	
+	.DATA.W		3193       ; 3099	
+	.DATA.W		3195       ; 3100	
+	.DATA.W		3197       ; 3101	
+	.DATA.W		3198       ; 3102	
+	.DATA.W		3200       ; 3103	
+	.DATA.W		3202       ; 3104	
+	.DATA.W		3203       ; 3105	
+	.DATA.W		3205       ; 3106	
+	.DATA.W		3207       ; 3107	
+	.DATA.W		3208       ; 3108	
+	.DATA.W		3210       ; 3109	
+	.DATA.W		3211       ; 3110	
+	.DATA.W		3213       ; 3111	
+	.DATA.W		3215       ; 3112	
+	.DATA.W		3216       ; 3113	
+	.DATA.W		3218       ; 3114	
+	.DATA.W		3220       ; 3115	
+	.DATA.W		3221       ; 3116	
+	.DATA.W		3223       ; 3117	
+	.DATA.W		3225       ; 3118	
+	.DATA.W		3226       ; 3119	
+	.DATA.W		3228       ; 3120	
+	.DATA.W		3230       ; 3121	
+	.DATA.W		3231       ; 3122	
+	.DATA.W		3233       ; 3123	
+	.DATA.W		3235       ; 3124	
+	.DATA.W		3236       ; 3125	
+	.DATA.W		3238       ; 3126	
+	.DATA.W		3240       ; 3127	
+	.DATA.W		3241       ; 3128	
+	.DATA.W		3243       ; 3129	
+	.DATA.W		3244       ; 3130	
+	.DATA.W		3246       ; 3131	
+	.DATA.W		3248       ; 3132	
+	.DATA.W		3249       ; 3133	
+	.DATA.W		3251       ; 3134	
+	.DATA.W		3253       ; 3135	
+	.DATA.W		3254       ; 3136	
+	.DATA.W		3256       ; 3137	
+	.DATA.W		3258       ; 3138	
+	.DATA.W		3259       ; 3139	
+	.DATA.W		3261       ; 3140	
+	.DATA.W		3263       ; 3141	
+	.DATA.W		3264       ; 3142	
+	.DATA.W		3266       ; 3143	
+	.DATA.W		3268       ; 3144	
+	.DATA.W		3269       ; 3145	
+	.DATA.W		3271       ; 3146	
+	.DATA.W		3272       ; 3147	
+	.DATA.W		3274       ; 3148	
+	.DATA.W		3276       ; 3149	
+	.DATA.W		3277       ; 3150	
+	.DATA.W		3279       ; 3151	
+	.DATA.W		3281       ; 3152	
+	.DATA.W		3282       ; 3153	
+	.DATA.W		3284       ; 3154	
+	.DATA.W		3286       ; 3155	
+	.DATA.W		3287       ; 3156	
+	.DATA.W		3289       ; 3157	
+	.DATA.W		3291       ; 3158	
+	.DATA.W		3292       ; 3159	
+	.DATA.W		3294       ; 3160	
+	.DATA.W		3296       ; 3161	
+	.DATA.W		3297       ; 3162	
+	.DATA.W		3299       ; 3163	
+	.DATA.W		3301       ; 3164	
+	.DATA.W		3302       ; 3165	
+	.DATA.W		3304       ; 3166	
+	.DATA.W		3305       ; 3167	
+	.DATA.W		3307       ; 3168	
+	.DATA.W		3309       ; 3169	
+	.DATA.W		3310       ; 3170	
+	.DATA.W		3312       ; 3171	
+	.DATA.W		3314       ; 3172	
+	.DATA.W		3315       ; 3173	
+	.DATA.W		3317       ; 3174	
+	.DATA.W		3319       ; 3175	
+	.DATA.W		3320       ; 3176	
+	.DATA.W		3322       ; 3177	
+	.DATA.W		3324       ; 3178	
+	.DATA.W		3325       ; 3179	
+	.DATA.W		3327       ; 3180	
+	.DATA.W		3329       ; 3181	
+	.DATA.W		3330       ; 3182	
+	.DATA.W		3332       ; 3183	
+	.DATA.W		3333       ; 3184	
+	.DATA.W		3335       ; 3185	
+	.DATA.W		3337       ; 3186	
+	.DATA.W		3338       ; 3187	
+	.DATA.W		3340       ; 3188	
+	.DATA.W		3342       ; 3189	
+	.DATA.W		3343       ; 3190	
+	.DATA.W		3345       ; 3191	
+	.DATA.W		3347       ; 3192	
+	.DATA.W		3348       ; 3193	
+	.DATA.W		3350       ; 3194	
+	.DATA.W		3352       ; 3195	
+	.DATA.W		3353       ; 3196	
+	.DATA.W		3355       ; 3197	
+	.DATA.W		3357       ; 3198	
+	.DATA.W		3358       ; 3199	
+	.DATA.W		3360       ; 3200	
+	.DATA.W		3361       ; 3201	
+	.DATA.W		3363       ; 3202	
+	.DATA.W		3365       ; 3203	
+	.DATA.W		3366       ; 3204	
+	.DATA.W		3368       ; 3205	
+	.DATA.W		3370       ; 3206	
+	.DATA.W		3371       ; 3207	
+	.DATA.W		3373       ; 3208	
+	.DATA.W		3375       ; 3209	
+	.DATA.W		3376       ; 3210	
+	.DATA.W		3378       ; 3211	
+	.DATA.W		3380       ; 3212	
+	.DATA.W		3381       ; 3213	
+	.DATA.W		3383       ; 3214	
+	.DATA.W		3384       ; 3215	
+	.DATA.W		3386       ; 3216	
+	.DATA.W		3388       ; 3217	
+	.DATA.W		3389       ; 3218	
+	.DATA.W		3391       ; 3219	
+	.DATA.W		3393       ; 3220	
+	.DATA.W		3394       ; 3221	
+	.DATA.W		3396       ; 3222	
+	.DATA.W		3398       ; 3223	
+	.DATA.W		3399       ; 3224	
+	.DATA.W		3401       ; 3225	
+	.DATA.W		3403       ; 3226	
+	.DATA.W		3404       ; 3227	
+	.DATA.W		3406       ; 3228	
+	.DATA.W		3407       ; 3229	
+	.DATA.W		3409       ; 3230	
+	.DATA.W		3411       ; 3231	
+	.DATA.W		3412       ; 3232	
+	.DATA.W		3414       ; 3233	
+	.DATA.W		3416       ; 3234	
+	.DATA.W		3417       ; 3235	
+	.DATA.W		3419       ; 3236	
+	.DATA.W		3421       ; 3237	
+	.DATA.W		3422       ; 3238	
+	.DATA.W		3424       ; 3239	
+	.DATA.W		3425       ; 3240	
+	.DATA.W		3427       ; 3241	
+	.DATA.W		3429       ; 3242	
+	.DATA.W		3430       ; 3243	
+	.DATA.W		3432       ; 3244	
+	.DATA.W		3434       ; 3245	
+	.DATA.W		3435       ; 3246	
+	.DATA.W		3437       ; 3247	
+	.DATA.W		3439       ; 3248	
+	.DATA.W		3440       ; 3249	
+	.DATA.W		3442       ; 3250	
+	.DATA.W		3443       ; 3251	
+	.DATA.W		3445       ; 3252	
+	.DATA.W		3447       ; 3253	
+	.DATA.W		3448       ; 3254	
+	.DATA.W		3450       ; 3255	
+	.DATA.W		3452       ; 3256	
+	.DATA.W		3453       ; 3257	
+	.DATA.W		3455       ; 3258	
+	.DATA.W		3457       ; 3259	
+	.DATA.W		3458       ; 3260	
+	.DATA.W		3460       ; 3261	
+	.DATA.W		3461       ; 3262	
+	.DATA.W		3463       ; 3263	
+	.DATA.W		3465       ; 3264	
+	.DATA.W		3466       ; 3265	
+	.DATA.W		3468       ; 3266	
+	.DATA.W		3470       ; 3267	
+	.DATA.W		3471       ; 3268	
+	.DATA.W		3473       ; 3269	
+	.DATA.W		3474       ; 3270	
+	.DATA.W		3476       ; 3271	
+	.DATA.W		3478       ; 3272	
+	.DATA.W		3479       ; 3273	
+	.DATA.W		3481       ; 3274	
+	.DATA.W		3483       ; 3275	
+	.DATA.W		3484       ; 3276	
+	.DATA.W		3486       ; 3277	
+	.DATA.W		3488       ; 3278	
+	.DATA.W		3489       ; 3279	
+	.DATA.W		3491       ; 3280	
+	.DATA.W		3492       ; 3281	
+	.DATA.W		3494       ; 3282	
+	.DATA.W		3496       ; 3283	
+	.DATA.W		3497       ; 3284	
+	.DATA.W		3499       ; 3285	
+	.DATA.W		3501       ; 3286	
+	.DATA.W		3502       ; 3287	
+	.DATA.W		3504       ; 3288	
+	.DATA.W		3505       ; 3289	
+	.DATA.W		3507       ; 3290	
+	.DATA.W		3509       ; 3291	
+	.DATA.W		3510       ; 3292	
+	.DATA.W		3512       ; 3293	
+	.DATA.W		3514       ; 3294	
+	.DATA.W		3515       ; 3295	
+	.DATA.W		3517       ; 3296	
+	.DATA.W		3518       ; 3297	
+	.DATA.W		3520       ; 3298	
+	.DATA.W		3522       ; 3299	
+	.DATA.W		3523       ; 3300	
+	.DATA.W		3525       ; 3301	
+	.DATA.W		3526       ; 3302	
+	.DATA.W		3528       ; 3303	
+	.DATA.W		3530       ; 3304	
+	.DATA.W		3531       ; 3305	
+	.DATA.W		3533       ; 3306	
+	.DATA.W		3535       ; 3307	
+	.DATA.W		3537       ; 3308	
+	.DATA.W		3538       ; 3309	
+	.DATA.W		3539       ; 3310	
+	.DATA.W		3541       ; 3311	
+	.DATA.W		3543       ; 3312	
+	.DATA.W		3544       ; 3313	
+	.DATA.W		3546       ; 3314	
+	.DATA.W		3548       ; 3315	
+	.DATA.W		3549       ; 3316	
+	.DATA.W		3551       ; 3317	
+	.DATA.W		3552       ; 3318	
+	.DATA.W		3554       ; 3319	
+	.DATA.W		3556       ; 3320	
+	.DATA.W		3557       ; 3321	
+	.DATA.W		3559       ; 3322	
+	.DATA.W		3560       ; 3323	
+	.DATA.W		3562       ; 3324	
+	.DATA.W		3564       ; 3325	
+	.DATA.W		3565       ; 3326	
+	.DATA.W		3567       ; 3327	
+	.DATA.W		3568       ; 3328	
+	.DATA.W		3570       ; 3329	
+	.DATA.W		3572       ; 3330	
+	.DATA.W		3573       ; 3331	
+	.DATA.W		3575       ; 3332	
+	.DATA.W		3577       ; 3333	
+	.DATA.W		3578       ; 3334	
+	.DATA.W		3580       ; 3335	
+	.DATA.W		3581       ; 3336	
+	.DATA.W		3583       ; 3337	
+	.DATA.W		3585       ; 3338	
+	.DATA.W		3586       ; 3339	
+	.DATA.W		3588       ; 3340	
+	.DATA.W		3589       ; 3341	
+	.DATA.W		3591       ; 3342	
+	.DATA.W		3593       ; 3343	
+	.DATA.W		3594       ; 3344	
+	.DATA.W		3596       ; 3345	
+	.DATA.W		3597       ; 3346	
+	.DATA.W		3599       ; 3347	
+	.DATA.W		00         ;3348	
+	.DATA.W		02         ;3349	
+	.DATA.W		04         ;3350	
+	.DATA.W		05         ;3351	
+	.DATA.W		07         ;3352	
+	.DATA.W		09         ;3353	
+	.DATA.W		10         ;3354	
+	.DATA.W		12         ;3355	
+	.DATA.W		13         ;3356	
+	.DATA.W		15         ;3357	
+	.DATA.W		17         ;3358	
+	.DATA.W		18         ;3359	
+	.DATA.W		20         ;3360	
+	.DATA.W		21         ;3361	
+	.DATA.W		23         ;3362	
+	.DATA.W		25         ;3363	
+	.DATA.W		26         ;3364	
+	.DATA.W		28         ;3365	
+	.DATA.W		29         ;3366	
+	.DATA.W		31         ;3367	
+	.DATA.W		33         ;3368	
+	.DATA.W		34         ;3369	
+	.DATA.W		36         ;3370	
+	.DATA.W		37         ;3371	
+	.DATA.W		39         ;3372	
+	.DATA.W		41         ;3373	
+	.DATA.W		42         ;3374	
+	.DATA.W		44         ;3375	
+	.DATA.W		45         ;3376	
+	.DATA.W		47         ;3377	
+	.DATA.W		49         ;3378	
+	.DATA.W		50         ;3379	
+	.DATA.W		52         ;3380	
+	.DATA.W		53         ;3381	
+	.DATA.W		55         ;3382	
+	.DATA.W		56         ;3383	
+	.DATA.W		58         ;3384	
+	.DATA.W		60         ;3385	
+	.DATA.W		61         ;3386	
+	.DATA.W		63         ;3387	
+	.DATA.W		64         ;3388	
+	.DATA.W		66         ;3389	
+	.DATA.W		68         ;3390	
+	.DATA.W		69         ;3391	
+	.DATA.W		71         ;3392	
+	.DATA.W		72         ;3393	
+	.DATA.W		74         ;3394	
+	.DATA.W		75         ;3395	
+	.DATA.W		77         ;3396	
+	.DATA.W		79         ;3397	
+	.DATA.W		80         ;3398	
+	.DATA.W		82         ;3399	
+	.DATA.W		83         ;3400	
+	.DATA.W		85         ;3401	
+	.DATA.W		87         ;3402	
+	.DATA.W		88         ;3403	
+	.DATA.W		90         ;3404	
+	.DATA.W		91         ;3405	
+	.DATA.W		93         ;3406	
+	.DATA.W		94         ;3407	
+	.DATA.W		96         ;3408	
+	.DATA.W		98         ;3409	
+	.DATA.W		99         ;3410	
+	.DATA.W		101        ;3411	
+	.DATA.W		102        ;3412	
+	.DATA.W		104        ;3413	
+	.DATA.W		105        ;3414	
+	.DATA.W		107        ;3415	
+	.DATA.W		109        ;3416	
+	.DATA.W		110        ;3417	
+	.DATA.W		112        ;3418	
+	.DATA.W		113        ;3419	
+	.DATA.W		115        ;3420	
+	.DATA.W		116        ;3421	
+	.DATA.W		118        ;3422	
+	.DATA.W		120        ;3423	
+	.DATA.W		121        ;3424	
+	.DATA.W		123        ;3425	
+	.DATA.W		124        ;3426	
+	.DATA.W		126        ;3427	
+	.DATA.W		127        ;3428	
+	.DATA.W		129        ;3429	
+	.DATA.W		131        ;3430	
+	.DATA.W		132        ;3431	
+	.DATA.W		134        ;3432	
+	.DATA.W		135        ;3433	
+	.DATA.W		137        ;3434	
+	.DATA.W		138        ;3435	
+	.DATA.W		140        ;3436	
+	.DATA.W		141        ;3437	
+	.DATA.W		143        ;3438	
+	.DATA.W		145        ;3439	
+	.DATA.W		146        ;3440	
+	.DATA.W		148        ;3441	
+	.DATA.W		149        ;3442	
+	.DATA.W		151        ;3443	
+	.DATA.W		152        ;3444	
+	.DATA.W		154        ;3445	
+	.DATA.W		156        ;3446	
+	.DATA.W		157        ;3447	
+	.DATA.W		159        ;3448	
+	.DATA.W		160        ;3449	
+	.DATA.W		162        ;3450	
+	.DATA.W		163        ;3451	
+	.DATA.W		165        ;3452	
+	.DATA.W		166        ;3453	
+	.DATA.W		168        ;3454	
+	.DATA.W		170        ;3455	
+	.DATA.W		171        ;3456	
+	.DATA.W		173        ;3457	
+	.DATA.W		174        ;3458	
+	.DATA.W		176        ;3459	
+	.DATA.W		177        ;3460	
+	.DATA.W		179        ;3461	
+	.DATA.W		180        ;3462	
+	.DATA.W		182        ;3463	
+	.DATA.W		183        ;3464	
+	.DATA.W		185        ;3465	
+	.DATA.W		187        ;3466	
+	.DATA.W		188        ;3467	
+	.DATA.W		190        ;3468	
+	.DATA.W		191        ;3469	
+	.DATA.W		193        ;3470	
+	.DATA.W		194        ;3471	
+	.DATA.W		196        ;3472	
+	.DATA.W		197        ;3473	
+	.DATA.W		199        ;3474	
+	.DATA.W		200        ;3475	
+	.DATA.W		202        ;3476	
+	.DATA.W		203        ;3477	
+	.DATA.W		205        ;3478	
+	.DATA.W		207        ;3479	
+	.DATA.W		208        ;3480	
+	.DATA.W		210        ;3481	
+	.DATA.W		211        ;3482	
+	.DATA.W		213        ;3483	
+	.DATA.W		214        ;3484	
+	.DATA.W		216        ;3485	
+	.DATA.W		217        ;3486	
+	.DATA.W		219        ;3487	
+	.DATA.W		220        ;3488	
+	.DATA.W		222        ;3489	
+	.DATA.W		223        ;3490	
+	.DATA.W		225        ;3491	
+	.DATA.W		227        ;3492	
+	.DATA.W		228        ;3493	
+	.DATA.W		230        ;3494	
+	.DATA.W		231        ;3495	
+	.DATA.W		233        ;3496	
+	.DATA.W		234        ;3497	
+	.DATA.W		236        ;3498	
+	.DATA.W		237        ;3499	
+	.DATA.W		239        ;3500	
+	.DATA.W		240        ;3501	
+	.DATA.W		242        ;3502	
+	.DATA.W		243        ;3503	
+	.DATA.W		245        ;3504	
+	.DATA.W		246        ;3505	
+	.DATA.W		248        ;3506	
+	.DATA.W		249        ;3507	
+	.DATA.W		251        ;3508	
+	.DATA.W		252        ;3509	
+	.DATA.W		254        ;3510	
+	.DATA.W		255        ;3511	
+	.DATA.W		257        ;3512	
+	.DATA.W		259        ;3513	
+	.DATA.W		260        ;3514	
+	.DATA.W		262        ;3515	
+	.DATA.W		263        ;3516	
+	.DATA.W		265        ;3517	
+	.DATA.W		266        ;3518	
+	.DATA.W		268        ;3519	
+	.DATA.W		269        ;3520	
+	.DATA.W		271        ;3521	
+	.DATA.W		272        ;3522	
+	.DATA.W		274        ;3523	
+	.DATA.W		275        ;3524	
+	.DATA.W		277        ;3525	
+	.DATA.W		278        ;3526	
+	.DATA.W		280        ;3527	
+	.DATA.W		281        ;3528	
+	.DATA.W		283        ;3529	
+	.DATA.W		284        ;3530	
+	.DATA.W		286        ;3531	
+	.DATA.W		287        ;3532	
+	.DATA.W		289        ;3533	
+	.DATA.W		290        ;3534	
+	.DATA.W		292        ;3535	
+	.DATA.W		293        ;3536	
+	.DATA.W		295        ;3537	
+	.DATA.W		296        ;3538	
+	.DATA.W		298        ;3539	
+	.DATA.W		299        ;3540	
+	.DATA.W		301        ;3541	
+	.DATA.W		302        ;3542	
+	.DATA.W		304        ;3543	
+	.DATA.W		305        ;3544	
+	.DATA.W		307        ;3545	
+	.DATA.W		308        ;3546	
+	.DATA.W		310        ;3547	
+	.DATA.W		311        ;3548	
+	.DATA.W		313        ;3549	
+	.DATA.W		314        ;3550	
+	.DATA.W		316        ;3551	
+	.DATA.W		317        ;3552	
+	.DATA.W		319        ;3553	
+	.DATA.W		320        ;3554	
+	.DATA.W		322        ;3555	
+	.DATA.W		323        ;3556	
+	.DATA.W		325        ;3557	
+	.DATA.W		326        ;3558	
+	.DATA.W		328        ;3559	
+	.DATA.W		329        ;3560	
+	.DATA.W		331        ;3561	
+	.DATA.W		332        ;3562	
+	.DATA.W		334        ;3563	
+	.DATA.W		335        ;3564	
+	.DATA.W		337        ;3565	
+	.DATA.W		338        ;3566	
+	.DATA.W		340        ;3567	
+	.DATA.W		341        ;3568	
+	.DATA.W		343        ;3569	
+	.DATA.W		344        ;3570	
+	.DATA.W		346        ;3571	
+	.DATA.W		347        ;3572	
+	.DATA.W		349        ;3573	
+	.DATA.W		350        ;3574	
+	.DATA.W		351        ;3575	
+	.DATA.W		353        ;3576	
+	.DATA.W		354        ;3577	
+	.DATA.W		356        ;3578	
+	.DATA.W		357        ;3579	
+	.DATA.W		359        ;3580	
+	.DATA.W		360        ;3581	
+	.DATA.W		362        ;3582	
+	.DATA.W		363        ;3583	
+	.DATA.W		365        ;3584	
+	.DATA.W		366        ;3585	
+	.DATA.W		368        ;3586	
+	.DATA.W		369        ;3587	
+	.DATA.W		371        ;3588	
+	.DATA.W		372        ;3589	
+	.DATA.W		374        ;3590	
+	.DATA.W		375        ;3591	
+	.DATA.W		377        ;3592	
+	.DATA.W		378        ;3593	
+	.DATA.W		379        ;3594	
+	.DATA.W		381        ;3595	
+	.DATA.W		382        ;3596	
+	.DATA.W		384        ;3597	
+	.DATA.W		385        ;3598	
+	.DATA.W		387        ;3599	
+	.DATA.W		388        ;3600	

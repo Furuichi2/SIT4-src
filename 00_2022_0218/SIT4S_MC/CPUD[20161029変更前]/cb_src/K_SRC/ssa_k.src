@@ -1,0 +1,522 @@
+;	***************************************************
+;	***						***
+;	***						***
+;	***	各インターフェイスソフト		***
+;	***						***
+;	***						***
+;	***************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"		; //共通定義:必ず実行ﾌﾟﾛｸﾞﾗﾑにｲﾝｸﾙｰﾄﾞする事
+	.INCLUDE	"ssa_pfom.equ"		; //equ定義
+	.INCLUDE	"ssa_khad.equ"		; //equ定義
+	.INCLUDE	"ssa_wrmk.ext"		; //p4a_wrmk.ext+p4a_wrmy.ext
+;;	.INCLUDE	"ssa_wram.ext"		; //p4a_wrmk.ext+p4a_wrmy.ext
+	.INCLUDE	"shn_cmd1.mac"		; 
+	.INCLUDE	"ssa_kmc1.mac"		; //
+	.INCLUDE	"ssa_ver1.equ"		; //
+
+	.LIST	ON
+
+	.SECTION	P,CODE			;
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 PROGRAM	***
+;	//	***********************************
+	.IMPORT		_CB_BAKUP_LOAD		;ssa_dtmk.src
+	.IMPORT		_PWR_ON_DAT_LOAD	;ssa_dtmk.src 電源のﾊﾝﾄﾞｼｪｲｸ終了時
+	.IMPORT		_SYS_DAT_LOAD		;ssa_dtmk.src 電源のﾊﾝﾄﾞｼｪｲｸ終了時
+	.IMPORT		_SV_DAT_LOAD		;ssa_dtmk.src ﾒｲﾝｽｷｬﾝ:変更要求時
+
+	.IMPORT		_CB_INT_MAIN
+
+	.IMPORT		_ET1_CPU_MAIN_MOV	;[mc-used]
+	.IMPORT		_ET1_CPU_HIGH_MOV	;ssa_et1a/b.src
+
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 MEMORY,HARD	***
+;	//	***********************************
+	.IMPORT		_DP_COP_CB_LD_MONI_SIG
+
+;	//	***********************************
+;	//	***	PUBLIC 宣言 PROGRAM	***
+;	//	***********************************
+	.EXPORT		_ASM_DMK1_SOFT_INIT;// ﾏｽﾀ/ｽﾚｰﾌﾞ時の呼ばれる
+	.EXPORT		_ASM_DMK1_DATA_INIT;// ﾏｽﾀ/ｽﾚｰﾌﾞ時の呼ばれる
+	.EXPORT		_ASM_K1_CTRL_MAIN;//メインスキャン:出荷試験時は呼ばれない
+	.EXPORT		_ASM_K1_CTRL_INT1;//200usec割込(100usec)
+	.EXPORT		_ASM_K1_CTRL_INT2;//2msec割込(1msec)
+	.EXPORT		_ASM_K1_CTRL_INT3;//10msec程度(温調/通常のﾀｲﾏ計測)
+
+
+	.EXPORT		_ASM_DMK1_SOFT_INIT_OPTION;// ﾏｽﾀ/ｽﾚｰﾌﾞ時の呼ばれる
+	.EXPORT		_ASM_DMK1_SOFT_INIT_MASTER;// ﾏｽﾀ/ｽﾚｰﾌﾞ時の呼ばれる
+	.EXPORT		_ASM_DMK1_DATA_MAIN;// ﾏｽﾀのみ
+	.EXPORT		_ASM_DMK1_DATA_MAIN_MASTER	;//ﾃﾞｰﾀ受信後毎スキャン
+	.EXPORT		_ASM_K2_CTRL_INT2;//2msec割込(1msec)
+	.EXPORT		_ASM_K1_CTRL_INT4;//1msec程度(ﾄﾚﾝﾄﾞ計測)
+
+	.IMPORT		_KEEPRY_DATA_DP_MOV	;CPUBのみ転送
+;	*******************************************
+;	***					***
+;	***	クラッチ内部パラメータ		***
+;	***	2004-01-26			***
+;	*******************************************
+	.ALIGN	4		;
+	.EXPORT	_FSYS_MAX_STEP_SEL	;
+	.EXPORT	_FSYS_OPT_CNT_SEL	;SEL=1 連寸一、連続一行程有効
+;;_FSYS_MAX_STEP_SEL	.DATA.W		0	;SEL=1:10段仕様　それ以外(0)は5段仕様2004-01-26
+;;_FSYS_OPT_CNT_SEL	.DATA.W		0	;SEL=1 連寸一、連続一行程有効
+_FSYS_MAX_STEP_SEL	.DATA.W		1	;SEL=1:10段仕様　それ以外(0)は5段仕様2004-01-26
+_FSYS_OPT_CNT_SEL	.DATA.W		1	;SEL=1 連寸一、連続一行程有効
+
+	.ALIGN	4
+;	***********************************************************
+;	***							***
+;	***		ｲﾆｼｬﾙﾃﾞｰﾀ受信前１回			***
+;	***		(割込解除前)				***
+;	***********************************************************
+;	共通
+;[1]呼んでいる
+	.ALIGN	4		;
+_ASM_DMK1_SOFT_INIT:	;
+	SUB_START
+	PUSH_ALL
+
+
+;	=== CPUB SYSPARA MOVE ===
+	FAR_JSR	#_KEEPRY_DATA_DP_MOV,R0	;
+	FAR_JSR	#_CBB_STS_BKUP_LOAD,R0	;2011-09-14
+
+	FAR_JSR	#_VER_DATA_MAKE1,R0	;
+
+;	=======================
+	MOV.W	#BIT6+BIT0,R0			;
+	MOV.L	#_STOPPING_TIM_FLG,R1		;//ｽﾄｯﾋﾟﾝｸﾞﾀｲﾏ用ﾌﾗｸﾞ BIT0測定開始 BIT6:停止中
+	MOV.W	R0,@R1				;
+
+
+
+
+;	---- 2010-12-08 -------
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+
+;	***********************************************************
+;	***							***
+;	***		ｲﾆｼｬﾙﾃﾞｰﾀ受信後１回			***
+;	***							***
+;	***********************************************************
+;[2]呼んでいる
+
+	.IMPORT	_PVP_CB_A_VER		;
+	.IMPORT	_PVP_CB_B_VER		;
+	.IMPORT	_PVP_PAR_A_VER		;ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ HEX data
+	.IMPORT	_PVP_PAR_B_VER		;ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ HEX data
+	.IMPORT	_PVP_TBL_A_VER		;ｾﾝｻのﾃｰﾌﾞﾙ番号1~99 HEX data
+	.IMPORT	_PVP_TBL_B_VER		;ｾﾝｻのﾃｰﾌﾞﾙ番号1~99 HEX data
+
+	.IMPORT	_PVP_PAR_A_CHAR	;ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ 末尾ｷｬﾗｸﾀ ASCII(2BYTE)
+	.IMPORT	_PVP_TBL_A_CHAR	;ｾﾝｻのﾃｰﾌﾞﾙ番号()
+
+	.IMPORT	_PVP_PAR_B_CHAR	;ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ 末尾ｷｬﾗｸﾀ ASCII(2BYTE)
+	.IMPORT	_PVP_TBL_B_CHAR	;ｾﾝｻのﾃｰﾌﾞﾙ番号()
+
+	.IMPORT	_SVP_AMPERR_TIM1	;
+	.IMPORT	_SVP_AMPERR_TIM2	;
+	.IMPORT	_SVP_AMPERR_TIM3	;
+
+	.IMPORT	_PAR_SYS_VERDSP		;(ｼｽﾃﾑﾊﾟﾗﾒｰﾀのﾊﾞｰｼﾞｮﾝ表示追加 1~999まで)
+	.IMPORT	_PAR_SYS_VERCHAR	;(ｼｽﾃﾑﾊﾟﾗﾒｰﾀのﾊﾞｰｼﾞｮﾝ表示追加 1~999まで)
+
+	.IMPORT	_DAIHAITO_DATA_DEF_SET	;
+
+_ASM_DMK1_DATA_INIT:		;
+	SUB_START
+	PUSH_ALL
+
+	FAR_JSR	#_CB_BAKUP_LOAD,R0	;
+	FAR_JSR	#_PWR_ON_DAT_LOAD,R0	;電源のﾊﾝﾄﾞｼｪｲｸ終了時
+	FAR_JSR	#_SYS_DAT_LOAD,R0	;電源のﾊﾝﾄﾞｼｪｲｸ終了時
+	FAR_JSR	#_SV_DAT_LOAD,R0	;ﾒｲﾝｽｷｬﾝ:変更要求時
+
+
+	MOV.W	#-1,R0			;
+	MOV.L	#_emg_err_flg,R1	;//異常ﾗｯﾁ
+	MOV.W	R0,@R1			;
+
+	MOV.L	#_CB_INT_START_OK,R1	;
+	MOV	#-1,R0			;
+	MOV.W	R0,@R1			;
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;	***************************************************
+;	***						***
+;	***	バージョンデータ作成＋			***
+;	***	テーブルデータ正常？チェック		***
+;	***						***
+;	***************************************************
+;	ｲﾆｼｬﾙ時の作成
+	.IMPORT	_DIG_PLS_CHG_INF1_TOP
+	.IMPORT	_PLS_DIG_CHG_INF1_TOP
+
+	.IMPORT	_DIG_PLS_CHG_TBL1_TOP		;
+	.IMPORT	_PLS_DIG_CHG_TBL1_TOP		;
+	.IMPORT	_PLS_DIG_CHG_TBL2_TOP		;
+	.IMPORT	_CLNK_SV_CHG_LINK_TBL_TOP	;
+	.IMPORT	_LINK_PV_CHG_CLNK_TBL_TOP	;
+
+_VER_DATA_MAKE1:
+	SUB_START
+
+
+	SUB_END
+	M_RTS
+
+
+;	***********************************************************
+;	***							***
+;	***		ﾃﾞｰﾀ受信後毎スキャン			***
+;	***							***
+;	***********************************************************
+;	PUSH_ALL不要
+;	ｱｾﾝﾌﾞﾗから呼ばれる[ﾏｽﾀのみ]
+;
+
+
+;	***********************************************************
+;	***							***
+;	***	制御用バックループメインスキャン		***
+;	***							***
+;	***********************************************************
+;	[C]から呼ぶ
+;
+	.IMPORT	_dpram_top		;
+	.IMPORT	_dpramB_top		;
+	.IMPORT	_CPUD_START_COD		;
+	.IMPORT	_HMI_CPU_HAND		;設定ﾃﾞｰﾀ受け取り
+
+;
+_ASM_K1_CTRL_MAIN;//メインスキャン
+	SUB_START
+	PUSH_ALL
+
+	MOV.L	#_CB_INT_START_OK,R1	;
+	MOV	#-1,R0			;
+	MOV.W	R0,@R1			;
+
+
+	FAR_JSR	#_HMI_CPU_HAND,R0		;設定ﾃﾞｰﾀ受け取り
+
+
+	MOV.L	#(_CPUD_START_COD-_dpram_top)+_dpram_top,R5
+	FAR_JSR	#_CPUD_START_CODE_SET,R0	;2013-12-10[MC]
+
+	MOV.L	#(_CPUD_START_COD-_dpram_top)+_dpramB_top,R5
+	FAR_JSR	#_CPUD_START_CODE_SET,R0	;2013-12-10[MC]
+
+
+;	-----2013-12-13
+	FAR_JSR	#_ET1_CPU_MAIN_MOV,R0	;
+
+	FAR_JSR	#_SND_DTOA_CPUDMEMX,R0	;
+
+
+;	----------CPUA DATA ﾊﾞｯｸｱｯﾌﾟ---------------
+	FAR_JSR	#_CBB_STS_BKUP_SAVE,R0	;2011-09-14 ﾊﾞｯｸｱｯﾌﾟ
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***	CPUD=>CPUA CPUBにｺｰﾄﾞを		***
+;	***	毎ｽｷｬﾝ送る			***
+;	***					***
+;	*******************************************
+;	input　R5 WORD ADR
+;
+_CPUD_START_CODE_SET:
+	SUB_START
+	MOV.W	#_START_ACK_COD,R3		;ACK CODE
+	MOV.W	#_START_REQ_COD,R4		;SET C0DE
+	MOV.W	@R5,R0				;
+	CMP/EQ	R4,R0				;
+	BT	CPUD_START_CODSET_100		;ｺｰﾄﾞが変化しない
+	CMP/EQ	R3,R0				;
+	BF	CPUD_START_CODSET_050		;正当なｺｰﾄﾞか? NO! 起動時またはゴミ
+
+;	-------- CPUA,CPUBが正当なｱｸｾｽを返した(CPUDは見なくていい)----
+
+CPUD_START_CODSET_050:
+	MOV.W	R4,@R5			;CODE SET 9876
+CPUD_START_CODSET_100:
+
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***		定周期200usec(100usec)			***
+;	***							***
+;	***********************************************************
+_ASM_K1_CTRL_INT1;//200usec割込(100usec)
+	SUB_START
+	PUSH_ALL
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***		定周期2msec(1msec)			***
+;	***							***
+;	***********************************************************
+	.IMPORT	_CPU_CTRL_CLK	;2004-03-01
+
+_ASM_K1_CTRL_INT2;//2msec割込(1msec)
+	SUB_START
+	PUSH_ALL
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+;;	MOV.L	#H'00040001,R0
+;;	LDS	R0,FPSCR
+	.AELSE
+	.AENDI
+
+
+	MOV.L	#_CB_INT_START_OK,R1	;
+	MOV.W	@R1,R0			;
+	TST	R0,R0			;
+	TST_BIT_OF ASM_K1_CTL_INT2_EXT	;//2msec割込(1msec)
+
+
+	FAR_JSR	#_CB_INT_MAIN,R0
+
+
+;	------ ET1(2006-10-30) ------
+	FAR_JSR	#_ET1_CPU_HIGH_MOV,R0
+
+
+;	---- [2009-09-25]画面ｻﾝﾌﾟﾘﾝｸﾞ-----------
+	FAR_JSR	#_GAMEN_SMP2_TRD2_CPUB,R0
+
+ASM_K1_CTL_INT2_EXT:			;//2msec割込(1msec)
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;//	***********************************
+;//	***				***
+;//	***	スキャン分割		***
+;//	***	2010-12-08		***
+;//	***				***
+;//	***********************************
+_INT1MS_SCAN_CNT:
+	SUB_START
+
+
+
+	SUB_END
+	M_RTS
+
+
+;
+;
+;
+;
+;
+
+;	***********************************************************
+;	***							***
+;	***		定周期10~20msec				***
+;	***							***
+;	***********************************************************
+_ASM_K1_CTRL_INT3;//10msec程度(温調/通常のﾀｲﾏ計測)
+	SUB_START
+	PUSH_ALL
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+
+;	***********************************
+;	***				***
+;	***	未使用			***
+;	***				***
+;	***********************************
+
+_ASM_DMK1_DATA_MAIN:	;//ﾃﾞｰﾀ受信後毎スキャン
+_ASM_DMK1_DATA_MAIN_MASTER:	;//ﾃﾞｰﾀ受信後毎スキャン
+_ASM_DMK1_SOFT_INIT_MASTER;// ﾏｽﾀ/ｽﾚｰﾌﾞ時の呼ばれる
+_ASM_DMK1_SOFT_INIT_OPTION;// ﾏｽﾀ/ｽﾚｰﾌﾞ時の呼ばれる
+_ASM_K2_CTRL_INT2;//2msec割込(1msec)
+_ASM_K1_CTRL_INT4;//1msec程度(ﾄﾚﾝﾄﾞ計測)
+	SUB_START
+	SUB_END
+	M_RTS
+
+;	----------------------
+	.INCLUDE	"ssa_cpumov_d.inc"		;
+
+	.IMPORT	_RENEA_1ROT_PLS_AND_DIG_MAK1	;
+	.IMPORT	_FPU_DIVS_32REG2_32REG1_R4_32REG2_R2;;/10 0.01mm data
+	.IMPORT	_DIG36000_CHG_RENEA1;
+
+	.EXPORT	_C_ASM_DISP_MM_CHG_DG
+	.EXPORT	_C_ASM_DISP_DG_CHG_MM
+
+	.IMPORT	_SV_CLNK_DG_CHG_LINK_DG1
+	.IMPORT	_PV_LINK_DG_CHG_CLNK_DG1
+;	"mm==>dig"
+_C_ASM_DISP_MM_CHG_DG:
+	SUB_START
+	PUSH_ALL
+	MOV.L	#_DISP_SV_MM_DAT,R1				;0.001mm data
+	MOV.L	@R1,R5						;
+
+	MOV.L	#_DISP_SV_DG_DAT,R1				;0.1度data (OLD data)
+	MOV.L	@R1,R2						;
+	FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0			;(DIG-->DIG変換)(ﾚｼﾞｽﾀのみ)
+
+	FAR_JSR	#_RENEA_1ROT_PLS_AND_DIG_MAK1,R0		;(ﾚｼﾞｽﾀのみ)
+	MOV	R3,R2						;LINK角度
+	FAR_JSR	#_PV_LINK_DG_CHG_CLNK_DG1,R0			;(ﾚｼﾞｽﾀのみ)
+	MOV.L	#_DISP_SV_DG_DAT,R1				;0.1度ﾃﾞｰﾀ
+	MOV.L	R2,@R1						;
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;	"dig==>mm"
+_C_ASM_DISP_DG_CHG_MM:
+	SUB_START
+	PUSH_ALL
+	MOV.L	#_DISP_SV_DG_DAT,R1				;0.1度
+	MOV.L	@R1,R2						;360.0度
+	FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0			;(DIG-->DIG変換)(ﾚｼﾞｽﾀのみ)
+
+	MOV	#100,R4						;
+	DMULS.L	R4,R2						;
+	STS.L	MACL,R2						;
+	FAR_JSR	#_DIG36000_CHG_RENEA1,R0			;360.000度-->0.001mm
+	MOV.L	#_DISP_SV_MM_DAT,R1				;0.001mm
+	MOV.L	R2,@R1						;
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+
+
+;	*******************************************
+;	***					***
+;	*******************************************
+
+	.EXPORT	_C_ASM_CHG_ROOT
+_C_ASM_CHG_ROOT
+	SUB_START
+	PUSH_ALL
+	MOV.L	#_ROOT_MAIN_INP,R0
+	MOV.L	@R0,R1		;
+	FAR_JSR	#_ROOT1_32R1,R0
+	MOV.L	#_ROOT_MAIN_OUT,R0
+	MOV.L	R3,@R0
+	POP_ALL
+	SUB_END
+	M_RTS
+
+_ROOT1_32R1:
+	SUB_START
+	XOR	R3,R3				;ANS.
+	XOR	R5,R5				;途中引算ﾃﾞｰﾀ WORK
+	XOR	R6,R6				;R1-->上位2ﾋﾞｯﾄ取出-->R6下位2ﾋﾞｯﾄ WORK
+	MOV.L	#1,R10				;ｲﾝｸﾘﾒﾝﾄ及びﾋﾞｯﾄ0ｾｯﾄ時に使用
+	MOV.L	#D'16,R11			;ｶｳﾝﾀ
+
+;	--------------------------------
+ROOT1_020:
+
+	SHLL	R1				;
+	ROTCL	R6				;
+	SHLL	R1				;
+	ROTCL	R6				;2ﾋﾞｯﾄ取出
+
+	SHLL	R5				;途中ﾃﾞｰﾀ左1ｼﾌﾄ
+	MOV	R5,R4				;
+	OR	R10,R4				;BIT0 SET 引けるかﾃﾞｰﾀ
+
+	CMP/HS	R4,R6				;R6 >= R4 THEN R4を引ける 
+	BT	ROOT1_050			;YES JUMP
+;	----- 引けない時 ------
+;	R5:そのまま + 0
+
+	SHLL	R3				;平方根結果=0
+	M_BRA	ROOT1_100			;
+
+
+ROOT1_050:
+;	----- 引ける時 ------
+	SUB	R4,R6				;R6-R4=R6
+	MOV	R4,R5				;途中演算ﾃﾞｰﾀ
+	ADD	R10,R5				;+1
+
+	SHLL	R3				;
+	OR	R10,R3				;平方根結果=1ｾｯﾄ
+ROOT1_100:
+
+	DT	R11
+	BT	ROOT1_EXIT			;ｶｳﾝﾀ-1=0 END
+	M_BRA	ROOT1_020			;
+
+ROOT1_EXIT:
+	SUB_END
+	M_RTS					;
+
+
+
+
+;	***************************************************
+;	***						***
+;	***	2011-09-14 ﾊﾞｯｸｱｯﾌﾟ処理			***
+;	***						***
+;	***	CPU-B					***
+;	***************************************************
+
+	.EXPORT		_CBB_STS_BKUP_SAVE
+	.INCLUDE	"ssa_cbkb.inc"		; //
+
+
+
+
+;	***************************************************
+;	***						***
+;	***	2009-09-25 画面ｻﾝﾌﾟﾘﾝｸﾞ処理		***
+;	***						***
+;	***	CPU-B					***
+;	***************************************************
+;
+;
+
+	.EXPORT	_GAMEN_SMP2_TRD2_CPUB
+	.INCLUDE	"ssa_gsmp.inc"		; //
+
+
+	.END

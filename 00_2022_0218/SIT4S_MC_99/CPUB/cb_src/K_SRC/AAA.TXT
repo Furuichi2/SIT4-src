@@ -1,0 +1,118 @@
+
+;	---- <04:SPD>2byte ---
+	MOV.L	#_PV_OUT_SPD_PER,R4	;OK
+	MOV.W	@R4+,R0			;
+
+;	---- <05:SPD>2byte ---
+	MOV.L	#_PV_ENC_SPD_PER,R4	;OK
+	MOV.W	@R4+,R0			;
+
+
+	MOV.L	#_LINK_RL_OBJ_ABSPLS+4,R4	;
+	MOV.L	@R4,R0				;
+
+
+;	---- <11:実位置>4byte ---
+	MOV.L	#_LINK_PV_ABSPLS+4,R4	;//制御位置 OK
+	MOV.L	@R4,R0				;
+
+	MOV.L	#_SVP_OVERLIDE_COF,R1		;W1
+	MOV.L	#_SET1_OVERLIDE_COF,R1		;W2
+	MOV.L	#_SET_GMN_SPD_OVRLIDE,R1	;W3
+	MOV.L	#_SET_SPD_OVRLIDE,R1		;W4
+	MOV.L	#_POSCTL_OVER_SPD_LAT		;W5
+
+
+_KAJYU_LOWLIMIT_CHK
+	SUB_START
+
+
+	MOV.L	#_KJYU_CMP_SELSW2,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT1,R0			;最小荷重(ﾏｲﾅｽ最大?)
+	TST_BIT_ON KAJYU_LOWLIMITCK_100		;
+	TST	#BIT2,R0			;幅?
+	TST_BIT_ON KAJYU_LOWLIMITCK_200		;
+
+;	------- 最大荷重(COP1Z) --------------------------
+;	------- 最小荷重(ﾏｲﾅｽ最大?),幅信号はｸﾘｱ-----------
+	MOV.L	#_KJYU_CMP_SEQMINS,R5		;
+	MOV.W	@R5,R0				;
+	AND	#LOW ~(BIT5|BIT4|BIT3),R0	;
+	MOV.W	R0,@R5				;
+	MOV.L	#_KJYU_CMP_SEQHABA,R1
+	MOV.W	@R5,R0				;
+	AND	#LOW ~(BIT5|BIT4|BIT3),R0	;
+	MOV.W	R0,@R5				;
+	M_BRA	KAJYU_LOWLIMITCK_EXT		;
+
+
+;	------- 最小荷重(ﾏｲﾅｽ最大?)-----
+KAJYU_LOWLIMITCK_100:
+
+
+	XOR	R8,R8				;SEQ
+	MOV.W	#BIT3,R7			;
+	MOV.L	#_BTOA_LFT_MIN,R5		;4B符号付
+	MOV.L	#_SVP_ROALM1_A27,R6		;2B符号無し  荷重計　オーバーロード１ 　（最小値）
+	FAR_JSR	#_KAJYU_OVER_NEGCMP,R0		;
+
+	MOV.W	#BIT4,R7			;
+	MOV.L	#_BTOA_RIH_MIN,R5		;4B符号付
+	MOV.L	#_SVP_ROALM2_A27,R6		;2B符号無し  荷重計　オーバーロード２  　（最小値）
+	FAR_JSR	#_KAJYU_OVER_NEGCMP,R0		;
+
+	MOV.W	#BIT5,R7			;
+	MOV.L	#_BTOA_TTL_MIN,R5		;4B符号付
+	MOV.L	#_SVP_ROALM3_A27,R6		;2B符号無し  荷重計　オーバーロード３  　（最小値）
+	FAR_JSR	#_KAJYU_OVER_NEGCMP,R0		;
+
+
+	MOV.L	#_KJYU_CMP_SEQMINS,R5		;比較信号ｾｯﾄ
+	MOV.W	@R5,R0				;
+	OR	R9,R0
+	MOV.W	R0,@R5				;
+
+
+	MOV.L	#_KJYU_CMP_SEQHABA,R1		;
+	MOV.W	@R5,R0				;
+	AND	#LOW ~(BIT5|BIT4|BIT3),R0	;
+	MOV.W	R0,@R5				;幅信号はｸﾘｱ
+	M_BRA	KAJYU_LOWLIMITCK_EXT		;
+
+;	------- 幅信号-----------
+KAJYU_LOWLIMITCK_200:
+
+	XOR	R8,R8				;SEQ
+	MOV.W	#BIT3,R7			;
+	MOV.L	#_BTOA_LFT_MIN,R5		;4B符号付
+	MOV.L	#_SVP_ROALM1_A28,R6		;2B符号無し  荷重計　オーバーロード１ 　（幅）
+	FAR_JSR	#_KAJYU_OVER_CMP,R0		;
+
+	MOV.W	#BIT4,R7			;
+	MOV.L	#_BTOA_RIH_MIN,R5		;4B符号付
+	MOV.L	#_SVP_ROALM2_A28,R6		;2B符号無し  荷重計　オーバーロード２  　（幅）
+	FAR_JSR	#_KAJYU_OVER_CMP,R0		;
+
+	MOV.W	#BIT5,R7			;
+	MOV.L	#_BTOA_TTL_MIN,R5		;4B符号付
+	MOV.L	#_SVP_ROALM3_A28,R6		;2B符号無し  荷重計　オーバーロード３  　（幅）
+	FAR_JSR	#_KAJYU_OVER_CMP,R0		;
+
+
+	MOV.L	#_KJYU_CMP_SEQHABA,R5		;比較信号ｾｯﾄ
+	MOV.W	@R5,R0				;
+	OR	R9,R0
+	MOV.W	R0,@R5				;
+
+
+	MOV.L	#_KJYU_CMP_SEQMINS,R5		;ﾏｲﾅｽ信号はｸﾘｱ
+	MOV.W	@R5,R0				;
+	AND	#LOW ~(BIT5|BIT4|BIT3),R0	;
+	MOV.W	R0,@R5				;
+KAJYU_LOWLIMITCK_EXT:
+
+	SUB_END
+	M_RTS
+
+

@@ -1,0 +1,43 @@
+                                        H SERIES LINKAGE EDITOR Ver. 5.3
+
+
+LINK COMMAND LINE
+
+
+LNK /DEBUG/SUBCOMMAND= seq_lnk.cmd 
+
+
+
+LINK SUBCOMMANDS
+
+
+input	seq_rom.obj
+
+START	ROM(070000)
+;REM START	VECTOR(000000),ROM(040000),SRAM(020000)
+
+OUTPUT		seq
+
+LIST		U
+
+PRINT		seq
+
+EXIT
+
+
+
+                                  H SERIES LINKAGE EDITOR Ver. 5.3                       PAGE :     1
+
+                                        ***     LINKAGE EDITOR LINK MAP LIST      ***
+
+
+SECTION   NAME                       START      -      END         LENGTH
+                                                              UNIT NAME                          MODULE NAME
+
+
+ATTRIBUTE  :   CODE  NOSHR
+
+ROM                               H'00070000    -    H'00070057   H'00000058
+                                                              SEQ_ROM                            SEQ_ROM                         
+
+* TOTAL ADDRESS *                 H'00070000    -    H'00070057   H'00000058

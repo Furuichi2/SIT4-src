@@ -1,0 +1,23 @@
+シート名称「画面毎実測値」
+
+[289行目]
+PV0287	win14	WIN段取　ｽﾗｲﾄﾞ調節画面	ダイハイト実測値			12	_PV0_KAGEN_POSITIONER	7	19	h'0004	4	2			
+[293行目]
+PV0291	win15	WIN段取　ｽﾗｲﾄﾞ自動調節画面	ダイハイト実測値			12	_PV0_KAGEN_POSITIONER	7	19	h'0004	4				
+
+
+ssa_pvp_ctrl.inc
+;PV0287
+;;;2020-12-16    .data.w 0, 0
+;;;2020-12-16    .data.l _PV_DAIHAI_B5
+    .data.w 0, 0
+    .data.l _PV0_KAGEN_POSITIONER
+	.data.w 7, 19, h'0004, 4, 2, 0, 0, 0;
+
+
+;PV0291
+;;;2020-12-16    .data.w 0, 0
+;;;2020-12-16    .data.l _PV_DAIHAI_B5
+    .data.w 0, 0
+    .data.l _PV0_KAGEN_POSITIONER
+	.data.w 7, 19, h'0004, 4, 0, 0, 0, 0;

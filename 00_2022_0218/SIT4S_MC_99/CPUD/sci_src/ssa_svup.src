@@ -1,0 +1,4099 @@
+;	*************************************************************************************
+;	*****										*****
+;	*****	バージョンＵＰ								*****
+;	*****										*****
+;	*****	(1)PCと通信を行いﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀを受信					*****
+;	*****	(2)PCからの指示によりﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀを外部FROM／SH2内蔵FROMへ書込み	*****
+;	*****										*****
+;	*************************************************************************************
+	.LIST	OFF
+	.include	"vect.inc"
+	.include	"cm_equ1.equ"
+	.INCLUDE	"ssa_ver1.equ"
+	.include	"CPU_REG.EXT"
+	.include	"shn_cmd1.mac"
+	.include	"ssa_com1.mac"
+	.include	"ssa_svup.equ"
+;;;mc	.include	"dp_cpuab.ext"
+	.include	"dp_cpud.ext"	;mc 2013-12-03
+
+	.INCLUDE	"ssa_had1.equ"		;2006-10-19 SAITO WDTﾏｸﾛ変更に伴い追加
+	.INCLUDE	"ssa_wrmy.ext"		;2006-10-19 SAITO WDTﾏｸﾛ変更に伴い追加
+	.import		_dio_top2		;2006-10-19 SAITO WDTﾏｸﾛ変更に伴い追加
+	.LIST	ON
+
+	.import		_from_top;
+	.import		_fram_top;
+	.import		_dpram_top;
+	.import		_dpramB_top;
+	.import		_GAM_TABLE;
+	.import		_GAM_TABLE2;		; V06
+	.IMPORT		_CB_TABLEX
+	.IMPORT		_CBSYS_TOP
+	.IMPORT		_SEQ_016_SV
+	.IMPORT		_PV_TOTLC1_B3
+	.IMPORT		_SUM_CHK
+	.IMPORT		_SVSW_CHG_FLG
+	.IMPORT		_GAMNE_REDISP_COD
+	.IMPORT		_mmon_trans_get
+;;	.IMPORT		_SEQ_PAR_103
+	.IMPORT		_SV_MACINE_SEL1
+        .IMPORT		_ResetHandler
+	.IMPORT		_CB_SYS_PARAM248		; シーケンス実行CPUD選択	2015/01/16
+	.IMPORT		_SEQ_COM1_TOP		     	; シーケンス領域		2015/01/16
+
+
+_YES_CHK		.DEFINE		"0"		;出荷
+_NO_CHK			.DEFINE		"1"		;ﾃﾞﾊﾞｯｸ
+_RXD_NO_SUM_CHK		.DEFINE		"_YES_CHK"	;出荷
+;;_RXD_NO_SUM_CHK		.DEFINE		"_NO_CHK"	;ﾃﾞﾊﾞｯｸ
+
+_FROM_SEL		.DEFINE		"0"		;出荷
+_EPROM_SEL		.DEFINE		"1"		;ﾃﾞﾊﾞｯｸ
+_SYS_ROM_SEL		.DEFINE		"_FROM_SEL"	;出荷
+;;_SYS_ROM_SEL		.DEFINE		"_EPROM_SEL"	;ﾃﾞﾊﾞｯｸﾞ
+
+_NON_SUM_CODE	.EQU	0917
+
+	.SECTION	PvupsciROM,CODE,ALIGN=4
+
+
+	.export		_SCI_VUP_MAIN;
+_SCI_VUP_MAIN:
+	SUB_START
+	PUSH_ALL
+
+_SCI_VUP_M000:
+	_WDT_CLR
+
+	FAR_JSR	#_ET1_LDCMD_IF,R0			; V06m 移動してきた。
+	FAR_JSR	#_RX0_MAIN,R0
+	FAR_JSR	#_SCI0_MAIN,R0
+	FAR_JSR	#_TX0_MAIN,R0
+	FAR_JSR	#_TE0_MAIN,R0
+	FAR_JSR	#_VUP_MAIN,R0
+	FAR_JSR	#_FRAM_TO_CB,R0				; 2004/05/19 V01i (INS)
+;//2013/06/18	FAR_JSR	#_LDCMD_CB2PC,R0			; V01v (INS)
+	FAR_JSR	#_EPROM_TO_FROM_COPY,R0
+
+	MOV.L	#_sci0_wkram+VUP_START,R1
+	MOV.W	@R1,R0					; 
+	TST	R0,R0					; 
+	BF	_SCI_VUP_M000				; 
+
+
+	FAR_JSR	#_LDCMD_CB2PC,R0			; 2013/06/18 V06q 
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+	.SECTION	PvupsciROM,CODE,ALIGN=4
+;	*************************************************************************************
+;	*****										*****
+;	*****	通信ＭＡＩＮ								*****
+;	*****										*****
+;	*****	ﾛｰﾀﾞｺﾏﾝﾄﾞを使用し、ﾊﾝﾄﾞｼｪｲｸｴﾘｱ／ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀｴﾘｱへ受信ﾃﾞｰﾀを格納	*****
+;	*****										*****
+;	*************************************************************************************
+;	======= EXTERN宣言=======
+
+;	======= PUBLIC宣言=======
+	.export		_SCI0_MAIN;
+	.export		_ER0_INT;
+	.export		_RX0_INT;
+	.export		_TX0_INT;
+	.export		_TE0_INT;
+
+_SCI0_MAIN:
+	SUB_START
+	PUSH_ALL
+
+	MOV.L	#_sci0_wkram,R0				;
+	LDC.L	R0,GBR					;
+
+	MOV.W	@(RX_TIMOUT_FLG,GBR),R0			; 受信時間監視		; V01l(INS)
+	TST	R0,R0					; 監視有効？
+	BT	_SCI0_M020				; いいえ
+	MOV.W	@(RX_TIMER,GBR),R0			; 受信監視時間＝1sec
+	TST	R0,R0					; 監視時間経過？
+	BF	_SCI0_M020				; いいえ
+	XOR	R0,R0
+	MOV.W	R0,@(RXD_CNT,GBR)
+	MOV.W	R0,@(HEAD_END,GBR)			; 伝送ﾍｯﾀﾞ部受信確認
+	MOV.W	R0,@(RXD_BUF_POI,GBR)			; ﾎﾟｲﾝﾀを次に更新
+
+_SCI0_M020:
+	MOV.W	@(RX_END,GBR),R0			; 全ﾃﾞｰﾀ受信完
+	TST	R0,R0
+	BF	_SCI0_M050				; はい
+
+	MOV.L	#_sci0_wkram+SEQ_LDCMND_REQ,R10		; 2014/03/11
+	MOV.W	@R10,R0
+	CMP/EQ	#1,R0					; シーケンス部へリクエスト中？
+	BF	_SCI0_M040				; いいえ
+	MOV.L	#_sci0_wkram+SEQ_LDCMND_RES,R10
+	MOV.W	@R10,R0					
+	CMP/EQ	#1,R0					; シーケンス部からレスポンス有り？？
+	BF	_SCI0_M040				; いいえ
+
+;;	MOV.L	#_sci0_wkram+TXD_CNT,R10
+;;	MOV.W	R2,@R10					; 全送信ﾊﾞｲﾄ数格納
+
+	XOR	R0,R0
+	MOV.L	#_sci0_wkram+TXD_BUF_POI,R10
+	MOV.W	R0,@R10					; 送信ﾊﾞｯﾌｧ用ﾎﾟｲﾝﾀをｸﾘｱ
+	MOV.L	#_sci0_wkram+SEQ_LDCMND_REQ,R10
+	MOV.W	R0,@R10
+	MOV.L	#_sci0_wkram+SEQ_LDCMND_RES,R10
+	MOV.W	R0,@R10
+
+	FAR_JSR	#_SCI0_TXI_EI,R10			; 送信ｴﾝﾌﾟﾃｨ割込み許可
+
+_SCI0_M040:
+	M_BRA	_SCI0_MEND
+
+_SCI0_M050:
+	XOR	R0,R0
+	MOV.W	R0,@(RX_END,GBR)			; 全ﾃﾞｰﾀ受信完
+
+	MOV.L	#_sci0_rxd_buf+_CMND,R1
+	MOV.B	@R1,R0
+	CMP/EQ	#_LOD_CMND_WR,R0			; ﾗｲﾄｺﾏﾝﾄﾞ?
+	BF	_SCI0_M100				; いいえ
+
+	FAR_JSR	#_LOD_CMND_WR_PRO,R1			; ﾗｲﾄｺﾏﾝﾄﾞ受信時の処理
+
+_SCI0_M100:
+	CMP/EQ	#_LOD_CMND_RD,R0			; ﾘｰﾄﾞｺﾏﾝﾄﾞ?
+	BF	_SCI0_M150				; いいえ
+                                                        
+	FAR_JSR	#_LOD_CMND_RD_PRO,R1			; ﾘｰﾄﾞｺﾏﾝﾄﾞ受信時の処理
+
+_SCI0_M150:
+	M_BRA	_SCI0_MEND
+
+_SCI0_MEND:
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	ライトコマンド受信時の処理						*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_LOD_CMND_WR_PRO:
+	SUB_START
+
+	XOR	R0,R0
+	MOV.L	#_sci0_wkram+RX_ERR,R10
+	MOV.W	R0,@R10					; 異常初期ｸﾘｱ
+
+	FAR_JSR	#_SCI0_SEQCMD_CHECK,R10			; 2014/03/11
+	TST	R0,R0					; SEQ部へｱｸｾｽ？
+	BT	LOD_CWRP_010				; いいえ
+	M_BRA	LOD_CWRP_EXT				; はい
+LOD_CWRP_010:
+
+	FAR_JSR	#_SCI0_BCC_CHECK,R10			; BCCﾁｪｯｸ
+	FAR_JSR	#_SCI0_MEMSEL_CHECK,R10			; ﾒﾓﾘ種別ﾁｪｯｸ
+	FAR_JSR	#_SCI0_MEMADR_CHECK,R10			; ｱﾄﾞﾚｽﾁｪｯｸ		V05 (ins)
+	FAR_JSR	#_SCI0_WREI_CHECK,R10			; 型ﾃﾞｰﾀ書き込み許可ﾁｪｯｸ	V05 (ins)
+
+	MOV.L	#_sci0_wkram+RX_ERR,R10			; V01p(INS)
+	MOV.W	@R10,R0
+	TST	R0,R0					; 通信ﾃﾞｰﾀ異常？
+	BT	LOD_CWRP_020				; いいえ
+
+	FAR_JSR	#_SCI0_TXDBUF_MAKE_NG,R10		; ﾗｲﾄｺﾏﾝﾄﾞ後の送信ﾃﾞｰﾀ作成
+	FAR_JSR	#_SCI0_TXI_EI,R10			; 送信ｴﾝﾌﾟﾃｨ割込み許可
+
+	M_BRA	LOD_CWRP_EXT
+
+LOD_CWRP_020:
+	MOV.L	#_sci0_rxd_buf+_AREA_SEL,R10
+	MOV.B	@R10+,R0				; 領域選択
+	MOV.B	@R10+,R1				; 領域ｱﾄﾞﾚｽ(L)
+	MOV.B	@R10+,R2				; 領域ｱﾄﾞﾚｽ(M)
+	MOV.B	@R10+,R3				; 領域ｱﾄﾞﾚｽ(H)
+	MOV.B	@R10+,R4				; 実ﾃﾞｰﾀﾜｰﾄﾞ数(L)
+	MOV.B	@R10+,R5				; 実ﾃﾞｰﾀﾜｰﾄﾞ数(H)
+	EXTU.B	R0,R0
+	EXTU.B	R1,R1
+	EXTU.B	R2,R2
+	EXTU.B	R3,R3
+	EXTU.B	R4,R4
+	EXTU.B	R5,R5
+
+	CMP/EQ	#_LOD_AREA0,R0				; ﾊﾝﾄﾞｼｪｲｸ領域にｱｸｾｽ？
+	BF	LOD_CWRP_050				; いいえ
+
+	MOV.L	#_vup_hs_area,R8			; ﾊﾝﾄﾞｼｪｲｸ領域先頭ｱﾄﾞﾚｽ
+	M_BRA	LOD_CWRP_220
+
+LOD_CWRP_050:
+	CMP/EQ	#_LOD_AREA1,R0				; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀ領域にｱｸｾｽ？
+	BF	LOD_CWRP_100				; いいえ
+
+	MOV.L	#_VUP_DATA_AREA_CPUB,R8			; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀ領域先頭ｱﾄﾞﾚｽ
+	M_BRA	LOD_CWRP_200
+
+LOD_CWRP_100:
+;/ V01  */
+	CMP/EQ	#_LOD_AREA_FROM,R0			; FROMﾀ領域にｱｸｾｽ？
+	BF	LOD_CWRP_110				; いいえ
+
+	M_BRA	LOD_CWRP_EXT
+
+LOD_CWRP_110:
+;/ V01  */
+	CMP/EQ	#_LOD_AREA_FRAM,R0			; FRAM領域にｱｸｾｽ？
+	BF	LOD_CWRP_120				; いいえ
+
+	MOV.L	#_fram_top,R8				; 先頭ｱﾄﾞﾚｽ
+	M_BRA	LOD_CWRP_220
+
+LOD_CWRP_120:
+;/ V01  */
+	CMP/EQ	#_LOD_AREA_DPRAM,R0			; DPRAM領域にｱｸｾｽ？
+	BF	LOD_CWRP_130				; いいえ
+
+;//2016/01/14	MOV.L	#_dpram_top,R8				; 先頭ｱﾄﾞﾚｽ
+	MOV.L	#_dpram_top+H'2000-H'500,R8		; 先頭ｱﾄﾞﾚｽ	MC前のDPRAM内ｼｰｹﾝｽ領域は500h～。
+							; 		MC後のDPRAM内ｼｰｹﾝｽ領域は2000h～。MC前と同じｱﾄﾞﾚｽ指定に対応するためｱﾄﾞﾚｽをｵﾌｾｯﾄする。
+	M_BRA	LOD_CWRP_220
+
+LOD_CWRP_130:
+;/ V01  */
+	CMP/EQ	#_LOD_AREA_SRAM,R0			; SRAM領域にｱｸｾｽ？
+	BF	LOD_CWRP_140				; いいえ
+
+	MOV.L	#_Bwkram1_top,R8			; 先頭ｱﾄﾞﾚｽ
+	M_BRA	LOD_CWRP_220
+
+LOD_CWRP_140:
+;/ V01v */
+	CMP/EQ	#_LOD_AREA_SAMP,R0			; ｻﾝﾌﾟﾘﾝｸﾞ領域にｱｸｾｽ？
+	BF	LOD_CWRP_150				; いいえ
+
+	FAR_JSR	#_LDCMD_PC2CB,R6			; C/Bへそのままﾛｰﾀﾞｺﾏﾝﾄﾞを流す。
+	M_BRA	LOD_CWRP_EXT
+
+LOD_CWRP_150:
+;/ V05  */
+	CMP/EQ	#_LOD_AREA_FRAMX,R0			; FRAM領域にｱｸｾｽ？
+	BF	LOD_CWRP_160				; いいえ
+
+	MOV.L	#_fram_top,R8				; 先頭ｱﾄﾞﾚｽ
+	M_BRA	LOD_CWRP_220
+
+LOD_CWRP_160:
+	CMP/EQ	#_LOD_AREA_KATA,R0			; 型ﾃﾞｰﾀR/W領域にｱｸｾｽ？		SIT4-MC  2014/05/08
+	BF	LOD_CWRP_170				; いいえ
+
+	MOV.L	#_KATA_RW_AREA,R8				; 先頭ｱﾄﾞﾚｽ
+	M_BRA	LOD_CWRP_220
+
+LOD_CWRP_170:
+	M_BRA	LOD_CWRP_EXT
+
+LOD_CWRP_200:
+	MOV.L	#_vup_hs_area+VUP_SEL_PC,R6
+	MOV.W	@R6,R0
+
+	CMP/EQ	#1,R0					; 画面ﾃｰﾌﾞﾙ
+	BF	LOD_CWRP_202
+	MOV.L	#H'50,R6				; 50****H
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_202:
+	CMP/EQ	#2,R0					; ｼｰｹﾝｽ
+	BF	LOD_CWRP_204
+	MOV.L	#H'07,R6				; 07****H
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_204:
+	CMP/EQ	#3,R0					; CPUAﾌﾟﾛｸﾞﾗﾑ
+	BF	LOD_CWRP_206
+	MOV.L	#H'00,R6				; 00****H
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_206:
+	CMP/EQ	#4,R0					; CPUBﾌﾟﾛｸﾞﾗﾑ
+	BF	LOD_CWRP_208
+	MOV.L	#H'00,R6				; 00****H
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_208:
+	CMP/EQ	#5,R0					; ｾﾝｻA
+	BF	LOD_CWRP_210
+	MOV.L	#H'0C,R6				; 0C****H
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_210:
+	CMP/EQ	#6,R0					; ｾﾝｻB
+	BF	LOD_CWRP_212
+	MOV.L	#H'5C,R6				; 5C****H
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_212:
+	CMP/EQ	#7,R0					; CPUAﾌﾟﾛｸﾞﾗﾑ
+	BF	LOD_CWRP_214
+	MOV.L	#H'00,R6				; 00****H
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_214:
+	CMP/EQ	#8,R0					; CPUBﾌﾟﾛｸﾞﾗﾑ
+	BF	LOD_CWRP_216
+	MOV.L	#H'00,R6				; 00****H
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_216:
+	CMP/EQ	#9,R0					; SYSA
+	BF	LOD_CWRP_216A
+	MOV.L	#H'0B,R6				; 0B****H
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_216A:
+	CMP/EQ	#10,R0					; SYSB
+	BF	LOD_CWRP_216AA
+	MOV.L	#H'5B,R6				; 5B****H
+	M_BRA	LOD_CWRP_218
+
+;/* V01l */
+LOD_CWRP_216AA:
+	CMP/EQ	#11,R0					; 外字など
+	BF	LOD_CWRP_216AB
+	MOV.L	#H'58,R6				; 58****H
+	M_BRA	LOD_CWRP_218
+
+;/* SIT-4 */
+LOD_CWRP_216AB:
+	CMP/EQ	#12,R0					; 漢字ROMなど
+	BF	LOD_CWRP_216AC
+	MOV.L	#H'0,R6					;
+	M_BRA	LOD_CWRP_218
+
+;/* SIT-4 COP2 */
+LOD_CWRP_216AC:
+	CMP/EQ	#13,R0					; COP2ﾌﾟﾛｸﾞﾗﾑ
+	BF	LOD_CWRP_216AD
+	MOV.W	#H'00,R6				; 00****H
+	M_BRA	LOD_CWRP_218
+
+;/* SIT-4 COP2 */
+LOD_CWRP_216AD:
+	CMP/EQ	#14,R0					; COP2 ｾﾝｻﾃｰﾌﾞﾙ
+	BF	LOD_CWRP_216AE
+	MOV.W	#H'0C,R6				; 0C****H
+	M_BRA	LOD_CWRP_218
+
+;/* SIT-4 COP2 */
+LOD_CWRP_216AE:
+	CMP/EQ	#15,R0					; COP2 ﾊﾟﾗﾒｰﾀ
+	BF	LOD_CWRP_216AF
+	MOV.W	#H'0B,R6				; 0B****H
+	M_BRA	LOD_CWRP_218
+
+;/* SIT-4 MC */
+LOD_CWRP_216AF:
+	CMP/EQ	#17,R0					; ｾﾝｻD
+	BF	LOD_CWRP_216AG
+	MOV.L	#H'5C,R6				; 5C****H
+	M_BRA	LOD_CWRP_218
+
+;/* SIT-4 MC */
+LOD_CWRP_216AG:
+	CMP/EQ	#18,R0					; CPUDﾌﾟﾛｸﾞﾗﾑ
+	BF	LOD_CWRP_216AH
+	MOV.L	#H'00,R6				; 00****H
+	M_BRA	LOD_CWRP_218
+
+;/* SIT-4 MC */
+LOD_CWRP_216AH:
+	CMP/EQ	#19,R0					; SYSD
+	BF	LOD_CWRP_216B
+	MOV.L	#H'5B,R6				; 5B****H
+	M_BRA	LOD_CWRP_218
+
+
+LOD_CWRP_216B:
+;/* V01  */
+	CMP/EQ	#20,R0					; 100型
+	BF	LOD_CWRP_216C
+	MOV.L	#H'04,R6				; 04****H (FRAM_TOP(500000H)からのｱﾄﾞﾚｽ)
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_216C:
+	CMP/EQ	#21,R0					; 101-200型		2014/04/17	SIT4-MC
+	BF	LOD_CWRP_216D
+	MOV.L	#H'1C,R6				; 1C****H (FRAM_TOP(500000H)からのｱﾄﾞﾚｽ)
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_216D:
+	CMP/EQ	#22,R0					; サンプル20型		2014/04/17	SIT4-MC
+	BF	LOD_CWRP_216E
+	MOV.L	#H'1F,R6				; 1F2***H (FRAM_TOP(500000H)からのｱﾄﾞﾚｽ)
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_216E:
+	M_BRA	LOD_CWRP_EXT
+
+LOD_CWRP_218:
+	SUB	R6,R3					; 
+
+LOD_CWRP_220:
+	SHLL16	R3
+	SHLL8	R2
+	OR	R2,R1
+	OR	R3,R1					; ｱﾄﾞﾚｽ
+	ADD	R1,R8					; R8 <- 書込み先頭ｱﾄﾞﾚｽ
+
+;	/* V00m */
+	MOV.L	#_sci0_rxd_buf+_AREA_SEL,R10
+	MOV.B	@R10,R0					; 領域選択
+	EXTU.B	R0,R0
+	CMP/EQ	#_LOD_AREA0,R0				; ﾊﾝﾄﾞｼｪｲｸ領域にｱｸｾｽ？
+	BF	LOD_CWRP_222				; いいえ
+	M_BRA	LOD_CWRP_230
+
+LOD_CWRP_222:
+	CMP/EQ	#_LOD_AREA1,R0				; ﾊﾞｰｼﾞｮﾝUP領域にｱｸｾｽ？
+	BF	LOD_CWRP_223				; いいえ
+;//2016/10/08	MOV.L	#_VUP_DATA_AREA_CPUB+_CPUB_PRO_SIZE,R10
+	MOV.L	#_VUP_DATA_AREA_CPUB+H'00200000,R10
+	CMP/HS	R10,R8					;
+	BF	LOD_CWRP_230
+	M_BRA	LOD_CWRP_300
+
+LOD_CWRP_223:
+
+LOD_CWRP_230:
+	SHLL8	R5
+	OR	R5,R4
+	EXTU.W	R4,R9					; R9 <- 書込みﾜｰﾄﾞ数
+
+;///V01p	MOV.L	#_sci0_wkram+RX_ERR,R10			; V01i(INS)
+;///V01p	MOV.W	@R10,R0
+;///V01p	TST	R0,R0					; BCC異常？
+;///V01p	BF	LOD_CWRP_350				; はい
+
+	MOV.L	#_sci0_rxd_buf+_DATA,R10
+LOD_CWRP_250:
+	TST	R9,R9					; V01n_b
+	BT	LOD_CWRP_300				; V01n_b
+	MOV.B	@R10+,R0
+	MOV.B	@R10+,R1
+	SHLL8	R0
+	EXTU.B	R1,R1
+	OR	R1,R0
+	MOV.W	R0,@R8					; 指定された領域にﾃﾞｰﾀを格納
+	ADD	#2,R8
+	ADD	#-1,R9
+;//V01n_b	CMP/PL	R9
+;//V01n_b	BT	LOD_CWRP_250
+	M_BRA	LOD_CWRP_250
+
+LOD_CWRP_300:
+	MOV.L	#_sci0_rxd_buf+_AREA_SEL,R10		; /* V01i */
+	MOV.B	@R10+,R0				; 領域選択
+	CMP/EQ	#_LOD_AREA_FRAM,R0			; FRAM領域にｱｸｾｽ？
+	BT	LOD_CWRP_340				; はい
+	CMP/EQ	#_LOD_AREA_FRAMX,R0			; FRAM領域にｱｸｾｽ？	V05 (INS)
+	BT	LOD_CWRP_340				; はい
+	M_BRA	LOD_CWRP_350				; いいえ
+
+LOD_CWRP_340:
+	FAR_JSR	#_FRAM_csum_set_ASM,R0
+
+LOD_CWRP_350:
+	FAR_JSR	#_SCI0_TXDBUF_MAKE1,R10			; ﾗｲﾄｺﾏﾝﾄﾞ後の送信ﾃﾞｰﾀ作成
+	FAR_JSR	#_SCI0_TXI_EI,R10			; 送信ｴﾝﾌﾟﾃｨ割込み許可
+
+LOD_CWRP_EXT:
+	SUB_END
+	M_RTS
+
+
+;	*********************************************************************
+;	*****								*****
+;	*****	FeRAM SUM SET				V01i		*****
+;	*****								*****
+;	*****								*****
+;	*****								*****
+;	*********************************************************************
+_FRAM_csum_set_ASM:
+	SUB_START
+	XOR	R0,R0
+	MOV.L	#_SEQ_016_SV,R1
+	MOV.L	#_PV_TOTLC1_B3,R4
+	SUB	R1,R4
+	SHLR2	R4
+_FRAM_csum_set_ASM_LOOP:
+	MOV.L	@R1+,R2
+	ADD	R2,R0
+	ADD	#-1,R4
+	TST	R4,R4
+	BF	_FRAM_csum_set_ASM_LOOP
+	MOV.L	#_SUM_CHK,R1
+	MOV.L	R0,@R1
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	ライトコマンド受信後の送信データ作成					*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_SCI0_TXDBUF_MAKE1:
+	SUB_START
+
+	MOV.L	#_sci0_txd_buf,R1			;
+	XOR	R2,R2					; ﾃﾞｰﾀ数ｶｳﾝﾄ用
+	XOR	R3,R3					; BCC作成用
+
+	MOV.W	#H'5A,R0				; ｽﾀｰﾄｺｰﾄﾞ		0
+	MOV.B	R0,@R1
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.L	#_sci0_wkram+RX_ERR,R10
+	MOV.W	@R10,R0					; 処理ｽﾃｰﾀｽ		3
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'7A,R0				; 接続方式		4
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 接続ID(L)		5
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 接続ID(H)		6
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'11,R0				; 機種互換ｺｰﾄﾞ		7
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 伝送ｲﾝﾀｰﾛｯｸｺｰﾄﾞ	8
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(LL)		9
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(LH)		10
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(HL)		11
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(HH)		12
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'1,R0					; CMND			13
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; MODE			14
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 終了情報		15
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'01,R0				; ｼｰｹﾝｽ番号		16
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'6,R0					; ﾃﾞｰﾀﾊﾞｲﾄ数(L)		17
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾃﾞｰﾀﾊﾞｲﾄ数(H)		18
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.L	#_sci0_rxd_buf+_AREA_SEL,R10
+	MOV.B	@R10+,R0				; 領域選択		19
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 領域ｱﾄﾞﾚｽ(L)		20
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 領域ｱﾄﾞﾚｽ(M)		21
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 領域ｱﾄﾞﾚｽ(H)		22
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 実ﾃﾞｰﾀﾜｰﾄﾞ数(L)	23
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 実ﾃﾞｰﾀﾜｰﾄﾞ数(H)	24
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1（BCC分）
+
+	MOV.L	#_sci0_txd_buf+_DATA_CNTL,R4		;
+	EXTU.B	R2,R0					; ﾃﾞｰﾀ数ｶｳﾝﾀ(L)
+	MOV.B	R0,@R4
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R4					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV	R2,R0
+	SHLR8	R0					; ﾃﾞｰﾀ数ｶｳﾝﾀ(H)
+	MOV.B	R0,@R4
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R4					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	NEG	R3,R3
+	MOV.B	R3,@R1					; BCC格納
+
+	ADD	#3,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ＋3(伝送ﾍｯﾀﾞ部)＝全送信ﾊﾞｲﾄ数
+	MOV.L	#_sci0_wkram+TXD_CNT,R10
+	MOV.W	R2,@R10					; 全送信ﾊﾞｲﾄ数格納
+
+	XOR	R0,R0
+	MOV.L	#_sci0_wkram+TXD_BUF_POI,R10
+	MOV.W	R0,@R10					; 送信ﾊﾞｯﾌｧ用ﾎﾟｲﾝﾀをｸﾘｱ
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	受信データに異常があったときの送信データ作成				*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_SCI0_TXDBUF_MAKE_NG:
+	SUB_START
+
+	MOV.L	#_sci0_txd_buf,R1			;
+	XOR	R2,R2					; ﾃﾞｰﾀ数ｶｳﾝﾄ用
+	XOR	R3,R3					; BCC作成用
+
+	MOV.W	#H'5A,R0				; ｽﾀｰﾄｺｰﾄﾞ		0
+	MOV.B	R0,@R1
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.L	#_sci0_wkram+RX_ERR,R10
+	MOV.W	@R10,R0					; 処理ｽﾃｰﾀｽ		3
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'7A,R0				; 接続方式		4
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 接続ID(L)		5
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 接続ID(H)		6
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'11,R0				; 機種互換ｺｰﾄﾞ		7
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 伝送ｲﾝﾀｰﾛｯｸｺｰﾄﾞ	8
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(LL)		9
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(LH)		10
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(HL)		11
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(HH)		12
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'1,R0					; CMND			13
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; MODE			14
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 終了情報		15
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'01,R0				; ｼｰｹﾝｽ番号		16
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'6,R0					; ﾃﾞｰﾀﾊﾞｲﾄ数(L)		17
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾃﾞｰﾀﾊﾞｲﾄ数(H)		18
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	#0,R0					; 領域選択		19
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	#0,R0					; 領域ｱﾄﾞﾚｽ(L)		20
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	#0,R0					; 領域ｱﾄﾞﾚｽ(M)		21
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	#0,R0					; 領域ｱﾄﾞﾚｽ(H)		22
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	#0,R0					; 実ﾃﾞｰﾀﾜｰﾄﾞ数(L)	23
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	#0,R0					; 実ﾃﾞｰﾀﾜｰﾄﾞ数(H)	24
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1（BCC分）
+
+	MOV.L	#_sci0_txd_buf+_DATA_CNTL,R4		;
+	EXTU.B	R2,R0					; ﾃﾞｰﾀ数ｶｳﾝﾀ(L)
+	MOV.B	R0,@R4
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R4					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV	R2,R0
+	SHLR8	R0					; ﾃﾞｰﾀ数ｶｳﾝﾀ(H)
+	MOV.B	R0,@R4
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R4					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	NEG	R3,R3
+	MOV.B	R3,@R1					; BCC格納
+
+	ADD	#3,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ＋3(伝送ﾍｯﾀﾞ部)＝全送信ﾊﾞｲﾄ数
+	MOV.L	#_sci0_wkram+TXD_CNT,R10
+	MOV.W	R2,@R10					; 全送信ﾊﾞｲﾄ数格納
+
+	XOR	R0,R0
+	MOV.L	#_sci0_wkram+TXD_BUF_POI,R10
+	MOV.W	R0,@R10					; 送信ﾊﾞｯﾌｧ用ﾎﾟｲﾝﾀをｸﾘｱ
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	リードコマンド受信時の処理						*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_LOD_CMND_RD_PRO:
+	SUB_START
+
+	XOR	R0,R0
+	MOV.L	#_sci0_wkram+RX_ERR,R10
+	MOV.W	R0,@R10					; 異常初期ｸﾘｱ
+
+	FAR_JSR	#_SCI0_SEQCMD_CHECK,R10			; 2014/03/11
+	TST	R0,R0					; SEQ部へｱｸｾｽ？
+	BT	LOD_CRDP_010				; いいえ
+	M_BRA	LOD_CRDP_EXT				; はい
+LOD_CRDP_010:
+
+	FAR_JSR	#_SCI0_BCC_CHECK,R10			; BCCﾁｪｯｸ
+	FAR_JSR	#_SCI0_MEMSEL_CHECK,R10			; ﾒﾓﾘ種別ﾁｪｯｸ
+	FAR_JSR	#_SCI0_RDEI_CHECK,R10			; 型ﾃﾞｰﾀ読み出し許可ﾁｪｯｸ	V05 (ins)
+
+	MOV.L	#_sci0_wkram+RX_ERR,R10			; V01p(INS)
+	MOV.W	@R10,R0
+	TST	R0,R0					; 通信ﾃﾞｰﾀ異常？
+	BT	LOD_CRDP_020				; いいえ
+
+	FAR_JSR	#_SCI0_TXDBUF_MAKE_NG,R10		; ﾗｲﾄｺﾏﾝﾄﾞ後の送信ﾃﾞｰﾀ作成
+	FAR_JSR	#_SCI0_TXI_EI,R10			; 送信ｴﾝﾌﾟﾃｨ割込み許可
+
+	M_BRA	LOD_CRDP_EXT
+
+LOD_CRDP_020
+	MOV.L	#_sci0_rxd_buf+_AREA_SEL,R10
+	MOV.B	@R10+,R0				; 領域選択
+	MOV.B	@R10+,R1				; 領域ｱﾄﾞﾚｽ(L)
+	MOV.B	@R10+,R2				; 領域ｱﾄﾞﾚｽ(M)
+	MOV.B	@R10+,R3				; 領域ｱﾄﾞﾚｽ(H)
+	MOV.B	@R10+,R4				; 実ﾃﾞｰﾀﾜｰﾄﾞ数(L)
+	MOV.B	@R10+,R5				; 実ﾃﾞｰﾀﾜｰﾄﾞ数(H)
+	EXTU.B	R0,R0
+	EXTU.B	R1,R1
+	EXTU.B	R2,R2
+	EXTU.B	R3,R3
+	EXTU.B	R4,R4
+	EXTU.B	R5,R5
+
+	CMP/EQ	#_LOD_AREA0,R0				; ﾊﾝﾄﾞｼｪｲｸ領域にｱｸｾｽ？
+	BF	LOD_CRDP_050				; いいえ
+
+	MOV.L	#_vup_hs_area,R8			; ﾊﾝﾄﾞｼｪｲｸ領域先頭ｱﾄﾞﾚｽ
+	M_BRA	LOD_CRDP_200
+
+LOD_CRDP_050:
+	CMP/EQ	#_LOD_AREA1,R0				; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀ領域にｱｸｾｽ？
+	BF	LOD_CRDP_100				; いいえ
+
+	MOV.L	#_VUP_DATA_AREA_CPUB,R8			; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀ領域先頭ｱﾄﾞﾚｽ
+	M_BRA	LOD_CRDP_200
+
+LOD_CRDP_100:
+;/ V01  */
+	CMP/EQ	#_LOD_AREA_FROM,R0			; FROMﾀ領域にｱｸｾｽ？
+	BF	LOD_CRDP_110				; いいえ
+
+	MOV.L	#_from_top,R8				; 先頭ｱﾄﾞﾚｽ
+	M_BRA	LOD_CRDP_200
+
+LOD_CRDP_110:
+;/ V01  */
+	CMP/EQ	#_LOD_AREA_FRAM,R0			; FRAM領域にｱｸｾｽ？
+	BF	LOD_CRDP_120				; いいえ
+
+	MOV.L	#_fram_top,R8				; 先頭ｱﾄﾞﾚｽ
+	M_BRA	LOD_CRDP_200
+
+LOD_CRDP_120:
+;/ V01  */
+	CMP/EQ	#_LOD_AREA_DPRAM,R0			; DPRAM領域にｱｸｾｽ？
+	BF	LOD_CRDP_130				; いいえ
+
+;//SIT4-MC	MOV.L	#_dpram_top,R8				; 先頭ｱﾄﾞﾚｽ
+;//2016/01/14	MOV.L	#_dpram_top+H'1B00,R8		; 先頭ｱﾄﾞﾚｽ
+	MOV.L	#_dpram_top+H'2000-H'500,R8		; 先頭ｱﾄﾞﾚｽ	MC前のDPRAM内ｼｰｹﾝｽ領域は500h～。
+							; 		MC後のDPRAM内ｼｰｹﾝｽ領域は2000h～。MC前と同じｱﾄﾞﾚｽ指定に対応するためｱﾄﾞﾚｽをｵﾌｾｯﾄする。
+	M_BRA	LOD_CRDP_200
+
+LOD_CRDP_130:
+;/ V01  */
+	CMP/EQ	#_LOD_AREA_SRAM,R0			; SRAM領域にｱｸｾｽ？
+	BF	LOD_CRDP_140				; いいえ
+
+	MOV.L	#_Bwkram1_top,R8			; 先頭ｱﾄﾞﾚｽ
+	M_BRA	LOD_CRDP_200
+
+LOD_CRDP_140:
+;/ V01v */
+	CMP/EQ	#_LOD_AREA_SAMP,R0			; ｻﾝﾌﾟﾘﾝｸﾞ領域にｱｸｾｽ？
+	BF	LOD_CRDP_150				; いいえ
+
+	FAR_JSR	#_LDCMD_PC2CB,R6			; C/Bへそのままﾛｰﾀﾞｺﾏﾝﾄﾞを流す。
+	M_BRA	LOD_CRDP_EXT
+
+LOD_CRDP_150:
+;/ V05  */
+	CMP/EQ	#_LOD_AREA_FRAMX,R0			; FRAM領域にｱｸｾｽ？	V05 (INS)
+	BF	LOD_CRDP_160				; いいえ
+
+	MOV.L	#_fram_top,R8				; 先頭ｱﾄﾞﾚｽ
+	M_BRA	LOD_CRDP_200
+
+LOD_CRDP_160:
+	CMP/EQ	#_LOD_AREA_KATA,R0			; 型ﾃﾞｰﾀR/W領域にｱｸｾｽ？		SIT4-MC  2014/05/08
+	BF	LOD_CRDP_170				; いいえ
+
+	MOV.L	#_KATA_RW_AREA,R8			; 先頭ｱﾄﾞﾚｽ
+	M_BRA	LOD_CRDP_200
+
+LOD_CRDP_170:
+	M_BRA	LOD_CRDP_EXT
+
+
+LOD_CRDP_200:
+	SHLL16	R3
+	SHLL8	R2
+	OR	R2,R1
+	OR	R3,R1					; ｱﾄﾞﾚｽ
+	ADD	R1,R8					; R8 <- 読出し先頭ｱﾄﾞﾚｽ
+
+	SHLL8	R5
+	OR	R5,R4
+	EXTU.W	R4,R9					; R9 <- 読出しﾜｰﾄﾞ数
+
+	mov.w	#246,r10
+	cmp/hi	r10,r9
+	bf	LOD_CRDP_250
+	mov	r10,r9
+LOD_CRDP_250:
+
+	FAR_JSR	#_SCI0_TXDBUF_MAKE2,R10			; ﾘｰﾄﾞｺﾏﾝﾄﾞ後の送信ﾃﾞｰﾀ作成	In:R8,R9
+	FAR_JSR	#_SCI0_TXI_EI,R10			; 送信ｴﾝﾌﾟﾃｨ割込み許可
+
+LOD_CRDP_EXT:
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	リードコマンド受信後の送信データ作成					*****
+;	*****										*****
+;	*****	Input : R8 <- 読出し先頭ｱﾄﾞﾚｽ						*****
+;	*****	Input : R9 <- 読出しﾜｰﾄﾞ数						*****
+;	*****										*****
+;	*************************************************************************************
+_SCI0_TXDBUF_MAKE2:
+	SUB_START
+
+	MOV.L	#_sci0_txd_buf,R1			;
+	XOR	R2,R2					; ﾃﾞｰﾀ数ｶｳﾝﾄ用
+	XOR	R3,R3					; BCC作成用
+
+	MOV.W	#H'5A,R0				; ｽﾀｰﾄｺｰﾄﾞ		0
+	MOV.B	R0,@R1
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.L	#_sci0_wkram+RX_ERR,R10
+	MOV.W	@R10,R0					; 処理ｽﾃｰﾀｽ		3
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'7A,R0				; 接続方式		4
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 接続ID(L)		5
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 接続ID(H)		6
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'11,R0				; 機種互換ｺｰﾄﾞ		7
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 伝送ｲﾝﾀｰﾛｯｸｺｰﾄﾞ	8
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(LL)		9
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(LH)		10
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(HL)		11
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(HH)		12
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; CMND			13
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; MODE			14
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 終了情報		15
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'01,R0				; ｼｰｹﾝｽ番号		16
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV	R9,R4
+	SHLL	R4					; 読出しﾜｰﾄﾞ数 -> ﾊﾞｲﾄ数
+	ADD	#6,R4					;
+	MOV	R4,R0					; ﾃﾞｰﾀﾊﾞｲﾄ数(L)		17
+	EXTU.B	R0,R0
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV	R4,R0
+	SHLR8	R0					; ﾃﾞｰﾀﾊﾞｲﾄ数(H)		18
+	EXTU.B	R0,R0
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.L	#_sci0_rxd_buf+_AREA_SEL,R10
+	MOV.B	@R10+,R0				; 領域選択
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 領域ｱﾄﾞﾚｽ(L)
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 領域ｱﾄﾞﾚｽ(M)
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 領域ｱﾄﾞﾚｽ(H)
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 実ﾃﾞｰﾀﾜｰﾄﾞ数(L)
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 実ﾃﾞｰﾀﾜｰﾄﾞ数(H)
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+_SCI0_TB_MK2_100:
+	TST	R9,R9					; V01n_b
+	BT	_SCI0_TB_MK2_200			; V01n_b
+	MOV.W	@R8+,R4
+	MOV	R4,R0
+	SHLR8	R0
+	EXTU.B	R0,R0
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+2
+	MOV	R4,R0
+	EXTU.B	R0,R0
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+	ADD	#-1,R9
+;//V01n_b	TST	R9,R9
+;//V01n_b	BF	_SCI0_TB_MK2_100
+	M_BRA	_SCI0_TB_MK2_100
+
+_SCI0_TB_MK2_200:
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1（BCC分）
+
+	MOV.L	#_sci0_txd_buf+_DATA_CNTL,R4		;
+	EXTU.B	R2,R0					; ﾃﾞｰﾀ数ｶｳﾝﾀ(L)
+	MOV.B	R0,@R4
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R4					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV	R2,R0
+	SHLR8	R0					; ﾃﾞｰﾀ数ｶｳﾝﾀ(H)
+	MOV.B	R0,@R4
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R4					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	NEG	R3,R3
+	MOV.B	R3,@R1					; BCC格納
+
+	ADD	#3,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ＋3(伝送ﾍｯﾀﾞ部)＝全送信ﾊﾞｲﾄ数
+	MOV.L	#_sci0_wkram+TXD_CNT,R10
+	MOV.W	R2,@R10					; 全送信ﾊﾞｲﾄ数格納
+
+	XOR	R0,R0
+	MOV.L	#_sci0_wkram+TXD_BUF_POI,R10
+	MOV.W	R0,@R10					; 送信ﾊﾞｯﾌｧ用ﾎﾟｲﾝﾀをｸﾘｱ
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	受信データのＢＣＣチェック						*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_SCI0_BCC_CHECK:
+	SUB_START
+
+	MOV.L	#_sci0_rxd_buf+_DATA_CNTL,R10
+	MOV.B	@R10+,R1
+	EXTU.B	R1,R1
+	ADD	R1,R0
+
+	MOV.B	@R10+,R2
+	EXTU.B	R2,R2
+	ADD	R2,R0
+
+	SHLL8	R2
+	OR	R2,R1					; ﾍｯﾀﾞ部を除いた受信ﾃﾞｰﾀﾊﾞｲﾄ数
+	ADD	#-1,R1					; BCC分をﾏｲﾅｽ
+
+SCI0_BCC_CK100:
+	MOV.B	@R10+,R2
+	EXTU.B	R2,R2
+	ADD	R2,R0					; BCC加算
+	ADD	#-1,R1
+	CMP/PL	R1
+	BT	SCI0_BCC_CK100
+
+	NEG	R0,R0
+	EXTU.B	R0,R0
+	MOV.B	@R10+,R2				; 受信したBCC
+	EXTU.B	R2,R2
+	CMP/EQ	R2,R0					; BCCはOK？
+	BT	SCI0_BCC_CKEND				; はい
+
+	.AIF	_RXD_NO_SUM_CHK EQ _NO_CHK
+	M_BRA	SCI0_BCC_CKEND
+	.AENDI
+
+	MOV.W	#H'60,R0
+	MOV.L	#_sci0_wkram+RX_ERR,R10
+	MOV.W	R0,@R10					; BCC異常0x60
+
+SCI0_BCC_CKEND:
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	受信データのメモリ種別チェック						*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_SCI0_MEMSEL_CHECK:
+	SUB_START
+
+	MOV.L	#_sci0_rxd_buf+_AREA_SEL,R10
+	MOV.B	@R10,R0
+	EXTU.B	R0,R0
+	CMP/EQ	#_LOD_AREA0,R0
+	BT	SCI0_MSEL_EXT
+	CMP/EQ	#_LOD_AREA1,R0
+	BT	SCI0_MSEL_EXT
+	CMP/EQ	#_LOD_AREA_FROM,R0
+	BT	SCI0_MSEL_EXT
+	CMP/EQ	#_LOD_AREA_FRAM,R0
+	BT	SCI0_MSEL_EXT
+	CMP/EQ	#_LOD_AREA_DPRAM,R0
+	BT	SCI0_MSEL_EXT
+	CMP/EQ	#_LOD_AREA_SRAM,R0
+	BT	SCI0_MSEL_EXT
+	CMP/EQ	#_LOD_AREA_SAMP,R0			; V01v
+	BT	SCI0_MSEL_EXT
+	CMP/EQ	#_LOD_AREA_FRAMX,R0			; V05
+	BT	SCI0_MSEL_EXT
+	CMP/EQ	#_LOD_AREA_KATA,R0			; SIT4-MC  2014/05/08
+	BT	SCI0_MSEL_EXT
+
+	MOV.W	#H'40,R0
+	MOV.L	#_sci0_wkram+RX_ERR,R10
+	MOV.W	R0,@R10					; BCC異常0x60
+
+SCI0_MSEL_EXT:
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	受信データのアドレスチェック						*****
+;	*****										*****
+;	*****	V05 (MAKE)								*****
+;	*****										*****
+;	*************************************************************************************
+	.IMPORT		_FRAM_KAT_TOP
+	.IMPORT		_FRAM_KAT_END
+	.IMPORT		_SV_MOTDEG0_001
+	.IMPORT		_SV_YOBDAT
+_SCI0_MEMADR_CHECK:
+	SUB_START
+
+	MOV.L	#_sci0_rxd_buf+_AREA_SEL,R10
+	MOV.B	@R10+,R0
+	EXTU.B	R0,R0
+	CMP/EQ	#_LOD_AREA_FRAMX,R0			; FRAMへのｱｸｾｽ？
+	BF	SCI0_MADR_EXT				; いいえ
+
+	MOV.B	@R10+,R1
+	MOV.B	@R10+,R2
+	MOV.B	@R10+,R3
+	EXTU.B	R1,R1
+	EXTU.B	R2,R2
+	EXTU.B	R3,R3
+	SHLL16	R3
+	SHLL8	R2
+	OR	R2,R1
+	OR	R3,R1					; 相対ｱﾄﾞﾚｽ
+	MOV.L	#_fram_top,R2				; FeRAM先頭ｱﾄﾞﾚｽ
+	ADD	R2,R1					; FeRAMｱｸｾｽ絶対ｱﾄﾞﾚｽ
+	MOV.L	#_FRAM_KAT_TOP,R2			; 型ﾃﾞｰﾀの先頭ｱﾄﾞﾚｽ
+	MOV.L	#_FRAM_KAT_END,R3			; 型ﾃﾞｰﾀの最終ｱﾄﾞﾚｽ
+	CMP/HS	R2,R1					; 先頭ｱﾄﾞﾚｽ以上？
+;//2016/02/10	BF	SCI0_MADR_ERR				; いいえ
+	BF	SCI0_MADR_100				; いいえ
+	CMP/HS	R3,R1					; 最終ｱﾄﾞﾚｽ以上？
+;//2016/02/10	BT	SCI0_MADR_ERR				; はい
+	BT	SCI0_MADR_100				; はい
+	M_BRA	SCI0_MADR_EXT				; 型ﾃﾞｰﾀのｱﾄﾞﾚｽでＯＫ
+
+SCI0_MADR_100:						; モーション100段対応		2016/02/10
+	MOV.L	#_SV_MOTDEG0_001,R2			; 型ﾃﾞｰﾀの先頭ｱﾄﾞﾚｽ
+	MOV.L	#_SV_YOBDAT,R3				; 型ﾃﾞｰﾀの最終ｱﾄﾞﾚｽ
+	CMP/HS	R2,R1					; 先頭ｱﾄﾞﾚｽ以上？
+	BF	SCI0_MADR_ERR				; いいえ
+	CMP/HS	R3,R1					; 最終ｱﾄﾞﾚｽ以上？
+	BT	SCI0_MADR_ERR				; はい
+	M_BRA	SCI0_MADR_EXT				; 型ﾃﾞｰﾀのｱﾄﾞﾚｽでＯＫ
+
+SCI0_MADR_ERR:
+	MOV.W	#H'40,R0
+	MOV.L	#_sci0_wkram+RX_ERR,R10
+	MOV.W	R0,@R10					; BCC異常0x60
+
+SCI0_MADR_EXT:
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	受信データのアドレスチェック						*****
+;	*****										*****
+;	*****	V05 (MAKE)								*****
+;	*****										*****
+;	*************************************************************************************
+_SCI0_WREI_CHECK:
+	SUB_START
+
+	MOV.L	#_sci0_rxd_buf+_AREA_SEL,R10
+	MOV.B	@R10+,R0
+	EXTU.B	R0,R0
+	CMP/EQ	#_LOD_AREA_FRAMX,R0			; FRAMへのｱｸｾｽ？
+	BF	SCI0_WREI_EXT				; いいえ
+
+	MOV.L	#_SEQ_PAR_103,R10
+	MOV.W	@R10,R0
+	MOV.L	#H'4000,R1				; 103.14
+	TST	R1,R0					; ライト許可？
+	BT	SCI0_WREI_EXT				; はい
+
+	MOV.W	#H'40,R0
+	MOV.L	#_sci0_wkram+RX_ERR,R10
+	MOV.W	R0,@R10					;
+
+SCI0_WREI_EXT:
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	受信データのアドレスチェック						*****
+;	*****										*****
+;	*****	V05 (MAKE)								*****
+;	*****										*****
+;	*************************************************************************************
+_SCI0_RDEI_CHECK:
+	SUB_START
+
+	MOV.L	#_sci0_rxd_buf+_AREA_SEL,R10
+	MOV.B	@R10+,R0
+	EXTU.B	R0,R0
+	CMP/EQ	#_LOD_AREA_FRAMX,R0			; FRAMへのｱｸｾｽ？
+	BF	SCI0_RDEI_EXT				; いいえ
+
+	MOV.L	#_SEQ_PAR_103,R10
+	MOV.W	@R10,R0
+	MOV.L	#H'8000,R1				; 103.15
+	TST	R1,R0					; リード許可？
+	BT	SCI0_RDEI_EXT				; はい
+
+	MOV.W	#H'40,R0
+	MOV.L	#_sci0_wkram+RX_ERR,R10
+	MOV.W	R0,@R10					;
+
+SCI0_RDEI_EXT:
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	シーケンス部へのアクセスチェック					*****
+;	*****										*****
+;	*************************************************************************************
+_SCI0_SEQCMD_CHECK:
+	SUB_START
+
+	XOR	R0,R0
+
+	MOV.L	#_sci0_rxd_buf+_SETUZOKU_IDL,R10
+	MOV.B	@R10,R2
+	EXTU.B	R2,R2
+	MOV.L	#H'0A5,R1				; IDL
+	CMP/EQ	R1,R2					; = 0xA5?
+	BF	_SCI0_SQCM_CHK_EXT			; いいえ
+
+	MOV.L	#_sci0_rxd_buf+_SETUZOKU_IDH,R10
+	MOV.B	@R10,R2
+	EXTU.B	R2,R2
+	MOV.L	#H'055,R1				; IDL
+	CMP/EQ	R1,R2					; = 0xA5?
+	BF	_SCI0_SQCM_CHK_EXT			; いいえ
+
+;//	FAR_JSR	#_KOMA_SEQCMD_REQ,R10			;
+
+	MOV.L	#_sci0_wkram+SEQ_LDCMND_RES,R10
+	MOV.L	#0,R1
+	MOV.W	R1,@R10
+
+	MOV.L	#_sci0_wkram+SEQ_LDCMND_REQ,R10
+	MOV.L	#1,R1
+	MOV.W	R1,@R10
+
+	MOV.L	#H'0FF,R0
+
+_SCI0_SQCM_CHK_EXT:
+	SUB_END
+	M_RTS
+
+;	-------------------------------------------------------------------------------------
+;	-----										-----
+;	-----										-----
+;	-----	送信エンプティ割込み許可						-----
+;	-----										-----
+;	-----										-----
+;	-------------------------------------------------------------------------------------
+_SCI0_TXI_EI:
+	SUB_START
+
+	MOV.L	#_sci0_wkram+ET1_LDCMND_REQ,R1		; V05
+	MOV.W	@R1,R0
+	CMP/EQ	#1,R0					; 内部LdCmnd Request Flag有り？
+	BF	_SCI0_TXIEI_000
+	MOV.W	#1,R0
+	MOV.L	#_sci0_wkram+ET1_LDCMND_RES,R1
+	MOV.W	R0,@R1					; 内部LdCmnd Response Flagセット
+	M_BRA	_SCI0_TXIEI_EXT
+
+_SCI0_TXIEI_000:
+
+;///V01p	MOV.L	#_PADR,R1
+	MOV.L	#_sci0_wkram+RTS_FLG,R1
+	MOV.W	@R1,R0
+	MOV.W	#BIT13,R2				;
+	OR	R2,R0					; RTS ON !
+	MOV.W	R0,@R1					;
+
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	OR	#(BIT7+BIT5),R0				; BIT5:送信動作許可  BIT7:送信ｴﾝﾌﾟﾃｨ割込み許可
+	MOV.B	R0,@R1
+
+_SCI0_TXIEI_EXT:
+	SUB_END
+	M_RTS
+
+
+;	-------------------------------------------------------------------------------------
+;	-----										-----
+;	-----										-----
+;	-----	送信エンプティ割込み禁止						-----
+;	-----										-----
+;	-----										-----
+;	-------------------------------------------------------------------------------------
+_SCI0_TXI_DI:
+	SUB_START
+
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	AND	#NBIT7,R0
+	MOV.B	R0,@R1
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	汎用通信受信ｴﾗｰ割込み							*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_ER0_INT:
+	SUB_START
+
+	MOV.L	#_sci0_wkram,R0				;
+	LDC.L	R0,GBR					;
+
+	XOR	R0,R0
+	MOV.W	R0,@(RX_END,GBR)			; 全ﾃﾞｰﾀ受信完ｸﾘｱ
+	MOV.W	R0,@(RXD_CNT,GBR)			; 受信回数ｸﾘｱ
+	MOV.W	R0,@(HEAD_END,GBR)			; 伝送ﾍｯﾀﾞ部受信確認ｸﾘｱ
+	MOV.W	R0,@(RXD_BUF_POI,GBR)			; ﾎﾟｲﾝﾀｸﾘｱ
+
+	MOV.W	#(BIT3+BIT4+BIT5),R2
+	NOT	R2,R2
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	AND	R2,R0					; ORER,FER,PERｸﾘｱ
+	MOV.B	R0,@R1
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	汎用通信受信ＭＡＩＮ							*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_RX0_MAIN:
+	SUB_START
+	NOP
+	STC	SR,R0
+	NOP
+	MOV.L	#H'000000F0,R1
+	AND	R1,R0
+	mov.l	#SR_Init_DI,r2
+	AND	R1,R2
+	CMP/EQ	R2,R0					; 全割込み禁止中？
+	BT	_RX0_M100				; はい
+	SUB_END
+	M_RTS
+
+_RX0_M100:
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	TST	#BIT5,R0				; BIT5:送信動作許可中？
+	BT	_RX0_M150				; いいえ
+	SUB_END
+	M_RTS
+
+_RX0_M150:
+	TST	#BIT4,R0				; BIT4:受信動作許可中？
+	BF	_RX0_M200				; はい
+	SUB_END
+	M_RTS
+
+_RX0_M200:
+	TST	#BIT6,R0				; BIT6:受信完了割込み許可中？
+	BF	_RX0_M250				; はい
+	SUB_END
+	M_RTS
+
+_RX0_M250:
+	_WDT_CLR
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	TST	#BIT6,R0				; RDRF ON?
+	BF	_RX0_M300				; YES
+	M_BRA	_RX0_M250
+
+_RX0_M300:
+	MOV.L	#_sci0_wkram,R0				;
+	LDC.L	R0,GBR					;
+
+	MOV.L	#_RDR0,R1
+	MOV.B	@R1,R2
+	EXTU.B	R2,R2					; R2 <- 受信ﾃﾞｰﾀ
+
+	MOV.L	#_sci0_rxd_buf,R1
+	MOV.W	@(RXD_BUF_POI,GBR),R0			; ﾎﾟｲﾝﾀ
+	MOV	R0,R4					; ﾎﾟｲﾝﾀKEEP
+	ADD	R0,R1					; 受信ﾃﾞｰﾀ格納ｱﾄﾞﾚｽ
+
+	MOV.B	R2,@R1					; 受信ﾃﾞｰﾀ格納
+
+	TST	R4,R4					; ﾎﾟｲﾝﾀ=0？
+	BF	RX0_M020				; いいえ
+
+	MOV.W	#H'5A,R0
+	CMP/EQ	R0,R2					; 最初に受信したﾃﾞｰﾀは0x5A？
+	BT	RX0_M020				; はい
+
+	M_BRA	RX0_M030
+
+RX0_M020:
+	MOV.W	@(HEAD_END,GBR),R0			;
+	TST	R0,R0					; 伝送ﾍｯﾀﾞ部受信済み?
+	BT	RX0_M050				; いいえ
+
+	MOV.W	@(RXD_CNT,GBR),R0			; 受信すべきﾃﾞｰﾀﾊﾞｲﾄ数
+	ADD	#-1,R0
+	MOV.W	R0,@(RXD_CNT,GBR)
+	TST	R0,R0					; 全受信完了？
+	BF	RX0_M400				; いいえ
+
+	MOV.W	#1,R0
+	MOV.W	R0,@(RX_END,GBR)			; 全ﾃﾞｰﾀ受信完
+
+RX0_M030:
+	XOR	R0,R0
+	MOV.W	R0,@(RXD_CNT,GBR)
+	MOV.W	R0,@(HEAD_END,GBR)			; 伝送ﾍｯﾀﾞ部受信確認
+	MOV.W	R0,@(RXD_BUF_POI,GBR)			; ﾎﾟｲﾝﾀを次に更新
+
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	AND	#NBIT6,R0				; RDRFｸﾘｱ
+	MOV.W	R0,@R1
+
+	SUB_END
+	M_RTS
+
+RX0_M050:
+	MOV	R4,R0
+	CMP/EQ	#H'2,R0					; ﾎﾟｲﾝﾀ2？
+	BF	RX0_M400				; いいえ
+
+	MOV.W	#1,R0
+	MOV.W	R0,@(HEAD_END,GBR)			; 伝送ﾍｯﾀﾞ部受信確認
+
+	MOV.L	#_sci0_rxd_buf,R1
+	MOV.W	#1,R0					; 受信ﾊﾞｯﾌｧﾎﾟﾝﾀ＝１
+	ADD	R0,R1
+	MOV.B	@R1+,R0
+	EXTU.B	R0,R0
+	MOV.B	@R1,R3
+	SHLL8	R3
+	OR	R3,R0					; 伝送ﾃﾞｰﾀﾊﾞｲﾄ数
+	MOV.W	R0,@(RXD_CNT,GBR)			; 伝送ﾍｯﾀﾞ部以降の受信すべきﾃﾞｰﾀﾊﾞｲﾄ数格納
+
+RX0_M400:
+	ADD	#1,R4
+	MOV	R4,R0
+	MOV.W	#H'200,R1
+	CMP/HS	R1,R0					; ﾎﾟｲﾝﾀ200H以上になった？
+	BF	RX0_M500				; いいえ
+	XOR	R0,R0
+RX0_M500:
+	MOV.W	R0,@(RXD_BUF_POI,GBR)			; ﾎﾟｲﾝﾀを次に更新
+
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	AND	#NBIT6,R0				; RDRFｸﾘｱ
+	MOV.W	R0,@R1
+	M_BRA	_RX0_M250
+
+RX0_MEND:
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	汎用通信送信ＭＡＩＮ							*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_TX0_MAIN:
+	SUB_START
+	NOP
+	STC	SR,R0
+	NOP
+	MOV.L	#H'000000F0,R1
+	AND	R1,R0
+	mov.l	#SR_Init_DI,r2
+	AND	R1,R2
+	CMP/EQ	R2,R0					; 全割込み禁止中？
+	BT	_TX0_M100				; はい
+	SUB_END
+	M_RTS
+
+_TX0_M100:
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	TST	#BIT5,R0				; BIT5:送信動作許可中？
+	BF	_TX0_M150				; はい
+	SUB_END
+	M_RTS
+
+_TX0_M150:
+	MOV.W	#BIT7,R2
+	AND	R2,R0
+	TST	R0,R0					; BIT7:送信ｴﾝﾌﾟﾃｨ割込み許可中？
+	BF	_TX0_M200				; はい
+	SUB_END
+	M_RTS
+
+_TX0_M200:
+	_WDT_CLR
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	TST	#BIT7,R0				; TDRF ON?
+	BF	_TX0_M300				; YES
+	M_BRA	_TX0_M200
+
+_TX0_M300:
+	MOV.L	#_sci0_wkram+TXD_BUF_POI,R1
+	MOV.W	@R1,R0					; 送信ﾊﾞｯﾌｧﾎﾟｲﾝﾀ
+	MOV	R0,R2
+	MOV.L	#_sci0_txd_buf,R3
+	ADD	R0,R3					; R3=送信ﾃﾞｰﾀ格納ｱﾄﾞﾚｽ
+
+	MOV.B	@R3,R0
+	MOV.L	#_TDR0,R3
+	MOV.B	R0,@R3					; 送信ﾃﾞｰﾀ格納
+
+	ADD	#1,R2					; 送信ﾊﾞｯﾌｧﾎﾟｲﾝﾀ+1
+	MOV.W	R2,@R1
+
+	MOV.L	#_sci0_wkram+TXD_CNT,R1
+	MOV.W	@R1,R0
+	ADD	#H'FF,R0				; 送信ﾃﾞｰﾀ数-1
+	MOV.W	R0,@R1
+
+	TST	R0,R0					; 全ﾃﾞｰﾀ送信完？
+	BT	_TX0_M400				; はい
+
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	AND	#NBIT7,R0				; TDRFｸﾘｱ
+	MOV.B	R0,@R1
+
+	M_BRA	_TX0_M200
+
+_TX0_M400:
+	FAR_JSR	#_SCI0_TXI_DI,R1			; 送信ｴﾝﾌﾟﾃｨ割込み禁止
+
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	OR	#BIT2,R0
+	MOV.B	R0,@R1					; BIT2:送信終了割込み許可
+
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	AND	#NBIT7,R0				; TDRFｸﾘｱ
+	MOV.B	R0,@R1
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	汎用通信送信ＭＡＩＮ							*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_TE0_MAIN:
+	SUB_START
+	NOP
+	STC	SR,R0
+	NOP
+	MOV.L	#H'000000F0,R1
+	AND	R1,R0
+	mov.l	#SR_Init_DI,r2
+	AND	R1,R2
+	CMP/EQ	R2,R0					; 全割込み禁止中？
+	BT	_TE0_M100				; はい
+	SUB_END
+	M_RTS
+
+_TE0_M100:
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	TST	#BIT5,R0				; BIT5:送信動作許可中？
+	BF	_TE0_M150				; はい
+	SUB_END
+	M_RTS
+
+_TE0_M150:
+	TST	#BIT2,R0				; BIT2:送信終了割込み許可中？
+	BF	_TE0_M200				; はい
+	SUB_END
+	M_RTS
+
+_TE0_M200:
+	_WDT_CLR
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	TST	#BIT2,R0				; TEND ON?
+	BF	_TE0_M250				; YES
+	M_BRA	_TE0_M200
+
+_TE0_M250:
+;///V01p	MOV.L	#_PADR,R1
+	MOV.L	#_sci0_wkram+RTS_FLG,R1
+	MOV.W	@R1,R0
+	MOV.W	#BIT13,R2				;
+	NOT	R2,R2
+	AND	R2,R0					; RTS OFF !
+	MOV.W	R0,@R1					;
+
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	MOV.W	#(BIT2+BIT5),R2
+	NOT	R2,R2
+	AND	R2,R0
+	MOV.B	R0,@R1					; BIT2:送信終了割込み禁止  BIT5:送信動作禁止
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	汎用通信受信割込み							*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_RX0_INT:
+	SUB_START
+
+	MOV.L	#_sci0_wkram,R0				;
+	LDC.L	R0,GBR					;
+
+	MOV.L	#_RDR0,R1
+	MOV.B	@R1,R2
+	EXTU.B	R2,R2					; R2 <- 受信ﾃﾞｰﾀ
+
+	MOV.L	#_sci0_rxd_buf,R1
+	MOV.W	@(RXD_BUF_POI,GBR),R0			; ﾎﾟｲﾝﾀ
+	MOV	R0,R4					; ﾎﾟｲﾝﾀKEEP
+	ADD	R0,R1					; 受信ﾃﾞｰﾀ格納ｱﾄﾞﾚｽ
+
+	MOV.B	R2,@R1					; 受信ﾃﾞｰﾀ格納
+
+	TST	R4,R4					; ﾎﾟｲﾝﾀ=0？
+	BF	RX0I_020				; いいえ
+
+	MOV.W	#H'5A,R0
+	CMP/EQ	R0,R2					; 最初に受信したﾃﾞｰﾀは0x5A？
+;//V01l	BT	RX0I_020				; はい
+	BT	RX0I_010				; はい
+	M_BRA	RX0I_030				; いいえ
+
+RX0I_010:
+	MOV.W	#1000/5,R0				; V01l(INS)
+	MOV.W	R0,@(RX_TIMER,GBR)			; 受信監視時間＝1sec
+	MOV.W	#1,R0					; V01l(INS)
+	MOV.W	R0,@(RX_TIMOUT_FLG,GBR)			; 受信時間監視
+
+RX0I_020:
+	MOV.W	@(HEAD_END,GBR),R0			;
+	TST	R0,R0					; 伝送ﾍｯﾀﾞ部受信済み?
+	BT	RX0I_050				; いいえ
+
+	MOV.W	@(RXD_CNT,GBR),R0			; 受信すべきﾃﾞｰﾀﾊﾞｲﾄ数
+	ADD	#-1,R0
+	MOV.W	R0,@(RXD_CNT,GBR)
+	TST	R0,R0					; 全受信完了？
+	BF	RX0I_100				; いいえ
+
+	MOV.W	#1,R0
+	MOV.W	R0,@(RX_END,GBR)			; 全ﾃﾞｰﾀ受信完
+	XOR	R0,R0
+	MOV.W	R0,@(RX_TIMOUT_FLG,GBR)			; 受信時間監視		V01l
+
+RX0I_030:
+	XOR	R0,R0
+	MOV.W	R0,@(RXD_CNT,GBR)
+	MOV.W	R0,@(HEAD_END,GBR)			; 伝送ﾍｯﾀﾞ部受信確認
+	MOV.W	R0,@(RXD_BUF_POI,GBR)			; ﾎﾟｲﾝﾀを次に更新
+	M_BRA	RX0I_300
+
+RX0I_050:
+	MOV	R4,R0
+	CMP/EQ	#H'2,R0					; ﾎﾟｲﾝﾀ2？
+	BF	RX0I_100				; いいえ
+
+	MOV.W	#1,R0
+	MOV.W	R0,@(HEAD_END,GBR)			; 伝送ﾍｯﾀﾞ部受信確認
+
+	MOV.L	#_sci0_rxd_buf,R1
+	MOV.W	#1,R0					; 受信ﾊﾞｯﾌｧﾎﾟﾝﾀ＝１
+	ADD	R0,R1
+	MOV.B	@R1+,R0
+	EXTU.B	R0,R0
+	MOV.B	@R1,R3
+	SHLL8	R3
+	OR	R3,R0					; 伝送ﾃﾞｰﾀﾊﾞｲﾄ数
+	MOV.W	R0,@(RXD_CNT,GBR)			; 伝送ﾍｯﾀﾞ部以降の受信すべきﾃﾞｰﾀﾊﾞｲﾄ数格納
+
+RX0I_100:
+	ADD	#1,R4
+	MOV	R4,R0
+	MOV.W	#H'200,R1
+	CMP/HS	R1,R0					; ﾎﾟｲﾝﾀ200H以上になった？
+	BF	RX0I_200				; いいえ
+	XOR	R0,R0
+RX0I_200:
+	MOV.W	R0,@(RXD_BUF_POI,GBR)			; ﾎﾟｲﾝﾀを次に更新
+
+RX0I_300:
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	AND	#NBIT6,R0				; RDRFｸﾘｱ
+	MOV.W	R0,@R1
+
+RX0I_END:
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	汎用通信送信割込み							*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_TX0_INT:
+	SUB_START
+
+	MOV.L	#_sci0_wkram+TXD_BUF_POI,R1
+	MOV.W	@R1,R0					; 送信ﾊﾞｯﾌｧﾎﾟｲﾝﾀ
+	MOV	R0,R2
+	MOV.L	#_sci0_txd_buf,R3
+	ADD	R0,R3					; R3=送信ﾃﾞｰﾀ格納ｱﾄﾞﾚｽ
+
+	MOV.B	@R3,R0
+	MOV.L	#_TDR0,R3
+	MOV.B	R0,@R3					; 送信ﾃﾞｰﾀ格納
+
+	ADD	#1,R2					; 送信ﾊﾞｯﾌｧﾎﾟｲﾝﾀ+1
+	MOV.W	R2,@R1
+
+	MOV.L	#_sci0_wkram+TXD_CNT,R1
+	MOV.W	@R1,R0
+	ADD	#H'FF,R0				; 送信ﾃﾞｰﾀ数-1
+	MOV.W	R0,@R1
+
+	TST	R0,R0					; 全ﾃﾞｰﾀ送信完？
+	BF	_TX0I_050				; いいえ
+
+	FAR_JSR	#_SCI0_TXI_DI,R1			; 送信ｴﾝﾌﾟﾃｨ割込み禁止
+
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	OR	#BIT2,R0
+	MOV.B	R0,@R1					; BIT2:送信終了割込み許可
+
+_TX0I_050:
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	AND	#NBIT7,R0				; TDRFｸﾘｱ
+	MOV.B	R0,@R1
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	汎用通信送信割込み							*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_TE0_INT:
+	SUB_START
+
+;///V01p	MOV.L	#_PADR,R1
+	MOV.L	#_sci0_wkram+RTS_FLG,R1
+	MOV.W	@R1,R0
+	MOV.W	#BIT13,R2				;
+	NOT	R2,R2
+	AND	R2,R0					; RTS OFF !
+	MOV.W	R0,@R1					;
+
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	MOV.W	#(BIT2+BIT5),R2
+	NOT	R2,R2
+	AND	R2,R0
+	MOV.B	R0,@R1					; BIT2:送信終了割込み禁止  BIT5:送信動作禁止
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	バージョンＵＰ用定周期割込み（5ms）					*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+	.EXPORT		_VUP_5MS_INT
+_VUP_5MS_INT:
+	SUB_START
+
+	MOV.L	#_sci0_wkram+RX_TIMER,R1	; V01l
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	BT	_RX_TIME_000			;
+	ADD	#-1,R0				;
+	MOV.W	R0,@R1				;
+_RX_TIME_000:
+
+	SUB_END
+	M_RTS
+
+
+
+	.SECTION	BvupsciwkRAM, DATA,ALIGN=4			;
+;//2004/04/20(CHG)_vup_hs_area		.SRES		2*8*2		; ﾊﾝﾄﾞｼｪｲｸ領域
+_vup_hs_area		.SRES		2*8		; ﾊﾝﾄﾞｼｪｲｸ領域(PC->CPUB)
+			.SRES		2*32		; ﾊﾝﾄﾞｼｪｲｸ領域(PC<-CPUB)
+_sci0_rxd_buf		.SRES		1*512		; 受信ﾊﾞｯﾌｧ
+_sci0_txd_buf		.SRES		1*512		; 送信ﾊﾞｯﾌｧ
+_sci0_wkram		.SRES		2*16		; SCI0にﾌﾟﾛｸﾞﾗﾑで使用するﾜｰｸRAM
+_ET_LDCMND_WORK		.SRES		512		; SIT4-MC
+
+;★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+
+	.SECTION	PvupsciROM,CODE,ALIGN=4
+;	*************************************************************************************
+;	*****										*****
+;	*****										*****
+;	*****	バージョンＵＰ監視ＭＡＩＮ						*****
+;	*****										*****
+;	*****	フラッシュ書込み指令が来たら、各バージョンＵＰへ			*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+	.IMPORT	_FROM_ERASE_CMND
+	.IMPORT	_FROM_ERASE_POLLINKG
+	.IMPORT	_FROM_WRITE_CMND
+	.IMPORT	_FROM_WRITE_POLLINKG
+	.IMPORT	_FROM_SECT_TBL_SIZE
+	.IMPORT	_FROM_SECT_TBL
+
+	.MACRO	SH2_WAIT	CNT,REG
+	MOV.L	#\CNT,\REG
+JMP01\@:
+	DT	\REG
+	BF	JMP01\@
+	.ENDM
+
+	.MACRO	SH2_WAIT_REG	REG
+JMP01\@:
+	DT	\REG
+	BF	JMP01\@
+	.ENDM
+
+;	======= EXTERN宣言=======
+
+;	======= PUBLIC宣言=======
+	.export		_VUP_MAIN;
+
+
+_VUP_MAIN:
+	SUB_START
+	PUSH_ALL
+
+	MOV.L	#_vup_hs_area,R0			;
+	LDC.L	R0,GBR					;
+
+_VUP_M000:
+	MOV.W	@(VUP_END_PC,GBR),R0
+	MOV.W	R0,@(VUP_END_SH,GBR)			; ﾊﾞｰｼﾞｮﾝUP完了
+
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別
+	MOV.W	R0,@(VUP_SEL_SH,GBR)			; ﾊﾞｰｼﾞｮﾝUP種別  PCへ
+
+	MOV.W	@(VUP_STR_PC,GBR),R0
+	CMP/EQ	#H'01,R0				; ﾊﾞｰｼﾞｮﾝｱｯﾌﾟ開始
+	BT	_VUP_M002
+	CMP/EQ	#H'02,R0				; 型データ読出し			SIT4-MC  2014/05/08
+	BT	_VUP_M002
+	CMP/EQ	#H'03,R0				; 型データ書込み			SIT4-MC  2014/05/08
+	BT	_VUP_M002
+	MOV.W	R0,@(VUP_STR_SH,GBR)
+_VUP_M002:
+
+	MOV.W	@(VUP_DATA_WR_PC,GBR),R0
+	CMP/EQ	#H'01,R0
+	BT	_VUP_M004
+	MOV.W	R0,@(VUP_DATA_WR_SH,GBR)
+_VUP_M004:
+
+;	-------------------------------- 2006/12/26(INS) V05 {
+	MOV.L	#_VUP_PRG_NG_DAT,R1			;
+	MOV.W	@R1,R0
+	TST	R0,R0					; ﾊﾞｰｼﾞｮﾝUP時異常あった？
+	BT	_VUP_M010				; いいえ
+	MOV.W	R0,@(VUP_REV1_SH,GBR)			;
+	M_BRA	_VUP_MEND
+_VUP_M010:
+;	-------------------------------- }
+
+	MOV.W	@(VUP_STR_SH,GBR),R0			;
+	CMP/EQ	#H'01,R0				; ﾊﾞｰｼﾞｮﾝUP開始準備完了済み？
+	BT	_VUP_M550				; はい
+	CMP/EQ	#H'02,R0				; 型ﾃﾞｰﾀ読出し済み？			SIT4-MC  2014/05/08
+	BT	_VUP_MEND				; はい
+	CMP/EQ	#H'03,R0				; 型ﾃﾞｰﾀ書込み済み？			SIT4-MC  2014/05/08
+	BT	_VUP_MEND				; はい
+
+	MOV.W	@(VUP_STR_PC,GBR),R0
+	CMP/EQ	#H'01,R0				; ﾊﾞｰｼﾞｮﾝUP開始?
+	BT	_VUP_M020				; はい
+	CMP/EQ	#H'02,R0				; 型ﾃﾞｰﾀ読出し?				SIT4-MC  2014/05/08
+	BT	_VUP_M015				; はい
+	CMP/EQ	#H'03,R0				; 型ﾃﾞｰﾀ書込み?				SIT4-MC  2014/05/08
+	BT	_VUP_M016				; はい
+	M_BRA	_VUP_MEND				; いいえ
+
+_VUP_M015:
+	FAR_JSR	#_SCI_KATA_READ,R1			; 型ﾃﾞｰﾀ読出し処理			SIT4-MC  2014/05/08
+	M_BRA	_VUP_MEND				;
+
+_VUP_M016:
+	FAR_JSR	#_SCI_KATA_WRITE,R1			; 型ﾃﾞｰﾀ書込み処理			SIT4-MC  2014/05/08
+	M_BRA	_VUP_MEND				;
+
+_VUP_M020:
+	MOV.L	#_sci0_wkram+VUP_START,R1
+	MOV.W	#H'FF,R0
+	MOV.W	R0,@R1					; ﾊﾞｰｼﾞｮﾝUP開始を記憶！！
+
+;	--------------------------------------
+;	-----   FLASH ROM DATA -> SRAM   -----
+;	--------------------------------------
+	mov.l	#SR_Init_SCIEI,r0
+	ldc	r0,sr					; SR set (SCI割込み(E)だけ許可)
+	NOP
+
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別
+	SHLL2	R0
+	SHLL	R0
+	MOV.L	#_FROM_TO_SRAM_TABLE,R1
+	ADD	R0,R1
+	MOV.L	@R1,R0
+	JSR	@R0
+	NOP
+
+	MOV.W	#H'01,R0				; ﾊﾞｰｼﾞｮﾝUP開始
+	MOV.W	R0,@(VUP_STR_SH,GBR)			; ﾊﾞｰｼﾞｮﾝUP開始準備完了  PCへ
+;	---------------------------------------
+
+_VUP_M550:
+	MOV.W	@(VUP_DATA_WR_SH,GBR),R0		;
+	CMP/EQ	#H'01,R0				; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀﾌﾗｯｼｭWRITE完了済み？
+	BT	_VUP_M999				; はい
+
+	MOV.W	@(VUP_DATA_WR_PC,GBR),R0
+	CMP/EQ	#H'01,R0				; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀWRITE指令有り?
+	BF	_VUP_M999				; いいえ
+
+;///V01p	MOV.L	#_PADR,R1
+	MOV.L	#_sci0_wkram+RTS_FLG,R1
+	MOV.W	@R1,R0
+	MOV.W	#BIT13,R2				;
+	AND	R2,R0					; 
+	TST	R0,R0					; RTS OFF ?
+	BT	_VUP_M570				; はい
+	M_BRA	_VUP_M999
+
+;	--------------------------------------
+;	-----   FLASH ROM DATA <- SRAM   -----
+;	--------------------------------------
+_VUP_M570:
+	_WDT_CLR
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別
+	SHLL2	R0
+	SHLL	R0
+	ADD	#4,R0
+	MOV.L	#_FROM_TO_SRAM_TABLE,R1
+	ADD	R0,R1
+	MOV.L	@R1,R0
+	JSR	@R0					; OUT:R1=0(準備完)
+	NOP
+
+	TST	R1,R1					; 準備完？
+	BF	_VUP_M999				; いいえ
+
+	MOV.W	#H'01,R0
+	MOV.W	R0,@(VUP_DATA_WR_SH,GBR)		; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀﾌﾗｯｼｭWRITE完了  PCへ
+;	---------------------------------------
+
+_VUP_M999:
+_VUP_MEND:
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+	.ALIGN	4
+_FROM_TO_SRAM_TABLE:
+;		FROMから読出し時  FROMへ書込み時
+	.DATA.L	_FROM_DUMY_COPY,	_FROM_DUMY_REWRITE		; 00:ﾀﾞﾐｰ
+	.DATA.L	_FROM_GAME_COPY,	_FROM_GAME_REWRITE		; 01:画面ﾃｰﾌﾞﾙ
+	.DATA.L	_FROM_SEQA_COPY,	_FROM_SEQA_REWRITE		; 02:ﾕｰｻﾞｼｰｹﾝｽ
+	.DATA.L	_FROM_CPUA_COPY,	_FROM_CPUA_REWRITE		; 03:CPUAﾌﾟﾛｸﾞﾗﾑ
+
+	.AIF	_SIT_TYPE_SEL EQ _TYPE_SIT3
+	.DATA.L	_FROM_CPUB_COPY,	_FROM_CPUB_REWRITE		; 04:CPUBﾌﾟﾛｸﾞﾗﾑ
+	.AELSE
+	.DATA.L	_FROM_CPUB_COPY,	_FROM_CPUB4_REWRITE		; 04:CPUBﾌﾟﾛｸﾞﾗﾑ
+	.AENDI
+
+	.DATA.L	_FROM_SENA_COPY,	_FROM_SENA_REWRITE		; 05:ｾﾝｻAﾃｰﾌﾞﾙ
+	.DATA.L	_FROM_SENB_COPY,	_FROM_SENB_REWRITE		; 06:ｾﾝｻBﾃｰﾌﾞﾙ
+	.DATA.L	_FROM_CPUA_COPY,	_FROM_CPUA_REWRITE		; 07:CPUAﾌﾟﾛｸﾞﾗﾑ
+
+	.AIF	_SIT_TYPE_SEL EQ _TYPE_SIT3
+	.DATA.L	_FROM_CPUB_COPY,	_FROM_CPUB_REWRITE		; 08:CPUBﾌﾟﾛｸﾞﾗﾑ
+	.AELSE
+	.DATA.L	_FROM_CPUB_COPY,	_FROM_CPUB4_REWRITE		; 08:CPUBﾌﾟﾛｸﾞﾗﾑ
+	.AENDI
+
+	.DATA.L	_FROM_SYSA_COPY,	_FROM_SYSA_REWRITE		; 09:CPUA C/Bｼｽﾊﾟﾗ
+	.DATA.L	_FROM_SYSB_COPY,	_FROM_SYSB_REWRITE		; 10:CPUB C/Bｼｽﾊﾟﾗ
+	.DATA.L	_FROM_GAIZ_COPY,	_FROM_GAIZ_REWRITE		; 11:外字など		V01l
+	.DATA.L	_FROM_CHAR_COPY,	_FROM_CHAR_REWRITE		; 12:漢字ROM
+	.DATA.L	_FROM_COP2_COPY,	_FROM_COP2_REWRITE		; 13:COP2 ﾌﾟﾛｸﾞﾗﾑ	SIT-4 COP2
+	.DATA.L	_FROM_SEN2_COPY,	_FROM_SEN2_REWRITE		; 14:COP2 ﾃｰﾌﾞﾙ		SIT-4 COP2
+	.DATA.L	_FROM_SYS2_COPY,	_FROM_SYS2_REWRITE		; 15:COP2 C/Bｼｽﾊﾟﾗ	SIT-4 COP2
+	.DATA.L	_FROM_DUMY_COPY,	_FROM_DUMY_REWRITE		; 16:ﾀﾞﾐｰ
+	.DATA.L	_FROM_SEND_COPY,	_FROM_SEND_REWRITE		; 17:ｾﾝｻDﾃｰﾌﾞﾙ
+	.DATA.L	_FROM_CPUD_COPY,	_FROM_CPUD_REWRITE		; 18:CPUDﾌﾟﾛｸﾞﾗﾑ
+	.DATA.L	_FROM_SYSD_COPY,	_FROM_SYSD_REWRITE		; 19:CPUD C/Bｼｽﾊﾟﾗ
+	.DATA.L	_FROM_KATA_COPY,	_FROM_KATA_REWRITE		; 20:100型ﾀﾞｰﾀ
+	.DATA.L	_FROM_KAT2_COPY,	_FROM_KAT2_REWRITE		; 21:101-200型ﾀﾞｰﾀ			2014/04/17	SIT4-MC
+	.DATA.L	_FROM_KATS_COPY,	_FROM_KATS_REWRITE		; 22:ｻﾝﾌﾟﾙ型ﾀﾞｰﾀ（201-220）		2014/04/17	SIT4-MC
+	.DATA.L	_FROM_DUMY_COPY,	_FROM_DUMY_REWRITE		; 23:ﾀﾞﾐｰ
+	.DATA.L	_FROM_DUMY_COPY,	_FROM_DUMY_REWRITE		; 24:ﾀﾞﾐｰ
+	.DATA.L	_FROM_DUMY_COPY,	_FROM_DUMY_REWRITE		; 25:ﾀﾞﾐｰ
+	.DATA.L	_FROM_DUMY_COPY,	_FROM_DUMY_REWRITE		; 26:ﾀﾞﾐｰ
+	.DATA.L	_FROM_DUMY_COPY,	_FROM_DUMY_REWRITE		; 27:ﾀﾞﾐｰ
+	.DATA.L	_FROM_DUMY_COPY,	_FROM_DUMY_REWRITE		; 28:ﾀﾞﾐｰ
+	.DATA.L	_FROM_DUMY_COPY,	_FROM_DUMY_REWRITE		; 29:ﾀﾞﾐｰ
+	.DATA.L	_FROM_DUMY_COPY,	_FROM_DUMY_REWRITE		; 30:ﾀﾞﾐｰ
+
+
+	.ALIGN	4
+_FROM_DUMY_COPY:
+_FROM_DUMY_REWRITE:
+	SUB_START
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****										*****
+;	*****	フラッシュＲＯＭのデータをＳＲＡＭへコピー				*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_FROM_GAME_COPY:
+	SUB_START
+;//V06	MOV.L	#_GAM_TABLE,R8				; R8 <- ﾌﾗｯｼｭROM読出し先頭ｱﾄﾞﾚｽ  500000H
+	MOV.L	#_GAM_TABLE2,R8				; R8 <- ﾌﾗｯｼｭROM読出し先頭ｱﾄﾞﾚｽ  500000H
+	MOV.L	#_VUP_DATA_AREA_CPUB,R9			; 400000H R9 <- ﾌﾗｯｼｭROMﾃﾞｰﾀ書込み先頭ｱﾄﾞﾚｽ
+;//V06	MOV.L	#_GAM_TBL_SIZE/4,R4			; 画面ﾃｰﾌﾞﾙﾜｰﾄﾞ数(40000H/4)
+;//V06m	MOV.L	#_GAM_TBL_SIZE2/4,R4			; 画面ﾃｰﾌﾞﾙﾜｰﾄﾞ数(60000H/4)
+	MOV.L	#_GAM_TBL_SIZE3/4,R4			; 画面ﾃｰﾌﾞﾙﾜｰﾄﾞ数(80000H/4)
+	M_BRA	_FROM_GAMCOPY_LOOP
+
+
+_FROM_GAIZ_COPY:	;/* V01l */
+	SUB_START
+	MOV.L	#_GAIZI_FROM_TOP,R8			; R8 <- ﾌﾗｯｼｭROM読出し先頭ｱﾄﾞﾚｽ  580000H
+	MOV.L	#_VUP_DATA_AREA_CPUB,R9			; 400000H R9 <- ﾌﾗｯｼｭROMﾃﾞｰﾀ書込み先頭ｱﾄﾞﾚｽ
+	MOV.L	#_GAIZI_FROM_SIZE/4,R4			; 画面ﾃｰﾌﾞﾙﾜｰﾄﾞ数(40000H/4)
+	M_BRA	_FROM_GAMCOPY_LOOP
+
+_FROM_CHAR_COPY:	;/* SIT-4 */
+	SUB_START
+	MOV.L	#_CHAR_ROM_TOP,R8			; R8 <- ﾌﾗｯｼｭROM読出し先頭ｱﾄﾞﾚｽ  580000H
+	MOV.L	#_VUP_DATA_AREA_CPUB,R9			; 400000H R9 <- ﾌﾗｯｼｭROMﾃﾞｰﾀ書込み先頭ｱﾄﾞﾚｽ
+	MOV.L	#_CHAR_ROM_SIZE/4,R4			; 画面ﾃｰﾌﾞﾙﾜｰﾄﾞ数(40000H/4)
+	M_BRA	_FROM_GAMCOPY_LOOP
+
+;/* SIT4-MC  2014/04/17 */
+_FROM_KAT2_COPY:
+	SUB_START
+	MOV.L	#_200_KATA_TOP,R8			; R8 <- ﾌﾗｯｼｭROM読出し先頭ｱﾄﾞﾚｽ  580000H
+	MOV.L	#_VUP_DATA_AREA_CPUB,R9			; 400000H R9 <- ﾌﾗｯｼｭROMﾃﾞｰﾀ書込み先頭ｱﾄﾞﾚｽ
+	MOV.L	#_100_KATA_SIZE/4,R4			; ﾌﾟﾛｸﾞﾗﾑ数(40000H/4)
+	M_BRA	_FROM_GAMCOPY_LOOP
+
+;/* SIT4-MC  2014/04/17 */
+_FROM_KATS_COPY:
+	SUB_START
+	MOV.L	#_SMP_KATA_TOP,R8			; R8 <- ﾌﾗｯｼｭROM読出し先頭ｱﾄﾞﾚｽ  580000H
+	MOV.L	#_VUP_DATA_AREA_CPUB,R9			; 400000H R9 <- ﾌﾗｯｼｭROMﾃﾞｰﾀ書込み先頭ｱﾄﾞﾚｽ
+	MOV.L	#_SMP_KATA_SIZE/4,R4			; ﾌﾟﾛｸﾞﾗﾑ数(10000H/4)
+	M_BRA	_FROM_GAMCOPY_LOOP
+
+_FROM_GAMCOPY_LOOP:
+	MOV.L	@R8+,R0
+	NOP
+	NOP
+	MOV.L	R0,@R9
+	NOP
+	NOP
+	ADD	#4,R9
+	DT	R4
+	BF	_FROM_GAMCOPY_LOOP
+
+	MOV.W	#0,R1					; 全ｺﾋﾟｰ完了
+
+	SUB_END
+	M_RTS
+
+
+
+_FROM_SEQA_COPY:
+	SUB_START
+
+	MOV.L	#H'FFFFFFFF,R0
+	MOV.L	#_VUP_DATA_AREA_CPUB,R9			; ﾌﾗｯｼｭROMﾃﾞｰﾀ書込み先頭ｱﾄﾞﾚｽ
+	MOV.L	#_SEQ_PRO_SIZE/4,R4			; SEQﾌﾟﾛｸﾞﾗﾑ数(10000H/4)
+
+	MOV.L	#_CB_SYS_PARAM248,R1			; シーケンス実行CPUD選択	2015/01/16
+	MOV.W	@R1,R2
+	MOV.L	#1234,R1
+	CMP/EQ	R1,R2					; 1234ならCPUD
+	BF	_FROM_SQCP_100
+	MOV.L	#_SEQ_PRO_SIZE2/4,R4			; SEQﾌﾟﾛｸﾞﾗﾑ数(30000H/4)
+_FROM_SQCP_100:
+
+	M_BRA	_FROM_COPY_FF_LOOP
+
+_FROM_SEN2_COPY:	; SIT-4 COP2
+_FROM_SENA_COPY:
+_FROM_SENB_COPY:
+_FROM_SEND_COPY:
+	SUB_START
+	MOV.L	#H'FFFFFFFF,R0
+	MOV.L	#_VUP_DATA_AREA_CPUB,R9			; ﾌﾗｯｼｭROMﾃﾞｰﾀ書込み先頭ｱﾄﾞﾚｽ
+	MOV.L	#_CB_TBL_SIZE/4,R4			; ｾﾝｻﾃｰﾌﾞﾙ数(40000H/4)
+	M_BRA	_FROM_COPY_FF_LOOP
+
+_FROM_COP2_COPY:	; SIT-4 COP2
+_FROM_CPUA_COPY:
+	SUB_START
+	MOV.W	#H'FFFFFFFF,R0
+	MOV.L	#_VUP_DATA_AREA_CPUB,R9			; ﾌﾗｯｼｭROMﾃﾞｰﾀ書込み先頭ｱﾄﾞﾚｽ
+	MOV.L	#_CPUA_PRO_SIZE/4,R4			; ﾌﾟﾛｸﾞﾗﾑ数(60000H/4)
+	M_BRA	_FROM_COPY_FF_LOOP
+
+_FROM_CPUB_COPY:
+_FROM_CPUD_COPY:
+	SUB_START
+	MOV.W	#H'FFFFFFFF,R0
+	MOV.L	#_VUP_DATA_AREA_CPUB,R9			; ﾌﾗｯｼｭROMﾃﾞｰﾀ書込み先頭ｱﾄﾞﾚｽ
+	MOV.L	#_CPUB_PRO_SIZE/4,R4			; ﾌﾟﾛｸﾞﾗﾑ数(60000H/4)
+	M_BRA	_FROM_COPY_FF_LOOP
+
+_FROM_SYS2_COPY:	; SIT-4 COP2
+_FROM_SYSA_COPY:
+_FROM_SYSB_COPY:
+_FROM_SYSD_COPY:
+	SUB_START
+	MOV.W	#H'FFFFFFFF,R0
+	MOV.L	#_VUP_DATA_AREA_CPUB,R9			; ﾌﾗｯｼｭROMﾃﾞｰﾀ書込み先頭ｱﾄﾞﾚｽ
+	MOV.L	#_CB_SYS_SIZE/4,R4			; ﾌﾟﾛｸﾞﾗﾑ数(10000H/4)
+	M_BRA	_FROM_COPY_FF_LOOP
+
+;/* V01  */
+_FROM_KATA_COPY:
+	SUB_START
+	MOV.W	#H'FFFFFFFF,R0
+	MOV.L	#_VUP_DATA_AREA_CPUB,R9			; ﾌﾗｯｼｭROMﾃﾞｰﾀ書込み先頭ｱﾄﾞﾚｽ
+	MOV.L	#_100_KATA_SIZE/4,R4			; ﾌﾟﾛｸﾞﾗﾑ数(10000H/4)
+	M_BRA	_FROM_COPY_FF_LOOP
+
+_FROM_COPY_FF_LOOP:
+	MOV.L	R0,@R9
+	NOP
+	NOP
+	ADD	#4,R9
+	DT	R4
+	BF	_FROM_COPY_FF_LOOP
+
+	MOV.W	#0,R1					; 全ｺﾋﾟｰ完了
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****										*****
+;	*****	ＦＲＯＭ消去／書込み							*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_FROM_GAME_REWRITE:
+	SUB_START
+
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	TST	R0,R0					; 書込み／消去スタート済み？
+	BT	_FROM_GAME_RW100			; いいえ
+	MOV.L	#_from_top,R13
+	M_BRA	_FROM_REWR_COM_100			; はい
+
+_FROM_GAME_RW100:
+	MOV.L	#_GAM_TABLE2,R1				; R1 <- 画面ﾃｰﾌﾞﾙの先頭は、必ずｾｸﾀの先頭ｱﾄﾞﾚｽ
+	MOV.L	#_GAM_TBL_SIZE3,R11			; 80000H
+	ADD	R1,R11					; R11 <- 画面ﾃｰﾌﾞﾙの最終ｱﾄﾞﾚｽ
+	MOV.L	#_FROM_SECT_TBL_GAM2_MC,R7		; セクタテーブル
+
+	MOV.L	#_from_top,R13
+	M_BRA	_FROM_REWR_COM
+;	---------------------------------------------------------------------------
+
+;	---------------------------------------------------------------------------
+_FROM_SEND_REWRITE:
+	SUB_START
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	TST	R0,R0					; 書込み／消去スタート済み？
+	BT	_FROM_SEND_RW100			; いいえ
+	MOV.L	#_from_top,R13
+	M_BRA	_FROM_REWR_COM_100			; はい
+
+_FROM_SEND_RW100:
+	MOV.L	#_CB_TABLEX,R1				; R1 <- ｾﾝｻﾃｰﾌﾞﾙの先頭は、必ずｾｸﾀの先頭ｱﾄﾞﾚｽ
+	MOV.L	#_CB_TBL_SIZE,R11			; 40000H
+	ADD	R1,R11					; R11 <- 画面ﾃｰﾌﾞﾙの最終ｱﾄﾞﾚｽ+1
+	MOV.L	#_FROM_SECT_TBL_SENB_MC,R7		; セクタテーブル
+	MOV.L	#_from_top,R13
+	M_BRA	_FROM_REWR_COM
+;	---------------------------------------------------------------------------
+
+;	---------------------------------------------------------------------------
+_FROM_SYSD_REWRITE:
+	SUB_START
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	TST	R0,R0					; 書込み／消去スタート済み？
+	BT	_FROM_SYSD_RW100			; いいえ
+	MOV.L	#_from_top,R13
+	M_BRA	_FROM_REWR_COM_100			; はい
+
+_FROM_SYSD_RW100:
+	MOV.L	#_CBSYS_TOP,R1				; R1 <- ﾃｰﾌﾞﾙの先頭は、必ずｾｸﾀの先頭ｱﾄﾞﾚｽ
+	MOV.L	#_CB_SYS_SIZE,R11			; 10000H
+	ADD	R1,R11					; R11 <- 画面ﾃｰﾌﾞﾙの最終ｱﾄﾞﾚｽ+1
+	MOV.L	#_FROM_SECT_TBL_SYSB_MC,R7		; シスパラテーブル
+	MOV.L	#_from_top,R13
+	M_BRA	_FROM_REWR_COM
+;	---------------------------------------------------------------------------
+
+;	---------------------------------------------------------------------------
+;/* V01l */
+_FROM_GAIZ_REWRITE:
+	SUB_START
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	TST	R0,R0					; 書込み／消去スタート済み？
+	BT	_FROM_GAIZ_RW100			; いいえ
+	MOV.L	#_from_top,R13
+	M_BRA	_FROM_REWR_COM_100			; はい
+
+_FROM_GAIZ_RW100:
+	MOV.L	#_GAIZI_FROM_TOP,R1			; R1 <- 画面ﾃｰﾌﾞﾙの先頭は、必ずｾｸﾀの先頭ｱﾄﾞﾚｽ
+	MOV.L	#_GAIZI_FROM_SIZE,R11			; 30000H
+	ADD	R1,R11					; R11 <- 画面ﾃｰﾌﾞﾙの最終ｱﾄﾞﾚｽ
+	MOV.L	#_FROM_SECT_TBL_GAIZ_MC,R7		; セクタテーブル
+	MOV.L	#_from_top,R13
+	M_BRA	_FROM_REWR_COM
+;	---------------------------------------------------------------------------
+
+;	---------------------------------------------------------------------------
+_FROM_CHAR_REWRITE:
+	SUB_START
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	TST	R0,R0					; 書込み／消去スタート済み？
+	BT	_FROM_CHAR_RW100			; いいえ
+	MOV.L	#_from_top,R13
+	M_BRA	_FROM_REWR_COM_100			; はい
+
+_FROM_CHAR_RW100:
+	MOV.L	#_CHAR_ROM_TOP,R1			; R1 <- 画面ﾃｰﾌﾞﾙの先頭は、必ずｾｸﾀの先頭ｱﾄﾞﾚｽ
+	MOV.L	#_CHAR_ROM_SIZE,R11			; 30000H
+	ADD	R1,R11					; R11 <- 画面ﾃｰﾌﾞﾙの最終ｱﾄﾞﾚｽ
+	MOV.L	#_FROM_SECT_TBL_CHAR_MC,R7		; セクタテーブル
+	MOV.L	#_from_top,R13
+	M_BRA	_FROM_REWR_COM
+;	---------------------------------------------------------------------------
+
+;	---------------------------------------------------------------------------
+;/* V01  */
+_FROM_KATA_REWRITE:
+	SUB_START
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	TST	R0,R0					; 書込み／消去スタート済み？
+	BT	_FROM_KATA_RW100			; いいえ
+	MOV.L	#_from_top,R13
+	M_BRA	_FROM_REWR_COM_100			; はい
+
+_FROM_KATA_RW100:
+	MOV.L	#_100_KATA_TOP,R1			; R1 <- ﾃｰﾌﾞﾙの先頭は、必ずｾｸﾀの先頭ｱﾄﾞﾚｽ
+	MOV.L	#_100_KATA_SIZE,R11			; 40000H
+	ADD	R1,R11					; 最終ｱﾄﾞﾚｽ+1
+	MOV.L	#_FROM_SECT_TBL_KATA_MC,R7			; 
+	MOV.L	#_from_top,R13
+	M_BRA	_FROM_REWR_COM
+;	---------------------------------------------------------------------------
+
+;	---------------------------------------------------------------------------
+;/* SIT4-MC */
+_FROM_CPUD_REWRITE:
+	SUB_START
+
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	TST	R0,R0					; 書込み／消去スタート済み？
+	BT	_FROM_CPUB4_RW100			; いいえ
+
+	.AIF	_SYS_ROM_SEL EQ _FROM_SEL
+	MOV.L	#H'A0000000,R13
+	.AELSE
+	MOV.L	#H'B0000000,R13
+	.AENDI
+	M_BRA	_FROM_REWR_COM_100			; はい
+
+_FROM_CPUB4_RW100:
+;	-------------------------------- 2006/12/26(INS) V05 {
+;//2016/04/15	FAR_JSR	#_VUP_PROG_SUM_CHK,R11			; ﾊﾞｰｼﾞｮﾝUPﾌﾟﾛｸﾞﾗﾑのSUMﾁｪｯｸ		サムチェック止める！！
+	MOV.L	#_VUP_PRG_NG_DAT,R11
+	MOV.W	@R11,R1
+	TST	R1,R1					; ﾊﾞｰｼﾞｮﾝUPﾌﾟﾛｸﾞﾗﾑのSUM異常ある？
+	BT	_FROM_CPUB4_RW140			; いいえ
+	MOV.W	#H'FF,R1				; エラー有り
+	M_BRA	_FROM_REWR_EXT
+_FROM_CPUB4_RW140:
+;	-------------------------------- }
+
+	.AIF	_SYS_ROM_SEL EQ _FROM_SEL
+	MOV.L	#H'A0000000,R1				; R1 <- 
+	MOV.L	#_CPUB_PRO_SIZE,R11			; 80000H
+	ADD	R1,R11					; R11 <- 画面ﾃｰﾌﾞﾙの最終ｱﾄﾞﾚｽ		540000H
+	MOV.L	#_FROMSYS_SECT_TBL,R7			; セクタテーブル
+	MOV.L	#H'A0000000,R13
+	.AELSE
+	MOV.L	#H'B0000000,R1				; R1 <- 
+	MOV.L	#_CPUB_PRO_SIZE,R11			; 80000H
+	ADD	R1,R11					; R11 <- 画面ﾃｰﾌﾞﾙの最終ｱﾄﾞﾚｽ		540000H
+	MOV.L	#_FROMSYSEP_SECT_TBL,R7			; セクタテーブル
+	MOV.L	#H'B0000000,R13
+	.AENDI
+	M_BRA	_FROM_REWR_COM
+;	---------------------------------------------------------------------------
+
+;	---------------------------------------------------------------------------
+;/* SIT4-MC  2014/04/17 */
+_FROM_KAT2_REWRITE:
+	SUB_START
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	TST	R0,R0					; 書込み／消去スタート済み？
+	BT	_FROM_KAT2_RW100			; いいえ
+	MOV.L	#_from_top,R13
+	M_BRA	_FROM_REWR_COM_100			; はい
+
+_FROM_KAT2_RW100:
+	MOV.L	#_200_KATA_TOP,R1			; R1 <- ﾃｰﾌﾞﾙの先頭は、必ずｾｸﾀの先頭ｱﾄﾞﾚｽ
+	MOV.L	#_100_KATA_SIZE,R11			; 40000H
+	ADD	R1,R11					; 最終ｱﾄﾞﾚｽ+1
+	MOV.L	#_FROM_SECT_TBL_KAT2_MC,R7			; 
+	MOV.L	#_from_top,R13
+	M_BRA	_FROM_REWR_COM
+;	---------------------------------------------------------------------------
+
+;	---------------------------------------------------------------------------
+;/* SIT4-MC  2014/04/17 */
+_FROM_KATS_REWRITE:
+	SUB_START
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	TST	R0,R0					; 書込み／消去スタート済み？
+	BT	_FROM_KATS_RW100			; いいえ
+	MOV.L	#_from_top,R13
+	M_BRA	_FROM_REWR_COM_100			; はい
+
+_FROM_KATS_RW100:
+	MOV.L	#_SMP_KATA_TOP,R1			; R1 <- ﾃｰﾌﾞﾙの先頭は、必ずｾｸﾀの先頭ｱﾄﾞﾚｽ
+	MOV.L	#_SMP_KATA_SIZE,R11			; 40000H
+	ADD	R1,R11					; 最終ｱﾄﾞﾚｽ+1
+	MOV.L	#_FROM_SECT_TBL_KATS_MC,R7			; 
+	MOV.L	#_from_top,R13
+	M_BRA	_FROM_REWR_COM
+;	---------------------------------------------------------------------------
+
+;	---------------------------------------------------------------------------
+;/* SIT4-MC  2015/01/16 */
+_FROM_SEQD_REWRITE:
+	SUB_START
+
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	TST	R0,R0					; 書込み／消去スタート済み？
+	BT	_FROM_SEQD_RW100			; いいえ
+	MOV.L	#_from_top,R13
+	M_BRA	_FROM_REWR_COM_100			; はい
+
+_FROM_SEQD_RW100:
+	MOV.L	#_SEQ_COM1_TOP,R1			; R1 <- シーケンスの先頭は、必ずｾｸﾀの先頭ｱﾄﾞﾚｽ
+	MOV.L	#_SEQ_PRO_SIZE2,R11			; 30000H
+	ADD	R1,R11					; R11 <- 画面ﾃｰﾌﾞﾙの最終ｱﾄﾞﾚｽ
+	MOV.L	#_FROM_SECT_TBL_SEQD_MC,R7		; セクタテーブル
+
+	MOV.L	#_from_top,R13
+	M_BRA	_FROM_REWR_COM
+;	---------------------------------------------------------------------------
+
+;	---------------------------------------------------------------------------
+_FROM_REWR_COM:
+	MOV.L	#_FROM_SCT_TOP_ADR,R6
+	MOV.L	R7,@R6					; 先頭のセクタテーブル
+	MOV.L	#_FROM_REWR_TOP_ADR,R6
+	MOV.L	R1,@R6					; 書込み／消去先頭アドレス格納
+	MOV.L	#_FROM_REWR_END_ADR,R6
+	MOV.L	R11,@R6					; 書込み／消去最終アドレス格納
+	MOV.L	#_VUP_DATA_AREA_CPUB,R9
+	MOV.L	#_VUP_DATA_AREA_ADR,R6
+	MOV.L	R9,@R6					; 転送元先頭ｱﾄﾞﾚｽ
+
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	#BIT0,R0
+	MOV.W	R0,@R6					; 書込み／消去スタートＯＮ！
+
+_FROM_REWR_COM_100:
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	TST	#BIT1,R0				; 消去済み？
+	BF	_FROM_REWR_COM_200			; はい
+
+;	---------------------------------------------------------------------
+;	-----	ｾｸﾀnの消去						-----
+;	---------------------------------------------------------------------
+	MOV.L	#_FROM_REWR_TOP_ADR,R6
+	MOV.L	@R6,R8					; 書込み／消去セクタ先頭アドレス格納
+;SIT-4	MOV.L	#_from_top,R13
+
+	FAR_JSR	#_FROM_ERASE_CMND,R10			; FROM消去ｺﾏﾝﾄﾞ発行
+							; In : R13<-_from_top  R0:KEEP
+							; In : R8 <- 消去するｾｸﾀの先頭ｱﾄﾞﾚｽ
+	FAR_JSR	#_FROM_ERASE_POLLINKG,R10		; 消去時のﾎﾟｰﾘﾝｸﾞ
+							; In : R8 <- 消去するｾｸﾀの先頭ｱﾄﾞﾚｽ
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	OR	#BIT1,R0
+	MOV.W	R0,@R6
+
+	MOV.W	#1,R1
+	M_BRA	_FROM_REWR_EXT
+;	--------------------------------------------------------------------
+
+_FROM_REWR_COM_200:
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	TST	#BIT2,R0				; 書込み済み？
+	BF	_FROM_REWR_COM_300			; はい
+
+;	---------------------------------------------------------------------
+;	-----	ｾｸﾀnの書込み						-----
+;	---------------------------------------------------------------------
+	MOV.L	#_VUP_DATA_AREA_ADR,R6
+	MOV.L	@R6,R9					; 転送元先頭ｱﾄﾞﾚｽ
+	MOV.L	#_FROM_REWR_TOP_ADR,R6
+	MOV.L	@R6,R8					; 書込み／消去セクタ先頭アドレス格納
+;SIT-4	MOV.L	#_from_top,R13
+_FROM_REWR_250:
+	FAR_JSR	#_FROM_WRITE_CMND,R10			; FROM書込みｺﾏﾝﾄﾞ発行
+							; In:R13<-_from_top  R0:KEEP
+	NOP
+	NOP
+	MOV.W	@R9+,R0
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	MOV.W	R0,@R8
+	NOP
+	NOP
+
+	FAR_JSR	#_FROM_WRITE_POLLINKG,R10
+
+	ADD	#2,R8
+
+	MOV.L	#_FROM_SCT_TOP_ADR,R6
+	MOV.L	@R6,R6					; 書込み中の先頭のセクタテーブルアドレス
+	ADD	#4,R6
+	MOV.L	@R6,R1					; 次のﾌﾗｯｼｭROMｾｸﾀの先頭ｱﾄﾞﾚｽ
+	CMP/HS	R1,R8					; 次のｾｸﾀになった？
+	BF	_FROM_REWR_250				; いいえ
+
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	OR	#BIT2,R0
+	MOV.W	R0,@R6
+
+	MOV.W	#1,R1
+	M_BRA	_FROM_REWR_EXT
+;	----------------------------------------------------------------------
+
+_FROM_REWR_COM_300:
+;	---------------------------------------------------------------------
+;	-----	ｾｸﾀnのﾍﾞﾘﾌｧｲ						-----
+;	---------------------------------------------------------------------
+	MOV.L	#_VUP_DATA_AREA_ADR,R6
+	MOV.L	@R6,R9					; 転送元先頭ｱﾄﾞﾚｽ
+	MOV.L	#_FROM_REWR_TOP_ADR,R6
+	MOV.L	@R6,R8					; 書込み／消去セクタ先頭アドレス格納
+_FROM_REWR_400:
+	_WDT_CLR					; R0,R10 USED
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	MOV.W	@R9+,R0
+	EXTU.W	R0,R0
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	MOV.W	@R8+,R1
+	EXTU.W	R1,R1
+
+	CMP/EQ	R1,R0
+	BT	_FROM_REWR_VEROK
+
+;	-------------------------------- 2006/12/26(INS) V05 {
+	MOV.L	#_VUP_PRG_RETRY_CNT,R6
+	MOV.W	@R6,R0
+	ADD	#1,R0
+	MOV.W	R0,@R6
+	CMP/EQ	#3,R0
+	BF	_FROM_REWR_450
+	MOV.W	#H'0082,R0				; 書き込みリトライオーバー
+	MOV.L	#_VUP_PRG_NG_DAT,R1
+	MOV.W	R0,@R1
+_FROM_REWR_450:
+	MOV.L	#_FROM_REWR_STR_FLG,R7
+	MOV.W	@R7,R0
+	MOV.W	#(BIT2+BIT1),R1
+	NOT	R1,R1
+	AND	R1,R0					; 消去済み／書き込み済みフラグクリア
+	MOV.W	R0,@R7
+;	-------------------------------- }
+
+	MOV.W	#H'FF,R1				; エラー有り
+	M_BRA	_FROM_REWR_EXT
+;	-----------------------------------------------------------------------------
+
+_FROM_REWR_VEROK:
+	MOV.L	#_FROM_SCT_TOP_ADR,R6
+	MOV.L	@R6,R6					; 書込み中の先頭のセクタテーブルアドレス
+	ADD	#4,R6
+	MOV.L	@R6,R1					; 次のﾌﾗｯｼｭROMｾｸﾀの先頭ｱﾄﾞﾚｽ
+	CMP/HS	R1,R8					; 次のｾｸﾀになった？
+	BF	_FROM_REWR_400				; いいえ
+
+	MOV.L	#_FROM_SCT_TOP_ADR,R7
+	MOV.L	R6,@R7					; 書込み中の先頭のセクタテーブルアドレス
+	MOV.L	#_VUP_DATA_AREA_ADR,R7
+	MOV.L	R9,@R7					; 転送元先頭ｱﾄﾞﾚｽ
+	MOV.L	#_FROM_REWR_TOP_ADR,R7
+	MOV.L	R8,@R7					; 書込み／消去セクタ先頭アドレス格納
+
+	MOV.L	@R6,R1					; 次のﾌﾗｯｼｭROMｾｸﾀの先頭ｱﾄﾞﾚｽ
+	MOV.L	#_FROM_REWR_END_ADR,R6
+	MOV.L	@R6,R11					; 書込み最終ｱﾄﾞﾚｽ
+	CMP/HS	R11,R1					; このセクタは最後？
+	BF	_FROM_REWR_500				; いいえ
+
+	MOV.L	#_FROM_REWR_STR_FLG,R7
+	MOV.W	#0,R0
+	MOV.W	R0,@R7
+
+	MOV.W	#0,R1					; 正常に全終了
+	M_BRA	_FROM_REWR_EXT
+
+_FROM_REWR_500:
+	MOV.L	#_FROM_REWR_STR_FLG,R7
+	MOV.W	@R7,R0
+	MOV.W	#(BIT2+BIT1),R1
+	NOT	R1,R1
+	AND	R1,R0					; 消去済み／書き込み済みフラグクリア
+	MOV.W	R0,@R7
+
+	MOV.W	#1,R1					; 正常に１セクタ終了
+	M_BRA	_FROM_REWR_EXT
+
+_FROM_REWR_EXT:
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****										*****
+;	*****	受信データのSUMチェック							*****
+;	*****										*****
+;	*****	V05 (MAKE) 2006/12/26							*****
+;	*****										*****
+;	*************************************************************************************
+	.IMPORT		_ROM_SUM_CODE;
+	.IMPORT		_PV_DEB_WORD_WK11;
+_VUP_PROG_SUM_CHK:
+	SUB_START
+	PUSH_ALL
+
+	MOV.L	#_SV_MACINE_SEL1,R1
+	MOV.W	@R1,R0
+	MOV.W	#_NON_SUM_CODE,R2
+	CMP/EQ	R2,R0					; SUM CHECK無しｺｰﾄﾞ？
+	BF	_VUP_PROG_SUMCHK_010			; いいえ
+	M_BRA	_VUP_PROG_SUMCHK_EXT			; はい
+
+_VUP_PROG_SUMCHK_010:
+	MOV.L	#_VUP_DATA_AREA_CPUB,R9			; ﾊﾞｰｼﾞｮﾝUPﾌﾟﾛｸﾞﾗﾑ格納領域先頭
+	MOV.L	#_ROM_SUM_CODE,R8			;
+;//SIT4-MC	MOV.L	#H'A0000000,R7
+	MOV.L	#_ResetHandler,R7
+	SUB	R7,R8					
+	ADD	R9,R8					; ﾊﾞｰｼﾞｮﾝUPﾌﾟﾛｸﾞﾗﾑ格納領域最終
+	XOR	R2,R2					; SUM作成用
+	MOV.W	#H'7FFF,R6
+
+_VUP_PROG_SUMCHK_050:
+	CMP/HS	R8,R9					; 最終ｱﾄﾞﾚｽまできた？
+	BT	_VUP_PROG_SUMCHK_100			; はい
+	MOV.L	@R9+,R0
+	ADD	R0,R2
+	MOV	R9,R7
+	AND	R6,R7
+	TST	R7,R7
+	BF	_VUP_PROG_SUMCHK_050
+	_WDT_CLR
+	M_BRA	_VUP_PROG_SUMCHK_050
+
+_VUP_PROG_SUMCHK_100:
+	MOV.L	#_PV_DEB_WORD_WK11,R1
+	MOV.L	R2,@R1					; 算出SUM SAVE
+	MOV.L	@R9,R0					; 送られてきたSUM
+	MOV.L	#_DUMMY_SUM_CODE,R1
+	CMP/EQ	R1,R0					; SUM CHECK無し？
+	BT	_VUP_PROG_SUMCHK_150			; はい
+	CMP/EQ	R2,R0					; SUM CHECK!!
+	BT	_VUP_PROG_SUMCHK_150			; OK
+_VUP_PROG_SUMCHK_NG:
+	MOV.W	#H'0081,R0				; 受信したﾌﾟﾛｸﾞﾗﾑのSUM異常
+	MOV.L	#_VUP_PRG_NG_DAT,R1
+	MOV.W	R0,@R1
+
+_VUP_PROG_SUMCHK_150:
+_VUP_PROG_SUMCHK_EXT:
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****										*****
+;	*****	通信による設定値変更時、クラッチへのデータ転送要求	V01i		*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_FRAM_TO_CB:
+	SUB_START
+	MOV.L	#_vup_hs_area+VUP_SEL_PC,R1		;
+	MOV.W	@R1,R0					; NEW
+	MOV.L	#_FRAM_TO_CB_CODBAK,R1
+	MOV.W	@R1,R2					; OLD
+	MOV.W	R0,@R1
+	CMP/EQ	R0,R2
+	BT	_FRAMTOCB_EXIT
+	MOV.W	#H'0080,R1
+	CMP/EQ	R0,R1					; 80hになった？
+	BF	_FRAMTOCB_EXIT				; はい
+	PUSH_ALL
+	FAR_JSR	#_mmon_trans_get,R1			; V01q(INS)
+	POP_ALL
+	MOV.L	#_SVSW_CHG_FLG,R1
+;//	MOV.W	#H'012F,R0
+;//	MOV.W	#H'013F,R0				; V01l_d
+	MOV.W	#H'003F,R0				; V01o_a
+	MOV.W	R0,@R1					; ｸﾗｯﾁへの転送要求
+	MOV.L	#_GAMNE_REDISP_COD,R1			;
+	MOV.W	#H'FF,R0
+	MOV.W	R0,@R1
+_FRAMTOCB_EXIT:
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****										*****
+;	*****	ローダコマンドをそのままＣ／Ｂへ	V01v				*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_LDCMD_PC2CB:
+	SUB_START
+	PUSH_ALL
+
+	MOV.L	#_sci0_rxd_buf,R11
+	MOV.L	#_HMI2CB_LDCMD_DAT,R12
+	MOV.W	#512/2,R13
+
+_LDCMD_P2C_050:
+	TST	R13,R13
+	BT	_LDCMD_P2C_100
+	MOV.W	@R11+,R14
+	MOV.W	R14,@R12			; HMI->C/B ﾛｰﾀﾞｺﾏﾝﾄﾞ
+	ADD	#2,R12
+	ADD	#-1,R13
+	M_BRA	_LDCMD_P2C_050
+_LDCMD_P2C_100:
+
+	MOV.L	#_HMI2CB_LDCMD_FLG,R12
+	MOV.W	#1,R14
+	MOV.W	R14,@R12			; HMI->C/B ﾛｰﾀﾞｺﾏﾝﾄﾞｾｯﾄﾌﾞﾗｸﾞｾｯﾄ
+
+_LDCMD_P2C_EXT:
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****										*****
+;	*****	Ｃ／Ｂからくるローダコマンドをそのまま上位へ	V01v			*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_LDCMD_CB2PC:
+	SUB_START
+	PUSH_ALL
+
+	MOV.L	#_CB2HMI_LDCMD_FLG,R12
+	MOV.W	@R12,R0
+	CMP/EQ	#1,R0				; C/B->HMI ﾛｰﾀﾞｺﾏﾝﾄﾞｾｯﾄﾌﾞﾗｸﾞＯＮ？
+	BT	_LDCMD_C2P_020			; はい
+	M_BRA	_LDCMD_C2P_EXT			; いいえ
+
+_LDCMD_C2P_020:
+	MOV.L	#_CB2HMI_LDCMD_DAT,R11
+	MOV.L	#_sci0_txd_buf,R12
+	MOV.W	#512/2,R13
+
+_LDCMD_C2P_050:
+	TST	R13,R13
+	BT	_LDCMD_C2P_100
+	MOV.W	@R11+,R14
+	MOV.W	R14,@R12			; C/B->HMI ﾛｰﾀﾞｺﾏﾝﾄﾞ
+	ADD	#2,R12
+	ADD	#-1,R13
+	M_BRA	_LDCMD_C2P_050
+_LDCMD_C2P_100:
+
+	MOV.L	#_CB2HMI_LDCMD_FLG,R12
+	MOV.W	#0,R0
+	MOV.W	R0,@R12				; C/B->HMI ﾛｰﾀﾞｺﾏﾝﾄﾞｾｯﾄﾌﾞﾗｸﾞクリア
+
+	MOV.L	#_sci0_txd_buf+_DATA_CNTL,R10		;
+	MOV.B	@R10+,R2				; ﾃﾞｰﾀ数ｶｳﾝﾀ(L)
+	EXTU.B	R2,R0					;
+	MOV.B	@R10+,R2				; ﾃﾞｰﾀ数ｶｳﾝﾀ(H)
+	SHLL8	R2
+	OR	R0,R2
+	EXTU.W	R2,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ
+	ADD	#3,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ＋3(伝送ﾍｯﾀﾞ部)＝全送信ﾊﾞｲﾄ数
+	MOV.L	#_sci0_wkram+TXD_CNT,R10
+	MOV.W	R2,@R10					; 全送信ﾊﾞｲﾄ数格納
+	XOR	R0,R0
+	MOV.L	#_sci0_wkram+TXD_BUF_POI,R10
+	MOV.W	R0,@R10					; 送信ﾊﾞｯﾌｧ用ﾎﾟｲﾝﾀをｸﾘｱ
+
+	FAR_JSR	#_SCI0_TXI_EI,R10			; 送信ｴﾝﾌﾟﾃｨ割込み許可
+
+_LDCMD_C2P_EXT:
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****		WORK RAM							*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+	.SECTION	BvupsciwkRAM, DATA,ALIGN=4			;
+	.export		_VUP_PRG_NG_DAT
+_FROM_SCT_TOP_ADR	.SRES		4		;
+_FROM_REWR_TOP_ADR	.SRES		4		;
+_FROM_REWR_END_ADR	.SRES		4		;
+_VUP_DATA_AREA_ADR	.SRES		4		;
+_FROM_REWR_STR_FLG	.SRES		2		;
+_SECTOR_RETRY		.SRES		2		; 2004/04/20(INS)
+_FRAM_TO_CB_CODBAK	.SRES		2		; 2004/05/19 V01i (INS)
+_VUP_PRG_NG_DAT		.SRES		2		; 2006/12/26 V05
+_VUP_PRG_RETRY_CNT	.SRES		2		; 2006/12/26 V05
+
+
+;★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+
+	.SECTION	PvupsciROM,CODE,ALIGN=4
+;	*************************************************************************************
+;	*****										*****
+;	*****	ＳＨ４(CPUA)へＦＲＯＭデータを渡し、書かせる				*****
+;	*****										*****
+;	*************************************************************************************
+_FROM_SEQA_REWRITE:
+	SUB_START
+
+	MOV.L	#_CB_SYS_PARAM248,R10			; シーケンス実行CPUD選択	2015/01/16
+	MOV.W	@R10,R0
+	MOV.L	#1234,R10
+	CMP/EQ	R10,R0					; 1234ならCPUD
+	BF	_FROM_SEQA_RW050
+
+	FAR_JSR	#_FROM_SEQD_REWRITE,R10			; CPUD SEQ バージョンアップ
+	M_BRA	_FROM_CPUA_REWR_END
+
+_FROM_SEQA_RW050:
+
+
+
+	MOV.L	#_VUP_HSAREA_B_TO_A,R8			; ﾊﾝﾄﾞｼｪｲｸ領域CPUB書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_HSAREA_A_TO_B,R9			; ﾊﾝﾄﾞｼｪｲｸ領域CPUA書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_DATA_ADR_OP1,R12			; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀ転送領域先頭ｱﾄﾞﾚｽ
+	MOV.W	#(H'2000/4),R4				; 2000Hずつ転送（COP2対応）
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT0,R0				; ＣＰＵＡへスタート開始済み？
+	BT	_FROM_SEQA_RW100			; いいえ
+	M_BRA	_FROM_CPUA_REWR_100			; はい
+
+_FROM_SEQA_RW100:
+	MOV.L	#_VUP_DATA_AREA_CPUB,R0			; 400000H
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.L	#_SEQ_PRO_SIZE,R10
+	ADD	R10,R0					; 410000H
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別CPUAへ
+	M_BRA	_FROM_CPUA_REWR_COM
+;	-------------------------------------------------------------------------------------
+
+_FROM_CPUA_REWRITE:
+	SUB_START
+	MOV.L	#_VUP_HSAREA_B_TO_A,R8			; ﾊﾝﾄﾞｼｪｲｸ領域CPUB書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_HSAREA_A_TO_B,R9			; ﾊﾝﾄﾞｼｪｲｸ領域CPUA書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_DATA_ADR_OP1,R12			; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀ転送領域先頭ｱﾄﾞﾚｽ
+	MOV.W	#(H'2000/4),R4				; 2000Hずつ転送（COP2対応）
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT0,R0				; ＣＰＵＡへスタート開始済み？
+	BT	_FROM_CPUA_RW100			; いいえ
+	M_BRA	_FROM_CPUA_REWR_100			; はい
+
+_FROM_CPUA_RW100:
+	MOV.L	#_VUP_DATA_AREA_CPUB,R0			; 400000H
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.L	#_CPUA_PRO_SIZE,R10
+	ADD	R10,R0					; 460000H
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別CPUAへ
+	M_BRA	_FROM_CPUA_REWR_COM
+;	-------------------------------------------------------------------------------------
+
+_FROM_SENA_REWRITE:
+	SUB_START
+	MOV.L	#_VUP_HSAREA_B_TO_A,R8			; ﾊﾝﾄﾞｼｪｲｸ領域CPUB書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_HSAREA_A_TO_B,R9			; ﾊﾝﾄﾞｼｪｲｸ領域CPUA書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_DATA_ADR_OP1,R12			; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀ転送領域先頭ｱﾄﾞﾚｽ
+	MOV.W	#(H'2000/4),R4				; 2000Hずつ転送（COP2対応）
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT0,R0				; ＣＰＵＡへスタート開始済み？
+	BT	_FROM_SENA_RW100			; はい
+	M_BRA	_FROM_CPUA_REWR_100			; はい
+
+_FROM_SENA_RW100:
+	MOV.L	#_VUP_DATA_AREA_CPUB,R0			; 400000H
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.L	#_CB_TBL_SIZE,R10
+	ADD	R10,R0					; 440000H
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別CPUAへ
+	M_BRA	_FROM_CPUA_REWR_COM
+;	-------------------------------------------------------------------------------------
+
+_FROM_SYSA_REWRITE:
+	SUB_START
+	MOV.L	#_VUP_HSAREA_B_TO_A,R8			; ﾊﾝﾄﾞｼｪｲｸ領域CPUB書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_HSAREA_A_TO_B,R9			; ﾊﾝﾄﾞｼｪｲｸ領域CPUA書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_DATA_ADR_OP1,R12			; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀ転送領域先頭ｱﾄﾞﾚｽ
+	MOV.W	#(H'2000/4),R4				; 2000Hずつ転送（COP2対応）
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT0,R0				; ＣＰＵＡへスタート開始済み？
+	BT	_FROM_SYSA_RW100			; いいえ
+	M_BRA	_FROM_CPUA_REWR_100			; はい
+
+_FROM_SYSA_RW100:
+	MOV.L	#_VUP_DATA_AREA_CPUB,R0			; 400000H
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.L	#_CB_SYS_SIZE,R10
+	ADD	R10,R0					; 410000H
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別CPUAへ
+	M_BRA	_FROM_CPUA_REWR_COM
+;	-------------------------------------------------------------------------------------
+
+_FROM_COP2_REWRITE:					; SIT-4 COP2
+	SUB_START
+	MOV.L	#_VUP_HSAREA_B_TO_A - _dpram_top + _dpramB_top,R8	; ﾊﾝﾄﾞｼｪｲｸ領域CPUB書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_HSAREA_A_TO_B - _dpram_top + _dpramB_top,R9	; ﾊﾝﾄﾞｼｪｲｸ領域CPUA書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_DATA_ADR_OP1 - _dpram_top + _dpramB_top,R12
+	MOV.W	#(H'400/4),R4
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT0,R0				; ＣＰＵＡへスタート開始済み？
+	BT	_FROM_COP2_RW100			; いいえ
+	M_BRA	_FROM_CPUA_REWR_100			; はい
+_FROM_COP2_RW100:
+	MOV.L	#_VUP_DATA_AREA_CPUB,R0			; 400000H
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.L	#_CPUA_PRO_SIZE,R10
+	ADD	R10,R0					; 460000H
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別CPUAへ
+	M_BRA	_FROM_CPUA_REWR_COM
+;	-------------------------------------------------------------------------------------
+
+_FROM_SEN2_REWRITE:					; SIT-4 COP2
+	SUB_START
+	MOV.L	#_VUP_HSAREA_B_TO_A - _dpram_top + _dpramB_top,R8	; ﾊﾝﾄﾞｼｪｲｸ領域CPUB書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_HSAREA_A_TO_B - _dpram_top + _dpramB_top,R9	; ﾊﾝﾄﾞｼｪｲｸ領域CPUA書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_DATA_ADR_OP1 - _dpram_top + _dpramB_top,R12
+	MOV.W	#(H'400/4),R4
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT0,R0				; ＣＰＵＡへスタート開始済み？
+	BT	_FROM_SEN2_RW100			; いいえ
+	M_BRA	_FROM_CPUA_REWR_100			; はい
+_FROM_SEN2_RW100:
+	MOV.L	#_VUP_DATA_AREA_CPUB,R0			; 400000H
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.L	#_CB_TBL_SIZE,R10
+	ADD	R10,R0					; 460000H
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別CPUAへ
+	M_BRA	_FROM_CPUA_REWR_COM
+;	-------------------------------------------------------------------------------------
+
+_FROM_SYS2_REWRITE:					; SIT-4 COP2
+	SUB_START
+	MOV.L	#_VUP_HSAREA_B_TO_A - _dpram_top + _dpramB_top,R8	; ﾊﾝﾄﾞｼｪｲｸ領域CPUB書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_HSAREA_A_TO_B - _dpram_top + _dpramB_top,R9	; ﾊﾝﾄﾞｼｪｲｸ領域CPUA書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_DATA_ADR_OP1 - _dpram_top + _dpramB_top,R12
+	MOV.W	#(H'400/4),R4
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT0,R0				; ＣＰＵＡへスタート開始済み？
+	BT	_FROM_SYS2_RW100			; いいえ
+	M_BRA	_FROM_CPUA_REWR_100			; はい
+_FROM_SYS2_RW100:
+	MOV.L	#_VUP_DATA_AREA_CPUB,R0			; 400000H
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.L	#_CB_SYS_SIZE,R10
+	ADD	R10,R0					; 460000H
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別CPUAへ
+	M_BRA	_FROM_CPUA_REWR_COM
+;	-------------------------------------------------------------------------------------
+
+_FROM_CPUA_REWR_COM:
+	MOV.W	R0,@(VUP_SEL_PC,R8)			; ﾊﾞｰｼﾞｮﾝUP種別CPUAへ
+	MOV.L	#1,R0
+	MOV.W	R0,@(VUP_STR_PC,R8)			; ﾊﾞｰｼﾞｮﾝUPｽﾀｰﾄCPUAへ
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	#BIT0,R0
+	MOV.W	R0,@R10					; ＣＰＵＡへスタート開始済みＯＮ！
+
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	ＳＨ３(CPUB)へＦＲＯＭデータを渡し、書かせる				*****
+;	*****										*****
+;	*************************************************************************************
+_FROM_CPUB4_REWRITE:
+	SUB_START
+	MOV.L	#_VUP_HSAREA_B_TO_A - _dpram_top + _dpramB_top,R8	; ﾊﾝﾄﾞｼｪｲｸ領域CPUB書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_HSAREA_A_TO_B - _dpram_top + _dpramB_top,R9	; ﾊﾝﾄﾞｼｪｲｸ領域CPUA書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_DATA_ADR_OP1 - _dpram_top + _dpramB_top,R12
+	MOV.W	#(H'2000/4),R4
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT0,R0				; ＣＰＵＡへスタート開始済み？
+	BT	_FROM_CPUB_RW100			; いいえ
+	M_BRA	_FROM_CPUA_REWR_100			; はい
+
+_FROM_CPUB_RW100:
+	MOV.L	#_VUP_DATA_AREA_CPUB,R0			; 400000H
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.L	#_CPUB_PRO_SIZE,R10
+	ADD	R10,R0					; 460000H
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別CPUAへ
+	M_BRA	_FROM_CPUB_REWR_COM
+;	-------------------------------------------------------------------------------------
+
+_FROM_SENB_REWRITE:
+	SUB_START
+	MOV.L	#_VUP_HSAREA_B_TO_A - _dpram_top + _dpramB_top,R8	; ﾊﾝﾄﾞｼｪｲｸ領域CPUB書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_HSAREA_A_TO_B - _dpram_top + _dpramB_top,R9	; ﾊﾝﾄﾞｼｪｲｸ領域CPUA書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_DATA_ADR_OP1 - _dpram_top + _dpramB_top,R12
+	MOV.W	#(H'2000/4),R4
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT0,R0				; ＣＰＵＡへスタート開始済み？
+	BT	_FROM_SENB_RW100			; はい
+	M_BRA	_FROM_CPUA_REWR_100			; はい
+
+_FROM_SENB_RW100:
+	MOV.L	#_VUP_DATA_AREA_CPUB,R0			; 400000H
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.L	#_CB_TBL_SIZE,R10
+	ADD	R10,R0					; 440000H
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別CPUAへ
+	M_BRA	_FROM_CPUB_REWR_COM
+;	-------------------------------------------------------------------------------------
+
+_FROM_SYSB_REWRITE:
+	SUB_START
+	MOV.L	#_VUP_HSAREA_B_TO_A - _dpram_top + _dpramB_top,R8	; ﾊﾝﾄﾞｼｪｲｸ領域CPUB書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_HSAREA_A_TO_B - _dpram_top + _dpramB_top,R9	; ﾊﾝﾄﾞｼｪｲｸ領域CPUA書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_DATA_ADR_OP1 - _dpram_top + _dpramB_top,R12
+	MOV.W	#(H'2000/4),R4
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT0,R0				; ＣＰＵＡへスタート開始済み？
+	BT	_FROM_SYSB_RW100			; いいえ
+	M_BRA	_FROM_CPUA_REWR_100			; はい
+
+_FROM_SYSB_RW100:
+	MOV.L	#_VUP_DATA_AREA_CPUB,R0			; 400000H
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.L	#_CB_SYS_SIZE,R10
+	ADD	R10,R0					; 410000H
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別CPUAへ
+	M_BRA	_FROM_CPUB_REWR_COM
+;	-------------------------------------------------------------------------------------
+
+_FROM_CPUB_REWR_COM:
+	MOV.W	R0,@(VUP_SEL_PC,R8)			; ﾊﾞｰｼﾞｮﾝUP種別CPUAへ
+	MOV.L	#1,R0
+	MOV.W	R0,@(VUP_STR_PC,R8)			; ﾊﾞｰｼﾞｮﾝUPｽﾀｰﾄCPUAへ
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	#(BIT7+BIT0),R0
+	MOV.W	R0,@R10					; ＣＰＵＡへスタート開始済みＯＮ！
+
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+;----------------------------------------------------------------------------------------------------------------
+;----------------------------------------------------------------------------------------------------------------
+;----------------------------------------------------------------------------------------------------------------
+;//CPUA/B共通
+_FROM_CPUA_REWR_100:
+;	-------------------------------- 2006/12/26(INS) V05 {
+	MOV.W	@(VUP_REV1_SH,R9),R0			; ﾊﾞｰｼﾞｮﾝUPｽﾀｰﾄCPUAから
+	MOV.W	R0,@(VUP_REV1_SH,GBR)
+;	-------------------------------- }
+
+;	-------------------------------------------------
+;		CPUAからのｽﾀｰﾄｺｰﾄﾞ応答待ち
+;	-------------------------------------------------
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT1,R0				; ＣＰＵＡからスタート開始応答済み？
+	BF	_FROM_CPUA_REWR_150			; はい
+
+	MOV.W	@(VUP_STR_PC,R8),R0			; ﾊﾞｰｼﾞｮﾝUPｽﾀｰﾄCPUAへ
+	MOV	R0,R1
+	MOV.W	@(VUP_STR_PC,R9),R0			; ﾊﾞｰｼﾞｮﾝUPｽﾀｰﾄCPUAから
+	CMP/EQ	R0,R1					; CPUAから応答有り？
+	BF	_FROM_CPUA_REWR_120			; いいえ
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	OR	#BIT1,R0				; ｽﾀｰﾄ応答済みＯＮ！
+	MOV.W	R0,@R10
+
+_FROM_CPUA_REWR_120:
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+;	-------------------------------------------------
+;		CPUAへ2000Hづつ転送
+;	-------------------------------------------------
+_FROM_CPUA_REWR_150:
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT2,R0				; ＣＰＵＡへ2000Ｈ転送完了済み？
+	BF	_FROM_CPUA_REWR_200			; はい
+
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	@R10,R11
+
+;//2016/03/24	COP2対応（もっと上位でｾｯﾄ）
+;///////	MOV.L	#_VUP_DATA_ADR_OP1,R12
+;///////	TST	#BIT7,R0				; ＣＰＵＢ？
+;///////	BT	_FROM_CPUA_REWR_160			; いいえ
+;///////	MOV.L	#_VUP_DATA_ADR_OP1 - _dpram_top + _dpramB_top,R12
+;///////_FROM_CPUA_REWR_160:
+;///////	MOV.W	#(H'2000/4),R4
+
+_FROM_CPUA_REWR_170:
+	MOV.L	@R11+,R0
+	NOP
+	MOV.L	R0,@R12
+	ADD	#4,R12
+	DT	R4
+	BF	_FROM_CPUA_REWR_170
+
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	R11,@R10
+
+	MOV.W	@(VUP_REV2_PC,R8),R0
+	ADD	#1,R0
+	MOV.W	R0,@(VUP_REV2_PC,R8)			; データブロック番号
+	MOV.W	#1,R0
+	MOV.W	R0,@(VUP_REV1_PC,R8)			; 2000H転送完了
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	OR	#BIT2,R0				; ＣＰＵＡへ2000Ｈ転送完了ＯＮ！
+	MOV.W	R0,@R10
+
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+;	-------------------------------------------------
+;		CPUAから2000H受信完了応答待ち
+;	-------------------------------------------------
+_FROM_CPUA_REWR_200:
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT3,R0				; ＣＰＵＡから2000Ｈ受信完了応答済み？
+	BF	_FROM_CPUA_REWR_250			; はい
+
+	MOV.W	@(VUP_REV1_PC,R8),R0			;
+	MOV	R0,R1
+	MOV.W	@(VUP_REV1_PC,R9),R0			;
+	CMP/EQ	R0,R1					; CPUAから応答有り？
+	BF	_FROM_CPUA_REWR_240			; いいえ
+
+	MOV.W	#0,R0
+	MOV.W	R0,@(VUP_REV1_PC,R8)			; ＣＰＵＡへ2000H転送完了ＯＦＦ
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	OR	#BIT3,R0				; 応答済みＯＮ！
+	MOV.W	R0,@R10
+
+_FROM_CPUA_REWR_240:
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+;	-------------------------------------------------
+;		CPUAから2000H受信完了信号OFF待ち
+;	-------------------------------------------------
+_FROM_CPUA_REWR_250:
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT4,R0				; ＣＰＵＡから2000Ｈ受信完了応答済み？
+	BF	_FROM_CPUA_REWR_300			; はい
+
+	MOV.W	@(VUP_REV1_PC,R8),R0			;
+	MOV	R0,R1
+	MOV.W	@(VUP_REV1_PC,R9),R0			;
+	CMP/EQ	R0,R1					; CPUAから応答有り？
+	BF	_FROM_CPUA_REWR_290			; いいえ
+
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	@R10,R0
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	@R10,R1
+	CMP/HS	R1,R0					; 転送最終アドレス？
+	BT	_FROM_CPUA_REWR_270			; はい
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	MOV.W	#(BIT3+BIT2),R1
+	NOT	R1,R1
+	AND	R1,R0					; 転送完了／応答済みＯＦＦ！
+	MOV.W	R0,@R10
+	M_BRA	_FROM_CPUA_REWR_290
+
+_FROM_CPUA_REWR_270:
+	MOV.W	#0,R0
+	MOV.W	R0,@(VUP_REV2_PC,R8)			; データブロック番号クリア
+	MOV.W	#1,R0
+	MOV.W	R0,@(VUP_DATA_WR_PC,R8)			; フラッシュへデータ書けＯＮ！
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	OR	#BIT4,R0				; 全データ送信完ＯＮ！
+	MOV.W	R0,@R10
+
+_FROM_CPUA_REWR_290:
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+;	-------------------------------------------------
+;		CPUAからﾌﾗｯｼｭ書込み完了応答待ち
+;	-------------------------------------------------
+_FROM_CPUA_REWR_300:
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT5,R0				; ＣＰＵＡから2000Ｈ受信完了応答済み？
+	BF	_FROM_CPUA_REWR_350			; はい
+
+	MOV.W	@(VUP_DATA_WR_PC,R8),R0			;
+	MOV	R0,R1
+	MOV.W	@(VUP_DATA_WR_PC,R9),R0			;
+	CMP/EQ	R0,R1					; CPUAから応答有り？
+	BF	_FROM_CPUA_REWR_340			; いいえ
+
+	MOV.W	#0,R0
+	MOV.W	R0,@(VUP_DATA_WR_PC,R8)			; ＣＰＵＡへ書込み指令ＯＦＦ
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	OR	#BIT5,R0				; 書込み完了ＯＮ！
+	MOV.W	R0,@R10
+
+_FROM_CPUA_REWR_340:
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+;	-------------------------------------------------
+;		CPUAからﾌﾗｯｼｭ書込み完了応答OFF待ち
+;	-------------------------------------------------
+_FROM_CPUA_REWR_350:
+	MOV.W	@(VUP_DATA_WR_PC,R8),R0			;
+	MOV	R0,R1
+	MOV.W	@(VUP_DATA_WR_PC,R9),R0			;
+	CMP/EQ	R0,R1					; CPUAから応答有り？
+	BF	_FROM_CPUA_REWR_390			; いいえ
+
+	MOV.W	#0,R0
+	MOV.W	R0,@(VUP_STR_PC,R8)
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	R0,@R10
+
+	MOV	#0,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+_FROM_CPUA_REWR_390:
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+_FROM_CPUA_REWR_END:
+	SUB_END
+	M_RTS
+
+
+;★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+
+	.SECTION	PvupsciROM,CODE,ALIGN=4
+;	*************************************************************************************
+;	*****										*****
+;	*****										*****
+;	*****	ＥＰＲＯＭからＦＲＯＭへ全コピー					*****
+;	*****	（ＥＰＲＯＭで動かしＦＲＯＭにコピーしたいとき）			*****
+;	*****										*****
+;	*************************************************************************************
+_EPROM_TO_FROM_COPY:
+	SUB_START
+	.AIF	_SIT_TYPE_SEL EQ _TYPE_SIT4
+
+	MOV.L	#_EPROM_TO_FROM_END,R10
+	MOV.W	@R10,R0
+	MOV.W	#H'5AA5,R4
+	CMP/EQ	R0,R4
+	BF	_EP2F_COPY_STR
+	M_BRA	_EP2F_COPY_EXT
+
+_EP2F_COPY_STR:
+	MOV.L	#_PFDR,R10
+	MOV.B	@R10,R0
+	NOT	R0,R0
+	EXTU.B	R0,R0
+	CMP/EQ	#H'5A,R0
+	BT	_EP2F_COPY_000
+	M_BRA	_EP2F_COPY_EXT
+
+_EP2F_COPY_000:
+	MOV.W	#11,R4
+	MOV.L	#_FROMSYSEP_SECT_TBL+0*4,R11
+_EP2F_COPY_050:
+	TST	R4,R4					; ｾｸﾀ0～10（ｱﾄﾞﾚｽ0～7FFFF）まで消去
+	BT	_EP2F_COPY_100
+	MOV.L	@R11+,R8				;
+	MOV.L	#H'B0000000,R13				; ｺﾋﾟｰ先先頭ｱﾄﾞﾚｽ
+	FAR_JSR	#_FROM_ERASE_CMND,R10			; 消去ｺﾏﾝﾄﾞ発行
+							; In : R13<-_from_top  R0:KEEP
+							; In : R8 <- 消去するｾｸﾀの先頭ｱﾄﾞﾚｽ
+	FAR_JSR	#_FROM_ERASE_POLLINKG,R10		; 消去時のﾎﾟｰﾘﾝｸﾞ
+							; In : R8 <- 消去するｾｸﾀの先頭ｱﾄﾞﾚｽ
+	ADD	#-1,R4
+	M_BRA	_EP2F_COPY_050
+
+_EP2F_COPY_100:
+
+	MOV.L	#0,R9					; ｺﾋﾟｰ元先頭ｱﾄﾞﾚｽ
+	MOV.L	#H'B0000000,R8				; ｺﾋﾟｰ先先頭ｱﾄﾞﾚｽ
+	MOV.L	#H'B007EFFF,R5				; ｺﾋﾟｰ先最終ｱﾄﾞﾚｽ
+_EP2F_COPY_150:
+	CMP/HI	R5,R8					; 最終ｱﾄﾞﾚｽを超えた？
+	BT	_EP2F_COPY_200
+
+	MOV.L	#H'B0000000,R13				; ｺﾋﾟｰ先先頭ｱﾄﾞﾚｽ
+	FAR_JSR	#_FROM_WRITE_CMND,R10			; FROM書込みｺﾏﾝﾄﾞ発行
+							; In:R13<-_from_top  R0:KEEP
+	NOP
+	NOP
+	MOV.W	@R9+,R0
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	MOV.W	R0,@R8
+	NOP
+	NOP
+
+	FAR_JSR	#_FROM_WRITE_POLLINKG,R10
+	ADD	#2,R8
+	M_BRA	_EP2F_COPY_150
+
+_EP2F_COPY_200:
+	MOV.L	#_EPROM_TO_FROM_END,R10
+	MOV.W	#H'5AA5,R4
+	MOV.W	R4,@R10
+
+_EP2F_COPY_EXT:
+	.AENDI
+	SUB_END
+	M_RTS
+
+
+;//_FROMSYS_SECT_TBL:
+;//	.DATA.L		H'A0000000			; ｾｸﾀ0	16kb
+;//	.DATA.L		H'A0004000			; ｾｸﾀ1	8kb
+;//	.DATA.L		H'A0006000			; ｾｸﾀ2	8kb
+;//	.DATA.L		H'A0008000			; ｾｸﾀ3	32kb
+;//	.DATA.L		H'A0010000			; ｾｸﾀ4	64kb
+;//	.DATA.L		H'A0020000			; ｾｸﾀ5	64kb
+;//	.DATA.L		H'A0030000			; ｾｸﾀ6	64kb
+;//	.DATA.L		H'A0040000			; ｾｸﾀ7	64kb
+;//	.DATA.L		H'A0050000			; ｾｸﾀ8	64kb
+;//	.DATA.L		H'A0060000			; ｾｸﾀ9	64kb
+;//	.DATA.L		H'A0070000			; ｾｸﾀ10	64kb
+;//	.DATA.L		H'A0080000			; ｾｸﾀ11	64kb
+;//	.DATA.L		H'A0090000			; ｾｸﾀ12	64kb
+;//	.DATA.L		H'A00a0000			; ｾｸﾀ13	64kb
+;//	.DATA.L		H'A00b0000			; ｾｸﾀ14	64kb
+;//	.DATA.L		H'A00c0000			; ｾｸﾀ15	64kb
+;//	.DATA.L		H'A00d0000			; ｾｸﾀ16	64kb
+;//	.DATA.L		H'A00e0000			; ｾｸﾀ17	64kb
+;//	.DATA.L		H'A00f0000			; ｾｸﾀ18	64kb
+;//	.DATA.L		H'A0100000			; DUMMY
+
+
+_FROMSYS_SECT_TBL:
+	.DATA.L		H'A0000000			; ｾｸﾀ0		8kb
+	.DATA.L		H'A0002000			; ｾｸﾀ1		8kb
+	.DATA.L		H'A0004000			; ｾｸﾀ2		8kb
+	.DATA.L		H'A0006000			; ｾｸﾀ3		8kb
+	.DATA.L		H'A0008000			; ｾｸﾀ4		8kb
+	.DATA.L		H'A000A000			; ｾｸﾀ5		8kb
+	.DATA.L		H'A000C000			; ｾｸﾀ6		8kb
+	.DATA.L		H'A000E000			; ｾｸﾀ7		8kb
+	.DATA.L		H'A0010000			; ｾｸﾀ8		64kb
+	.DATA.L		H'A0020000			; ｾｸﾀ9		64kb
+	.DATA.L		H'A0030000			; ｾｸﾀ10		64kb
+	.DATA.L		H'A0040000			; ｾｸﾀ11		64kb
+	.DATA.L		H'A0050000			; ｾｸﾀ12		64kb
+	.DATA.L		H'A0060000			; ｾｸﾀ13		64kb
+	.DATA.L		H'A0070000			; ｾｸﾀ14		64kb
+	.DATA.L		H'A0080000			; ｾｸﾀ15		64kb
+	.DATA.L		H'A0090000			; ｾｸﾀ16		64kb
+	.DATA.L		H'A00a0000			; ｾｸﾀ17		64kb
+	.DATA.L		H'A00b0000			; ｾｸﾀ18		64kb
+	.DATA.L		H'A00c0000			; ｾｸﾀ19		64kb
+	.DATA.L		H'A00D0000			; ｾｸﾀ20		64kb
+	.DATA.L		H'A00E0000			; ｾｸﾀ21		64kb
+	.DATA.L		H'A00F0000			; ｾｸﾀ22		64kb
+	.DATA.L		H'A0100000			; ｾｸﾀ23		64kb
+	.DATA.L		H'A0110000			; ｾｸﾀ24		64kb
+	.DATA.L		H'A0120000			; ｾｸﾀ25		64kb
+	.DATA.L		H'A0130000			; ｾｸﾀ26		64kb
+	.DATA.L		H'A0140000			; ｾｸﾀ27		64kb
+	.DATA.L		H'A0150000			; ｾｸﾀ28		64kb
+	.DATA.L		H'A0160000			; ｾｸﾀ29		64kb
+	.DATA.L		H'A0170000			; ｾｸﾀ30		64kb
+	.DATA.L		H'A0180000			; ｾｸﾀ31		64kb
+	.DATA.L		H'A0190000			; ｾｸﾀ32		64kb
+	.DATA.L		H'A01a0000			; ｾｸﾀ33		64kb
+	.DATA.L		H'A01b0000			; ｾｸﾀ34		64kb
+	.DATA.L		H'A01c0000			; ｾｸﾀ35		64kb
+	.DATA.L		H'A01D0000			; ｾｸﾀ36		64kb
+	.DATA.L		H'A01E0000			; ｾｸﾀ37		64kb
+	.DATA.L		H'A01F0000			; ｾｸﾀ38		64kb
+	.DATA.L		H'A0200000			; ｾｸﾀ39		64kb
+	.DATA.L		H'A0210000			; ｾｸﾀ40		64kb
+	.DATA.L		H'A0220000			; ｾｸﾀ41		64kb
+	.DATA.L		H'A0230000			; ｾｸﾀ42		64kb
+_FROM_SECT_TBL_KATA_MC:
+	.DATA.L		H'A0240000			; ｾｸﾀ43		64kb
+	.DATA.L		H'A0250000			; ｾｸﾀ44		64kb
+	.DATA.L		H'A0260000			; ｾｸﾀ45		64kb
+	.DATA.L		H'A0270000			; ｾｸﾀ46		64kb
+_FROM_SECT_TBL_GAIZ_MC:
+	.DATA.L		H'A0280000			; ｾｸﾀ47		64kb
+	.DATA.L		H'A0290000			; ｾｸﾀ48		64kb
+	.DATA.L		H'A02a0000			; ｾｸﾀ49		64kb
+_FROM_SECT_TBL_SYSB_MC:
+	.DATA.L		H'A02b0000			; ｾｸﾀ50		64kb
+_FROM_SECT_TBL_SENB_MC:
+	.DATA.L		H'A02c0000			; ｾｸﾀ51		64kb
+	.DATA.L		H'A02D0000			; ｾｸﾀ52		64kb
+	.DATA.L		H'A02E0000			; ｾｸﾀ53		64kb
+	.DATA.L		H'A02F0000			; ｾｸﾀ54		64kb
+_FROM_SECT_TBL_CHAR_MC:
+	.DATA.L		H'A0300000			; ｾｸﾀ55		64kb
+	.DATA.L		H'A0310000			; ｾｸﾀ56		64kb
+	.DATA.L		H'A0320000			; ｾｸﾀ57		64kb
+	.DATA.L		H'A0330000			; ｾｸﾀ58		64kb
+_FROM_SECT_TBL_GAM2_MC:
+	.DATA.L		H'A0340000			; ｾｸﾀ59		64kb
+	.DATA.L		H'A0350000			; ｾｸﾀ60		64kb
+	.DATA.L		H'A0360000			; ｾｸﾀ61		64kb
+	.DATA.L		H'A0370000			; ｾｸﾀ62		64kb
+	.DATA.L		H'A0380000			; ｾｸﾀ63		64kb
+	.DATA.L		H'A0390000			; ｾｸﾀ64		64kb
+	.DATA.L		H'A03a0000			; ｾｸﾀ65		64kb
+	.DATA.L		H'A03b0000			; ｾｸﾀ66		64kb
+_FROM_SECT_TBL_KAT2_MC:
+	.DATA.L		H'A03c0000			; ｾｸﾀ67		64kb
+	.DATA.L		H'A03D0000			; ｾｸﾀ68		64kb
+	.DATA.L		H'A03E0000			; ｾｸﾀ69		64kb
+_FROM_SECT_TBL_KATS_MC:
+	.DATA.L		H'A03F0000			; ｾｸﾀ70		64kb
+	.DATA.L		H'A0400000			; ｾｸﾀ71		64kb
+	.DATA.L		H'A0410000			; ｾｸﾀ72		64kb
+	.DATA.L		H'A0420000			; ｾｸﾀ73		64kb
+	.DATA.L		H'A0430000			; ｾｸﾀ74		64kb
+	.DATA.L		H'A0440000			; ｾｸﾀ75		64kb
+	.DATA.L		H'A0450000			; ｾｸﾀ76		64kb
+	.DATA.L		H'A0460000			; ｾｸﾀ77		64kb
+	.DATA.L		H'A0470000			; ｾｸﾀ78		64kb
+	.DATA.L		H'A0480000			; ｾｸﾀ79		64kb
+	.DATA.L		H'A0490000			; ｾｸﾀ80		64kb
+	.DATA.L		H'A04a0000			; ｾｸﾀ81		64kb
+	.DATA.L		H'A04b0000			; ｾｸﾀ82		64kb
+	.DATA.L		H'A04c0000			; ｾｸﾀ83		64kb
+	.DATA.L		H'A04D0000			; ｾｸﾀ84		64kb
+	.DATA.L		H'A04E0000			; ｾｸﾀ85		64kb
+	.DATA.L		H'A04F0000			; ｾｸﾀ86		64kb
+	.DATA.L		H'A0500000			; ｾｸﾀ87		64kb
+	.DATA.L		H'A0510000			; ｾｸﾀ88		64kb
+	.DATA.L		H'A0520000			; ｾｸﾀ89		64kb
+	.DATA.L		H'A0530000			; ｾｸﾀ90		64kb
+	.DATA.L		H'A0540000			; ｾｸﾀ91		64kb
+	.DATA.L		H'A0550000			; ｾｸﾀ92		64kb
+	.DATA.L		H'A0560000			; ｾｸﾀ93		64kb
+	.DATA.L		H'A0570000			; ｾｸﾀ94		64kb
+	.DATA.L		H'A0580000			; ｾｸﾀ95		64kb
+	.DATA.L		H'A0590000			; ｾｸﾀ96		64kb
+	.DATA.L		H'A05a0000			; ｾｸﾀ97		64kb
+	.DATA.L		H'A05b0000			; ｾｸﾀ98		64kb
+	.DATA.L		H'A05c0000			; ｾｸﾀ99		64kb
+	.DATA.L		H'A05D0000			; ｾｸﾀ100	64kb
+	.DATA.L		H'A05E0000			; ｾｸﾀ101	64kb
+	.DATA.L		H'A05F0000			; ｾｸﾀ102	64kb
+	.DATA.L		H'A0600000			; ｾｸﾀ103	64kb
+	.DATA.L		H'A0610000			; ｾｸﾀ104	64kb
+	.DATA.L		H'A0620000			; ｾｸﾀ105	64kb
+	.DATA.L		H'A0630000			; ｾｸﾀ106	64kb
+	.DATA.L		H'A0640000			; ｾｸﾀ107	64kb
+	.DATA.L		H'A0650000			; ｾｸﾀ108	64kb
+	.DATA.L		H'A0660000			; ｾｸﾀ109	64kb
+	.DATA.L		H'A0670000			; ｾｸﾀ110	64kb
+	.DATA.L		H'A0680000			; ｾｸﾀ111	64kb
+	.DATA.L		H'A0690000			; ｾｸﾀ112	64kb
+	.DATA.L		H'A06a0000			; ｾｸﾀ113	64kb
+	.DATA.L		H'A06b0000			; ｾｸﾀ114	64kb
+	.DATA.L		H'A06c0000			; ｾｸﾀ115	64kb
+	.DATA.L		H'A06D0000			; ｾｸﾀ116	64kb
+	.DATA.L		H'A06E0000			; ｾｸﾀ117	64kb
+	.DATA.L		H'A06F0000			; ｾｸﾀ118	64kb
+_FROM_SECT_TBL_SEQD_MC:									;2015/01/16
+	.DATA.L		H'A0700000			; ｾｸﾀ119	64kb
+	.DATA.L		H'A0710000			; ｾｸﾀ120	64kb
+	.DATA.L		H'A0720000			; ｾｸﾀ121	64kb
+	.DATA.L		H'A0730000			; ｾｸﾀ122	64kb
+	.DATA.L		H'A0740000			; ｾｸﾀ123	64kb
+	.DATA.L		H'A0750000			; ｾｸﾀ124	64kb
+	.DATA.L		H'A0760000			; ｾｸﾀ125	64kb
+	.DATA.L		H'A0770000			; ｾｸﾀ126	64kb
+	.DATA.L		H'A0780000			; ｾｸﾀ127	64kb
+	.DATA.L		H'A0790000			; ｾｸﾀ128	64kb
+	.DATA.L		H'A07a0000			; ｾｸﾀ129	64kb
+	.DATA.L		H'A07b0000			; ｾｸﾀ130	64kb
+	.DATA.L		H'A07c0000			; ｾｸﾀ131	64kb
+	.DATA.L		H'A07D0000			; ｾｸﾀ132	64kb
+	.DATA.L		H'A07E0000			; ｾｸﾀ133	64kb
+	.DATA.L		H'A07F0000			; ｾｸﾀ134	8kb
+	.DATA.L		H'A07F2000			; ｾｸﾀ135	8kb
+	.DATA.L		H'A07F4000			; ｾｸﾀ136	8kb
+	.DATA.L		H'A07F6000			; ｾｸﾀ137	8kb
+	.DATA.L		H'A07F8000			; ｾｸﾀ138	8kb
+	.DATA.L		H'A07FA000			; ｾｸﾀ139	8kb
+	.DATA.L		H'A07FC000			; ｾｸﾀ140	8kb
+	.DATA.L		H'A07FE000			; ｾｸﾀ141	8kb
+	.DATA.L		H'A0800000			; DUMMY
+
+
+_FROMSYSEP_SECT_TBL:
+	.DATA.L		H'B0000000			; ｾｸﾀ0	16kb
+	.DATA.L		H'B0004000			; ｾｸﾀ1	8kb
+	.DATA.L		H'B0006000			; ｾｸﾀ2	8kb
+	.DATA.L		H'B0008000			; ｾｸﾀ3	32kb
+	.DATA.L		H'B0010000			; ｾｸﾀ4	64kb
+	.DATA.L		H'B0020000			; ｾｸﾀ5	64kb
+	.DATA.L		H'B0030000			; ｾｸﾀ6	64kb
+	.DATA.L		H'B0040000			; ｾｸﾀ7	64kb
+	.DATA.L		H'B0050000			; ｾｸﾀ8	64kb
+	.DATA.L		H'B0060000			; ｾｸﾀ9	64kb
+	.DATA.L		H'B0070000			; ｾｸﾀ10	64kb
+	.DATA.L		H'B0080000			; ｾｸﾀ11	64kb
+	.DATA.L		H'B0090000			; ｾｸﾀ12	64kb
+	.DATA.L		H'B00a0000			; ｾｸﾀ13	64kb
+	.DATA.L		H'B00b0000			; ｾｸﾀ14	64kb
+	.DATA.L		H'B00c0000			; ｾｸﾀ15	64kb
+	.DATA.L		H'B00d0000			; ｾｸﾀ16	64kb
+	.DATA.L		H'B00e0000			; ｾｸﾀ17	64kb
+	.DATA.L		H'B00f0000			; ｾｸﾀ18	64kb
+	.DATA.L		H'B0100000			; DUMMY
+
+
+	.SECTION	BvupsciwkRAM, DATA,ALIGN=4			;
+_EPROM_TO_FROM_END	.SRES		2;
+
+
+	.AIF	_SIT_TYPE_SEL EQ _TYPE_SIT4
+	.INCLUDE	"ssa_etif.inc"			; V04a(INS)
+	.AENDI
+
+
+;★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+
+	.SECTION	PvupsciROM,CODE,ALIGN=4
+;	*************************************************************************************
+;	*****										*****
+;	*****	指定型データの読出し		SIT4-MC  2014/05/08			*****
+;	*****										*****
+;	*************************************************************************************
+	.IMPORT		_kata_no_ld
+	.IMPORT		_kata_adr_ld
+	.IMPORT		_KATA_LOAD_ASM
+	.IMPORT		_KATA_LOAD_ASM2			; 2016/09/22
+
+_SCI_KATA_READ:
+	SUB_START
+
+	MOV.W	@(VUP_KTNO_PC,GBR),R0			; 型番号
+	TST	R0,R0					; 型番号指定ある？
+	BT	_SCI_KATA_RD_EXT			; いいえ
+	MOV.L	#220,R2
+	CMP/GE	R0,R2					; 型番号220以下？
+	BF	_SCI_KATA_RD_EXT			; いいえ
+
+	MOV.L	#_kata_no_ld,R1
+	MOV.W	R0,@R1					; 読出し型番号
+	MOV.L	#_kata_adr_ld,R1
+	MOV.L	#_KATA_RW_AREA,R2			; コピー先
+	MOV.L	R2,@R1
+	FAR_JSR	#_KATA_LOAD_ASM,R1
+
+	MOV.L	#_kata_adr_ld,R1			; 2016/09/22
+	MOV.L	#_KATA_RW_AREA + H'800,R2		; コピー先
+	MOV.L	R2,@R1
+	FAR_JSR	#_KATA_LOAD_ASM2,R1
+
+	MOV.W	#H'02,R0				; 読出し完了
+	MOV.W	R0,@(VUP_STR_SH,GBR)			; PCへ
+
+_SCI_KATA_RD_EXT:
+	SUB_END
+	M_RTS
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	指定型データの書込み		SIT4-MC  2014/05/08			*****
+;	*****										*****
+;	*************************************************************************************
+	.IMPORT		_kata_no_sv
+	.IMPORT		_kata_adr_sv
+	.IMPORT		_KATA_SAVE_ASM
+	.IMPORT		_KATA_SAVE_ASM2			; 2016/09/22
+	.IMPORT		_GET_KAT_NAME_MEMO		; Cソース	2014/12/23
+
+_SCI_KATA_WRITE:
+	SUB_START
+
+	MOV.W	@(VUP_KTNO_PC,GBR),R0			; 型番号
+	TST	R0,R0					; 型番号指定ある？
+	BT	_SCI_KATA_WR_EXT			; いいえ
+	MOV.L	#220,R2
+	CMP/GE	R0,R2					; 型番号220以下？
+	BF	_SCI_KATA_WR_EXT			; いいえ
+
+	MOV.L	#_kata_no_sv,R1
+	MOV.W	R0,@R1					; 書込み型番号
+	MOV.L	#_kata_adr_sv,R1
+	MOV.L	#_KATA_RW_AREA,R2			; コピー元
+	MOV.L	R2,@R1
+	FAR_JSR	#_KATA_SAVE_ASM,R1
+
+	MOV.L	#_kata_adr_sv,R1			; 2016/09/22
+	MOV.L	#_KATA_RW_AREA + H'800,R2		; コピー元
+	MOV.L	R2,@R1
+	FAR_JSR	#_KATA_SAVE_ASM2,R1
+
+	MOV.W	#H'03,R0				; 書込み完了
+	MOV.W	R0,@(VUP_STR_SH,GBR)			; PCへ
+
+	PUSH_ALL
+	FAR_JSR	#_GET_KAT_NAME_MEMO,R1			; 2014/12/23
+	POP_ALL
+
+_SCI_KATA_WR_EXT:
+	SUB_END
+	M_RTS
+
+;	*************************************************************************************
+;	*****										*****
+;	*****		WORK RAM							*****
+;	*****										*****
+;	*************************************************************************************
+	.SECTION	BvupsciwkRAM, DATA,ALIGN=4			;
+_KATA_RW_AREA	.SRES		H'2000;			; 1000 -> 2000  2016/09/22
+
+	.END

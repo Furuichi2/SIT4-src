@@ -1,0 +1,51 @@
+;	***********************************
+;	***				***
+;	***		ram定義		***
+;	***				***
+;	***********************************
+;	できる限りssc_wrm*.c/ssc_wrm*.h側に定義する事
+;	ssc_wrm*.h のextern文をアセンブラで参照する場合はここに入れる
+;	===========================================
+;	===	ssa_wrmy.src のextern文		===
+;	===========================================
+	.GLOBAL	_SEQ_ASM_RAM_TOP		;
+
+
+;	===========================================
+;	===	ssc_wrmy.c のextern文		===
+;	===========================================
+	.GLOBAL	_SEQ_RUN1_TOP			;
+	.GLOBAL	_SEQ_RUN1			; SEQUENCE RUN CODE AREA
+	.GLOBAL	_SEQ_RUN1_END			; 8000STEP*20BYTE+余力
+
+;;;;;	.GLOBAL	_SEQ_CARD_RAM_TOP		;
+;;;;;	.GLOBAL	_SEQ_CARD_RAM			; SEQUENCE BIT AREA
+;;;;;	.GLOBAL	_SEQ_CARD_RAM_END		;
+
+;	========== DPRAM -> SDRAM 変更 2008-07-30 SAITO ==========
+	.GLOBAL	_SEQ_CARD_RAM			; SEQUENCE BIT AREA
+;	==========================================================
+
+
+;;;;;	.GLOBAL	_SEQ_TMR_DT_TOP			;
+	.GLOBAL	_SEQ_TMR_DATA			; SEQUENCE TIMER AREA
+;;;;;	.GLOBAL	_SEQ_TMR_DT_END			;
+
+;;;;;	.GLOBAL	_SEQ_CTR_DT_TOP			;
+	.GLOBAL	_SEQ_CTR_DATA			; SEQUENCE COUNTER AREA
+;;;;;	.GLOBAL	_SEQ_CTR_DT_END			;
+
+	.GLOBAL	_SEQ_SR_FLG			;
+
+
+	.GLOBAL	_SEQ_CMP_ERR			; CMP OK = BX:0000 , CMP NG = BX:FFFF
+	.GLOBAL	_SEQ_ARG1_DATA			; ARG data load
+	.GLOBAL	_SEQ_MRG1_DATA			; MRG data load
+	.GLOBAL	_SEQ_NRG1_DATA			; NRG data load
+	.GLOBAL	_SEQ_DRG1_DATA			; DATA REG data load
+
+	.GLOBAL	_SEQ_CMP_ERR_ADR		;
+
+
+
+

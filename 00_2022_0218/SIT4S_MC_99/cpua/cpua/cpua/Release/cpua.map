@@ -1,0 +1,165 @@
+Optimizing Linkage Editor (V.10.01.00.000)        14-Nov-2021 20:02:09
+
+*** Options ***
+
+-subcommand=D:\SIT4S_MC_99\cpua\cpua\cpua\Release\cpua.hlk
+-noprelink
+-rom=D=R,P=PRAM,Pcall=PcallRAM,PvupROM=PvupRAM
+-nomessage
+-list="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\cpua.map"
+-nooptimize
+-start=PcallRAM/0C000000,PRAM/0C001000,Bwkram1,B,R/0C070000,Bseqram1/0C0B0000,Bseqram2/0C0FC000,Btrend/0C180000,BsnapRAM/0C1D0000,BwkIRAM/07C001000,Stack/07C002800,RSTHandler/0A0000000,INTHandler,VECTTBL,INTTBL/0A0000800,PResetPRG/0A0001000,IntPRG/0A0002000,Phwsetup1/0A0004000,PvupROM/0A0006000,Pcall/0A0008000,Pstart,Pstart1,P,C,D/0A000A000,Psum_code/0A0057000,Pseqcode1/0A0070000,Pcbsys/0A00B0000,Pcb_TBL1X/0A00C0000,BdpramAB/0A4000000,Bdpram/0A6000000,Bdio1/0A8000000,Bdio2/0A8000100,Baio/0A8000200,BRMIO_I/0A8000300,BRMIO_O/0A8000308,BRMIO2_I/0A8000320,BRMIO2_O/0A8000328,Bdio3/0A8000338,PvupRAM/0AC100000,Bvupwkram/0AC110000,Bposlsi1/0B4000000,Bcop2dpA/0B8000000,SH7750RG/0FF000000
+-nologo
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\cpua.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\dbsct.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\hwsetup.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\initsct.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\intprg.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\lowlvl.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\lowsrc.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\resetprg.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\sbrk.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\SH7750RG.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_acrm.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_cblp.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_cbmn.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_com1.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_cop2if.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_ctbl.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_ctrl.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_dioy.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_dtmk.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_dummymem.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_else.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_err1.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_et1a.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_frif.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_had1.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_k.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_khad.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_ldtd.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_mem1.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_pcal.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_pos1.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_scal.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_scif.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_self.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_seqm.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_sint.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_snapram.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_sqcd.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_sqcg.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_sqtb.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_swrm.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_tbl1.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_tbl2.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_wram.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_wrmk.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_wrmy.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssa_y.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssc_k.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssc_swrm.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssc_wrmk.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssc_wrmy.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssc_y.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\stacksct.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\vecttbl.obj"
+-input="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\vhandler.obj"
+-library="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\cpua.lib"
+-output="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\cpua.abs"
+-end
+
+*** Error information ***
+
+*** Mapping List ***
+
+SECTION                            START      END         SIZE   ALIGN
+
+PcallRAM
+                                  0c000000  0c000833       834   4
+PRAM
+                                  0c001000  0c031a87     30a88   4
+Bwkram1
+                                  0c070000  0c0a154d     3154e   4
+B
+                                  0c0a1550  0c0a1b2b       5dc   4
+R
+                                  0c0a1b2c  0c0a1b37         c   4
+Bseqram1
+                                  0c0b0000  0c0eb15b     3b15c   4
+Bseqram2
+                                  0c0fc000  0c0fd1b3      11b4   4
+Btrend
+                                  0c180000  0c1c08cf     408d0   4
+BsnapRAM
+                                  0c1d0000  0c21afff     4b000   4
+BwkIRAM
+                                  7c001000  7c001409       40a   4
+Stack
+                                  7c002800  7c002fef       7f0   4
+RSTHandler
+                                  a0000000  a000002f        30   4
+INTHandler
+                                  a0000800  a0000d67       568   4
+VECTTBL
+                                  a0000d68  a0000d93        2c   4
+INTTBL
+                                  a0000d94  a0000ed3       140   4
+PResetPRG
+                                  a0001000  a000107f        80   4
+IntPRG
+                                  a0002000  a0002507       508   4
+Phwsetup1
+                                  a0004000  a00046d5       6d6   4
+PvupROM
+                                  a0006000  a0006857       858   4
+Pcall
+                                  a0008000  a0008833       834   4
+Pstart
+                                  a000a000  a000a0a7        a8   4
+Pstart1
+                                  a000a0a8  a000a2a5       1fe   4
+P
+                                  a000a2a8  a003ad2f     30a88   4
+C
+                                  a003ad30  a003ad67        38   4
+D
+                                  a003ad68  a003ad73         c   4
+Psum_code
+                                  a0057000  a005702f        30   4
+Pseqcode1
+                                  a0070000  a0077ff3      7ff4   4
+Pcbsys
+                                  a00b0000  a00b306f      3070   4
+Pcb_TBL1X
+                                  a00c0000  a00d3c23     13c24   4
+BdpramAB
+                                  a4000000  a4003fff      4000   4
+Bdpram
+                                  a6000000  a6003fff      4000   4
+Bdio1
+                                  a8000000  a8000000         0   4
+Bdio2
+                                  a8000100  a8000100         0   4
+Baio
+                                  a8000200  a8000200         0   4
+BRMIO_I
+                                  a8000300  a8000300         0   4
+BRMIO_O
+                                  a8000308  a8000308         0   4
+BRMIO2_I
+                                  a8000320  a8000320         0   4
+BRMIO2_O
+                                  a8000328  a8000328         0   4
+Bdio3
+                                  a8000338  a800033b         4   4
+PvupRAM
+                                  ac100000  ac100857       858   4
+Bvupwkram
+                                  ac110000  ac11003d        3e   4
+Bposlsi1
+                                  b4000000  b4000000         0   4
+Bcop2dpA
+                                  b8000000  b8000509       50a   4
+SH7750RG
+                                  ff000000  ffe80027    e80028   4

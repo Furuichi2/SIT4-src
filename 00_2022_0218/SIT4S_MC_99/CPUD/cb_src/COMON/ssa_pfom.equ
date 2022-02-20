@@ -1,0 +1,279 @@
+;	***********************************
+;	***				***
+;	***				***
+;	***				***
+;	***********************************
+;	equ定義
+;
+_TIM_SEC		.EQU	10000			;10000*100usec=1秒
+_TIM_1MSEC		.EQU	10			;
+_CB_TIME		.EQU	10			;10*100usec
+_PS_TIME		.EQU	2			; 2*100usec
+_SPD_PER_MAX		.EQU	10000			;100.00%
+_DT_100PER_1		.EQU	1000			;100.0%
+_DT_100PER_0		.EQU	100			;100%
+
+;	================= 上昇/下降の区間判断(ﾘﾆｱｽｹｰﾙのため)==
+_UPDN_DIRJG_DIG		.EQU	1800	;
+_FUL_CLS_RNADIG		.EQU	800	;180.0+80.0=260.0~0は＋のﾊﾟﾙｽ 360~280はﾏｲﾅｽのﾊﾟﾙｽ
+
+;	***********************************
+;	***	本来シスパラ		***
+;	***********************************
+_SYS_BSAME_TIM		.EQU	500*_TIM_1MSEC/_CB_TIME		; 500msec *10(10*100usec)/10運転開始釦
+_SYS_SETUP_TIM		.EQU	2000*_TIM_1MSEC/_CB_TIME	;2000msec *10(10*100usec)/10ｾｯﾄｱｯﾌﾟ釦
+_SYS_STOPPING_TIM	.EQU	50*_TIM_1MSEC/_CB_TIME		;50msec
+;	***********************************
+;	***	ﾘｾｯﾄ時間		***
+;	***********************************
+;;_RST_DLY_TM		.EQU	20*_TIM_1MSEC/_CB_TIME	;20msec *10(10*100usec)/10
+_RST_DLY_TM		.EQU	200*_TIM_1MSEC/_CB_TIME	;200msec *10(10*100usec)/10
+
+;	***********************************
+;	***	c/b制御			***
+;	***********************************
+
+;	***********************************
+;	***	c/b制御			***
+;	***********************************
+;;2002-08-02_STEP_MAX		.EQU	4			;10段
+_EQ_STEP_MAX		.EQU	5			;5段
+_EQ_STEP_MX2		.EQU	10			;10段(2004-01-26)
+_DMATH_CNTROT		.EQU	BIT0		;DRIVE MATH 連続回転
+_DMATH_REVRSE		.EQU	BIT1		;DRIVE MATH 反転
+_DMATH_DNDRIV		.EQU	BIT2		;DRIVE MATH 下往復
+_DMATH_UPDRIV		.EQU	BIT3		;DRIVE MATH 上往復
+
+_EQ_DND_MAX		.EQU	2		;2段
+;	***********************************
+;	***	c/b制御/位置決め	***
+;	***********************************
+_UP360_JGDIG		.EQU	40	;40:5度//30;3.0度 原点復帰上昇時
+_OVER1_JGDIG		.EQU	50	;5.0 DIG
+
+
+;	***********************************
+;	***	動作異常		***
+;	***********************************
+;	下記設定なら異常検知無視
+_ZERO_INCHEN	.EQU	0;PG偏差異常幅PLS
+_ZERO_INCENC	.EQU	0;PG-ENC一致量0.0度
+_ZERO_INCRNA	.EQU	1;PG-ﾘﾆｱ一致量mm
+_ZERO_INCSTP	.EQU	0;PG停止異常量PLS
+_ZERO_RNASTP	.EQU	1;ﾘﾆｱ停止異常量mm
+_ZERO_INCREV	.EQU	0;PG逆転異常量PLS
+_ZERO_RNAREV	.EQU	1;ﾘﾆｱ逆転異常量mm
+
+;	CPUBのみﾃﾞｰﾀADD
+_INCHEN_ADD	.EQU	0	;1000	;PG偏差異常幅PLS  <1000PLS>
+_INCENC_ADD	.EQU	0	;PG-ENC一致量0.0度<0.100>
+_INCRNA_ADD	.EQU	0	;100	;PG-ﾘﾆｱ一致量mm   <0.100>
+_INCSTP_ADD	.EQU	0	;1000	;PG停止異常量PLS
+_RNASTP_ADD	.EQU	0	;100	;ﾘﾆｱ停止異常量mm <0.100>
+_INCREV_ADD	.EQU	0	;1000	;PG逆転異常量PLS <1000PLS>
+_RNAREV_ADD	.EQU	0	;100	;ﾘﾆｱ逆転異常量mm
+
+
+
+;	***********************************
+;	***				***
+;	***	位置決め定数		***
+;	***				***
+;	***********************************
+_CALC_ROT_MAX		.EQU	H'60000000;3000rpm*60*24*365=5DFC,0F00<6000,0000
+
+;	１年間を最大とし6BYTE長で演算する(できる限り8BYTE演算但しOVER-FLOWをみない)
+;;_CALC_PLS_PMAX_H32	.EQU	H'00007FFF;C00
+_CALC_PLS_PMAX_H32	.EQU	H'3FFFFFFF;C00
+_CALC_PLS_PMAX_L32	.EQU	H'FFFFFFFF;0000,0000
+
+;;_CALC_PLS_MMIN_H32	.EQU	H'FFFF8000;C00
+_CALC_PLS_MMIN_H32	.EQU	H'C0000000;C00
+_CALC_PLS_MMIN_L32	.EQU	H'00000001;0000,0000
+
+;	*******************************************
+;	***	Dpramｼｰｹﾝｽ	入力のみ	***
+;	*******************************************
+_DPSQ024		.EQU	24*2	;仕様選択SW HMI-->SEQ 2004-01-26
+_DPSQ028		.EQU	28*2	;選択SW HMI-->SEQ
+_DPSQ029		.EQU	29*2	;選択SW
+_DPSQ340		.EQU	340*2	;動作指令 SEQ-->C/B
+_DPSQ341		.EQU	341*2	;動作指令 SEQ-->C/B
+_DPSQ358		.EQU	358*2	;動作指令 SEQ-->C/B 2008-08-07
+_DPSQ359		.EQU	359*2	;動作指令 SEQ-->C/B 2008-09-16
+_DPSQ367		.EQU	367*2	;動作指令 SEQ-->C/B　富士TEST　起動SW
+_DPSQ368		.EQU	368*2	;動作指令 SEQ-->C/B 富士出荷試験ﾓｰﾄﾞsw切り替え
+_DPSQ369		.EQU	369*2	;動作指令 SEQ-->C/B　最後
+
+_DPSQ287		.EQU	287*2	;CPUB
+_DPSQ288		.EQU	288*2	;CPUB
+;	***********************************
+;	***	Workｼｰｹﾝｽ		***
+;	***********************************
+_WKSQCB200		.EQU	0*2			; SEQ CARD 200
+_WKSQCB201		.EQU	1*2			; SEQ CARD 201
+_WKSQCB202		.EQU	2*2			; SEQ CARD 202
+_WKSQCB203		.EQU	3*2			; SEQ CARD 203
+_WKSQCB204		.EQU	4*2			; SEQ CARD 204
+_WKSQCB205		.EQU	5*2			; SEQ CARD 205
+_WKSQCB206		.EQU	6*2			; SEQ CARD 206
+_WKSQCB207		.EQU	7*2			; SEQ CARD 207
+_WKSQCB208		.EQU	8*2			; SEQ CARD 208
+_WKSQCB209		.EQU	9*2			; SEQ CARD 209
+_WKSQCB210		.EQU	10*2			; SEQ CARD 210
+_WKSQCB211		.EQU	11*2			; SEQ CARD 211
+_WKSQCB212		.EQU	12*2			; SEQ CARD 212
+_WKSQCB213		.EQU	13*2			; SEQ CARD 213
+_WKSQCB214		.EQU	14*2			; SEQ CARD 214
+_WKSQCB215		.EQU	15*2			; SEQ CARD 215
+_WKSQCB216		.EQU	16*2			; SEQ CARD 216
+_WKSQCB217		.EQU	17*2			; SEQ CARD 217
+_WKSQCB218		.EQU	18*2			; SEQ CARD 218
+_WKSQCB219		.EQU	19*2			; SEQ CARD 219
+_WKSQCB220		.EQU	20*2			; SEQ CARD 220
+_WKSQCB221		.EQU	21*2			; SEQ CARD 221
+_WKSQCB222		.EQU	22*2			; SEQ CARD 222
+_WKSQCB223		.EQU	23*2			; SEQ CARD 223
+_WKSQCB224		.EQU	24*2			; SEQ CARD 224
+_WKSQCB225		.EQU	25*2			; SEQ CARD 225
+_WKSQCB226		.EQU	26*2			; SEQ CARD 226
+_WKSQCB227		.EQU	27*2			; SEQ CARD 227
+_WKSQCB228		.EQU	28*2			; SEQ CARD 228
+_WKSQCB229		.EQU	29*2			; SEQ CARD 229
+_WKSQCB230		.EQU	30*2			; SEQ CARD 230
+_WKSQCB231		.EQU	31*2			; SEQ CARD 231
+_WKSQCB232		.EQU	32*2			; SEQ CARD 232
+_WKSQCB233		.EQU	33*2			; SEQ CARD 233
+_WKSQCB234		.EQU	34*2			; SEQ CARD 234
+_WKSQCB235		.EQU	35*2			; SEQ CARD 235
+_WKSQCB236		.EQU	36*2			; SEQ CARD 236
+_WKSQCB237		.EQU	37*2			; SEQ CARD 237
+_WKSQCB238		.EQU	38*2			; SEQ CARD 238
+_WKSQCB239		.EQU	39*2			; SEQ CARD 239
+_WKSQCB240		.EQU	40*2			; SEQ CARD 240
+_WKSQCB241		.EQU	41*2			; SEQ CARD 241
+_WKSQCB242		.EQU	42*2			; SEQ CARD 242
+_WKSQCB243		.EQU	43*2			; SEQ CARD 243
+_WKSQCB244		.EQU	44*2			; SEQ CARD 244
+_WKSQCB245		.EQU	45*2			; SEQ CARD 245
+_WKSQCB246		.EQU	46*2			; SEQ CARD 246
+_WKSQCB247		.EQU	47*2			; SEQ CARD 247
+_WKSQCB248		.EQU	48*2			; SEQ CARD 248
+_WKSQCB249		.EQU	49*2			; SEQ CARD 249
+_WKSQCB250		.EQU	50*2			; SEQ CARD 250
+_WKSQCB251		.EQU	51*2			; SEQ CARD 251
+_WKSQCB252		.EQU	52*2			; SEQ CARD 252
+_WKSQCB253		.EQU	53*2			; SEQ CARD 253
+_WKSQCB254		.EQU	54*2			; SEQ CARD 254
+_WKSQCB255		.EQU	55*2			; SEQ CARD 255
+_WKSQCB256		.EQU	56*2			; SEQ CARD 256
+_WKSQCB257		.EQU	57*2			; SEQ CARD 257
+_WKSQCB258		.EQU	58*2			; SEQ CARD 258
+_WKSQCB259		.EQU	59*2			; SEQ CARD 259
+_WKSQCB260		.EQU	60*2			; SEQ CARD 260
+_WKSQCB261		.EQU	61*2			; SEQ CARD 261
+_WKSQCB262		.EQU	62*2			; SEQ CARD 262
+_WKSQCB263		.EQU	63*2			; SEQ CARD 263
+_WKSQCB264		.EQU	64*2			; SEQ CARD 264
+_WKSQCB265		.EQU	65*2			; SEQ CARD 265
+_WKSQCB266		.EQU	66*2			; SEQ CARD 266
+_WKSQCB267		.EQU	67*2			; SEQ CARD 267
+_WKSQCB268		.EQU	68*2			; SEQ CARD 268
+_WKSQCB269		.EQU	69*2			; SEQ CARD 269
+
+
+;	***************************
+;	***			***
+;	***************************
+_CAM_STRCUT	.EQU	10*2	;10word
+_CAM_ON_STP	.EQU	0*2	;
+_CAM_ON_DIG	.EQU	1*2	;
+_CAM_ON_DIR	.EQU	2*2	;BIT0=0 増加方向
+_CAM_OF_STP	.EQU	3*2		;
+_CAM_OF_DIG	.EQU	4*2		;DIG/TIM10msec
+_CAM_OF_TIM	.EQU	_CAM_OF_DIG	;SV
+_CAM_OF_DIR	.EQU	5*2	;BIT0=0 増加方向
+_CAM_OF_DGT	.EQU	6*2	;内部ﾀｲﾏ時
+_CAM_DT_FLG	.EQU	7*2	;(BIT0:ON END BIT1 -->工程が戻った時ｸﾘｱ)
+_CAM_INF_D1	.EQU	8*2	;(前回の工程記憶)
+_CAM_INF_D2	.EQU	9*2	;予備
+
+;	***********************************
+;	***	DIG_PLS_TBL_INFO	***
+;	***********************************
+_INFO_CHK1_COD		.EQU	H'5AA51234		;
+_INFO_CHK2_COD		.EQU	H'4321A55A		;
+_DG_PS_INF_CHK1		.EQU	0*4		;
+_DG_PS_INF_CONT		.EQU	1*4		;7200(360000/50)
+_DG_PS_INF_UNIT		.EQU	2*4		;X側"50"(0.050度)
+_DG_PS_INF_STLK		.EQU	3*4		;(CHEAKに使用するだけ)
+_DG_PS_INF_LATE		.EQU	4*4		;Y側の正規化基数10000(~50000)
+_DG_PS_INF_CHK2		.EQU	15*4		;
+
+_PS_DG_INF_CHK1		.EQU	0*4		;
+_PS_DG_INF_CONT		.EQU	1*4		;10000(MAXmm*10000/MAXmm)
+_PS_DG_INF_UNIT		.EQU	2*4		;X側
+_PS_DG_INF_STLK		.EQU	3*4		;(CHEAKに使用するだけ)
+_PS_DG_INF_LATE		.EQU	4*4		;Y側 36000
+_PS_DG_INF_CHK2		.EQU	15*4		;
+
+
+;	***********************************
+;	***	SYSPARAM/WR-CHEAK CODE	***
+;	***********************************
+_WR_CB_SYS_CHKCOD1	.EQU	H'1234	;ﾊﾟﾗﾒｰﾀWR開始 _CB_SYS_PARAM000
+_WR_CB_SYS_CHKCOD2	.EQU	H'4321	;ﾊﾟﾗﾒｰﾀWR開始 _CB_SYS_PARAM001
+_WR_CB_SYS_CHKCOD3	.EQU	H'5678	;ﾊﾟﾗﾒｰﾀWREND _CB_SYS_PARAM126
+_WR_CB_SYS_CHKCOD4	.EQU	H'8765	;ﾊﾟﾗﾒｰﾀWREND _CB_SYS_PARAM127
+
+;
+;	_SVP_MACINE_SEL1 == 99 コマツデバックモード
+
+;	99d()
+;	1111d(VER-UP SH4 ROMtoFLASH)
+;	1234d(ﾃﾞﾊﾞｯｸ)
+;	99~角度
+;	89~下死点
+;	79~ﾀﾞｲﾊｲﾄ
+;	69~複合
+_MCN_DBG_COD11		.EQU	99	;角度に360ｴﾝｺｰﾀﾞ表示
+
+_MCN_DBG_COD21		.EQU	89	;下死点高さに絶対位置表示
+_MCN_DBG_COD22		.EQU	88	;ﾎﾞﾙｽﾀ面高さ絶対位置
+_MCN_DBG_COD23		.EQU	88	;下死点高さに絶対位置表示
+
+_MCN_DBG_COD31		.EQU	79	;ﾀﾞｲﾊｲﾄに最下死点表示
+_MCN_DBG_COD32		.EQU	78	;ﾀﾞｲﾊｲﾄにｲﾝｸﾘﾒﾝﾀﾙ表示
+_MCN_DBG_COD33		.EQU	77	;ﾎﾞﾙｽﾀ面高さ絶対位置
+
+_MCN_FUJI_DBG1		.EQU	1234	;
+					;ROMからのﾊﾞｰｼﾞｮﾝUP=1114
+;	***************************
+;	***	2004-01-27	***
+;	***************************
+_ERR_INFO_C01	.EQU	+0*4
+_ERR_INFO_C02	.EQU	+1*4
+_ERR_INFO_C03	.EQU	+2*4
+_ERR_INFO_C04	.EQU	+3*4
+_ERR_INFO_C05	.EQU	+4*4
+_ERR_INFO_C06	.EQU	+5*4
+_ERR_INFO_C07	.EQU	+6*4
+_ERR_INFO_C08	.EQU	+7*4
+_ERR_INFO_A01	.EQU	+8*4+0*2
+_ERR_INFO_A02	.EQU	+8*4+1*2
+_ERR_INFO_A03	.EQU	+8*4+2*2
+_ERR_INFO_A04	.EQU	+8*4+3*2
+_ERR_INFO_A05	.EQU	+8*4+4*2
+_ERR_INFO_A06	.EQU	+8*4+5*2
+_ERR_INFO_A07	.EQU	+8*4+6*2
+_ERR_INFO_A08	.EQU	+8*4+7*2
+_ERR_INFO_B01	.EQU	+8*4+8*2
+_ERR_INFO_B02	.EQU	+8*4+9*2
+_ERR_INFO_B03	.EQU	+8*4+10*2
+_ERR_INFO_B04	.EQU	+8*4+11*2
+_ERR_INFO_B05	.EQU	+8*4+12*2
+_ERR_INFO_B06	.EQU	+8*4+13*2
+_ERR_INFO_B07	.EQU	+8*4+14*2
+_ERR_INFO_B08	.EQU	+8*4+15*2
+
+

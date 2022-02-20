@@ -1,0 +1,219 @@
+SH SERIES C/C++ Compiler (V.9.04.01.002)                                                         12-Dec-2017 19:19:35  PAGE    1
+
+************ OBJECT LISTING ************
+
+FILE NAME: D:\SIT4S_MC\cpua\cpua\cb_src\Y_src\ssc_y.c
+
+SCT OFFSET   CODE       C LABEL     INSTRUCTION OPERAND    COMMENT
+
+              ssc_y.c          1    //;   ***************************************************
+              ssc_y.c          2    //;   ***                     ***
+              ssc_y.c          3    //;   ***                     ***
+              ssc_y.c          4    //;   *** 各インターフェイスソフト        ***
+              ssc_y.c          5    //;   ***                     ***
+              ssc_y.c          6    //;   ***                     ***
+              ssc_y.c          7    //;   ***************************************************
+              ssc_y.c          8    #include  "cm_equ1.h" 
+            cm_equ1.h          1    /*    *********************************** */
+            cm_equ1.h          2    /*    ***     基本        *** */
+            cm_equ1.h          3    /*    *********************************** */
+            cm_equ1.h          4    #define   cBIT0   0x1 /* */
+            cm_equ1.h          5    #define   cBIT1   0x2 /* */
+            cm_equ1.h          6    #define   cBIT2   0x4 /* */
+            cm_equ1.h          7    #define   cBIT3   0x8 /* */
+            cm_equ1.h          8    #define   cBIT4   0x10    /* */
+            cm_equ1.h          9    #define   cBIT5   0x20    /* */
+            cm_equ1.h         10    #define   cBIT6   0x40    /* */
+            cm_equ1.h         11    #define   cBIT7   0x80    /* */
+            cm_equ1.h         12    #define   cBIT8   0x100   /* */
+            cm_equ1.h         13    #define   cBIT9   0x200   /* */
+            cm_equ1.h         14    #define   cBIT10  0x400   /* */
+            cm_equ1.h         15    #define   cBIT11  0x800   /* */
+            cm_equ1.h         16    #define   cBIT12  0x1000  /* */
+            cm_equ1.h         17    #define   cBIT13  0x2000  /* */
+            cm_equ1.h         18    #define   cBIT14  0x4000  /* */
+            cm_equ1.h         19    #define   cBIT15  0x8000  /* */
+            cm_equ1.h         20    
+            cm_equ1.h         21    //    *******************************************
+            cm_equ1.h         22    //    ***                 ***
+            cm_equ1.h         23    //    ***                 ***
+            cm_equ1.h         24    //    ***                 ***
+            cm_equ1.h         25    //    *******************************************
+            cm_equ1.h         26    //
+            cm_equ1.h         27    //    共通定義 型に意味のある場合下記を仕様する
+            cm_equ1.h         28    typedef unsigned char     Uchar;      //
+            cm_equ1.h         29    typedef unsigned short    Ushort;     //
+            cm_equ1.h         30    typedef unsigned int  Uint;       //
+            cm_equ1.h         31    typedef unsigned long Ulong;      //
+            cm_equ1.h         32    typedef signed char   Char;       //
+            cm_equ1.h         33    typedef signed short  Short;      //
+            cm_equ1.h         34    typedef signed int    Int;        //
+            cm_equ1.h         35    typedef signed long   Long;       //
+            cm_equ1.h         36    
+            cm_equ1.h         37    /*    共通定義 ﾊﾞｲﾄ長に意味のある場合下記を仕様する   */
+            cm_equ1.h         38    typedef unsigned char     U1b;        /*  u1b */
+            cm_equ1.h         39    typedef unsigned short    U2b;        /*  u2b */
+            cm_equ1.h         40    typedef unsigned long U4b;        /*  u4b */
+            cm_equ1.h         41    typedef signed char   S1b;        /*  s1b */
+            cm_equ1.h         42    typedef signed short  S2b;        /*  s2b */
+            cm_equ1.h         43    typedef signed long   S4b;        /*  s4b */
+            cm_equ1.h         44    
+            cm_equ1.h         45    /*    ============ 通常この記述を使用 =============   */
+            cm_equ1.h         46    //typedef signed char     BYTE;       /*  s1b */
+            cm_equ1.h         47    //typedef signed short    WORD;       /*  s2b */
+            cm_equ1.h         48    //typedef signed long DWORD;      /*  s4b */
+            cm_equ1.h         49    
+            cm_equ1.h         50    /*    *********************************** */
+            cm_equ1.h         51    /*    ***     sh3     *** */
+            cm_equ1.h         52    /*    *********************************** */
+            cm_equ1.h         53    /*    =================================   */
+            cm_equ1.h         54    #define       Debug_YES   1
+            cm_equ1.h         55    #define       Debug_NO    0
+            cm_equ1.h         56    #define       CMPILE_YES  1
+            cm_equ1.h         57    #define       CMPILE_NO   0
+            cm_equ1.h         58    
+            cm_equ1.h         59    #define       CB_STS_BUF_MAX      512     //128
+            cm_equ1.h         60    #define       CB_TRD_BUF_MAX      2048    //2048 total 2048確保
+            cm_equ1.h         61    #define       CB_TRD_SMP_CNT      128     //128個
+              ssc_y.c          9    #include  "ssc_wram.h"
+           ssc_wram.h          1    //;   ***************************************************
+           ssc_wram.h          2    //;   ***                                             ***
+           ssc_wram.h          3    //;   ***     外部ＳＲＡＭ定義                        ***
+           ssc_wram.h          4    //;   ***                                             ***
+           ssc_wram.h          5    //;   ***************************************************
+           ssc_wram.h          6      extern  S4b sram_top;
+           ssc_wram.h          7    
+           ssc_wram.h          8      extern  U2b data_init2_timer;   //; ｲﾆｼｬﾙWAITﾀｲﾏ2
+           ssc_wram.h          9    
+              ssc_y.c         10    
+              ssc_y.c         11    //void c_dmy1_soft_init(void);// ﾏｽﾀ/ｽﾚｰﾌﾞ時の呼ばれる
+              ssc_y.c         12    //void c_dmy1_data_init(void);// ﾏｽﾀ/ｽﾚｰﾌﾞ時の呼ばれる
+              ssc_y.c         13    //void c_dmy1_data_main(void);// ﾏｽﾀ/ｽﾚｰﾌﾞ時の呼ばれる
+              ssc_y.c         14    //void c_y1_ctrl_main(void);//メインスキャン
+              ssc_y.c         15    //void c_y1_ctrl_int1(void);//200usec割込(100usec)
+              ssc_y.c         16    //void c_y1_ctrl_int2(void);//2msec割込(1msec)
+              ssc_y.c         17    //void c_y1_ctrl_int3(void);//10msec程度(温調/通常のﾀｲﾏ計測)
+              ssc_y.c         18    
+              ssc_y.c         19    
+              ssc_y.c         20    //;   ***********************************************************
+              ssc_y.c         21    //;   ***                         ***
+              ssc_y.c         22    //;   ***     ｲﾆｼｬﾙﾃﾞｰﾀ受信前１回         ***
+              ssc_y.c         23    //;   ***                         ***
+              ssc_y.c         24    //;   ***********************************************************
+              ssc_y.c         25    //void c_dmy1_soft_init(void)
+              ssc_y.c         26    //{
+              ssc_y.c         27    //}
+              ssc_y.c         28    //;   ***********************************************************
+              ssc_y.c         29    //;   ***                         ***
+              ssc_y.c         30    //;   ***     ｲﾆｼｬﾙﾃﾞｰﾀ受信後１回         ***
+              ssc_y.c         31    //;   ***                         ***
+              ssc_y.c         32    //;   ***********************************************************
+              ssc_y.c         33    //void c_dmy1_data_init(void)
+              ssc_y.c         34    //{
+              ssc_y.c         35    //}
+              ssc_y.c         36    //;   ***********************************************************
+              ssc_y.c         37    //;   ***                         ***
+              ssc_y.c         38    //;   ***     ﾃﾞｰﾀ受信後毎スキャン            ***
+              ssc_y.c         39    //;   ***                         ***
+              ssc_y.c         40    //;   ***********************************************************
+              ssc_y.c         41    //void c_dmy1_data_main(void)
+              ssc_y.c         42    //{
+              ssc_y.c         43    //}
+              ssc_y.c         44    //;   ***********************************************************
+              ssc_y.c         45    //;   ***                         ***
+              ssc_y.c         46    //;   ***     制御用メインスキャン            ***
+              ssc_y.c         47    //;   ***                         ***
+              ssc_y.c         48    //;   ***********************************************************
+              ssc_y.c         49    //void c_y1_ctrl_main(void)
+              ssc_y.c         50    //{
+              ssc_y.c         51    //}
+              ssc_y.c         52    //;   ***********************************************************
+              ssc_y.c         53    //;   ***                         ***
+              ssc_y.c         54    //;   ***     定周期200usec(100usec)          ***
+              ssc_y.c         55    //;   ***                         ***
+              ssc_y.c         56    //;   ***********************************************************
+              ssc_y.c         57    //void c_y1_ctrl_int1(void)
+              ssc_y.c         58    //{
+              ssc_y.c         59    //}
+              ssc_y.c         60    //;   ***********************************************************
+              ssc_y.c         61    //;   ***                         ***
+              ssc_y.c         62    //;   ***     定周期2msec(1msec)          ***
+              ssc_y.c         63    //;   ***                         ***
+              ssc_y.c         64    //;   ***********************************************************
+              ssc_y.c         65    //void c_y1_ctrl_int2(void){
+              ssc_y.c         66    //}
+              ssc_y.c         67    //;   ***********************************************************
+              ssc_y.c         68    //;   ***                         ***
+              ssc_y.c         69    //;   ***     定周期10~20msec             ***
+              ssc_y.c         70    //;   ***                         ***
+              ssc_y.c         71    //;   ***********************************************************
+              ssc_y.c         72    //void c_y1_ctrl_int3(void){
+              ssc_y.c         73    //}
+              ssc_y.c         74    
+              ssc_y.c         75    
+SH SERIES C/C++ Compiler (V.9.04.01.002)                                                         12-Dec-2017 19:19:35  PAGE    1
+
+
+******** STATISTICS INFORMATION ********
+
+
+********** ERROR INFORMATION ***********
+
+NUMBER OF ERRORS:           0
+NUMBER OF WARNINGS:         0
+
+
+
+
+******* SOURCE LINE INFORMATION ********
+
+COMPILED SOURCE LINE:       75
+
+
+
+******* SECTION SIZE INFORMATION *******
+
+PROGRAM  SECTION (P):                                 00000000 Byte(s)
+CONSTANT SECTION (C):                                 00000000 Byte(s)
+DATA     SECTION (D):                                 00000000 Byte(s)
+BSS      SECTION (B):                                 00000000 Byte(s)
+
+TOTAL PROGRAM  SECTION: 00000000 Byte(s)
+TOTAL CONSTANT SECTION: 00000000 Byte(s)
+TOTAL DATA     SECTION: 00000000 Byte(s)
+TOTAL BSS      SECTION: 00000000 Byte(s)
+
+    TOTAL PROGRAM SIZE: 00000000 Byte(s)
+
+
+
+********** LABEL INFORMATION ***********
+
+NUMBER OF EXTERNAL REFERENCE SYMBOLS:            0
+NUMBER OF EXTERNAL DEFINITION SYMBOLS:           0
+NUMBER OF INTERNAL/EXTERNAL SYMBOLS:             0
+
+
+
+*** COMMAND PARAMETER ***
+
+-subcommand=D:\SIT4S_MC\cpua\cpua\cpua\Debug\ssc_y.shc
+-cpu=sh4
+-include="D:\SIT4S_MC\cpua\cpua\HW_SRC","D:\SIT4S_MC\comon","D:\SIT4S_MC\cpua\cpua","D:\SIT4S_MC\cpua\cpua\SEQ_SRC","D:\SIT4S_MC\cpua\cpua\cb_src\COMON","D:\SIT4S_MC\cpua\cpua\cb_src\K_SRC","D:\SIT4S_MC\comon\cpua_inc"
+-object="D:\SIT4S_MC\cpua\cpua\cpua\Debug\ssc_y.obj"
+-debug
+-listfile="D:\SIT4S_MC\cpua\cpua\cpua\Debug\ssc_y.lst"
+-show=source,include,expansion,tab=4
+-optimize=0
+-noinline
+-gbr=auto
+-chgincpath
+-errorpath
+"D:\SIT4S_MC\cpua\cpua\cb_src\Y_src\ssc_y.c"
+-global_volatile=0
+-opt_range=all
+-infinite_loop=0
+-del_vacant_loop=0
+-struct_alloc=1
+-lang=c
+-nologo

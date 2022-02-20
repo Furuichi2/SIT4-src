@@ -1,0 +1,975 @@
+;	*******************************************
+;	***					***
+;	***					***
+;	***	セルフチェック			***
+;	***					***
+;	***					***
+;	*******************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"		; //共通定義:必ず実行ﾌﾟﾛｸﾞﾗﾑにｲﾝｸﾙｰﾄﾞする事
+	.INCLUDE	"shn_cmd1.mac"		; //
+	.INCLUDE	"ssa_kmc1.mac"		; //
+	.INCLUDE	"ssa_pfom.equ"		; //equ定義
+	.INCLUDE	"ssa_khad.equ"		; //equ定義
+	.INCLUDE	"ssa_wrmk.ext"		; //
+	.INCLUDE	"cb_param.ext"		; //
+	.INCLUDE	"ssa_ver1.equ"		; //
+	
+	.LIST	ON
+
+	.SECTION	P,CODE			;
+
+;	=========== 2006-04-10 =========
+	.GLOBAL		_CPUA_SELF2_STR		;
+	.GLOBAL		_CPUA_SELF2_END		;
+	.GLOBAL		_CPUA_SELF2_CD1		;
+	.GLOBAL		_CPUA_SELF2_CD2		;
+	.GLOBAL		_CPUA_SELF2_CD3		;
+	.GLOBAL		_CPUA_SELF2_CD4		;
+
+	.GLOBAL		_CPUB_SELF2_STR		;
+	.GLOBAL		_CPUB_SELF2_END		;
+	.GLOBAL		_CPUB_SELF2_CD1		;
+	.GLOBAL		_CPUB_SELF2_CD2		;
+	.GLOBAL		_CPUB_SELF2_CD3		;
+	.GLOBAL		_CPUB_SELF2_CD4		;
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 PROGRAM	***
+;	//	***********************************
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+
+_CPUi_SELF2_STR		.DEFINE		"_CPUA_SELF2_STR"	;
+_CPUi_SELF2_END		.DEFINE		"_CPUA_SELF2_END"	;
+_CPUi_SELF2_CD1		.DEFINE		"_CPUA_SELF2_CD1"	;
+_CPUi_SELF2_CD2		.DEFINE		"_CPUA_SELF2_CD2"	;
+_CPUi_SELF2_CD3		.DEFINE		"_CPUA_SELF2_CD3"	;
+_CPUi_SELF2_CD4		.DEFINE		"_CPUA_SELF2_CD4"	;
+
+_CPUy_SELF2_STR		.DEFINE		"_CPUB_SELF2_STR"	;
+_CPUy_SELF2_END		.DEFINE		"_CPUB_SELF2_END"	;
+_CPUy_SELF2_CD1		.DEFINE		"_CPUB_SELF2_CD1"	;
+_CPUy_SELF2_CD2		.DEFINE		"_CPUB_SELF2_CD2"	;
+_CPUy_SELF2_CD3		.DEFINE		"_CPUB_SELF2_CD3"	;
+_CPUy_SELF2_CD4		.DEFINE		"_CPUB_SELF2_CD4"	;
+
+	.AELSE
+
+_CPUy_SELF2_STR		.DEFINE		"_CPUA_SELF2_STR"	;
+_CPUy_SELF2_END		.DEFINE		"_CPUA_SELF2_END"	;
+_CPUy_SELF2_CD1		.DEFINE		"_CPUA_SELF2_CD1"	;
+_CPUy_SELF2_CD2		.DEFINE		"_CPUA_SELF2_CD2"	;
+_CPUy_SELF2_CD3		.DEFINE		"_CPUA_SELF2_CD3"	;
+_CPUy_SELF2_CD4		.DEFINE		"_CPUA_SELF2_CD4"	;
+
+_CPUi_SELF2_STR		.DEFINE		"_CPUB_SELF2_STR"	;
+_CPUi_SELF2_END		.DEFINE		"_CPUB_SELF2_END"	;
+_CPUi_SELF2_CD1		.DEFINE		"_CPUB_SELF2_CD1"	;
+_CPUi_SELF2_CD2		.DEFINE		"_CPUB_SELF2_CD2"	;
+_CPUi_SELF2_CD3		.DEFINE		"_CPUB_SELF2_CD3"	;
+_CPUi_SELF2_CD4		.DEFINE		"_CPUB_SELF2_CD4"	;
+
+	.AENDI
+
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 MEMORY,HARD	***
+;	//	***********************************
+
+
+;	//	***********************************
+;	//	***	PUBLIC 宣言 PROGRAM	***
+;	//	***********************************
+	.EXPORT		_SELF_CHEAK			;==>ssa_cbmn.src
+	.EXPORT		_SELF_START_CONF		;==>ssa_ctrl.src
+	.EXPORT		_STP_SLF_FLG_PROC		;==>ssa_err1.src
+	.IMPORT		_SELF_POS_START_WORK_CLR	;
+
+_SELF_CHEAK:
+	SUB_START
+
+	MOV.L	#_SELF_CHK_SEL,R1		;
+	MOV.W	@R1,R0				;
+;;2006-04-10	TST	#BIT0,R0		;
+	TST	#(BIT1+BIT0),R0			;2006-04-10
+	TST_BIT_ON SELF_CHK_NOMAL		;
+
+	MOV.L	#_SELF_FLG,R1			;//BIT0:ｾﾙﾌﾁｪｯｸ中  BIT7ｾﾙﾌﾁｪｯｸ正常完了
+	MOV.W	@R1,R0				;
+	TST	#BIT7,R0			;ｾﾙﾌﾁｪｯｸ完了
+	TST_BIT_ON DUMSELF_CHK_EXIT		;
+
+	TST	#BIT0,R0			;
+	TST_BIT_ON DUMSELF_CHK_0900		;ｾﾙﾌ中になったらいきなり完了にする
+
+	MOV.L	#_SELF_COM,R1			;//BIT0:ｾﾙﾌﾁｪｯｸ指令
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_OF DUMSELF_CHK_EXIT		;
+
+;	==== ｾﾙﾌﾁｪｯｸ受付 ====
+	MOV.L	#_SELF_COM,R1			;//BIT0:ｾﾙﾌﾁｪｯｸ指令
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;COMMAND CLR
+
+;	==== ｾﾙﾌﾁｪｯｸ開始 ====
+	MOV.W	#BIT0,R0			;
+	MOV.L	#_SELF_FLG,R1			;//BIT0:ｾﾙﾌﾁｪｯｸ中  BIT7ｾﾙﾌﾁｪｯｸ正常完了
+	MOV.W	R0,@R1				;
+	M_BRA	DUMSELF_CHK_EXIT		;
+
+
+;	==== 正常終了 ===========
+DUMSELF_CHK_0900:
+	FAR_JSR	#_SELF_NOMAL_END_SET,R0		;2006-04-10
+
+;;	MOV.W	#BIT7,R0		;
+;;	MOV.L	#_SELF_FLG,R1		;//BIT0:ｾﾙﾌﾁｪｯｸ中  BIT7ｾﾙﾌﾁｪｯｸ正常完了
+;;	MOV.W	R0,@R1			;BIT7はANTIがｸﾘｱする
+
+DUMSELF_CHK_EXIT:
+	M_BRA	SELF_CHK_EXIT		;
+
+
+;	===================================
+;	===				===
+;	===================================
+SELF_CHK_NOMAL:
+	MOV.L	#_SELF_FLG,R1		;//BIT0:ｾﾙﾌﾁｪｯｸ中  BIT7ｾﾙﾌﾁｪｯｸ正常完了
+	MOV.W	@R1,R0			;
+	TST	#BIT7,R0		;ｾﾙﾌﾁｪｯｸ完了
+	TST_BIT_OF SELF_CHK_START	;
+	M_BRA	SELF_CHK_EXIT		;
+SELF_CHK_START:
+
+	TST	#BIT0,R0		;
+	TST_BIT_ON SELF_CHK_0100	;
+
+	MOV.L	#_SELF_COM,R1		;//BIT0:ｾﾙﾌﾁｪｯｸ指令
+	MOV.W	@R1,R0			;
+	TST	#BIT0,R0		;
+	TST_BIT_OF SELF_CHK_EXIT	;
+
+;	==== ｾﾙﾌﾁｪｯｸ受付 ====
+	MOV.L	#_SELF_COM,R1			;//BIT0:ｾﾙﾌﾁｪｯｸ指令
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;COMMAND CLR
+
+	FAR_JSR	#_SELF_HAND_ALL_INIT,R0		;2006-04-10
+
+;	==== ｾﾙﾌﾁｪｯｸ開始 ====
+	MOV.W	#BIT0,R0			;
+	MOV.L	#_SELF_FLG,R1			;//BIT0:ｾﾙﾌﾁｪｯｸ中  BIT7ｾﾙﾌﾁｪｯｸ正常完了
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_PAR_SELF_WAIT_TM,R1		;セルフチェック開始遅延時間 500*1msec
+	MOV.W	@R1,R0				;
+	MOV.L	#_SELF_START_WAIT_TM,R1		;
+	MOV.W	R0,@R1				;
+
+;	==== 動作条件ﾁｪｯｸ(2006-04-10)==========
+	FAR_JSR	#_SELF_MODE_CHK,R0		;ANS R0: BIT0=1 FIRST 有り,BIT1=1 SECOND 有り
+	TST	#BIT0,R0			;FIRST?
+	TST_BIT_ON SELF_CHK_0030		;
+
+	MOV.W	#(BIT7+BIT0),R0			;BIT0=1 EXIT信号
+	MOV.L	#_SELF_FIRST_END_FLG,R1		;
+	MOV.W	R0,@R1				;
+
+SELF_CHK_0030:
+	M_BRA	SELF_CHK_EXIT			;
+
+
+;	===== ｾﾙﾌﾁｪｯｸ中?=========
+SELF_CHK_0100:
+	MOV.L	#_SELF_SECOND_ACT_FLG,R1	;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON SELF_CHK_0300		;SECOND? YES JUMP
+
+	MOV.L	#_SELF_FIRST_END_FLG,R1		;
+	MOV.W	@R1,R0				;FIRST END?
+	TST	#BIT7,R0			;
+	TST_BIT_OF SELF_CHK_EXIT		;
+
+;	--- FIRST END ----
+	TST	#BIT6,R0			;ERR?
+	TST_BIT_OF SELF_CHK_0120		;NO
+
+;	---- 異常 END-----
+	FAR_JSR	#_SELF_NOMAL_END_SET,R0		;
+	MOV.W	#(BIT7+BIT6),R0			;
+	MOV.L	#_SELF_FLG,R1			;//BIT0:ｾﾙﾌﾁｪｯｸ中  BIT7ｾﾙﾌﾁｪｯｸ正常完了
+	MOV.W	R0,@R1				;
+	M_BRA	SELF_CHK_EXIT			;
+
+;	---- SECOND 起動ﾁｪｯｸ---------
+SELF_CHK_0120:
+	FAR_JSR	#_SELF_MODE_CHK,R0		;ANS R0: BIT0=1 FIRST 有り,BIT1=1 SECOND 有り
+	TST	#BIT1,R0			;SECOND?
+	TST_BIT_ON SELF_CHK_0150		;
+
+	FAR_JSR	#_SELF_NOMAL_END_SET,R0		;
+	M_BRA	SELF_CHK_EXIT			;
+
+
+;	---- SECOND 起動---------
+SELF_CHK_0150:
+	MOV.W	#(BIT7+BIT5),R0			;
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB208),R1	;
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_SELF_START_WAIT_TM,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;ﾆｱｾﾞﾛのためのWAIT処理
+	TST_BIT_OF SELF_CHK_0160		;
+	M_BRA	SELF_CHK_EXIT			;
+
+SELF_CHK_0160:
+	MOV.W	#BIT0,R0			;
+	MOV.L	#_SELF_SECOND_ACT_FLG,R1	;
+	MOV.W	R0,@R1				;
+						;
+	MOV.W	#1,R0				;
+	MOV.L	#_SELF_SECOND_STEP,R1		;
+	MOV.W	R0,@R1				;実際には"00"ｽﾃｯﾌﾟで行っている
+
+;	-----------------------------------------
+	MOV.W	#BIT0,R0			;
+	MOV.L	#_SELF_BRK_LOCK,R1		;ﾌﾞﾚｰｷﾛｯｸ開始
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_PAR_BRKLOCK_TIM,R1		;
+	MOV.W	@R1,R0				;
+	MOV.L	#_SELF_START_WAIT_TM,R1		;
+	MOV.W	R0,@R1				;
+;	------------------------------------------
+SELF_CHK_0300:
+
+	MOV.L	#_SELF_SECOND_STEP,R1						;
+	MOV.W	@R1,R0								;STEP NO
+	TABLE_CALL_MEM	NUMBER_REG=R0,TABLE_MEM=_SELF2_STEP_TBL,WKREG1=R1	;
+
+	MOV.L	#_SELF_SECOND_ACT_FLG,R1	;
+	MOV.W	@R1,R0				;
+	TST	#BIT7,R0			;
+	TST_BIT_OF SELF_CHK_EXIT		;
+
+;	------ 終了------
+	FAR_JSR	#_SELF_NOMAL_END_SET,R0		;
+
+
+SELF_CHK_EXIT:
+	MOV.L	#_SELF_HAND_FLG1,R1		; 自分の状態ﾌﾗｸﾞ異常STEPになったかﾁｪｯｸ
+	MOV.W	@R1,R0				;
+	EXTU.B	R0,R0				;下位8bit
+
+	MOV.L	#_SELF_SECOND_STEP,R1		;
+	MOV.W	@R1,R2				;
+	SHLL8	R2				;
+	OR	R2,R0				;
+
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB238,R4	;
+	MOV.W	R0,@R4				;
+
+
+	SUB_END
+	M_RTS
+
+
+	.ALIGN 4
+_SELF2_STEP_TBL
+	.DATA.L		_SELF2_STEP00	;DUMMY
+	.DATA.L		_SELF2_STEP01	;*同期
+	.DATA.L		_SELF2_STEP02	;ﾌﾞﾚｰｷON遅延時間
+	.DATA.L		_SELF2_STEP03	;負荷ﾗｯﾁ
+	.DATA.L		_SELF2_STEP04	;DUMMY
+	.DATA.L		_SELF2_STEP05	;*同期
+	.DATA.L		_SELF2_STEP06	;ﾊﾟﾙｽ出力
+	.DATA.L		_SELF2_STEP07	;ﾊﾟﾙｽ出力完了+負荷確認
+	.DATA.L		_SELF2_STEP08	;*同期
+	.DATA.L		_SELF2_STEP09	;ﾊﾟﾙｽ出力
+	.DATA.L		_SELF2_STEP10	;負荷率
+	.DATA.L		_SELF2_STEP11	;同期
+	.DATA.L		_SELF2_STEP12	;ﾌﾞﾚｰｷ解除
+	.DATA.L		_SELF2_STEP13	;遅延
+	.DATA.L		_SELF2_STEP14	;*終了同期
+	.DATA.L		_SELF2_STEP15	;終了ｺｰﾄﾞ
+
+_SELF2_COD_STR		.EQU		1	;
+_SELF2_COD_END		.EQU		1	;
+_SELF2_COD_CD1		.EQU		1	;
+_SELF2_COD_CD2		.EQU		1	;
+_SELF2_COD_CD3		.EQU		1	;
+
+	.IMPORT	_POS_LSI_START_INITAL		;SPEED,LATE
+	.IMPORT	_POS_LSI_TOP_SPEED_SET	;SPEED
+	.IMPORT	_LENGH_ADD_CALC		;
+	.IMPORT	_LENGH_ADD_CALC_SV_TYPE	;
+	
+	.IMPORT	_POS_LENGTH_ADD_DATA	;
+	.IMPORT	_POS_PLS_OUTPUT_DATA	;位置決めLSIｱｸｾｽ(毎ｽｷｬﾝ)
+	.IMPORT	_FWD_REV_START		;起動
+	.IMPORT	_LOD_POS_STS_REG	;
+	.IMPORT	_LOD_POS_STS_REG_POR	;
+	.IMPORT	_FWD_REV_STSIG_OFF	;指令OFF
+	.IMPORT	_FWD_REV_STSIG_OFF_SPEC	;
+
+	.ALIGN 4
+;	***********************************
+;	***	DUMMY			***
+;	***********************************
+_SELF2_STEP00
+	SUB_START
+	MOV.L	#_SELF_SECOND_STEP,R1	;
+	MOV.W	#1,R0			;
+	MOV.W	R0,@R1			;
+	SUB_END
+	M_RTS
+
+;	***************************
+;	***	STEP01		***
+;	***	開始同期	***
+;	***************************
+_SELF2_STEP01
+	SUB_START
+	MOV.W	#_SELF2_COD_STR,R3	;
+	MOV.L	#_CPUi_SELF2_STR,R5	;
+	MOV.L	#_CPUy_SELF2_STR,R6	;
+	FAR_JSR	#_SELF2_SYNC_STEP,R0	
+	SUB_END
+	M_RTS
+
+;	***************************
+;	***	STEP02		***
+;	***	WAIT		***
+;	***************************
+_SELF2_STEP02
+	SUB_START
+	MOV.L	#_SELF_START_WAIT_TM,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON SLF2_STEP02_10		;
+	FAR_JSR	#_SELF2_STEP_INC,R0		;
+SLF2_STEP02_10
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	STEP03			***
+;	***	開始前負荷率(ﾗｯﾁ)	***
+;	***********************************
+_SELF2_STEP03
+	SUB_START
+;;2006-09-30	MOV.L	#_PV_AD_DATA,R1			; 移動平均とった後の0~1000 DATA
+	MOV.L	#_WPV_ABS_AD_DATA,R1			; 移動平均とった後の0~1000 DATA
+	MOV.W	@R1,R0				;
+	MOV.L	#_SELF_AD_LATCH,R1		;
+	MOV.W	R0,@R1				;
+
+	FAR_JSR	#_SELF_POS_START_WORK_CLR,R0	;2006-05-09 BUG
+
+	FAR_JSR	#_SELF_START_LATCH,R0	;
+
+	FAR_JSR	#_SELF2_STEP_INC,R0		;
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	DUMMY			***
+;	***********************************
+_SELF2_STEP04
+	SUB_START
+	FAR_JSR	#_SELF2_STEP_INC,R0		;
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	同期1			***
+;	***********************************
+_SELF2_STEP05
+	SUB_START
+	MOV.W	#_SELF2_COD_CD1,R3	;
+	MOV.L	#_CPUi_SELF2_CD1,R5	;
+	MOV.L	#_CPUy_SELF2_CD1,R6	;
+	FAR_JSR	#_SELF2_SYNC_STEP,R0	
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	PLS-OUT	FWD		***
+;	***********************************
+_SELF2_STEP06
+	SUB_START
+	FAR_JSR	#_POS_LSI_START_INITAL,R0	;SPEED,LATE
+	MOV.L	#_SELF_MOV_SPEED,R1		;//  PLS(換算値)
+	MOV.L	@R1,R2				;
+	FAR_JSR	#_POS_LSI_TOP_SPEED_SET,R0	;SPEED
+	FAR_JSR	#_SELF_FWD_POS_MAKE,R0		;
+	FAR_JSR	#_SELF_OBJ_POS_MAKE,R0		;+起動
+	FAR_JSR	#_SELF2_STEP_INC,R0	;
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	PLS-END+負荷率		***
+;	***********************************
+;(負荷率比較をはずすか？)
+;とりあえず絶対値で比較する
+;
+_SELF2_STEP07
+	SUB_START
+
+	FAR_JSR	#_FWD_REV_STSIG_OFF_SPEC,R0
+
+	FAR_JSR	#_LOD_POS_STS_REG_POR,R1	;
+	TST	#BIT2,R0		;停止?
+	TST_BIT_OF SLF2_STEP07_10	;0:払出中 1:停止 
+
+;;2006-05-09	MOV.L	#_PV_AD_DATA,R1		;移動平均とった後の0~1000 DATA
+;;"	MOV.W	@R1,R0			;
+;;"	MOV.L	#_PAR_SLFTRQ_UPP,R1	;ｾﾙﾌﾁｪｯｸ時の負荷率 %
+;;"	MOV.W	@R1,R2			;	
+;;"	CMP/GE	R2,R0			;UP?
+;;"	BF	SLF2_STEP07_10		;NO
+
+	FAR_JSR	#_SELF_TRQ_CMP1,R0	;2006-05-09
+
+	MOV.L	#_CB_SEQ_CB_COM346,R1	;2006-05-09
+	MOV.W	@R1,R0			;
+	MOV.W	#BIT11,R4		;
+	TST	R4,R0			;
+	TST_BIT_OF SLF2_STEP07_10	;ﾄﾙｸ上昇確認
+
+	FAR_JSR	#_SELF2_STEP_INC,R0	;
+
+SLF2_STEP07_10
+
+	SUB_END
+	M_RTS
+
+
+
+;	***********************************
+;	***	同期2			***
+;	***********************************
+_SELF2_STEP08
+	SUB_START
+	MOV.W	#_SELF2_COD_CD2,R3	;
+	MOV.L	#_CPUi_SELF2_CD2,R5	;
+	MOV.L	#_CPUy_SELF2_CD2,R6	;
+	FAR_JSR	#_SELF2_SYNC_STEP,R0	
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	PLS-OUT			***
+;	***********************************
+_SELF2_STEP09
+	SUB_START
+	FAR_JSR	#_POS_LSI_START_INITAL,R0	;SPEED,LATE
+	MOV.L	#_SELF_MOV_SPEED,R1		;//  PLS(換算値)
+	MOV.L	@R1,R2				;
+	FAR_JSR	#_POS_LSI_TOP_SPEED_SET,R0	;SPEED
+	FAR_JSR	#_SELF_REV_POS_MAKE,R0					;
+	FAR_JSR	#_SELF_OBJ_POS_MAKE,R0					;+起動 Input R1,R2
+	
+	FAR_JSR	#_SELF2_STEP_INC,R0					;
+	SUB_END
+	M_RTS
+;	***********************************
+;	***	PLS-END+負荷率		***
+;	***********************************
+_SELF2_STEP10
+	SUB_START
+	FAR_JSR	#_FWD_REV_STSIG_OFF_SPEC,R0
+
+	FAR_JSR	#_LOD_POS_STS_REG_POR,R1		;
+	TST	#BIT2,R0			;停止?
+	TST_BIT_OF SLF2_STEP10_10		;0:払出中 1:停止 
+
+;;2006-05-09	MOV.L	#_PV_AD_DATA,R1		; 移動平均とった後の0~1000 DATA
+;;"	MOV.W	@R1,R0				;
+;;"	MOV.L	#_PAR_SLFTRQ_UPP,R1		;ｾﾙﾌﾁｪｯｸ時の負荷率 %
+;;"	MOV.W	@R1,R2				;	
+;;"	CMP/GE	R0,R2				;DN?
+;;"	BF	SLF2_STEP10_10			;NO
+
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB208),R1	;ﾊﾟﾙｽ戻し完了 2006-05-09
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT6,R4			;
+	OR	R4,R0				;BIT SET
+	MOV.W	R0,@R1				;
+
+	FAR_JSR	#_SELF_TRQ_CMP1,R0	;2006-05-09
+
+	MOV.L	#_CB_SEQ_CB_COM346,R1	;2006-05-09
+	MOV.W	@R1,R0			;
+	MOV.W	#BIT11,R4		;
+	TST	R4,R0			;
+	TST_BIT_ON SLF2_STEP10_10	;ﾄﾙｸ上昇確認状態 下降待ち
+
+	FAR_JSR	#_SELF2_STEP_INC,R0	;
+
+SLF2_STEP10_10
+
+	SUB_END
+	M_RTS
+;	***********************************
+;	***	同期3			***
+;	***********************************
+_SELF2_STEP11
+	SUB_START
+	MOV.W	#_SELF2_COD_CD3,R3	;
+	MOV.L	#_CPUi_SELF2_CD3,R5	;
+	MOV.L	#_CPUy_SELF2_CD3,R6	;
+	FAR_JSR	#_SELF2_SYNC_STEP,R0	
+	SUB_END
+	M_RTS
+;	***********************************
+;	***	ﾌﾞﾚｰｷ解除		***
+;	***********************************
+_SELF2_STEP12
+	SUB_START
+;	-----------------------------------------
+	XOR	R0,R0				;
+	MOV.L	#_SELF_BRK_LOCK,R1		;ﾌﾞﾚｰｷﾛｯｸ解除
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_PAR_BRKDISE_TIM,R2		;
+	MOV.W	@R2,R0
+	MOV.L	#_SELF_START_WAIT_TM,R1		;
+	MOV.W	R0,@R1				;
+
+	FAR_JSR	#_SELF2_STEP_INC,R0		;
+;	------------------------------------------
+
+	SUB_END
+	M_RTS
+;	***********************************
+;	***	遅延			***
+;	***********************************
+_SELF2_STEP13
+	SUB_START
+	MOV.L	#_SELF_START_WAIT_TM,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0
+	TST_BIT_ON SLF2_STEP13_10		;
+	FAR_JSR	#_SELF2_STEP_INC,R0		;
+SLF2_STEP13_10
+	SUB_END
+	M_RTS
+;	***********************************
+;	***	同期			***
+;	***********************************
+_SELF2_STEP14
+	SUB_START
+	MOV.W	#_SELF2_COD_END,R3	;
+	MOV.L	#_CPUi_SELF2_END,R5	;
+	MOV.L	#_CPUy_SELF2_END,R6	;
+	FAR_JSR	#_SELF2_SYNC_STEP,R0
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	終了			***
+;	***********************************
+_SELF2_STEP15
+	SUB_START
+	MOV.L	#_SELF_SECOND_ACT_FLG,R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT7,R4
+	OR	R4,R0
+	MOV.W	R0,@R1				;
+
+	SUB_END
+	M_RTS
+
+
+
+;	***************************
+;	***	同期ｽﾃｯﾌﾟ	***
+;	***************************
+;	R3:CODE
+;	R5:I   ADR
+;	R6:YOU ADR
+_SELF2_SYNC_STEP
+	SUB_START
+	MOV.W	R3,@R5			;output I(my)data
+	MOV.W	@R6,R2			;read You data
+	CMP/EQ	R2,R3			;
+	BF	SLF2_SYNCSTEP_10	;
+	FAR_JSR	#_SELF2_STEP_INC,R0	;
+SLF2_SYNCSTEP_10:			;
+	SUB_END
+	M_RTS
+
+
+;	***************************
+;	***	ｽﾃｯﾌﾟ+1		***
+;	***************************
+_SELF2_STEP_INC
+	SUB_START
+	MOV.L	#_SELF_SECOND_STEP,R1	;
+	MOV.W	@R1,R0			;STEP NO
+	ADD	#1,R0			;
+	MOV.W	R0,@R1			;
+	SUB_END
+	M_RTS
+
+;	***************************
+;	***			***
+;	***	TRQ比較208.8	***
+;	***			***
+;	***	2006-05-09	***
+;	***************************
+_SELF_TRQ_CMP1:
+	SUB_START
+;;	MOV.L	#_PVP_POWER_MONI,R1		;こっちが％だけどＢにはないからだめ
+
+	MOV.W	#BIT8,R4			;
+
+;;2006-09-30	MOV.L	#_PV_AD_DATA,R1			; 移動平均とった後の0~1000 DATA
+	MOV.L	#_WPV_ABS_AD_DATA,R1			;移動平均とった後の0~1000 DATA
+	MOV.W	@R1,R0				;
+	MOV.L	#_PAR_SLFTRQ_UPP,R1		;ｾﾙﾌﾁｪｯｸ時の負荷率 %
+	MOV.W	@R1,R2				;	
+	CMP/GE	R2,R0				;UP?
+	BF	SELF_TRQCMP1_050		;
+						;UP
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB208),R1	;
+	MOV.W	@R1,R0				;
+	OR	R4,R0				;BIT SET
+	MOV.W	R0,@R1				;
+	M_BRA	SELF_TRQCMP1_100		;
+
+SELF_TRQCMP1_050:				;
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB208),R1	;BIT CLR
+	MOV.W	@R1,R0				;
+	NOT	R4,R4				;
+	AND	R4,R0				;
+	MOV.W	R0,@R1				;
+SELF_TRQCMP1_100:				;
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***	ｾﾙﾌﾁｪｯｸ開始条件(継続条件)	***
+;	*******************************************
+;	待機点にいる事を条件にすべきだが、、
+;
+;;;2006-05-09 _SELF_START_CONF:
+;;;	SUB_START
+;;;	XOR	R0,R0	;ｾﾙﾌﾁｪｯｸ開始可能
+;;;	SUB_END
+;;;	M_RTS
+
+	.IMPORT	_INC_SPEC_RSTCHK		;2014-09-26
+
+
+_SELF_START_CONF:
+	SUB_START
+	MOV.L	#_MODE_SEL,R1			;
+	MOV.W	@R1,R0				;
+	TST	#_W1OFF,R0			;切?
+	TST_BIT_ON SELF_STARTCONF_NG		;
+
+	MOV.W	#(_W1DUP+_W1DIC),R1		;
+	TST	R1,R0				;
+	TST_BIT_ON SELF_STARTCONF_OK		;どこでもOK
+
+;---2011-09-14---
+	MOV.L	#_BRKTST_INPUT_CMD,R1		;//安全一行程の試験モード指定時ON
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON SELF_CONFCK_BRK100		;[]
+
+
+;	---待機点か---
+	MOV.L	#_M_LINK_AREASIG,R4		;//BIT0/BIT4:待機点範囲
+	MOV.W	@R4,R0				;
+	TST	#BIT4,R0			;
+	TST_BIT_ON SELF_STARTCONF_OK		;
+
+;	----------- 振子時のみON/OFFする--------------
+	MOV.L	#_DNM_RESET_AREA,R4		;//BIT7(左)/BIT4(右側)
+	MOV.W	@R4,R0
+	TST	#(BIT7+BIT0),R0			;
+	TST_BIT_ON SELF_STARTCONF_OK		;
+
+;	-------------2014-09-26---------------------------------------
+	FAR_JSR	#_INC_SPEC_RSTCHK,R0		;
+	TST	R0,R0				;
+	TST_BIT_ON SELF_STARTCONF_OK		;
+;	-----------------------------------------------------
+
+	M_BRA	SELF_STARTCONF_NG		;2011-09-14 ADD
+
+;	--------------------------------------
+SELF_CONFCK_BRK100:
+	MOV.L	#_BRKTST_AREA_SIG,R4		;//BIT0/BIT4:待機点範囲
+	MOV.W	@R4,R0				;//BIT1:下降(上昇信号はない)
+	TST	#BIT4,R0			;
+	TST_BIT_ON SELF_STARTCONF_OK
+	M_BRA	SELF_STARTCONF_NG		;
+
+
+
+SELF_STARTCONF_NG:
+	MOV	#-1,R0				;
+	M_BRA	SELF_STARTCONF_END		;
+SELF_STARTCONF_OK:
+	XOR	R0,R0	;ｾﾙﾌﾁｪｯｸ開始可能
+SELF_STARTCONF_END:
+	SUB_END
+	M_RTS
+	
+
+
+;	***************************
+;	***	非常停止時に	***
+;	***	急停止時も	***
+;	***************************
+_STP_SLF_FLG_PROC:
+	SUB_START
+
+	FAR_JSR	#_STP_SELF_OUT_OFF,R0		; セルフチェック信号 全ＯＦＦ CHK,CH0~2
+
+	XOR	R0,R0
+	MOV.L	#_SELF_FLG,R1			;//BIT0:ｾﾙﾌﾁｪｯｸ中  BIT7ｾﾙﾌﾁｪｯｸ正常完了
+	MOV.W	R0,@R1				
+	MOV.L	#_SELF_COM,R1			;//BIT0:ｾﾙﾌﾁｪｯｸ指令
+	MOV.W	R0,@R1				;
+
+	FAR_JSR	#_SELF_END_CLR,R0
+
+	SUB_END
+	M_RTS
+
+
+	.INCLUDE	"ssa_slfy.inc"		;Y_SRC 2002-09-12
+
+
+;	*******************************************
+;	***					***
+;	***		ﾌﾞﾚｰｷ回路ﾁｪｯｸ		***
+;	***					***
+;	*******************************************
+
+;	*******************************************
+;	***					***
+;	***		DPRAM,FLG CLR		***
+;	***					***
+;	*******************************************
+;	=========== 2006-04-10 =========
+;_CPUA_SELF2_STR		.SRES	2	;
+;_CPUA_SELF2_END		.SRES	2	;
+;_CPUA_SELF2_CD1		.SRES	2	;
+;_CPUA_SELF2_CD2		.SRES	2	;
+;_CPUA_SELF2_CD3		.SRES	2	;
+;_CPUA_SELF2_CD4		.SRES	2	;
+
+;_CPUB_SELF2_STR		.SRES	2	;
+;_CPUB_SELF2_END		.SRES	2	;
+;_CPUB_SELF2_CD1		.SRES	2	;
+;_CPUB_SELF2_CD2		.SRES	2	;
+;_CPUB_SELF2_CD3		.SRES	2	;
+;_CPUB_SELF2_CD4		.SRES	2	;
+
+_SELF_HAND_ALL_INIT:
+	SUB_START
+
+	XOR	R0,R0					;
+	MOV.L	#_SELF_FIRST_END_FLG,R1			;
+	MOV.W	R0,@R1					;
+
+	XOR	R0,R0					;
+	MOV.L	#_SELF_SECOND_ACT_FLG,R1		;
+	MOV.W	R0,@R1					;
+	MOV.L	#_SELF_SECOND_STEP,R1			;
+	MOV.W	R0,@R1					;
+
+	XOR	R0,R0					;
+	MOV.L	#_CPUi_SELF2_STR,R1			;
+	MOV.W	R0,@R1					;
+	MOV.L	#_CPUi_SELF2_END,R1			;
+	MOV.W	R0,@R1					;
+	MOV.L	#_CPUi_SELF2_CD1,R1			;
+	MOV.W	R0,@R1					;
+	MOV.L	#_CPUi_SELF2_CD2,R1			;
+	MOV.W	R0,@R1					;
+	MOV.L	#_CPUi_SELF2_CD3,R1			;
+	MOV.W	R0,@R1					;
+	MOV.L	#_CPUi_SELF2_CD4,R1			;
+	MOV.W	R0,@R1					;
+
+	SUB_END
+	M_RTS
+
+_SELF_NOMAL_END_SET:
+	SUB_START
+
+	FAR_JSR	#_SELF_END_CLR,R0
+
+	MOV.W	#BIT7,R0			;
+	MOV.L	#_SELF_FLG,R1			;//BIT0:ｾﾙﾌﾁｪｯｸ中  BIT7ｾﾙﾌﾁｪｯｸ正常完了
+	MOV.W	R0,@R1				;
+
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***				***
+;	***				***
+;	***********************************
+_SELF_END_CLR:
+	SUB_START
+
+	XOR	R0,R0					;
+	MOV.L	#_CPUi_SELF2_STR,R1			;
+	MOV.W	R0,@R1					;
+
+	XOR	R0,R0					;
+	MOV.L	#_SELF_BRK_LOCK,R1			;
+	MOV.W	R0,@R1					;
+
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB208),R1		;
+	MOV.W	R0,@R1					;
+
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	FIRST/SECODN CHECK	***
+;	***				***
+;	***********************************
+;ANS R0: BIT0=1 FIRST 有り,BIT1=1 SECOND 有り
+;
+_SELF_MODE_CHK			;
+	SUB_START
+	MOV.L	#_SELF_CHK_SEL,R1		;
+	MOV.W	@R1,R0				;
+	TST	#(BIT1+BIT0),R0			;2006-04-10
+	TST_BIT_OF SELF_MODECHK_END		;
+
+	MOV.L	#_SELF_TIMING_SIG,R1		;
+	MOV.W	@R1,R0				;0(RESET) 1:DRV
+	TST	R0,R0				;
+	TST_BIT_ON SELF_MODECHK_100		;
+;	---- RESET ---
+	MOV.L	#_SELF_CHK_MATHED,R1		;
+	MOV.W	@R1,R0				;
+	AND	#(BIT1+BIT0),R0			;
+	M_BRA	SELF_MODECHK_300		;
+
+;	---- DRV----
+SELF_MODECHK_100				;
+	MOV.L	#_SELF_CHK_MATHED,R1		;
+	MOV.W	@R1,R0				;
+	SHLR2	R0				;BIT4->3,2
+	SHLR2	R0				;BIT2->1,0
+	AND	#(BIT1+BIT0),R0			;BIT1:ﾊﾟﾙｽ BIT0:EMGﾚﾍﾞﾙ
+
+SELF_MODECHK_300
+;	------2006-05-09 346.10に従いﾊﾟﾙｽ有り・なしを行う。上記のBIT1は意味をなさない-----
+	MOV.L	#_CB_SEQ_CB_COM346,R1		;2006-05-09
+	MOV.W	@R1,R2				;346.10=1ﾊﾟﾙｽのｾﾙﾌﾁｪｯｸを行う
+	MOV.W	#BIT10,R4			;
+	TST	R4,R2				;
+	TST_BIT_ON SELF_MODECHK_350		;
+	AND	#LOW ~BIT1,R0			;
+	M_BRA	SELF_MODECHK_END		;
+SELF_MODECHK_350				;
+	OR	#BIT1,R0			;ﾊﾟﾙｽ有り
+SELF_MODECHK_END				;
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	開始位置記憶~位置決め		***
+;	***					***
+;	*******************************************
+
+_SELF_START_LATCH
+	SUB_START
+	MOV.L	#_LINK_PV_ABSPLS,R4		;
+	MOV.L	@R4+,R1					;
+	MOV.L	@R4,R2					;
+	MOV.L	#_LINK_RL_OBJ_ABSPLS,R4			;//ﾘｱﾙﾀｲﾑ目標絶対位置(ﾊﾞｯｸﾗｯｼなし)
+	MOV.L	R1,@(0,R4)
+	MOV.L	R2,@(4,R4)
+
+	MOV.L	#_SELF_START_POS_LATCH,R4		;
+	MOV.L	R1,@(0,R4)				;
+	MOV.L	R2,@(4,R4)				;
+	SUB_END
+	M_RTS
+
+_SELF_FWD_POS_MAKE
+	SUB_START
+
+	MOV.L	#_POSLSI_DRIV_SHIN,R1	;//BIT0
+	MOV.W	@R1,R0			;
+	AND	#LOW ~BIT0,R0		;
+	MOV.W	R0,@R1			;
+
+	MOV.L	#_SELF_START_POS_LATCH,R4				;
+	MOV.L	@(0,R4),R1						;
+	MOV.L	@(4,R4),R2						;
+
+	MOV.L	#_SELF_MOV_LENGTH,R4					;// PLS(換算値)
+	MOV.L	@R4,R6							;
+	XOR	R5,R5							;
+	ADD8B DT_REGH=R5,DT_REGL=R6,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;
+
+	FAR_JSR	#_LENGH_ADD_CALC,R0					;_LINK_SV_OBJ_ABSPLS save
+
+	SUB_END
+	M_RTS
+
+_SELF_REV_POS_MAKE
+	SUB_START
+	MOV.L	#_POSLSI_DRIV_SHIN,R1	;//BIT0
+	MOV.W	@R1,R0			;
+	OR	#BIT0,R0		;反転
+	MOV.W	R0,@R1			;
+
+;;;	MOV.L	#_SELF_START_POS_LATCH,R4				;開始位置に戻す
+;;;	MOV.L	@(0,R4),R1						;
+;;;	MOV.L	@(4,R4),R2						;
+
+;;;;	MOV.L	#_LINK_SV_OBJ_ABSPLS,R5					;
+;;;;	MOV.L	R1,@(0,R5)						;
+;;;;	MOV.L	R2,@(4,R5)						;
+
+;;;;	FAR_JSR	#_LENGH_ADD_CALC,R0					;
+
+	MOV.L	#_SELF_START_POS_LATCH,R4				;開始位置に戻す
+	MOV.L	@(0,R4),R1						;
+	MOV.L	@(4,R4),R2						;
+
+	FAR_JSR	#_LENGH_ADD_CALC_SV_TYPE,R0				;Input R1,R2
+
+	SUB_END
+	M_RTS
+
+
+_SELF_OBJ_POS_MAKE:
+	SUB_START
+
+	FAR_JSR	#_POS_LENGTH_ADD_DATA,R0	;
+	FAR_JSR	#_POS_PLS_OUTPUT_DATA,R0	;位置決めLSIｱｸｾｽ(毎ｽｷｬﾝ)
+	FAR_JSR	#_FWD_REV_START,R1		;起動
+
+	SUB_END
+	M_RTS
+
+
+
+	.END

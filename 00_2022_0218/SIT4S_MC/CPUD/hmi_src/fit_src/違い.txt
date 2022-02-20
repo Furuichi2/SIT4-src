@@ -1,0 +1,52 @@
+_99段仕様
+ssc_Seisan.c
+		case E_sstg_hos:		//生産[補正モニタ]	//V01w(追加)
+			switch(KEY_DATA_MODE) {
+				case E_key_ent_mode:		//ENT key mode
+					i = SV_TBL_POS_NOW;
+					Key_Ent_sv();								//設定値の確定
+					mmon_sv_chg(i);								//角度&位置の設定値変更
+					mmon_tchk_disp(0x00);						//ﾓｰｼｮﾝ画面用情報ﾃｰﾌﾞﾙのﾁｪｯｸ&表示
+					mmon_trans_put();							//回転方式によるﾃﾞｰﾀの格納
+					break;
+
+_10段仕様
+ssc_Seisan.c
+		case E_sstg_hos:		//生産[補正モニタ]	//V01w(追加)
+			switch(KEY_DATA_MODE) {
+				case E_key_ent_mode:		//ENT key mode
+					i = SV_TBL_POS_NOW;
+					Key_Ent_sv();								//設定値の確定
+//2017/11/09
+////					mmon_sv_chg(i);								//角度&位置の設定値変更
+////					mmon_tchk_disp(0x00);						//ﾓｰｼｮﾝ画面用情報ﾃｰﾌﾞﾙのﾁｪｯｸ&表示
+
+					mmon_trans_put();							//回転方式によるﾃﾞｰﾀの格納
+					break;
+
+
+
+
+
+
+
+
+
+
+ssa_csr_ctrl.inc
+_99段仕様
+CS1038
+    .data.w 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+
+_10段仕様
+CS1038
+	.data.w 0, 0, 1, 0, 0, 0, 0, 0, 0, 95, h'ff, 65, 0, 108, 0, 0;
+
+->test1:だめ
+    .data.w 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+->test2:だめ
+	.data.w 0, 0, 1, 0, 0, 0, 0, 0, 0, 95, h'ff, 65, 0, 108, 0, 0;
+
+
+_99段仕様
+_10段仕様

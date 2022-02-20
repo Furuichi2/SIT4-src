@@ -1,0 +1,682 @@
+	.global		_SVPV_LCD_FLG;							//設定値＆実測値のLCD表示ﾌﾗｸﾞ(00＝表示／00≠非表示)
+	.global		_SV_DANSUU_SRV_BAK;						//工程数 セーブ
+	.global		_SV_TAIKIPOS_SRV;            /* 待機位置 */
+	.global		_SV_KAITEN_SRV;              /* 回転方式 */
+	.global		_SV_DANSUU_SRV;              /* 段数 */
+	.global		_SV_TAIKIKAKU_SRV;           /* 待機角 */
+	.global		_SV_TAIKSPD_SRV;             /* 基準速度 */
+	.global		_SV_DAIHAITO_SRV;            /* ダイハイト */
+	.global		_SV_HOASEI_SRV;              /* 補正データ */
+	.global		_SV_TAIKTIM_SRV;             /* 待機時間 */
+	.global		_SV_1DANDEG_SRV;             /* 1段目目標角度 */
+	.global		_SV_2DANDEG_SRV;             /* 2段目目標角度 */
+	.global		_SV_3DANDEG_SRV;             /* 3段目目標角度 */
+	.global		_SV_4DANDEG_SRV;             /* 4段目目標角度 */
+	.global		_SV_5DANDEG_SRV;             /* 5段目目標角度 */
+	.global		_SV_6DANDEG_SRV;             /* 6段目目標角度 */
+	.global		_SV_7DANDEG_SRV;             /* 7段目目標角度 */
+	.global		_SV_8DANDEG_SRV;             /* 8段目目標角度 */
+	.global		_SV_9DANDEG_SRV;             /* 9段目目標角度 */
+	.global		_SV_10DANDEG_SRV;            /* 10段目目標角度 */
+	.global		_SV_1DANPOS_SRV;             /* 1段目目標位置 */
+	.global		_SV_2DANPOS_SRV;             /* 2段目目標位置 */
+	.global		_SV_3DANPOS_SRV;             /* 3段目目標位置 */
+	.global		_SV_4DANPOS_SRV;             /* 4段目目標位置 */
+	.global		_SV_5DANPOS_SRV;             /* 5段目目標位置 */
+	.global		_SV_6DANPOS_SRV;             /* 6段目目標位置 */
+	.global		_SV_7DANPOS_SRV;             /* 7段目目標位置 */
+	.global		_SV_8DANPOS_SRV;             /* 8段目目標位置 */
+	.global		_SV_9DANPOS_SRV;             /* 9段目目標位置 */
+	.global		_SV_10DANPOS_SRV;            /* 10段目目標位置 */
+	.global		_SV_1DANSPD_SRV;             /* 1段目移動速度 */
+	.global		_SV_2DANSPD_SRV;             /* 2段目移動速度 */
+	.global		_SV_3DANSPD_SRV;             /* 3段目移動速度 */
+	.global		_SV_4DANSPD_SRV;             /* 4段目移動速度 */
+	.global		_SV_5DANSPD_SRV;             /* 5段目移動速度 */
+	.global		_SV_6DANSPD_SRV;             /* 6段目移動速度 */
+	.global		_SV_7DANSPD_SRV;             /* 7段目移動速度 */
+	.global		_SV_8DANSPD_SRV;             /* 8段目移動速度 */
+	.global		_SV_9DANSPD_SRV;             /* 9段目移動速度 */
+	.global		_SV_10DANSPD_SRV;            /* 10段目移動速度 */
+	.global		_SV_1DANTIM_SRV;             /* 1段目停止時間 */
+	.global		_SV_2DANTIM_SRV;             /* 2段目停止時間 */
+	.global		_SV_3DANTIM_SRV;             /* 3段目停止時間 */
+	.global		_SV_4DANTIM_SRV;             /* 4段目停止時間 */
+	.global		_SV_5DANTIM_SRV;             /* 5段目停止時間 */
+	.global		_SV_6DANTIM_SRV;             /* 6段目停止時間 */
+	.global		_SV_7DANTIM_SRV;             /* 7段目停止時間 */
+	.global		_SV_8DANTIM_SRV;             /* 8段目停止時間 */
+	.global		_SV_9DANTIM_SRV;             /* 9段目停止時間 */
+	.global		_SV_10DANTIM_SRV;            /* 10段目停止時間 */
+	.global		_SV_MOKKAN_SRV;              /* 目標完了範囲 */
+	.global		_SV_KAJYUU_PRS;				/* 荷重補正 V01m*/
+	.global		_SV_KAJYUU_OBJP;				/* 荷重目標 V01m*/
+	.global		_disp_stg;
+	.global		_disp_stg_sel;
+	.global		_language_chg;
+	.global		_PV_STPTIM_B2;							/* ssc_tbl.c にて使用		*/
+	.global		_PV_STPTM_OLD;							/*                      	*/
+	.global		_PV_MLNO01_C15;							/*                      	*/
+	.global		_PV_MLNO02_C15;							/*                      	*/
+	.global		_PV_MLNO03_C15;							/*                      	*/
+	.global		_PV_MLNO04_C15;							/*                      	*/
+	.global		_PV_MLNO05_C15;							/*                      	*/
+	.global		_PV_MLNO06_C15;							/*                      	*/
+	.global		_PV_MLNO07_C15;							/*                      	*/
+	.global		_PV_MLNO08_C15;							/*                      	*/
+	.global		_PV_MLNO09_C15;							/*                      	*/
+	.global		_PV_MLNO10_C15;							/*                      	*/
+	.global		_PV_MLDNO2_F11;		//DB 16 DUP(?)	;	/* V01j */
+	.global		_PV_CAMNA1_C1;							/*                      	*/
+	.global		_PV_MLDMES_C1;							/*							*/
+	.global		_PV_OFFSET_A1;							/*							*/
+	.global		_PV_DATINI_A1;							/*							*/
+	.global		_PV_KAJYUU_A1;							/*							*/
+	.global		_PV_GAIBU_A1;							/*							*/
+	.global		_PV_BACKDA_A1;							/*							*/
+	.global		_deg_OLD	;							/* 角度前回値				*/
+	.global		_rbit_OLD;							/* ﾘｾｯﾄ   指令ﾋﾞｯﾄ前回値	*/
+	.global		_cbit_OLD;							/* ｶｳﾝﾀUP 指令ﾋﾞｯﾄ前回値	*/
+	.global		_TAIKI_ZEN_MOD;							/* ルーレット前回描画方向	*/
+	.global		_TAIKITEN_DIRECT;						/* 待機点データ（クラッチ）	*/
+	.global		_SEISAN_DISP_FLG;						// 生産行程表示	 (00:なし／FF:あり)
+	.global		_INTROCK_DISP_FLG;						// ガイダンス表示(00:なし／FF:あり)
+	.global		_IROCK_NO	 ;			/* ｲﾝﾀｰﾛｯｸ表示番号列		*/
+	.global		_IROCK_NO_LAST;			/* ｲﾝﾀｰﾛｯｸ表示番号列前回値	*/
+	.global		_KEY_DATA_CODE;
+	.global		_KEY_DATA_MODE;
+	.global		_Key_up;
+	.global		_Key_dn;
+	.global		_Key_last;
+	.global		_GAMEN_NO;					//DW ?	;/* 画面コード */
+	.global		_GAMEN_CODE;					//DB ?	;/* 画面コード */
+	.global		_WINDOW_NO;					//DW ?	;/* 画面コード */
+	.global		_CSR_FLG;					//DB ?	;/* カーソル有り画面フラグ */
+	.global		_CSR_CNT;					/* カーソルカウンタ */
+	.global		_CSR_CNT1;					/* カーソルカウンタ */
+	.global		_SV_CNT;						/* 設定値カウンタ */
+	.global		_PV_CNT;						/* 実測値カウンタ */
+	.global		_SW_CNT;						/* ＳＷデータカウンタ */
+	.global		_SW_CNT1;					/* ＳＷデータカウンタ */
+	.global		_CSR_buff;		/* カーソル情報テーブル定義領域	*/
+	.global		_SV_buff;		/* 設定値情報テーブル定義領域	*/
+	.global		_PV_buff;		/* 実測値情報テーブル定義領域	*/
+	.global		_SW_buff;		/* ＳＷデータ情報テーブル定義領域	*/
+	.global		_PV_DISP_CNT;				/* 表示実測値カウンタ */
+	.global		_SW_DISP_CNT;				//次回表示ＳＷデータカウンタ
+	.global		_LCD_WORK1;		/* 表示ﾜｰｸ領域LCD1[何行何ﾄﾞｯﾄ目何文字目] */
+	.global		_LCD_WORK2;		/* 表示ﾜｰｸ領域LCD2[何行何ﾄﾞｯﾄ目何文字目] */
+	.global		_LCD_WORK3;		/* 表示ﾜｰｸ領域LCD3[何行何ﾄﾞｯﾄ目何文字目] */ /* V01  */
+	.global		_CSR_FLG_CNT;				//DW ?	;/* 現在のカーソル位置カウント */
+	.global		_SV_FLG_CNT;					//DW ?	;/* 初期値セット */
+	.global		_SW_FLG_CNT;					//DW ?	;/* 初期値セット */
+	.global		_CSR_POS;					//DW ?	;/* カーソルポジションデータ読込 */
+	.global		_CSR_POS_LAST;				//DW ?	;/* 前回カーソルポジションデータ読込 */
+	.global		_CSR_ON_FLG;					//DB ?	;/* カーソル表示フラグＯＮ */
+	.global		_SWDATA_DISP_CNT;			//DW ?	;/* ＳＷデータ表示用ループカウント */
+	.global		_SVSW_CHG_FLG;				//DB ?	;/* データチェンジフラグセット */
+	.global		_SV_DISP_BUFF;				//DB 20 DUP(?)	;/* 設定値中間バッファ（ＡＳＣＩＩ） */
+	.global		_SV_DATA_CHG;				//DB ?	;//設定ﾃﾞｰﾀ変更ﾌﾗｸﾞ(0:なし/55:小数点入力/ff:整数入力)
+	.global		_CSR_TBL_POS_NOW;			//DW ?	;/* カーソル現在位置アドレス */
+	.global		_SV_TBL_POS_NOW;				//DW ?	;/* カーソル現在位置アドレス */
+	.global		_SW_TBL_POS_NOW;				//DW ?	;/* カーソル現在位置アドレス */
+	.global		_DISP_CHG_FLG;				//DB ?	;/* 表示反転フラグセット */
+	.global		_SV_DISP_CNT;				//DB ?	;/* 設定値表示個数＝入力処理個数 */
+	.global		_SV_ENT_CNT;					//DB ?
+	.global		_TENKEY_CNT;					//DB ?	;/* 入力オーバー？ */
+	.global		_NO_SUPRESU;					//DB ?
+	.global		_INTER_ROCK_FLG;				//DB ?	;/* インターロック有り？ */
+	.global		_PATH_WORD_CNT;				//DB ?		;
+	.global		_SEI_INF_BUFF;			//DW 280H DUP(?)	;/* データ格納アドレス */
+	.global		_SEI_INF_BUFF1;			//DW 280H DUP(?)	;/* データ格納アドレス */
+	.global		_SEI_INF_BUFF2;			//DW 280H DUP(?)	;/* データ格納アドレス */
+	.global		_SEI_WRT_POS;				//DW ?	;/* 表示位置 */
+	.global		_SEI_WRT_CNT;				//DW ?		;/* 表示文字数 */
+	.global		_SEI_WRT_ADR;				//DW ?		;/* 表示文字数 */
+	.global		_IROCK_BUFF;				//DW 40 DUP(?)	;
+	.global		_IROCK_BUFF01;		//DB 320 DUP(?)	;
+	.global		_SEI_INF_FLG;				//DB ?
+	.global		_SEI_INF_FLG_LAST;			//DB ?		;
+	.global		_GAMEN_WRITE_CNT;			//DB ?		;
+	.global		_SEQ_044_WORK;				//DB 30 DUP(?)	;
+	.global		_IROC_CHG_FLG;				//DW ?	;
+	.global		_IROC_CHG_FLG1;				//DW ?	;
+	.global		_IL_DISP_LAST;				//DB ?
+	.global		_GAMEN_NO_IROCK;				//DW ?
+	.global		_SEISAN_FLG;					//DB ?	;
+	.global		_SEISAN_FLG_LAST;			//DB ?	;
+	.global		_IROCK_SHR_LAST;				//DB ?
+	.global		_SVPV_DATA_FLG;				//DB ?
+	.global		_SOUSA_LEFT_FLG;				//DB ?
+	.global		_ERR_MONI_LAST1;				//DW ?
+	.global		_ERR_MONI_LAST2;				//DW ?
+	.global		_ERR_MONI_LAST3;				//DW ?
+	.global		_DAN_SOUSA_DAT;				//DW ?
+	.global		_RULET_DIG_TBL_ADR;			//DW ?
+	.global		_SEI_COUNT_LAST1;			//DB ?;
+	.global		_SEI_COUNT_LAST2;			//DB ?;
+	.global		_SEI_COUNT_LAST3;			//DB ?;
+	.global		_SEI_COUNT_LAST4;			//DB ?;
+	.global		_IL_DISP_FLG;				//DB ?		;/* ＩＬ表示フラグリセット */
+	.global		_INI_FLG	;					//DB ?
+	.global		_SEQ_018_SV_BUFF;			//DB ?
+	.global		_BASE_CLS_CNT;				//DW ?
+	.global		_SEI_INF_SPATH_CNT;			//DW ?
+	.global		_SUM_CHK_ERR;				//DB ?
+	.global		_DAN_NON_GAMEN;				//DB ?
+	.global		_SV_CHK_ERR;					//DB ?
+	.global		_SV_CMP_ERR;					//DB ?
+	.global		_SV_SUM1_ERR;				//DB ?
+	.global		_SV_SUM2_ERR;				//DB ?
+	.global		_SV_DPRAM_ERR;				//DB ?
+	.global		_INCH_DATA_FLG;				//DB ?	;/* INCH処理フラグ */
+	.global		_OP_MESS_DISP_LAST1;			//DB ?	;
+	.global		_OP_MESS_DISP_LAST2;			//DB ?	;
+	.global		_OP_MESS_DISP_LAST3;			//DB ?	;
+	.global		_OFF_SET_MNG_LAST;			//DB ?	;
+	.global		_OFF_SET_MNG_LAST1;			//DB ?	;
+	.global		_KOUSEI_MNG_LAST;			//DB ?	;
+	.global		_KOUSEI_MNG_LAST1;			//DB ?	;
+	.global		_SURA_AUTO_MNG_LAST;			//DB ?	;
+	.global		_SURA_AUTO_MNG_LAST1;		//DB ?	;
+	.global		_SURA_AUTO_MNG_LAST2;		//DB ?	;
+	.global		_SEIGAMEN_CNT;				//DB ?	;
+	.global		_SEGAMEN_ADR;				//DW ?	;
+	.global		_OFF_SET_MNG_LAST2;			//DB ?	;
+	.global		_OFF_SET_MNG_LAST3;			//DB ?	;
+	.global		_OFF_SET_MNG_LASTX;			//DB ?	;
+	.global		_KOUSEI_MNG_LAST2;			//DB ?	;
+	.global		_YOUBI_LAST;					//DB ?
+	.global		_PODATA_SET_FLG;				//DB ?	;
+	.global		_ONOFF_FLG;					//DB ?	;
+	.global		_ONOFF_LAST1;				//DB ?	;
+	.global		_ONOFF_LAST2;				//DB ?	;
+	.global		_ONOFF_LAST3;				//DB ?	;
+	.global		_ONOFF_LAST4;				//DB ?	;
+	.global		_ONOFF_LAST5;				//DB ?	;
+	.global		_ONOFF_LAST6;				//DB ?	;
+	.global		_GAMEN_B6_NON_FLG;			//DB ?	;
+	.global		_INI_POS_ERR_FLG;			//DB ?	;
+	.global		_PV_ADBAKD_A14;				//DW ?	;
+	.global		_ENCO_DATA_BCD;				//DW ?	;
+	.global		_ENCO_DATA_HEX;				//DW ?	;
+	.global		_OFFSET_END_FLG;				//DB ?	;/* オフセット調整完了？ */
+	.global		_MCN_SEQ_LAST1;				//DB ?		;
+	.global		_MCN_SEQ_LAST2;				//DB ?		;
+	.global		_MCN_SEQ_LAST3;				//DB ?		;
+	.global		_MCN_SEQ_LAST4;				//DB ?		;
+	.global		_MCN_SEQ_LAST5;				//DB ?		;
+	.global		_MCN_DATA_NO1;				//DB ?		;
+	.global		_MCN_DATA_NO2;				//DB ?		;
+	.global		_MCN_DATA_NO3;				//DB ?		;
+	.global		_MCN_DATA_NO4;				//DB ?		;
+	.global		_MCN_DATA_NO5;				//DB ?		;
+	.global		_MCN_REC_FLG;				//DB ?		;
+	.global		_GGAMEN_DISP_FLG;			//DB ?	;
+	.global		_CARA_CHG_FLG;				//DB ?	;
+	.global		_YOKOBAI_CNT;				//DW ?	;/* 横倍カウンタ */
+	.global		_YOKOBAI_ADR;				//DW ?	;/* 横倍アドレス */
+	.global		_YOKO_BAI_WORK;		//DB 32*16 DUP(?)	;/* データをワーク領域へ転送 */
+	.global		_KAN_BANK_NO;				//DB ?		;V05
+	.global		_GENGO_CHG_LAST;				//DB ?		;
+	.global		_WORK_BUFF_NAME;			//DW 20 DUP(?);
+	.global		_BASE_WORK;					//DW ?		;
+	.global		_KT_DUMMY_01;				//DW ?	;
+	.global		_KT_DUMMY_02;				//DB ?	;
+	.global		_DAI_SVDATA_FLG;				//DB ?	;/* ダイハイト処理有効？ */
+	.global		_SEQ_023_WK;					//DB ?	;
+	.global		_AUTO_SEQ_LST;				//DB ?	;
+	.global		_SV_0401_FLG;				//DB 	?	;
+	.global		_SV_1101_FLG;				//DB ?	;
+	.global		_SW_1101_FLG;				//DB ?	;
+	.global		_SW_1102_FLG;				//DB ?	;
+	.global		_SW_1103_FLG;				//DB ?	;
+	.global		_CSR_MLD_WORK;			//DB 32 DUP(?)	;/* カーソルを移動すると文字の */
+	.global		_SIT_MOLD3_RCV_BUFF;		//DW	50	DUP(?)	;
+	.global		_TAIKITEN_DAT;				//DW ?	;/* 待機点だったらルーレットを再表示 */
+	.global		_RULET_NOW_LST;				//DW ?	;
+	.global		_DEG_DISP_LST;				//DW ?	;/* 角度ﾃﾞｰﾀ変化あり？ */
+	.global		_DEG_DISP_DATA;			//DD	?	;
+	.global		_DEG_LCD_BUFF;		//DB 32*12 DUP(?)	;/* 角度表示専用バッファ */
+	.global		_STOPTIME_DISP_LST;			//DW ?	;/* 角度ﾃﾞｰﾀ変化あり？ */
+	.global		_STOPTIME_DISP_DATA;		//DD	?	;
+	.global		_STOPTIME_LCD_BUFF;	//DB 32*12 DUP(?)	;/* 角度表示専用バッファ */
+	.global		_PFOUT_DATA_BAK;				//DB ?	;
+	.global		_DAT_LCD_KAN_BAK;			//DB ?	;
+	.global		_DEG_DISP_FLG;				//DB ?	;
+	.global		_RULET_DISP_FLG;				//DB ?	;/* ルーレット表示ＯＫ */
+	.global		_CSR_MOVE_OK_FLG;			//DB ?	;/* カーソル移動禁止 */
+	.global		_SW14_ON_FLG;				//DB ?	;
+	.global		_SW14_ON_CNT;				//DB ?	;
+	.global		_SET_KEY_LST;				//DB ?	;
+	.global		_KIDO_FLG_FLG;				//DB 2 DUP(?)	;/* 輝度データ読込＆格納 */
+	.global		_KIDO_FLG_PV;				//DB ?		;/* 輝度データ読込＆格納 */
+	.global		_GAIBU_RST_LAST;				//DB ?	;
+	.global		_GAIBU_RST_LAST2;			//DB ?	;
+	.global		_GAIBU_RST_LAST3;			//DB ?	;
+	.global		_TAIKITEN_FLG;				//DB ?	;
+	.global		_TAIKITEN_LAST;				//DB ?
+	.global		_TAIKITEN_DATA;				//DW ?
+	.global		_TAIKI_NOW_POS;				//DW ?	;
+	.global		_TAIKI_ZEN_POS;				//DW ?	;
+	.global		_COUNT_HOSEI_ADR;			//DW ?	;/* 反転アドレスデータ待避 */
+	.global		_SURA_HOSEI_ADR;				//DW ?	;/* 反転アドレスデータ待避 */
+	.global		_SWCHG_DISP_ON_FLG;			//DB ?	;
+	.global		_SEISAN_SW56_FLG;			//DB ?	;
+	.global		_SEISAN_SW56_TIM;			//DW ?	;
+	.global		_OPBAK_UP_LST;				//DB ?	;
+	.global		_OPBAK_UP_LST1;				//DB ?	;
+	.global		_SW14_ON1_FLG;				//DB ?	;
+	.global		_SW14_ON6_FLG;				//DB ?	;
+	.global		_SW14_ON1_FLG_BAK2;			//DB ?	;
+	.global		_SW14_ON1_FLG_BAK;			//DB ?	;
+	.global		_SW14_ON6_FLG_BAK;			//DB ?	;
+	.global		_SW14_ON6_FLG_BACK;			//DB ?	;
+	.global		_TAIKI_LST;					//DW ?	;
+	.global		_CAMNAME_INP_CNT;			//DB ?	;
+	.global		_NAME_CHG_FLG;				//DB ?	;/* 名称変更中？ */
+	.global		_CAM_NAME_NO;				//DB ?	;/* 変更カム名称番号読込 */
+	.global		_SUOERTH_BUFF;			//DW 3 DUP(?)	;
+	.global		_CSR_FLG_CNT_BAK;			//DW ?	;/* 現在のカーソル位置カウント */
+	.global		_SV_FLG_CNT_BAK;				//DW ?	;/* 初期値セット */
+	.global		_SW_FLG_CNT_BAK;				//DW ?	;/* 初期値セット */
+	.global		_CAMOUT_MUSK;				//DW ?	;/* 汎用出力マスクビット */
+	.global		_CAMOUT_BIT;					//DW ?	;/* 汎用出力ビット */
+	.global		_GAMEN_NO_CAM;				//DW ?	;
+	.global		_DAN_WIN_FLG;				//DB ?	;	V01j(INS)
+	.global		_DAN_CSR_LST;				//DB ?	;
+	.global		_SET_SPM_LST;				//DB ?	;
+	.global		_KATNAME_INP_CNT;			//DB ?	;/* 入力カウンター１ */
+	.global		_PV_MLDNO1_F0;				//DB 16 DUP(?)	;
+	.global		_PV_MLDNO2_F0;			//DB 16 DUP(?)	;
+	.global		_SINCAM_LST;					//DB ?	;	
+	.global		_TAIKITEN_FLG_FLG;			//DB ?	;/* すでにフラグを立てていたらやめ */
+	.global		_CSR_CLS_FLG;				//DB ?	;
+	.global		_PVCNT_DISP_CNT;				//DB ?	;
+	.global		_PVALL_FLG;					//DB ?	;
+	.global		_PVGENNITI_FLG;				//DB ?	;
+	.global		_CSR_FLG_BUF;				//DW ?	;/*  */
+	.global		_SV_FLG_BUF;					//DW ?	;/*  */
+	.global		_ENCO_DATA_HEX1;				//DW ?	;
+	.global		_RULET_GAKU_FLG;				//DW ?	;
+	.global		_RULET_GAKU_LST;				//DB ?	;
+	.global		_SEI_ON6_LST1;				//DB ?	;
+	.global		_SEI_ON6_LST2;				//DB ?	;
+	.global		_SEI_ON6_LST3;				//DB ?	;
+	.global		_SEI_ON6_LST4;				//DB ?	;
+	.global		_SEI_ON1_LST;				//DB ?	;
+	.global		_DAN_GAMEN_NON;				//DB ?	;
+	.global		_SEL_GAMEN_NON;				//DB ?	;
+	.global		_CAM_GAMEN_NON;				//DB ?	;
+	.global		_EJE_GAMEN_NON;				//DB ?	;
+	.global		_MIS_GAMEN_NON;				//DB ?	;
+	.global		_ROT_GAMEN_NON;				//DB ?	;
+	.global		_ROT1_GAMEN_NON;				//DB ?	;
+	.global		_ROT2_GAMEN_NON;				//DB ?	;
+	.global		_ROT3_GAMEN_NON;				//DB ?	;
+	.global		_CSR_FLG_CNT_LST;			//DW ?	;/* カーソル番号セット */
+	.global		_POWRE_OK_FLG;				//DW ?	;
+	.global		_PVDATA_NON;					//DB ?	;
+	.global		_CAR_ROM_SEG;				//DW ?	;
+	.global		_PV_SUM_CHK;					//DW ?	;
+	.global		_EE_SUM_CHK;					//DW ?	;
+	.global		_POWER_DOWN_FLG;				//DB ?	;
+	.global		_SW56_UPTOP_FLG;				//DB ?	;'98-08-05
+;;	.global		_KAT_DATCHG_FLG;				//DB ?	;
+	.global		_KAT_CNTCHG_FLG;				//DB ?	;
+	.global		_SW14_DISP7_DANNON;			//DB ?	;'98-08-31/*スライド以外ないときはジャンプ  */
+	.global		_SYS_HIGHSPM_B1;				//DW ?	;V01a
+	.global		_SYS_LOWSPM_B1;				//DW ?	;V01a
+	.global		_RULET_HIGH_FLG;				//DB ?	;/* 高速ルーレット描画フラグセット */
+	.global		_RULET_HIGH_LST;				//DB ?	;
+	.global		_CB1_SPMDAT_PVV;				//DW ?	;/* 読み込み */
+	.global		_PV_TLINKSMP_DAT;			//DW ?	;V03j
+	.global		_ENC_SPD_CNT;				//DW ?		;
+	.global		_ENCSPD_ADD;					//DD	?		;
+	.global		_ENCSPD_BF;				//DW	10	DUP (?)	;
+	.global		_CSR_DAN_CSR_LST;			//DW ?		;V01a/* 段取り画面SW56ｼｰｹﾝｽｷｬﾝｾﾙ用 */
+	.global		_SW56_MUSK_FLG;				//DW ?		;V01b
+	.global		_MLD_100_GNO;				//DW ?		;MLD100/* 型管理画面番号初期化 */
+	.global		_MLD_100_FLG;				//DB ?		;MLD100/* 型管理フラグ初期化 */
+	.global		_MEM_ADR;					//DW ?	;
+	.global		_MEM_BNK;					//DW ?	;
+	.global		_MLD_WRITE_BNK;				//DB ?	;
+	.global		_CSR_POS_G15;				//DB ?	;/*  */
+	.global		_CSR_MOVE_NON;				//DB ?	;/* カーソルは動かない？ */
+	.global		_MLD100_INI_FLG;				//DB ?	;
+	.global		_DAN_DAN_FLG;				//DB ?	;
+	.global		_CSR_FLG_CNT_BACK;			//DW ?		;
+	.global		_WINDOW_NO_BACK;				//DW ? 		;
+	.global		_DAN_KEY_FLG;				//DB ?		;
+	.global		_G07_WIN_FLG;				//DB ?		;
+	.global		_FILCK_CNT;					//DW ?			;
+	.global		_FILCK_STEP1_FLG;			//DB ?			;
+	.global		_FILCK_STEP2_FLG;			//DB ?			;
+	.global		_FILCK_STEP3_FLG;			//DB ?			;
+	.global		_NEXT_READ_NO;				//DW ?	;/* 次型番号設定値 */
+	.global		_KEY_DOWN14_FLG;				//DB ?	;/* ＫＥＹ立ち下がりフラグリセット */
+	.global		_SW14_MUSK_FLG;				//DW ?	;
+	.global		_SW14_MUSK_FLG_SW2;			//DW ?	;
+	.global		_CSR_G07_NO1;				//DW ?	;/* カーソル先頭位置と同じ？ */
+	.global		_CSR_G07_NO2;				//DW ?	;/* カーソル先頭位置と同じ？ */
+	.global		_SYS_SPMPM_B1P;				//DW ?	;
+	.global		_SYS_SPMPM_B1M;				//DW ?	;
+	.global		_SEQ_019_FLG;				//DB ?	;
+	.global		_SYS_MISSEL_SV;				//DB ?		;
+	.global		_SURA_SEL_LST;				//DB ?	;
+	.global		_DAN_CLS_CNT;				//DW ?		;2000-07-04/* 表示した個数カウンタ */
+	.global		_SEI_GAI_LST;				//DB ?
+	.global		_GENG_SEQ_LST;				//DB ?
+	.global		_NEXT_MLDSEQ_FLG;			//DB ?		;2001-08-07 /*シーケンス用次型データ読み込みフラグＯＮ*/
+	.global		_PV_CAMSW1_C1;		//DB 8 DUP(?)	;BIT_1
+	.global		_PV_CAMSW2_C1;		//DB 8 DUP(?)	;BIT_2
+	.global		_PV_CAMSW3_C1;		//DB 8 DUP(?)	;BIT_3
+	.global		_PV_CAMSW4_C1;		//DB 8 DUP(?)	;BIT_4
+	.global		_PV_CAMSW5_C1;		//DB 8 DUP(?)	;BIT_5
+	.global		_PV_CAMSW6_C1;		//DB 8 DUP(?)	;BIT_6
+	.global		_PV_CAMSW7_C1;		//DB 8 DUP(?)	;BIT_7
+	.global		_PV_CAMSW8_C1;		//DB 8 DUP(?)	;BIT_8
+	.global		_PV_CAMSW9_C1;		//DB 8 DUP(?)	;BIT_9
+	.global		_PV_CAMSWA_C1;		//DB 8 DUP(?)	;BIT_A
+	.global		_PV_CAMSWB_C1;		//DB 8 DUP(?)	;BIT_B
+	.global		_PV_CAMSWC_C1;		//DB 8 DUP(?)	;BIT_C
+	.global		_PV_CAMSWD_C1;		//DB 8 DUP(?)	;BIT_D
+	.global		_PV_CAMSWE_C1;		//DB 8 DUP(?)	;BIT_E
+	.global		_PV_CAMSWF_C1;		//DB 8 DUP(?)	;BIT_F
+	.global		_PV_CAMNA01_C1;		//DB 8 DUP(?)	;/* ロータリカム１名称 */
+	.global		_PV_CAMNA02_C1;		//DB 8 DUP(?)	;/* ロータリカム２名称 */
+	.global		_PV_CAMNA03_C1;		//DB 8 DUP(?)	;/* ロータリカム３名称 */
+	.global		_PV_CAMNA04_C1;		//DB 8 DUP(?)	;/* ロータリカム４名称 */
+	.global		_PV_CAMNA05_C1;		//DB 8 DUP(?)	;/* ロータリカム５名称 */
+	.global		_PV_CAMNA06_C1;		//DB 8 DUP(?)	;/* ロータリカム６名称 */
+	.global		_PV_CAMNA07_C1;		//DB 8 DUP(?)	;/* ロータリカム７名称 */
+	.global		_PV_CAMNA08_C1;		//DB 8 DUP(?)	;/* ロータリカム８名称 */
+	.global		_PV_CAMNA09_C1;		//DB 8 DUP(?)	;/* ロータリカム９名称 */
+	.global		_PV_CAMNA10_C1;		//DB 8 DUP(?)	;/* ロータリカム１０名称 */
+	.global		_PV_CAMNA11_C1;		//DB 8 DUP(?)	;/* ロータリカム１１名称 */
+	.global		_PV_CAMNA12_C1;		//DB 8 DUP(?)	;/* ロータリカム１２名称 */
+	.global		_PV_CAMNA13_C1;		//DB 8 DUP(?)	;/* ロータリカム１３名称 */
+	.global		_PV_CAMNA14_C1;		//DB 8 DUP(?)	;/* ロータリカム１４名称 */
+	.global		_PV_CAMNA15_C1;		//DB 8 DUP(?)	;/* ロータリカム１５名称 */
+	.global		_PV_CAMNA16_C1;		//DB 8 DUP(?)	;/* ロータリカム１６名称 */
+	.global		_PV_CAMNA17_C1;		//DB 8 DUP(?)	;/* ロータリカム１７名称 */
+	.global		_PV_CAMNA18_C1;		//DB 8 DUP(?)	;/* ロータリカム１８名称 */
+	.global		_PV_CAMNA19_C1;		//DB 8 DUP(?)	;/* ロータリカム１９名称 */
+	.global		_PV_CAMNA20_C1;		//DB 8 DUP(?)	;/* ロータリカム２０名称 */
+	.global		_PV_KOUMOKU1_NAME;	//DB 16 DUP(?)	;
+	.global		_PV_KOUMOKU2_NAME;	//DB 16 DUP(?)	;
+	.global		_PV_KOUMOKU3_NAME;	//DB 16 DUP(?)	;
+	.global		_PV_KOUMOKU4_NAME;	//DB 16 DUP(?)	;
+	.global		_PV_KINOU01_NAE;		//DB 16 DUP(?)	;
+	.global		_PV_KINOU02_NAE;		//DB 16 DUP(?)	;
+	.global		_PV_KINOU03_NAE;		//DB 16 DUP(?)	;
+	.global		_PV_KINOU04_NAE;		//DB 16 DUP(?)	;
+	.global		_PV_KINOU05_NAE;		//DB 16 DUP(?)	;
+	.global		_PV_KINOU06_NAE;		//DB 16 DUP(?)	;
+	.global		_PV_KINOU07_NAE;		//DB 16 DUP(?)	;
+	.global		_PV_KINOU08_NAE;		//DB 16 DUP(?)	;
+	.global		_PV_KINOU09_NAE;		//DB 16 DUP(?)	;
+	.global		_PV_KINOU10_NAE;		//DB 16 DUP(?)	;
+	.global		_PV_KINOU11_NAE;		//DB 16 DUP(?)	;
+	.global		_PV_KINOU12_NAE;		//DB 16 DUP(?)	;
+	.global		_PV_KINOU13_NAE;		//DB 16 DUP(?)	;
+	.global		_PV_KINOU14_NAE;		//DB 16 DUP(?)	;
+	.global		_PV_KINOU15_NAE;		//DB 16 DUP(?)	;
+	.global		_PV_KINOU16_NAE;		//DB 16 DUP(?)	;
+	.global		_SEQ_PAR_101_BAK;		/* V00p */
+	.global		_disp_stg_sel_bak;		/* V00p */
+	.global		_WINDOW_NO_bak;			/* V00p */
+	.global		_PV0_PAR_A_CHAR;			/* V00p */    /* ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ 末尾ｷｬﾗｸﾀ ASCII */
+	.global		_PV0_PAR_B_CHAR;			/* V00p */    /* ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ 末尾ｷｬﾗｸﾀ ASCII */
+	.global		_PV0_TBL_A_CHAR;			/* V00p */    /* ｾﾝｻのﾃｰﾌﾞﾙ番号 ASCII */
+	.global		_PV0_TBL_B_CHAR;			/* V00p */    /* ｾﾝｻのﾃｰﾌﾞﾙ番号 ASCII */
+	.global		_PV0_INTER_VER2;			/* V00p */    /* ｲﾝﾀｰﾛｯｸﾊﾞｰｼﾞｮﾝ 末尾ｷｬﾗｸﾀ ASCII */
+	.global		_PV0_DEFULT_VER2;		/* V00p */    /* 初期値ﾃﾞｰﾀﾊﾞｰｼﾞｮﾝ 末尾ｷｬﾗｸﾀ ASCII */
+	.global		_PV0_SEQ_VER2;			/* V00p */    /* ｼｰｹﾝｽﾊﾞｰｼﾞｮﾝ 末尾ｷｬﾗｸﾀ ASCII */
+	.global		_PV0_NOW_POSI000;		/* V00q */    /* 下限上高さPV */
+	.global		_PV0_DYHITO_POS;			/* V00q */    /* 下限位置PV */
+	.global		_PV0_SLIDE_POS;			/* V01  */    /* 生産下限PV */
+	.global		_PV0_NOWPOSI_SLIDE;		/* V01  */    /* 生産下限or下限上高PV */
+	.global		_GAIBU_RST_BAK;			/* V00t */
+	.global		_PV0_MONALM_P01;
+	.global		_PV0_MONALM_P02;
+	.global		_PV0_MONALM_P03;
+	.global		_PV0_MONALM_P04;
+	.global		_PV0_MONALM_A01;
+	.global		_PV0_MONALM_A02;
+	.global		_PV0_MONALM_A03;
+	.global		_PV0_MONALM_A04;
+	.global		_PV0_MONALM_A05;
+	.global		_PV0_MONALM_A06;
+	.global		_PV0_MONALM_A07;
+	.global		_PV0_MONALM_A08;
+	.global		_PV0_MONALM_B01;
+	.global		_PV0_MONALM_B02;
+	.global		_PV0_MONALM_B03;
+	.global		_PV0_MONALM_B04;
+	.global		_PV0_MONALM_B05;
+	.global		_PV0_MONALM_B06;
+	.global		_PV0_MONALM_B07;
+	.global		_PV0_MONALM_B08;
+	.global		_PV0_MONALM_C01;
+	.global		_PV0_MONALM_C02;
+	.global		_PV0_MONALM_C03;
+	.global		_PV0_MONALM_C04;
+	.global		_PV0_MONALM_C05;
+	.global		_PV0_MONALM_C06;
+	.global		_PV0_MONALM_C07;
+	.global		_PV0_MONALM_C08;
+	.global		_PV0_MONALM_B01_SIGN;
+	.global		_PV0_MONALM_B02_SIGN;
+	.global		_PV0_MONALM_B03_SIGN;
+	.global		_PV0_MONALM_B04_SIGN;
+	.global		_PV0_MONALM_B05_SIGN;
+	.global		_PV0_MONALM_B06_SIGN;
+	.global		_PV0_MONALM_B07_SIGN;
+	.global		_PV0_MONALM_B08_SIGN;
+	.global		_PV0_MONALM_C01_SIGN;
+	.global		_PV0_MONALM_C02_SIGN;
+	.global		_PV0_MONALM_C03_SIGN;
+	.global		_PV0_MONALM_C04_SIGN;
+	.global		_PV0_MONALM_C05_SIGN;
+	.global		_PV0_MONALM_C06_SIGN;
+	.global		_PV0_MONALM_C07_SIGN;
+	.global		_PV0_MONALM_C08_SIGN;
+	.global		_MOTION_SV_CHG_CANCEL;			/* V01d */
+	.global		_TAIKIKAKU_CHG_FLG;				/* V01i */
+	.global		_GAMNE_REDISP_COD;				/* V01i */
+	.global		_SEQ_PAR_107_BAK;				/* V01j */
+	.global		_SEQ_PAR_427_CHG;				/* V01j */
+	.global		_SEQ_PAR_427_ONE;				/* V01j */
+	.global		_SEQ_PAR_427_OFE;				/* V01j */
+	.global		_SEQ_PAR_427_BAK;				/* V01j */
+	.global		_autokana_sw56_bak;				/* V01j */
+	.global		_ADC_DISP_FLG;					/* V01j */
+	.global		_ADC_CHG_LST;					/* V01j */
+	.global		_ADC_CHG_LST1;					/* V01j */
+	.global		_ADC_CHG_LST2;					/* V01j */
+	.global		_ADC_CHG_LST3;					/* V01j */
+	.global		_ADC_CHG_LST4;					/* V01j */
+	.global		_ADC_CHG_LST5;					/* V01j */
+	.global		_ADC_CHG_LST2_2;					/* V01j */
+	.global		_ADC_MODE_FLG;					/* V01j */
+	.global		_ADC_STEP_FLG;					/* V01j */
+	.global		_ADC_STPCHG_FLG;					/* V01j */
+	.global		_ADC_FILCK_LST;					/* V01j */
+	.global		_ADC_SW2_FLG;					/* V01j */
+	.global		_ADC_SW34_FLG;					/* V01j */
+	.global		_ADC_SW5_FLG;					/* V01j */
+	.global		_ADC_SW6_FLG;					/* V01j */
+	.global		_SW14_DISP7_NON;					/* V01j */
+	.global		_ADC_STEP_NO;					/* V01j */
+	.global		_ADC_STEP_NO_LAST;			/* V01j */
+	.global		_step_flick_flg;					/* V01j */
+	.global		_step_flick_flg_bak;				/* V01j */
+	.global		_step_flick_cnt;					/* V01j */
+	.global		_CAR_LNG_KAJ_AREA;				/* V01k */
+	.global		_SYO_LNG_KAJ_CNT;				/* V01k */
+	.global		_PV0_KAGEN_POSITIONER;				/* V01l_b */
+	.global		_SYO_LNG_SUR_CNT;				/* V01m */
+	.global		_DEB_WORD_FLG1;					/* V01n_b */
+	.global		_DEB_WORD_FLG2;					/* V01n_b */
+	.global		_DEB_WORD_FLG3;					/* V01n_b */
+	.global		_DEB_WORD_FLG4;					/* V01n_b */
+	.global		_DEB_WORD_FLG5;					/* V01n_b */
+	.global		_DEB_WORD_FLG6;					/* V01n_b */
+	.global		_DEB_WORD_FLG7;					/* V01n_b */
+	.global		_DEB_WORD_FLG8;					/* V01n_b */
+	.global		_DEB_WORD_FLG9;					/* V01n_b */
+	.global		_DEB_WORD_FLG10;					/* V01n_b */
+	.global		_DEB_WORD_FLG11;					/* V01n_b */
+	.global		_DEB_WORD_FLG12;					/* V01n_b */
+	.global		_DEB_WORD_FLG13;					/* V01n_b */
+	.global		_DEB_WORD_FLG14;					/* V01n_b */
+	.global		_DEB_WORD_FLG15;					/* V01n_b */
+	.global		_DEB_WORD_FLG16;					/* V01n_b */
+
+	.global		_DEBUG_CNT;
+
+	.global		_PVW_ZURE_PLS_SIN;		//軸間ｽﾞﾚ実測符号
+	.global		_PVW_ZURE_RNA_SIN;		//軸間ｽﾞﾚﾘﾆｱ符号
+	.global		_PVW_ZURE_PLS;			//軸間ｽﾞﾚ実測
+	.global		_PVW_ZURE_RNA;			//軸間ｽﾞﾚﾘﾆｱ
+	.global		_PVW_BAKORG_SIN1;		//ﾊﾞｯｸｱｯﾌﾟ実測符号
+	.global		_PVW_BAKORG_SIN2;		//ﾊﾞｯｸｱｯﾌﾟ実測符号
+	.global		_SVBW_BAKORG_PLS1;		//ﾘﾆｱ基準位置ﾊﾟﾙｽ	COP2
+	.global		_SVBW_BAKORG_PLS2;		//ﾘﾆｱ基準位置ﾊﾟﾙｽ	COP2
+
+	.global		_PV0_CB_C_VER;			//ASCIIﾃﾞｰﾀ (1WORDでｷｬﾗｸﾀする 6char) SH4-->
+	.global		_PV0_PAR_C_CHAR;			//ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ 末尾ｷｬﾗｸﾀ ASCII(2BYTE)
+	.global		_PV0_TBL_C_CHAR;			//ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ 末尾ｷｬﾗｸﾀ ASCII(2BYTE)
+
+;	******** 2007/12/12 ***********
+	.GLOBAL		_PV0_IPM_ADR0;			//IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+	.GLOBAL		_PV0_IPM_ADR1;			//IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+	.GLOBAL		_PV0_IPM_ADR2;			//IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+	.GLOBAL		_PV0_IPM_ADR3;			//IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+
+;	******** 2009/08/-- *********** V05o(INS)	実測波形表示用
+	.GLOBAL		_PV0_SMPCSR_KJT;		//ｶｰｿﾙ位置の合計荷重
+	.GLOBAL		_PV0_SMPCSR_KJL;		//ｶｰｿﾙ位置の左荷重
+	.GLOBAL		_PV0_SMPCSR_KJR;		//ｶｰｿﾙ位置の右荷重
+	.GLOBAL		_PV0_SMPCSR_AGL;		//ｶｰｿﾙ位置の角度
+	.GLOBAL		_PV0_SMPCSR_RNA1;		//ｶｰｿﾙ位置のｽﾗｲﾄﾞ位置
+	.GLOBAL		_PV0_SMPCSR_RNA2;		//ｶｰｿﾙ位置のｽﾗｲﾄﾞ位置
+	.GLOBAL		_PV0_SMPCSR_SEQ0;		//ｶｰｿﾙ位置のｼｰｹﾝｽ
+	.GLOBAL		_PV0_SMPCSR_SEQ1;		//ｶｰｿﾙ位置のｼｰｹﾝｽ
+	.GLOBAL		_PV0_SMPCSR_TIM;		//ｶｰｿﾙ位置の時間
+	.GLOBAL		_PV0_SMPCSR_POS;		//ｶｰｿﾙ位置のﾎﾟｲﾝﾄ
+	.GLOBAL		_PV0_TRDCSR_RNAU;		//ｽﾗｲﾄﾞ上限検出位置
+	.GLOBAL		_PV0_TRDCSR_RNAD;		//ｽﾗｲﾄﾞ下限検出位置
+	.GLOBAL		_PV0_TRDCSR_KJT;		//ｶｰｿﾙ位置の合計荷重
+	.GLOBAL		_PV0_TRDCSR_KJL;		//ｶｰｿﾙ位置の左荷重
+	.GLOBAL		_PV0_TRDCSR_KJR;		//ｶｰｿﾙ位置の右荷重
+	.GLOBAL		_PV0_TRDCSR_RNA1;		//ｶｰｿﾙ位置のｽﾗｲﾄﾞ位置
+	.GLOBAL		_PV0_TRDCSR_RNA2;		//ｶｰｿﾙ位置のｽﾗｲﾄﾞ位置
+	.GLOBAL		_PV0_TRDCSR_TIM;		//ｶｰｿﾙ位置の時間
+	.GLOBAL		_PV0_TRDCSR_POS;		//ｶｰｿﾙ位置のﾎﾟｲﾝﾄ
+	.GLOBAL		_PV0_TRDCSR_POSL;		//ｶ-ｿﾙ範囲
+	.GLOBAL		_PV0_TRDCSR_POSR;		//ｶ-ｿﾙ範囲
+
+;	******** 2010/08/10~ *********** V05r(INS)
+	.GLOBAL		_SEIDOU_SEQ_LST;		//
+	.GLOBAL		_sys_1min_cnt;			//1minｶｳﾝﾀ
+;//	.GLOBAL		_PVTIM_seidouseinou_inter;	//制動性能試験ｲﾝﾀｰﾊﾞﾙﾀｲﾏ(1minﾃﾞｸﾘﾒﾝﾄﾀｲﾏ)
+;//	.GLOBAL		_PVTIM_seidouseinou_yokok;	//制動性能試験予告ﾀｲﾏ(1minﾃﾞｸﾘﾒﾝﾄﾀｲﾏ)
+	.GLOBAL		_SYO_HOS_KAJ_CNT;
+	.GLOBAL		_PV0_INTER_TIM;			//制動性能試験ｲﾝﾀｰﾊﾞﾙﾀｲﾏ(1hﾃﾞｸﾘﾒﾝﾄﾀｲﾏ)
+
+;	******** 2010/08/31~ *********** V06 (INS)
+	.GLOBAL		_INTR_DAT_OFS;
+	.GLOBAL		_INIT_DAT_OFS;
+	.GLOBAL		_ALL_CHR_TBL_OFS;
+	.GLOBAL		_GAM_INF_TBL_OFS;
+	.GLOBAL		_EcoMeter_bit;
+	.GLOBAL		_PV0_EPMCSR_HOR;
+	.GLOBAL		_PV0_EPMCSR_MIN;
+	.GLOBAL		_PV0_EPMCSR_UEP;
+	.GLOBAL		_PV0_EPMCSR_KEP;
+	.GLOBAL		_PV0_EPMCSR_TEP;
+	.GLOBAL		_PV0_EPML_SCRH;
+	.GLOBAL		_PV0_EPML_SCRM;
+	.GLOBAL		_PV0_EPML_SCRL;
+	.GLOBAL		_PV0_EPMR_SCRH;
+	.GLOBAL		_PV0_EPMR_SCRM;
+	.GLOBAL		_PV0_EPMR_SCRL;
+	.GLOBAL		_PV0_EPM_KWH;			//電力モニタ用グラフデータ
+	.GLOBAL		_EPM_CSR;			//電力モニタ用カーソル位置
+	.GLOBAL		_EPM_TIM_BAK;			//単位時間
+	.GLOBAL		_EPM_GRP_MXL;			//棒グラフ最大値変わった？
+	.GLOBAL		_EPM_GRP_MXR;			//折れ線グラフ最大値変わった？
+	.GLOBAL		_sys_1sec_cnt;			//1secｶｳﾝﾀ
+
+;;	.GLOBAL		_EPM_SEC_60ADD;			//消費電力量 60sec積算(kWs)
+;;	.GLOBAL		_EPM_SEC_60CNT;
+;;	.GLOBAL		_EPM_HOR_BUF;			//消費電力量 1440分(kWs)
+;;	.GLOBAL		_EPM_HOR_POI;
+	.GLOBAL		_EPM_GAMEN_RIF;			//電力モニタ画面リフレッシュフラグ
+
+	.GLOBAL		_PV0_SMPCSR_EP;			//ｻﾝﾌﾟﾘﾝｸﾞ波形画面ｶｰｿﾙ位置の瞬時電力
+	.GLOBAL		_PV0_SMPCSR_EP_SIN;		//ｻﾝﾌﾟﾘﾝｸﾞ波形画面ｶｰｿﾙ位置の瞬時電力		//V06a
+	.GLOBAL		_PV0_TRDCSR_EP;			//ﾄﾚﾝﾄﾞ波形画面   ｶｰｿﾙ位置の電力量
+
+	.GLOBAL		_SEIDOU_DSP_LST;
+
+	.GLOBAL		_PV0_INTER_VER1;		/* ｲﾝﾀｰﾛｯｸﾊﾞｰｼﾞｮﾝ 数値 */
+	.GLOBAL		_PV0_DEFULT_VER1;		/* 初期値ﾃﾞｰﾀﾊﾞｰｼﾞｮﾝ 数値 */
+
+	.GLOBAL		_PV0_EPMDAT_SIN;		//ｻﾝﾌﾟﾘﾝｸﾞ波形画面の電力値符号BIT
+	.GLOBAL		_EPM_TOTAL_INF;			//電力ﾓﾆﾀ画面累計値切替の表示情報		//V06a
+	.GLOBAL		_EPM_TLINF_BAK;			//電力ﾓﾆﾀ画面累計値切替の表示情報			//V06a
+	.GLOBAL		_EPM_CLR_TIM;			//電力ﾓﾆﾀ内部ﾃﾞｰﾀｸﾘｱﾀｲﾑ						//V06a
+	.GLOBAL		_EPM_CLR_FLG;			//電力ﾓﾆﾀｸﾘｱ受付ﾌﾗｸﾞ						//V06a
+	.GLOBAL		_EPM_GAMRIF_CNT;		//電力ﾓﾆﾀ画面ﾘﾌﾚｯｼｭﾀｲﾐﾝｸﾞｶﾝｳﾀ				//V06a
+
+	.GLOBAL		_SV0_EP_AVE;
+
+;	******** 2010/12/06 *********** V06b (INS)
+	.GLOBAL		_rulet_taiki_pos1;		//反転、振り子時の待機点
+	.GLOBAL		_rulet_taiki_pos2;		//		振り子時の待機点
+	.GLOBAL		_SV0_TAL1_CNT;			//ﾄｰﾀﾙｶｳﾝﾀ修正値
+	.GLOBAL		_SV0_LOT1_CNT;			//ﾛｯﾄｶｳﾝﾀ1修正値
+	.GLOBAL		_SV0_LOT2_CNT;			//ﾛｯﾄｶｳﾝﾀ2修正値
+
+;	******** 2011/01/02 *********** V06c (INS)
+	.GLOBAL		_SV0_WORKER_COD_BAK	;		//作業者ｺｰﾄﾞ退避
+	.GLOBAL		_SV0_ORDER_COD_BAK	;		//注番ｺｰﾄﾞ退避
+	.GLOBAL		_SV0_PLAN_CNT_BAK		;		//計画数退避
+	.GLOBAL		_SV0_WORKER_COD		;		//作業者ｺｰﾄﾞ
+	.GLOBAL		_SV0_ORDER_COD		;		//注番ｺｰﾄﾞ
+	.GLOBAL		_SV0_PLAN_CNT		;		//計画数
+
+	.GLOBAL		_SV0_WORK_STR_FLG		;	//作業開始ﾌﾗｸﾞ（to C/B用）
+	.GLOBAL		_SV0SP_WORKER_COD	;		//作業開始時作業者ｺｰﾄﾞ
+	.GLOBAL		_SV0SP_ORDER_COD		;		//作業開始時注番ｺｰﾄﾞ
+	.GLOBAL		_SV0SP_PLAN_CNT		;		//作業開始時計画数
+	.GLOBAL		_SV0SP_BAD_CNT		;		//作業開始時不良数
+	.GLOBAL		_SV0SP_KATA_NO		;		//作業開始時型番号
+	.GLOBAL		_SV0SP_KATA_NAME	;		//作業開始時型名称
+	.GLOBAL		_SV0SP_KATA_MEMO	;		//作業開始時型メモ
+
+	.GLOBAL		_SV0_WORK_STP_FLG		;	//作業終了ﾌﾗｸﾞ（to C/B用）
+	.GLOBAL		_SV0SR_WORKER_COD	;		//作業終了時作業者ｺｰﾄﾞ
+	.GLOBAL		_SV0SR_ORDER_COD		;		//作業終了時注番ｺｰﾄﾞ
+	.GLOBAL		_SV0SR_PLAN_CNT		;		//作業終了時計画数
+	.GLOBAL		_SV0SR_BAD_CNT		;		//作業終了時不良数
+	.GLOBAL		_SV0SR_KATA_NO		;		//作業終了時型番号
+	.GLOBAL		_SV0SR_KATA_NAME	;		//作業終了時型名称
+	.GLOBAL		_SV0SR_KATA_MEMO	;		//作業終了時型メモ
+
+	.GLOBAL		_KAT_RD_CSR_POS	;			//型読出し時のCSR_TBL_POS_NOW
+
+;	******** 2012/10/15 *********** V06n (INS)
+	.GLOBAL		_SV0_RNAPOS_MAXO;
+	.GLOBAL		_SV0_RNAPOS_MINO;
+	.GLOBAL		_SV0_DAIHAI_LNG1O;
+	.GLOBAL		_SV0_DAIHAI_LNG2O;
+
+;	******** 2013/02/18 *********** V06p (INS)
+	.GLOBAL		_PV0_CKSPD_OVBIT;
+	.GLOBAL		_PV0_KATRD_BIT;
+
+

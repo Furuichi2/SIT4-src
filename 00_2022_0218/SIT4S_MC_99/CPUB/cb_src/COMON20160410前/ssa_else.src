@@ -1,0 +1,5336 @@
+;	***************************************************
+;	***						***
+;	***						***
+;	***	雑多					***
+;	***						***
+;	***						***
+;	***************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"		; //共通定義:必ず実行ﾌﾟﾛｸﾞﾗﾑにｲﾝｸﾙｰﾄﾞする事
+	.INCLUDE	"shn_cmd1.mac"		; //
+	.INCLUDE	"ssa_kmc1.mac"		; //
+	.INCLUDE	"ssa_pfom.equ"		; //equ定義
+	.INCLUDE	"ssa_khad.equ"		; //equ定義
+	.INCLUDE	"ssa_wrmk.ext"		; //
+	.INCLUDE	"dp_cpuab.ext"		; //
+	.INCLUDE	"dp_cpud.ext"		; //[2013-11-29 MC]
+	.INCLUDE	"ssa_krom.ext"		; //
+	.INCLUDE	"cb_param.ext"		; //
+	.INCLUDE	"ssa_ver1.equ"		; //
+	
+	.LIST	ON
+
+	.SECTION	P,CODE			;
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 PROGRAM	***
+;	//	***********************************
+
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 MEMORY,HARD	***
+;	//	***********************************
+
+	.IMPORT		_HENSA_DAT_MONI_MAK
+	.IMPORT		_PV_AD_CHAGE_UNIT	;-->ssa_dtmk.src
+	
+	.IMPORT		_EMG_STOP		;2009-03-11
+	.IMPORT	_ADD_REV_CHG			;
+
+	.IMPORT		_COS_IN_DEG		;SSA_COM1.SRC
+	.IMPORT		_COS_DIG1_UNIT_COEF	;SSA_COM1.SRC
+	.IMPORT		_ROOT2_64R1R2_ANS_R2	;SSA_COM1.SRC
+
+	.IMPORT		_OFSPLS_DIG_CHANGE1	;SSA_DTMK.SRC
+
+	.IMPORT		_SMUL1_R1R2_MUL_R5R6_ANS
+	.IMPORT		_DIVS1_16B_DIV_8B_ANS_8B	;
+
+	.IMPORT		_SET_PV_ABS_TO_OBJ		;2014-09-14
+
+;	//	***********************************
+;	//	***	PUBLIC 宣言 PROGRAM	***
+;	//	***********************************
+	.EXPORT		_SEQ_IN1		;-->ssa_cbmn.src
+	.EXPORT		_SEQ_VALV_ON		;-->ssa_cbmn.src
+	.EXPORT		_CB_SEQ_DATA_MAKE1	;-->ssa_cbmn.src
+	.EXPORT		_ORG_END_SIG_CLR
+	.EXPORT		_UP_AREA_INPCHK		;-->ssa_k.src
+	.EXPORT		_UP_AREA_INP360ENCCHK	;
+
+
+	.IMPORT		_FULCLS_OVER_SIG	;2012-05-30,2012-10-05移動
+
+;	-------------------------------------------
+
+	.MACRO	VLV_STS_CPUBA_LOAD
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+	MOV.L	#_SH2_VLV_SIG,R1		;209.6(ﾊﾟﾙｽ動作),206.0(ACT)
+	.AELSE
+	MOV.L	#_SH4_VLV_SIG,R1		;209.6(ﾊﾟﾙｽ動作),206.0(ACT)
+	.AENDI
+	MOV.W	@R1,R0
+	.ENDM
+
+
+;	***********************************
+;	***				***
+;	***	1msec ｼｰｹﾝｽ取込		***
+;	***				***
+;	***********************************
+	.ALIGN	4			;2010-08-23
+_SEQ_IN1:
+	SUB_START
+
+
+;	---------2014-02-20------------------
+	MOV.L	#_SEQAB_DP_TOP+_DPSQ022,R5	;
+	MOV.W	@R5+,R0				;
+	MOV.L	#_CB_SEQ_SW_SEL022,R1		;//SEQ 24
+	MOV.W	R0,@R1				;
+
+
+;	==== 2004-01-26
+	MOV.L	#_SEQAB_DP_TOP+_DPSQ024,R5	;
+	MOV.W	@R5+,R0				;
+	MOV.L	#_CB_SEQ_SW_SEL024,R1		;//SEQ 24
+	MOV.W	R0,@R1				;
+;	===================
+
+	MOV.L	#_SEQAB_DP_TOP+_DPSQ028,R5	;
+	MOV.W	@R5+,R0				;
+	MOV.L	#_CB_SEQ_SW_SEL028,R1		;//SEQ 28
+	MOV.W	R0,@R1				;
+	MOV.L	#_CB_SEQ_SW_SEL029,R1		;//SEQ 29
+	MOV.W	@R5+,R0				;
+	MOV.W	R0,@R1				;
+	MOV.L	#_ERR_CHK_SW_SEL029,R1		;
+	MOV.W	R0,@R1				;
+
+;	==== 2004-06-04
+	MOV.L	#_SEQAB_DP_TOP+_DPSQ058,R5	;
+	MOV.W	@R5,R0				;
+	MOV.L	#_CB_SEQ_SW_SEL058,R1		;//
+	MOV.W	R0,@R1				;
+
+
+
+
+	MOV.L	#_SEQAB_DP_TOP+_DPSQ340,R5	;動作指令 SEQ-->C/B
+	MOV.W	@R5+,R0				;
+	MOV.L	#_CB_SEQ_CB_COM340,R1		;340
+	MOV.W	R0,@R1				;
+
+;	=== 2003-07-09 ===
+	MOV.L	#_WPAR_DRVHOS_SEL1,R1		;2003-07-09
+	MOV.W	@R1,R0				;
+	CMP/EQ	#2,R0				;
+	BF	SEQIN1_050			;
+
+	MOV.W	@R5+,R0				;
+	MOV.W	#BIT6,R1			;
+	NOT	R1,R1
+	AND	R1,R0				;
+	M_BRA	SEQIN1_060
+	
+SEQIN1_050:
+	MOV.W	@R5+,R0				;
+SEQIN1_060:
+	MOV.L	#_CB_SEQ_CB_SEL341,R1		;341
+	MOV.W	R0,@R1				;
+
+	MOV.W	@R5+,R0				;
+	MOV.L	#_CB_SEQ_CB_SEL342,R1		;342
+	MOV.W	R0,@R1				;
+
+;	--- 20030714 ----
+	MOV.W	@R5+,R0				;343(直接参照) OP
+	MOV.W	@R5+,R0				;344(直接参照) 試験
+
+	MOV.W	@R5+,R0				;345
+	MOV.L	#_CB_SEQ_CB_COM345,R1;//20030714
+	MOV.W	R0,@R1
+
+	MOV.W	@R5+,R0				;346
+	MOV.L	#_CB_SEQ_CB_COM346,R1		;//20030524
+	MOV.W	R0,@R1				;T-LINK=>OVER-RIDE
+
+
+;	--- 20050117 ----
+	MOV.W	@R5+,R0				;加減速時間ｵｰﾊﾞﾗｲﾄﾞ
+	MOV.L	#_CB_SEQ_CB_COM347,R1		;//20030524
+	MOV.W	R0,@R1				;T-LINK=>OVER-RIDE
+
+;	--- 20070728 ----
+	MOV.W	@R5+,R0				;
+	MOV.L	#_CB_SEQ_CB_COM348,R1		;
+	MOV.W	R0,@R1				;
+
+;	--- 20100820 ----
+	MOV.W	@R5+,R0				;
+	MOV.L	#_CB_SEQ_CB_COM349,R1		;
+	MOV.W	R0,@R1				;
+
+;	--- 2012-10-05 ----
+	MOV.W	@R5+,R0				;
+	MOV.L	#_CB_SEQ_CB_COM350,R1		;
+	MOV.W	R0,@R1				;
+
+	MOV.W	@R5+,R0				;
+	MOV.L	#_CB_SEQ_CB_COM351,R1		;
+	MOV.W	R0,@R1				;
+
+;	---- 2014-02-20 R02R03用---------
+	MOV.W	@R5+,R0				;
+	MOV.L	#_CB_SEQ_CB_COM352,R1		;
+	MOV.W	R0,@R1				;
+
+	SUB_END
+	M_RTS
+
+
+
+
+;	***************************************************
+;	***						***
+;	***	シーケンス情報作成			***
+;	***						***
+;	***************************************************
+	.IMPORT	_SQ_CBWK_TOP		;
+
+	.IMPORT	_SELF_HAND_FLG1		; 自分の状態ﾌﾗｸﾞ 異常終了処理するよ
+	.IMPORT	_SELF_HAND_FLG2		;
+
+	.ALIGN	4			;2010-08-23
+_CB_SEQ_DATA_MAKE1:
+	SUB_START
+
+
+
+;	===== 非常停止ﾊｰﾄﾞ情報=========
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB204,R5		;
+	MOV.W	@R5,R0					;
+	MOV.W	#LWORD ~(BIT9+BIT8+BIT1+BIT0),R4	;
+	AND	R4,R0					;以下 BIT0,BIT1,BIT8,BIT9を作成する
+
+	MOV.L	#_di3_cb_inp1,R1			;//+0:EMG1,EMG2 BIT1,BIT0
+	MOV.W	@R1,R3					;BIT0,BIT1==> BIT7,BIT8
+	SHLL8	R3					;BIT15~BIT10=0,BIT9,BIT8=EMG_SW情報
+	MOV.W	#(BIT9+BIT8),R2				;
+	AND	R2,R3					;BIT9,BIT8摘出
+	OR	R3,R0					;BIT9,BIT8作成完了
+
+	MOV.L	#_emg_err_flg,R1			;//異常ﾗｯﾁ
+	MOV.W	@R1,R2					;
+	TST	R2,R2					;
+	TST_BIT_OF EMGEXQ_SIGNAL_MAK050			;
+	OR	#BIT0,R0				;
+EMGEXQ_SIGNAL_MAK050:					;
+
+	MOV.L	#_exq_err_flg,R1			;//異常ﾗｯﾁ
+	MOV.W	@R1,R2					;
+	TST	R2,R2					;
+	TST_BIT_OF EMGEXQ_SIGNAL_MAK100			;
+	OR	#BIT1,R0				;
+EMGEXQ_SIGNAL_MAK100:					;
+	MOV.W	R0,@R5					;204.0,/204.1/204.8/204.9
+
+;	=============================
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB206,R5	;
+	MOV.W	@R5,R3				;
+	MOV.W	#BIT0,R4			;
+	MOV.L	#_DRV_ACT_FLG,R1		;//運転動作ﾌﾗｸﾞ BIT0:運転中
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON POS_END_SIGMAK050
+	NOT	R4,R4				;
+	AND	R4,R3				;R3 BIT0 CLR
+	XOR	R4,R4				;
+POS_END_SIGMAK050:				;
+	OR	R4,R3				;
+	MOV.W	R3,@R5				;
+
+
+;	---------2015-04-08
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+	FAR_JSR	#_DBG_AUTO_DRVIE_START,R0	;
+	.AENDI
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+;	======	2011-01-18	==== 206.14
+;	======	2010-12-27	==== 206.14
+	FAR_JSR	#_DISP_KAJYUU_RPM_CMP,R0	;荷重表示切替のための速度比較
+	.AENDI
+
+;;;;;;;;;;	.GLOBAL	_WPAR1_SFTSWER_TM
+
+;;;;;;;;;;	MOV.L	#_WPAR1_SFTSWER_TM,R1
+;;;;;;;;;;	MOV.W	@R1,R2				;
+;;;;;;;;;;	MOV.L	#_SQ_CBWK_TOP+_WKSQCB259,R4	;
+;;;;;;;;;;	MOV.W	R2,@R4
+
+
+;;;;;;;;;;	MOV.L	#(_CB_SYS_PARAM000-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;？
+;;;;;;;;;;	MOV.W	@R1,R2				;
+;;;;;;;;;;	MOV.L	#_SQ_CBWK_TOP+_WKSQCB254,R4	;
+;;;;;;;;;;	MOV.W	R2,@R4
+
+
+
+;	-------2014-10-11 ---------------
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+	FAR_JSR	#_AD_CH234_CHANGE,R0		;2015-08-12
+	FAR_JSR	#_AD_CH234_CMP,R0
+	.AENDI
+
+
+	FAR_JSR	#_HENSA_DAT_MONI_MAK,R0
+
+;	================================
+;	======= ﾃﾞﾊﾞｯｸ情報作成==========
+;	================================
+;;	MOV.L	#_POS_LSI_CTL_NOWPLS,R1		;
+;;	MOV.L	@R1+,R0				;
+;;	MOV.L	@R1,R2
+;;	MOV.L	#_SQ_CBWK_TOP+_WKSQCB224,R4	;
+;;	MOV.W	R2,@R4				;L:224
+;;
+;;	ADD	#2,R4
+;;	SWAP	R2,R2				
+;;	MOV.W	R2,@R4				;M:225
+;;
+;;	ADD	#2,R4				;
+;;	MOV.W	R0,@R4				;
+;;
+;;	ADD	#2,R4				;MH:226
+;;	SWAP.W	R0,R0				;
+;;	MOV.W	R0,@R4				;H:227
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+	.IMPORT	_LT_RNA_REF_ERR_FLG1
+	.IMPORT	_LT_RNA_REF_ERR_FLG2
+;;;2010-10-25	MOV.L	#_LT_RNA_REF_ERR_FLG1,R1;//BIT0,BIT1,BIT2(HARD),BIT3CMD,BIT4(RNA-SYS),BIT5(RNA-FORM),,
+;;;2010-10-25	MOV.W	@R1,R0
+;;;2010-10-25	MOV.L	#_SQ_CBWK_TOP+_WKSQCB224,R4	;
+;;;2010-10-25	MOV.W	R0,@R4
+
+	MOV.L	#_LT_RNA_REF_ERR_FLG1,R1;//BIT0,BIT1,BIT2(HARD),BIT3CMD,BIT4(RNA-SYS),BIT5(RNA-FORM),,
+	MOV.W	@R1,R0
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB224,R4	;
+	MOV.W	@R4,R2				;
+	MOV.W	#H'00FF,R3			;
+	AND	R3,R0				;BIT0~BIT7-SET
+	NOT	R3,R3				;
+	AND	R3,R2				;
+	OR	R0,R2				;
+	MOV.W	R2,@R4				;
+
+	MOV.L	#_LT_RNA_REF_ERR_FLG2,R1;//BIT0,BIT1,BIT2(HARD),BIT3CMD,BIT4(RNA-SYS),BIT5(RNA-FORM),,
+	MOV.W	@R1,R0
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB225,R4	;
+	MOV.W	R0,@R4
+	.AENDI
+
+
+
+	FAR_JSR	#_FULCLS_OVER_SIG,R0		;2012-05-30
+
+
+
+;	================================
+;	======= ﾃﾞﾊﾞｯｸ情報作成==========
+;	================================
+;	===============================
+	MOV.L	#_CMP_ERR_STSA_INF1,R1		;
+	MOV.W	@R1,R0				;
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB260,R4	;
+	MOV.W	R0,@R4				;
+
+	MOV.L	#_CMP_ERR_STSA_INF2,R1		;
+	MOV.W	@R1,R0				;
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB261,R4	;
+	MOV.W	R0,@R4				;
+
+	MOV.L	#_CMP_ERR_STSA_INF3,R1		;
+	MOV.W	@R1,R0				;
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB262,R4	;
+	MOV.W	R0,@R4				;
+
+	MOV.L	#_CMP_ERR_STSA_INF4,R1		;
+	MOV.W	@R1,R0				;
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB263,R4	;
+	MOV.W	R0,@R4				;
+
+;;;;;	MOV.L	#_INT_POS_CTL_STEP,R1
+;;;;;	MOV.W	@R1,R0				;
+;;;;;	MOV.L	#_SQ_CBWK_TOP+_WKSQCB264,R4	;
+;;;;;	MOV.W	R0,@R4				;
+
+;;;;;	MOV.L	#_CYCL_START_CNT,R1		
+;;;;;	MOV.W	@R1,R0				;
+;;;;;	MOV.L	#_SQ_CBWK_TOP+_WKSQCB265,R4	;
+;;;;;	MOV.W	R0,@R4				;
+
+	M_BRA	ELSE_F100			;2007-12-27
+
+ELSE_F100
+
+;	======= ﾃﾞﾊﾞｯｸ情報作成==========
+;	================================
+;;;;;2013-08-20	MOV.L	#_PVX_RNA_POSD2,R1		;
+;;;;;2013-08-20	MOV.L	@R1,R0				;
+;;;;;2013-08-20	MOV.L	#_SQ_CBWK_TOP+_WKSQCB233,R4	;
+;;;;;2013-08-20	MOV.W	R0,@R4				;
+;;;;;2013-08-20	ADD	#2,R4				;
+;;;;;2013-08-20	SWAP.W	R0,R0				;
+;;;;;2013-08-20	MOV.W	R0,@R4				;
+
+;	===================================================
+;	===	 ﾃﾞﾊﾞｯｸ情報作成				===
+;	===	2006-04-26 外部機器での二重化用		===
+;	===================================================
+;	========== ﾘﾆｱｽｹｰﾙからの角度 360.0 ============
+;;;;;2013-08-20	MOV.L	#_RNA_ENC360,R1			;
+;;;;;2013-08-20	MOV.W	@R1,R0				;
+;;;;;2013-08-20	MOV.L	#_SQ_CBWK_TOP+_WKSQCB235,R4	;
+;;;;;2013-08-20	MOV.W	R0,@R4				;
+
+;	===================================================
+;	===	 ﾃﾞﾊﾞｯｸ情報作成				===
+;	===	2006-04-26 外部機器での二重化用		===
+;	===================================================
+;	========= 360ｴﾝｺｰﾀﾞからの角度 360.0=============
+	MOV.L	#_CTL_ENC360,R1			;360.0度//360ｴﾝｺｰﾀﾞ<360ｴﾝｺｰﾀﾞ>
+	MOV.W	@R1,R0				;
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB236,R4	;
+	MOV.W	R0,@R4				;
+
+;	===================================================
+;	===	 ﾃﾞﾊﾞｯｸ情報作成				===
+;	===	2006-04-26 外部機器での二重化用		===
+;	===================================================
+;	========= PGからの角度 360.0=============
+;;;;;;;;;;;;2014-09-13	MOV.L	#_INC_ENC360,R1			;
+;;;;;;;;;;;;2014-09-13	MOV.W	@R1,R0				;
+;;;;;;;;;;;;2014-09-13	MOV.L	#_SQ_CBWK_TOP+_WKSQCB237,R4	;
+;;;;;;;;;;;;2014-09-13	MOV.W	R0,@R4				;
+
+
+
+
+;	================================
+;	======= ﾃﾞﾊﾞｯｸ情報作成==========
+;	================================
+;	===========================
+;;;;;	MOV.L	#_RNA_ABS_MAXPOS,R1		;//最上死点--ﾓｰﾄﾞ起動前RNA_ABS_POS
+;;;;;	MOV.L	@R1,R0
+;;;;;	MOV.L	#_SQ_CBWK_TOP+_WKSQCB250,R4	;250,251
+;;;;;	MOV.W	R0,@R4
+;;;;;	SWAP.W	R0,R0
+;;;;;	ADD	#2,R4
+;;;;;	MOV.W	R0,@R4
+;;;;;
+;	================================
+;	======= ﾃﾞﾊﾞｯｸ情報作成==========
+;	================================
+;;;;;	MOV.L	#_RNA_ABS_MINPOS,R1		;//最下死点--ﾓｰﾄﾞ起動前RNA_ABS_POS
+;;;;;	MOV.L	@R1,R0
+;;;;;	MOV.L	#_SQ_CBWK_TOP+_WKSQCB252,R4	;252,253
+;;;;;	MOV.W	R0,@R4
+;;;;;	SWAP.W	R0,R0
+;;;;;	ADD	#2,R4
+;;;;;	MOV.W	R0,@R4
+
+;	================================
+;	======= ﾃﾞﾊﾞｯｸ情報作成==========
+;	================================
+;	===============================
+	MOV.L	#_RNA_ABS_MAXPOS,R1		;//最上死点--ﾓｰﾄﾞ起動前RNA_ABS_POS
+	MOV.L	@R1,R2				;
+	MOV.L	#_RNA_ABS_MINPOS,R1		;//最下死点--ﾓｰﾄﾞ起動前RNA_ABS_POS
+	MOV.L	@R1,R0				;
+	SUB	R0,R2				;
+	CMP/PZ	R2	
+	BT	RNA_PV_MAK10
+	XOR	R2,R2
+RNA_PV_MAK10:
+	MOV.L	#_PVX_RNA_STLORK,R1;//実測
+	MOV.L	R2,@R1
+
+;	--------- 2007-12-23 -----------------
+	M_BRA	DEBG_INFO_MAK100
+
+DEBG_INFO_MAK100:
+	M_BRA	DEBG_INFO_MAK200
+
+DEBG_INFO_MAK200:
+
+
+;	================================
+;	======= ﾃﾞﾊﾞｯｸ情報作成==========
+;	================================
+;;; 2015-04-08
+;;;;;;;;;	MOV.L	#_POSLSI_HENSA_LATCH,R1
+;;;;;;;;	MOV.L	@R1+,R0
+;;;;;;;;	MOV.L	#_SQ_CBWK_TOP+_WKSQCB255,R4		;255
+;;;;;;;;	MOV.W	R0,@R4
+
+;;;;;;;;	MOV.L	#_POSLSI_OUTPUT_TOTAL_PLS,R1		;
+;;;;;;;;	MOV.L	@R1+,R0					;
+;;;;;;;;	MOV.L	#_SQ_CBWK_TOP+_WKSQCB256,R4		;256
+;;;;;;;;	MOV.W	R0,@R4
+
+;	===========================
+;	===			===
+;	===========================
+	MOV.L	#_MONI_RESET_STEP,R1
+	MOV.W	@R1,R0
+	MOV.L	#_MONI_RDY_STEP,R1		;
+	MOV.W	@R1,R2
+	SHLL8	R2
+	OR	R2,R0				;
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB243,R4	;
+	MOV.W	R0,@R4				;
+
+
+	MOV.L	#_SELF_ACT_FLG,R1
+	MOV.W	@R1,R0				;
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB244,R4	;
+	MOV.W	R0,@R4				;
+
+	MOV.L	#_SELF_HAND_FLG1,R1		; 自分の状態ﾌﾗｸﾞ 異常終了処理するよ
+	MOV.W	@R1,R0				;
+	EXTU.B	R0,R0
+	MOV.L	#_SELF_HAND_FLG2,R1		; 自分の状態ﾌﾗｸﾞ 異常終了処理するよ
+	MOV.W	@R1,R2
+	SHLL8	R2
+	OR	R2,R0				;
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB245,R4	;
+	MOV.W	R0,@R4				;
+
+;
+;;;2015-07-14一時停止	MOV.L	#_MONI_SELF_STS1,R1		;
+;;;2015-07-14一時停止	MOV.W	@R1,R0				;
+;;;2015-07-14一時停止	EXTU.B	R0,R0
+;;;2015-07-14一時停止	MOV.L	#_MONI_SELF_STS2,R1		;
+;;;2015-07-14一時停止	MOV.W	@R1,R2
+;;;2015-07-14一時停止	SHLL8	R2
+;;;2015-07-14一時停止	OR	R2,R0				;
+;;;2015-07-14一時停止	MOV.L	#_SQ_CBWK_TOP+_WKSQCB246,R4	;
+;;;2015-07-14一時停止	MOV.W	R0,@R4				;
+
+
+	FAR_JSR	#_CPUB_DATA_MONI_MOVE,R0
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+_CPUB_DATA_MONI_MOVE
+	SUB_START
+
+ .AIF	_CB_CPU_SEL EQ	_CB_CPUA
+ .AELSE
+	MOV.L	#_PV_OUT_SPD_PER,R1		;
+	MOV.W	@R1,R2				;
+	MOV.L	#_SH2_PV_OUT_SPD_PER,R1		;
+	MOV.W	R2,@R1				;
+
+	MOV.L	#_PV_ENC_SPD_PER,R1		;
+	MOV.W	@R1,R2				;
+	MOV.L	#_SH2_PV_ENC_SPD_PER,R1		;
+	MOV.W	R2,@R1				;
+
+	MOV.L	#_OBJ_ENC360,R1			;
+	MOV.W	@R1,R2				;
+	MOV.L	#_SH2_OBJ_ENC360,R1		;
+	MOV.W	R2,@R1				;
+ .AENDI
+ 
+	SUB_END
+	M_RTS
+
+
+
+
+;	***************************************************
+;	***						***
+;	***		荷重表示切替のための速度比較	***
+;	***		206.14				***
+;	***************************************************
+;;	MOV.L	#_SQ_CBWK_TOP+_WKSQCB206,R5	;
+;;	MOV.W	@R5,R3				;
+	.ALIGN	4			;2010-08-23
+_DISP_KAJYUU_RPM_CMP:
+	SUB_START
+
+
+	MOV.L	#_emg_err_flg,R1		;//異常ﾗｯﾁ
+	MOV.W	@R1,R0				;
+	MOV.L	#_exq_err_flg,R1		;//異常ﾗｯﾁ
+	MOV.W	@R1,R2				;
+	OR	R2,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON DISP_KAJYUU_RPMCMP_100	;
+
+	MOV.L	#_MODE_SEL,R1			;
+	MOV.W	@R1,R0				;
+	MOV.W	#_W1SGL+_W1CNT+_W1OPT,R4	;安全、連続、オプション
+	TST	R4,R0				;
+	TST_BIT_OF DISP_KAJYUU_RPMCMP_100	;
+
+	MOV.L	#_CYCLE_SPD_CMP_FLG1,R1		;//BIT0
+	MOV.W	@R1,R0				;
+	TST	#BIT6,R0			;
+	TST_BIT_OF DISP_KAJYUU_RPMCMP_190	;
+
+	MOV.L	#_PVP_CYCLE_SPM1,R1		;
+	MOV.W	@R1,R2				;
+	MOV.L	#_WPAR_COP_DISP_SPM1,R1		;//2010-12-27 荷重切替サイクル速度比較1spm単位
+	MOV.W	@R1,R3				;
+
+	XOR	R5,R5				;0 or BIT11
+	CMP/HS	R3,R2				;R3=<R2
+	BF	DISP_KAJYUU_RPMCMP_050		;NO
+	MOV.W	#BIT14,R5
+DISP_KAJYUU_RPMCMP_050:
+	M_BRA	DISP_KAJYUU_RPMCMP_200		;
+
+DISP_KAJYUU_RPMCMP_100:
+	XOR	R0,R0
+	MOV.L	#_CYCLE_SPD_CMP_FLG1,R1		;//BIT0
+	MOV.W	R0,@R1				;;
+
+DISP_KAJYUU_RPMCMP_190:
+	XOR	R5,R5				;0 or BIT11
+DISP_KAJYUU_RPMCMP_200:
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB206,R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#LWORD ~BIT14,R4		;#LOW ~
+	AND	R4,R0				;
+	OR	R5,R0				;
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_CYCLE_SPD_CMP_FLG1,R1		;//BIT0
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_OF DISP_KAJYUU_RPMCMP_300	;
+	OR	#BIT6,R0			;1ｽｷｬﾝ遅らせる
+DISP_KAJYUU_RPMCMP_300:
+	MOV.W	R0,@R1				;
+
+	SUB_END
+	M_RTS
+
+
+_DISP_KAJYUU_RPM_DAT_SET:
+	SUB_START
+	MOV.L	#_CYCLE_SPD_CMP_FLG1,R1		;//BIT0
+	MOV.W	@R1,R0				;
+	OR	#BIT0,R0			;
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+
+
+
+
+
+;	***************************
+;	***			***
+;	***	待機点範囲内	***
+;	***			***
+;	***************************
+	.ALIGN	4			;2010-08-23
+_UP_AREA_INPCHK:
+	SUB_START
+	MOV.L	#_SETX_LINK_UP_POS_DN,R4	;ﾘﾝｸ(範囲比較)
+	MOV.W	@R4,R1				;待機点-α[360ﾘﾝｸ角度]
+	MOV.L	#_SETX_LINK_UP_POS_UP,R4	;
+	MOV.W	@R4,R3				;待機点+α[360ﾘﾝｸ角度]
+
+
+;;[2009-10-07下振子]	MOV.L	#_INC_ENC360,R4			;
+;;[2009-10-07下振子]	MOV.W	@R4,R2				;R1~R3の範囲か？
+
+;	--------[2009-10-07下振子]---------------------------
+	MOV.L	#_DNM_CTL_INC3600,R4		;//CAM、ﾛｯﾄｶｳﾝﾀ、荷重用
+	MOV.W	@R4,R2				;
+;	-----------------------------------
+	FAR_JSR	#_DIG_AREA_CHK1,R0		;
+
+	MOV.L	#_M_LINK_AREASIG,R4		;//BIT0/BIT4:待機点範囲
+	MOV.W	@R4,R0				;
+
+	AND	#LOW ~(BIT4+BIT0),R0		;
+	CMP/PZ	R5				;
+	BF	UP_AREA_INPCK_050		;
+	OR	#(BIT4+BIT0),R0			;
+UP_AREA_INPCK_050:				;
+	PUSH_REG1 R0				;
+
+	MOV.L	#_SETX_LINK_UP_POS_UP,R4	;ﾘﾝｸ(範囲比較)
+	MOV.W	@R4,R1				;待機点
+	MOV.L	#_UP_HOLD_DIG,R4		;//0.1度(165.0):ﾓｰﾀ軸ｴﾝｺｰﾀﾞ角度で比較
+	MOV.W	@R4,R3				;
+	FAR_JSR	#_DIG_AREA_CHK1,R0		;
+	POP_REG1 R0				;
+
+	AND	#LOW ~(BIT1),R0			;<BIT1:下降領域>
+	CMP/PZ	R5				;
+	BF	UP_AREA_INPCK_100		;
+	OR	#(BIT1),R0			;
+UP_AREA_INPCK_100:				;
+	MOV.L	#_M_LINK_AREASIG,R4		;//BIT0/BIT4:待機点範囲
+	MOV.W	R0,@R4				;
+
+;	------- 2008-04-28 ----------
+	MOV.W	#(BIT4+BIT3+BIT2+BIT1+BIT0),R3	;
+	AND	R3,R0				;
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB207,R4	;
+	MOV.W	@R4,R1				;
+	NOT	R3,R3				;
+	AND	R3,R1				;BIT4~BIT0 CLR
+	OR	R0,R1				;BIT4~BIT0 SET
+	MOV.W	R1,@R4				;
+	M_BRA	UP_AREA_INPCK_120		;
+
+UP_AREA_INPCK_120:				;
+
+;	===== ﾛｯﾄｶｳﾝﾀの処理の為の信号(待機点->下降した時にONするﾌﾗｸﾞ)======
+	MOV	R0,R3				;
+	TST	#BIT0,R0
+	TST_BIT_OF UP_AREA_INPCK_150		;
+	MOV.L	#_LOT_CHK_FLG,R1		;
+	MOV.W	@R1,R0				;
+	OR	#(BIT2+BIT1+BIT0),R0		;
+	MOV.W	R0,@R1				;
+UP_AREA_INPCK_150:				;
+	MOV	R3,R0				;
+	TST	#BIT1,R0
+	TST_BIT_OF UP_AREA_INPCK_200		;
+	MOV.L	#_LOT_CHK_FLG,R1		;
+	MOV.W	@R1,R0				;
+	OR	#(BIT6+BIT5+BIT4),R0		;
+	MOV.W	R0,@R1				;
+UP_AREA_INPCK_200:				;
+
+
+;	----------- 2011-09-14-----------------
+	FAR_JSR	#_BRKTST_UP_AREA_CHK,R0		;
+	
+
+;	----------- 2012-10-16 --------------------
+	FAR_JSR	#_DNM_OBJ_AREA_SIG,R0		;振り子の場合の目標の待機点信号
+
+	SUB_END
+	M_RTS
+
+;	***************************************************
+;	***	360度ｴﾝｺｰﾀﾞで待機・下降上昇範囲を作成	***
+;	***************************************************
+;;	MOV.L	#_WSVX_CLNK_UP_POS,R1			;312.2度
+	.ALIGN	4			;2010-08-23
+_UP_AREA_INP360ENCCHK:
+	SUB_START
+	MOV.L	#_SETX_LINK_UP_POS_DN,R4	;ﾘﾝｸ(範囲比較)
+	MOV.W	@R4,R1				;待機点-α
+	MOV.L	#_SETX_LINK_UP_POS_UP,R4	;
+	MOV.W	@R4,R3				;待機点+α
+
+	MOV.L	#_CB_SEQ_CB_SEL341,R4		;341.14 360ｴﾝｺｰﾀﾞで異常検知するかincで異常検知するか
+	MOV.W	@R4,R0				;
+	MOV.W	#BIT14,R2			;
+	MOV.L	#_CTL_ENC360,R4			;360ｴﾝｺｰﾀﾞ出荷調整
+	TST	R2,R0				;
+	TST_BIT_OF UP_AREA_INP360ENCCK_020	;通常360ｴﾝｺｰﾀﾞ
+	MOV.L	#_INC_ENC360,R4			;PG
+UP_AREA_INP360ENCCK_020:			;
+	MOV.W	@R4,R2				;R1~R3の範囲か？
+
+	FAR_JSR	#_DIG_AREA_CHK1,R0		;
+
+	MOV.L	#_ENC360_LINK_AREASIG,R4		;//BIT0/BIT4:待機点範囲
+	MOV.W	@R4,R0				;
+
+	AND	#LOW ~(BIT4+BIT0),R0		;
+	CMP/PZ	R5				;
+	BF	UP_AREA_INP360ENCCK_050		;
+	OR	#(BIT4+BIT0),R0			;
+UP_AREA_INP360ENCCK_050:			;
+	PUSH_REG1 R0				;
+
+	MOV.L	#_SETX_LINK_UP_POS_UP,R4	;ﾘﾝｸ(範囲比較)
+	MOV.W	@R4,R1				;待機点
+	MOV.L	#_UP_HOLD_DIG,R4		;//0.1度(165.0):ﾓｰﾀ軸ｴﾝｺｰﾀﾞ角度で比較
+	MOV.W	@R4,R3				;
+	FAR_JSR	#_DIG_AREA_CHK1,R0		;
+	POP_REG1 R0				;
+
+	AND	#LOW ~(BIT1),R0			;<BIT1:下降領域>
+	CMP/PZ	R5				;
+	BF	UP_AREA_INP360ENCCK_100		;
+	OR	#(BIT1),R0			;
+UP_AREA_INP360ENCCK_100:			;
+	MOV.L	#_ENC360_LINK_AREASIG,R4	;//BIT0/BIT4:待機点範囲
+	MOV.W	R0,@R4				;
+
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB242,R4	;CPUBは違う内容で使用
+	MOV.W	R0,@R4				;
+	.AENDI
+
+	SUB_END
+	M_RTS
+
+
+;	***********************************************************
+;	***	ブレーキモード用待機範囲[ﾘｾｯﾄ・ﾒｯｾｰｼﾞ用]を作成	***
+;	***	2011-09-14					***
+;	***********************************************************
+	.ALIGN	4			;
+_BRKTST_UP_AREA_CHK:
+	SUB_START
+
+	MOV.L	#_BRKTST_SW_IN,R1				;
+	MOV.W	@R1,R0						;
+	TST	#BIT0,R0					;
+	TST_BIT_ON BRKTST_UP_AREACK_020				;
+	XOR	R0,R0						;
+	M_BRA	BRKTST_UP_AREACK_100				;
+
+
+BRKTST_UP_AREACK_020:			;
+	MOV.L	#_BRKTST_LINK_UP_POS_DN,R4	;ﾘﾝｸ[360ｴﾝｺｰﾀﾞ](範囲比較)
+	MOV.W	@R4,R1				;待機点-α[0.1度]
+	MOV.L	#_BRKTST_LINK_UP_POS_UP,R4	;
+	MOV.W	@R4,R3				;待機点+α[0.1度]
+
+	MOV.L	#_INC_ENC360,R4			;PG
+	MOV.W	@R4,R2				;R1~R3の範囲か？
+
+	FAR_JSR	#_DIG_AREA_CHK1,R0		;
+
+	MOV.L	#_BRKTST_AREA_SIG,R4		;//BIT0/BIT4:待機点範囲
+	MOV.W	@R4,R0				;
+
+	AND	#LOW ~(BIT4+BIT0),R0		;
+	CMP/PZ	R5				;
+	BF	BRKTST_UP_AREACK_050		;
+	OR	#(BIT4+BIT0),R0			;
+BRKTST_UP_AREACK_050:			;
+
+	PUSH_REG1 R0				;
+
+	MOV.L	#_BRKTST_LINK_UP_POS_UP,R4	;ﾘﾝｸ(範囲比較)
+	MOV.W	@R4,R1				;待機点
+	MOV.L	#_UP_HOLD_DIG,R4		;//0.1度(165.0):ﾓｰﾀ軸ｴﾝｺｰﾀﾞ角度で比較
+	MOV.W	@R4,R3				;
+	FAR_JSR	#_DIG_AREA_CHK1,R0		;
+
+	POP_REG1 R0				;
+
+	AND	#LOW ~(BIT1),R0			;<BIT1:下降領域>
+	CMP/PZ	R5				;
+	BF	BRKTST_UP_AREACK_100		;
+	OR	#(BIT1),R0			;
+BRKTST_UP_AREACK_100:			;
+	MOV.L	#_BRKTST_AREA_SIG,R4		;//BIT0/BIT4:待機点範囲
+	MOV.W	R0,@R4				;//BIT1:下降(上昇信号はない)
+
+	TST	#BIT0,R0
+	TST_BIT_OF BRKTST_UP_AREACK_150		;
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB229,LG=W,BIT=BIT11,WKRG1=R4,WKRG2=R1
+	M_BRA	BRKTST_UP_AREACK_200		;
+
+BRKTST_UP_AREACK_150:				;
+	MEM1_BIT0_F_ADCLR MEM=_SQ_CBWK_TOP+_WKSQCB229,LG=W,BIT=(~BIT11),WKRG1=R4,WKRG2=R1
+BRKTST_UP_AREACK_200:				;
+
+	SUB_END
+	M_RTS
+
+
+
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+;	----------- 2012-10-16 --------------------
+_DNM_OBJ_AREA_SIG:		;振り子の場合の目標の待機点信号
+	SUB_START
+
+	MOV.L	#_BRKTST_SW_IN,R1			;
+	MOV.W	@R1,R0					;
+	TST	#BIT0,R0				;
+	TST_BIT_ON DNMOBJ_ARASIG_CLR500			;
+
+;;;;;	MOV.L	#_MODE_SEL,R1				;
+;;;;;	MOV.W	@R1,R0					;
+;;;;;	TST	#_W1SGL+_W1CNT+_W1OPT+_W1INC,R0		;安全、連続、オプション,INC
+;;;;;	TST_BIT_OF DNMOBJ_ARASIG_150			;
+
+	MOV.L	#_SETX_POS_CTL_MATH,R1			;
+	MOV.W	@R1,R0					;
+	TST	#_DMATH_DNDRIV,R0			;
+	TST_BIT_OF DNMOBJ_ARASIG_CLR500			;ふりこじゃない
+
+;	--------------------------------------------
+	XOR	R6,R6					;ANS
+
+	MOV.L	#_INC_ENC360,R4				;PG
+	MOV.W	@R4,R2					;R1~R3の範囲か？
+	MOV.L	#_SETX_LINK_UP_POS_DN,R4		;ﾘﾝｸ(範囲比較)
+	MOV.W	@R4,R1					;待機点-α
+	MOV.L	#_SETX_LINK_UP_POS_UP,R4		;
+	MOV.W	@R4,R3					;待機点+α
+	FAR_JSR	#_DIG_AREA_CHK0,R0			;R1<=R2<=R3
+	TST	R0,R0					
+	TST_BIT_OF DNMOBJ_ARASIG_100			;
+	MOV.W	#BIT4,R0				;
+	OR	R0,R6					;BIT4:待機点左
+DNMOBJ_ARASIG_100					;
+
+
+	MOV.L	#_DNM_SETX_LINK_UP_POS_DN,R4		;ﾘﾝｸ(範囲比較)
+	MOV.W	@R4,R1					;待機点-α
+	MOV.L	#_DNM_SETX_LINK_UP_POS_UP,R4		;
+	MOV.W	@R4,R3					;待機点+α
+	MOV.L	#_INC_ENC360,R4				;PG
+	MOV.W	@R4,R2					;R1~R3の範囲か？
+	FAR_JSR	#_DIG_AREA_CHK0,R0			;R1<=R2<=R3
+
+
+	TST	R0,R0					;
+	TST_BIT_OF DNMOBJ_ARASIG_200			;
+	MOV.W	#BIT7,R0				;
+	OR	R0,R6					;BIT7:待機点右
+DNMOBJ_ARASIG_200					;
+
+	MOV.L	#_DNM_RESET_AREA,R1			;
+	MOV.W	R6,@R1					;
+
+;;;;;;;	MOV.W	#BIT7,R2
+;;;;;;;	MOV.L	#_DNM_DIR_NOW_FLG,R4			;//
+;;;;;;;	MOV.W	@R4,R0					;
+;;;;;;;	TST	R0,R0					;
+;;;;;;;	TST_BIT_OF DNMOBJ_ARASIG_300			;"0" 往路,207.7には目標側待機点
+;;;;;;;
+;;;;;;;	"進行方向"
+;;;;;;;	MOV.W	#BIT4,R2
+;;;;;;;
+;;;;;;;DNMOBJ_ARASIG_300:
+
+	MOV.W	#(BIT7+BIT4),R2
+	TST	R2,R6									;
+	TST_BIT_OF DNMOBJ_ARASIG_400							;
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB207,LG=W,BIT=BIT7,WKRG1=R4,WKRG2=R1	;
+	M_BRA	DNMOBJ_ARASIG_EXT
+
+
+DNMOBJ_ARASIG_400:
+	MEM1_BIT0_F_ADCLR MEM=_SQ_CBWK_TOP+_WKSQCB207,LG=W,BIT=(~BIT7),WKRG1=R4,WKRG2=R1	;
+	M_BRA	DNMOBJ_ARASIG_EXT
+
+;	---------------------------------------------------------------
+DNMOBJ_ARASIG_CLR500:
+	XOR	R0,R0
+	MOV.L	#_DNM_RESET_AREA,R1								;
+	MOV.W	R0,@R1										;
+	MEM1_BIT0_F_ADCLR MEM=_SQ_CBWK_TOP+_WKSQCB207,LG=W,BIT=(~BIT7),WKRG1=R4,WKRG2=R1	;
+DNMOBJ_ARASIG_EXT:
+
+
+	SUB_END
+	M_RTS
+
+	
+
+
+;	***************************************************
+;	***						***
+;	***	異常がなければｼｰｹﾝｽ指令に従う		***
+;	***						***
+;	***************************************************
+	.IMPORT	_SELF_ACT_FLG	;
+
+_SEQ_VALV_ON:
+	SUB_START
+
+	FAR_JSR	#_BREAK_VALV_CTRL,R0		;2013-09-30[BVLV_CTL_ON]
+
+;;;;;	2015-09-06	FAR_JSR	#_BREAK_SIG_CPUAB,R0
+
+
+;;;;;	2015-09-06
+;;;;;	-------- 2014-09-13----------------
+;;;;;	MOV.L	#_BVLV_CTL_FLG,R1		;
+;;;;;	MOV.W	@R1,R0				;
+;;;;;	MOV.L	#_SQ_CBWK_TOP+_WKSQCB237,R1	;
+;;;;;	MOV.W	R0,@R1				;
+;;;;;	----------------------------------
+
+
+	MOV.L	#_emg_err_flg,R1		;//異常ﾗｯﾁ
+	MOV.W	@R1,R3				;
+	MOV.L	#_exq_err_flg,R1		;//異常ﾗｯﾁ
+	MOV.W	@R1,R2				;
+	OR	R2,R3				;
+	TST	R3,R3				;
+	TST_BIT_ON SEQ_VALVON_050		;EMG
+
+;	====== ｾﾙﾌﾁｪｯｸ以外の条件(ﾘｾｯﾄ等) ===
+
+;	====== ｾﾙﾌﾁｪｯｸ関係の条件 ===
+	MOV.L	#_SELF_CHK_SEL,R1		;
+	MOV.W	@R1,R0				;
+	TST	#(BIT1+BIT0),R0			;2006-04-10
+	TST_BIT_OF SEQ_VALVON_100		;ｾﾙﾌﾁｪｯｸなし
+
+	MOV.L	#_SELF_ACT_FLG,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON SEQ_VALVON_050		;ｾﾙﾌ実ﾁｪｯｸ中
+	M_BRA	SEQ_VALVON_100			;
+
+SEQ_VALVON_050:
+	FAR_JSR	#_VON1_OF,R1
+	FAR_JSR	#_VON2_OF,R1
+	FAR_JSR	#_VON3_OF,R1
+	FAR_JSR	#_BRK_LOCK_KAIJYO_TIMSET,R0	;2007-01-19
+	M_BRA	SEQ_VALVON_400			;
+
+;	==== 通常処理====
+SEQ_VALVON_100:
+
+;	========== ﾌﾞﾚｰｷ以外のON/OFF=============
+	MOV.L	#_CB_SEQ_CB_COM340,R1		;340.1,340.2,340.3
+	MOV.W	@R1,R0				;
+	TST	#BIT2,R0			;ﾊﾞﾙﾌﾞON
+	TST_BIT_OF SEQ_VALVON_260		;
+	FAR_JSR	#_VON2_ON,R1			;
+	M_BRA	SEQ_VALVON_280			;
+SEQ_VALVON_260:					;
+	FAR_JSR	#_VON2_OF,R1			;
+SEQ_VALVON_280:
+
+	MOV.L	#_CB_SEQ_CB_COM340,R1		;340.1,340.2,340.3
+	MOV.W	@R1,R0				;
+	TST	#BIT3,R0			;ﾊﾞﾙﾌﾞON
+	TST_BIT_OF SEQ_VALVON_300		;
+	FAR_JSR	#_VON3_ON,R1			;
+	M_BRA	SEQ_VALVON_320			;
+SEQ_VALVON_300:					;
+	FAR_JSR	#_VON3_OF,R1			;
+SEQ_VALVON_320:					;
+
+
+;	===========================================
+;	===	2015-03-15整理＋二重WR修正	===
+;	===	停止中にﾌﾞﾚｰｷをかける		===
+;	===========================================
+	FAR_JSR	#_BREAK_VALV_ONCHK,R0
+
+;;;[2015-03-15]
+;;;[2015-03-15]
+;;;[2015-03-15]	MOV.L	#_CB_SEQ_CB_COM340,R1		;340.1,340.2,340.3
+;;;[2015-03-15]	MOV.W	@R1,R0				;
+;;;[2015-03-15]	MOV	R0,R9				;
+;;;[2015-03-15]
+;;;[2015-03-15];;;;;;	----------- EPﾁｪｯｸ中強制ON[2013-09-30]---------
+;;;[2015-03-15];;;;;;	MOV.L	#_EP_BRKVALV_ON,R1		;
+;;;[2015-03-15]
+;;;[2015-03-15]	MOV.L	#_EPCHK_FORCE_VONCMD,R1		;2014-06-05
+;;;[2015-03-15]	MOV.W	@R1,R2				;
+;;;[2015-03-15]	TST	R2,R2				;
+;;;[2015-03-15]	TST_BIT_ON SEQ_VALVON_200		;ON(ﾌﾞﾚｰｷ解除)が優先される
+;;;[2015-03-15]
+;;;[2015-03-15];	---------------------2013-09-30-----------------------------------------------
+;;;[2015-03-15]	MOV.L	#(_PAR_BVLVCTL_SEL-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+;;;[2015-03-15]	MOV.W	@R1,R0							;
+;;;[2015-03-15]	CMP/EQ	#1,R0							;ﾊﾞﾙﾌﾞ停止制御有り=1
+;;;[2015-03-15]	BF	SEQ_VALVON_150						;
+;;;[2015-03-15];	------------------------------------
+;;;[2015-03-15]	MOV.L	#_BVLV_CTL_ON,R1		;//ﾌﾞﾚｰｷON(開放)　ON=1ならON ：開放側に対して >340.1=1>本信号
+;;;[2015-03-15]	MOV.W	@R1,R2				;
+;;;[2015-03-15]	TST	R2,R2				;
+;;;[2015-03-15]	TST_BIT_OF SEQ_VALVON_220		;
+;;;[2015-03-15]						;EP-ﾁｪｯｸON(ﾊﾞﾙﾌﾞ開放) > 動作ﾁｪｯｸOFF(ﾊﾞﾙﾌﾞ閉) >340.1
+;;;[2015-03-15];	---------------------------------------------------------------------
+;;;[2015-03-15]SEQ_VALVON_150:
+;;;[2015-03-15]	MOV	R9,R0				;
+;;;[2015-03-15]	TST	#BIT1,R0			;ﾊﾞﾙﾌﾞON　340.1
+;;;[2015-03-15]	TST_BIT_OF SEQ_VALVON_220		;
+;;;[2015-03-15];	============== ﾊﾞﾙﾌﾞ開放条件成立=======================
+;;;[2015-03-15]
+;;;[2015-03-15];	=======================================================
+;;;[2015-03-15]SEQ_VALVON_200:
+;;;[2015-03-15]	FAR_JSR	#_VON1_ON,R1
+;;;[2015-03-15]	M_BRA	SEQ_VALVON_240			;
+;;;[2015-03-15]
+;;;[2015-03-15]SEQ_VALVON_220:
+;;;[2015-03-15]	FAR_JSR	#_VON1_OF,R1
+;;;[2015-03-15]	FAR_JSR	#_BRK_LOCK_KAIJYO_TIMSET,R0	;2007-01-19
+;;;[2015-03-15]SEQ_VALVON_240:
+
+
+
+;;;[2015-03-15];	===========================================
+;;;[2015-03-15];	===					===
+;;;[2015-03-15];	===		2006-04-10		===
+;;;[2015-03-15];	===		停止中にﾌﾞﾚｰｷをかける	===
+;;;[2015-03-15];	===========================================
+;;;[2015-03-15]	MOV.L	#_SELF_FLG,R1			;//BIT0:ｾﾙﾌﾁｪｯｸ中  BIT7ｾﾙﾌﾁｪｯｸ正常完了
+;;;[2015-03-15]	MOV.W	@R1,R0				;
+;;;[2015-03-15]	TST	R0,R0				;
+;;;[2015-03-15]	TST_BIT_OF SEQ_VALVON_350		;
+;;;[2015-03-15]
+;;;[2015-03-15]	MOV.L	#_SELF_BRK_LOCK,R1		;ｾﾙﾌﾁｪｯｸ中
+;;;[2015-03-15]	MOV.W	@R1,R0				;
+;;;[2015-03-15]	TST	#BIT0,R0			;
+;;;[2015-03-15]	TST_BIT_OF SEQ_VALVON_400		;
+;;;[2015-03-15]	FAR_JSR	#_VON1_OF,R1			;ﾌﾞﾚｰｷLOCK
+;;;[2015-03-15]	FAR_JSR	#_BRK_LOCK_KAIJYO_TIMSET,R0	;2007-01-19
+;;;[2015-03-15]	M_BRA	SEQ_VALVON_400			;
+;;;[2015-03-15]
+;;;[2015-03-15]SEQ_VALVON_350:
+;;;[2015-03-15]	MOV.L	#_IN_RDY_FLG,R1			;//内部準備完了(ANTIと同じﾚﾍﾞﾙ)
+;;;[2015-03-15]	MOV.W	@R1,R0				;
+;;;[2015-03-15]	TST	#BIT0,R0			;
+;;;[2015-03-15]	TST_BIT_OF SEQ_VALVON_400		;
+;;;[2015-03-15]
+;;;[2015-03-15]	MOV.L	#_DRV_ACT_FLG,R1		;//運転動作ﾌﾗｸﾞ BIT0:運転中
+;;;[2015-03-15]	MOV.W	@R1,R0				;
+;;;[2015-03-15]	TST	#BIT0,R0			;
+;;;[2015-03-15]	TST_BIT_ON SEQ_VALVON_400		;
+;;;[2015-03-15]
+;;;[2015-03-15]	MOV.L	#_RDY_SFTY_LOCK,R1		;//BIT0:LOCK
+;;;[2015-03-15]	MOV.W	@R1,R0				;
+;;;[2015-03-15]	TST	#BIT0,R0			;
+;;;[2015-03-15]	TST_BIT_OF SEQ_VALVON_400		;
+;;;[2015-03-15]
+;;;[2015-03-15];	=========[ﾌﾞﾚｰｷ停止状態]================
+;;;[2015-03-15]	FAR_JSR	#_VON1_OF,R1			;ﾌﾞﾚｰｷLOCK
+;;;[2015-03-15]	FAR_JSR	#_BRK_LOCK_KAIJYO_TIMSET,R0	;2007-01-19
+;;;[2015-03-15]
+;;;[2015-03-15]
+
+
+
+SEQ_VALVON_400:
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***				***
+;	***				***
+;	***********************************
+_BREAK_VALV_ONCHK:
+	SUB_START
+
+	MOV.L	#_EPCHK_FORCE_VONCMD,R1		;2014-06-05
+	MOV.W	@R1,R2				;
+	TST	R2,R2				;
+	TST_BIT_OF BREAK_VALVONCK_ST000		;
+	M_BRA	BREAK_VALVONCK_SFTYCHK		;ON(但し遮光していないこと)
+;;;;
+;;;; 2015-09-09
+;;;;	FAR_JSR	#_VON1_ON,R1			;
+;;;;	M_BRA	BREAK_VALVONCK_END		;
+;;;;
+
+BREAK_VALVONCK_ST000:
+	MOV.L	#_CB_SEQ_CB_COM340,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT1,R0			;
+	TST_BIT_ON BREAK_VALVONCK_ST100		;ﾊﾞﾙﾌﾞONと言っている
+	M_BRA	BREAK_VALVONCK_OF_LOCK		;
+
+BREAK_VALVONCK_ST100:
+;基本ON条件成立
+;	------- ｼｰｹﾝｽはONしろと言っている------
+	MOV.L	#_SELF_FLG,R1			;//BIT0:ｾﾙﾌﾁｪｯｸ中  BIT7ｾﾙﾌﾁｪｯｸ正常完了
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF SEQ_VALVON_350		;
+
+	MOV.L	#_SELF_BRK_LOCK,R1		;ｾﾙﾌﾁｪｯｸ中
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_OF BREAK_VALVONCK_ON		;
+	M_BRA	BREAK_VALVONCK_OF_LOCK		;ﾌﾞﾚｰｷﾛｯｸしろ
+
+SEQ_VALVON_350:
+
+;	======= 2015-09-09[ﾌﾞﾚｰｷﾃｽﾄ中の強制on]
+	MOV.L	#_BRKTST_SW_IN,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;349,0=制動(BRK)試験(TST)
+	TST_BIT_OF SEQ_VALVON_BRKTST_350	;
+
+	MOV.L	#_CB_SEQ_CB_COM349,R1		;
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT10,R4			;349.10(強制開放指令)
+	TST	R4,R0				;
+	TST_BIT_OF SEQ_VALVON_BRKTST_350	;強制開放ではない
+	M_BRA	BREAK_VALVONCK_SFTYCHK		;ON
+
+SEQ_VALVON_BRKTST_350
+;	====================================
+
+;	---------------------2013-09-30-----------------------------------------------
+;;2015-09-06	MOV.L	#(_PAR_BVLVCTL_SEL-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+;;	MOV.L	#(_PAR_MYU_BRK_SEL-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;NO.093
+;;	MOV.W	@R1,R0							;
+;;	CMP/EQ	#1,R0							;ﾊﾞﾙﾌﾞ停止制御有り=1
+;;	BF	SEQ_VALVON_360						;
+;;	------------------------------------
+;;	MOV.L	#_BVLV_CTL_ON,R1		;//ﾌﾞﾚｰｷON(開放)　ON=1ならON ：開放側に対して >340.1=1>本信号
+;;	MOV.W	@R1,R2				;
+;;	TST	R2,R2				;
+;;	TST_BIT_OF BREAK_VALVONCK_OF_LOCK	;ﾊﾞﾙﾌﾞ制御部はOFFと言っている
+;;						;(位置決め中だけ)
+;;SEQ_VALVON_360:
+
+;2015-09-06;;;;;;;;???????????????????????????
+;2015-09-06;;;;;;;;	MOV.L	#_IN_RDY_FLG,R1			;//内部準備完了(ANTIと同じﾚﾍﾞﾙ)
+;2015-09-06;;;;;;;;	MOV.W	@R1,R0				;
+;2015-09-06;;;;;;;;	TST	#BIT0,R0			;
+;2015-09-06;;;;;;;;	TST_BIT_OF BREAK_VALVONCK_ON		;
+;2015-09-06;;;;;;;;???????????????????????????
+
+	MOV.L	#_DRV_ACT_FLG,R1		;//運転動作ﾌﾗｸﾞ BIT0:運転中
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON BREAK_VALVONCK_ON		;
+
+;-----2015-09-06 ADD------
+	MOV.L	#(_PAR_MYU_BRK_SEL-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;NO.093
+	MOV.W	@R1,R0							;
+	CMP/EQ	#1,R0							;ﾊﾞﾙﾌﾞ停止制御有り=1
+	BT	SEQ_VALVON_370
+
+;-----2015-09-06 ADD------(ﾌﾞﾚｰｷ制御無し)
+	MOV.L	#_POS_END_MYUTIG_KEEPTIM,R1	;//終了後上昇無効を継続する時間
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;継続中
+	TST_BIT_ON BREAK_VALVONCK_ON		;ﾐｭｰﾃﾝｸﾞの位置決め中+α時間
+	M_BRA	BREAK_VALVONCK_SFTYCHK		;IN_RDY_FLG.0=0 [通常開放]
+
+;;;;;;;LOCK.0=1:遮光中
+;;;;;;;2015-09-06CUT	MOV.L	#_RDY_SFTY_LOCK,R1		;//BIT0:LOCK
+;;;;;;;2015-09-06CUT	MOV.W	@R1,R0				;
+;;;;;;;2015-09-06CUT	TST	#BIT0,R0			;
+;;;;;;;2015-09-06CUT	TST_BIT_OF BREAK_VALVONCK_ON		;
+;;;;;;;	=========[ﾌﾞﾚｰｷ停止状態]================
+;;;;;;;	M_BRA	BREAK_VALVONCK_OF_LOCK
+
+SEQ_VALVON_370:
+;	------------------------------------
+	MOV.L	#_BVLV_CTL_ON,R1		;//ﾌﾞﾚｰｷON(開放)　ON=1ならON ：開放側に対して >340.1=1>本信号
+	MOV.W	@R1,R2				;
+	TST	R2,R2				;
+	TST_BIT_OF BREAK_VALVONCK_OF_LOCK	;ﾊﾞﾙﾌﾞ制御部はOFFと言っている
+	M_BRA	BREAK_VALVONCK_SFTYCHK		;
+
+
+;;;;	運転釦ON→バルブON→「起動待ち」→起動　起動待ち状態でこの状態にくる
+;;;;	--------- 位置決め中でない状態で上昇無効ならブレーキをかける[2015-03-05]--------
+;;;;	---[起動時のパルス払い出しまでの遅延中は(位置決め開始前～準備完了中)に上昇無効をやめることが必要]
+;;;	MOV.L	#_FR_CYL_MASK_FLG,R1		;
+;;;	MOV.W	@R1,R0				;
+;;;	TST	#(BIT1+BIT0),R0			;
+;;;	TST_BIT_ON BREAK_VALVONCK_OF_LOCK	;1:上昇無効中:ﾌﾞﾚｰｷﾛｯｸ
+;;;	M_BRA	BREAK_VALVONCK_SFTYCHK		;
+
+
+BREAK_VALVONCK_SFTYCHK:
+	MOV.L	#_SFTY_IN_DAT,R1		;//安全装置入力 BIT0:前安全　BIT1:後安全装置
+	MOV.W	@R1,R0				;
+	TST	#(BIT1+BIT0),R0			;FACT/RACT
+	TST_BIT_OF BREAK_VALVONCK_ON		;通光中
+	M_BRA	BREAK_VALVONCK_OF_LOCK		;
+
+
+BREAK_VALVONCK_ON:
+	FAR_JSR	#_VON1_ON,R1
+	M_BRA	BREAK_VALVONCK_END		;
+
+
+
+;	-----------ﾊﾞﾙﾌﾞOFFです(ﾌﾞﾚｰｷﾛｯｸ中)-------------------------
+SEQ_VALVON_220:
+BREAK_VALVONCK_OF_LOCK:
+	FAR_JSR	#_VON1_OF,R1
+	FAR_JSR	#_BRK_LOCK_KAIJYO_TIMSET,R0	;2007-01-19
+
+BREAK_VALVONCK_END:
+
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***	2007-01-19(ﾌﾞﾚｰｷ処理側へ移動)		***
+;	***	[ﾌﾞﾚｰｷﾛｯｸ中]ﾛｯｸ解除から遅延するため	***
+;	***************************************************
+_BRK_LOCK_KAIJYO_TIMSET:
+	SUB_START
+	
+	MOV.L	#_PAR_BRKDISE_TIM,R1		;PNO.48ﾌﾞﾚｰｷ釈放遅延時間1000msec
+	MOV.W	@R1,R0				;
+	MOV.L	#_RDY_SFTY_WAIT_TIM,R1		;//
+	MOV.W	R0,@R1				;
+	
+	SUB_END
+	M_RTS
+	
+
+;	*******************************************
+;	***					***
+;	***	PGｴﾝｺｰﾀﾞ読み取り		***
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+	.IMPORT	_POS_LSI_DT_LATCH		;ssa_khad.src\ssa_Khd2/4.INC
+	.IMPORT	_POS_LSI_CNT_LOAD_R1reg		;Output R1
+	.IMPORT	_API_WDT_DEBUG_USEFUL		;WDT異常検出禁止[0x5AA5]2015-02-25
+	
+	.EXPORT	_POS_LSI_ENC_LOD
+_POS_LSI_ENC_LOD:
+	SUB_START
+
+
+	MOV.L	#_LSI_CHK_DBG_CNT2,R1
+	MOV.W	@R1,R0
+	ADD	#1,R0
+	MOV.W	R0,@R1
+
+	FAR_JSR	#_POS_LSI_DT_LATCH,R0				;ssa_khad.src\ssa_Khd2/4.INC
+	FAR_JSR	#_POS_LSI_CNT_LOAD_R1reg,R0		;Output R1
+
+;	------------2007-11-26 位置が読めないときがある-----------
+;	------------ 前回と同じならもう一度読み込みを行う----------
+	PUSH_REG1 R1
+	FAR_JSR	#_POS_LSI_DT_LATCH,R0			;ssa_khad.src\ssa_Khd2/4.INC
+	FAR_JSR	#_POS_LSI_CNT_LOAD_R1reg,R0		;Output R1
+	MOV	R1,R2					;
+	POP_REG1 R1
+
+ .AIF	_DEBUG_SERVO_PLS_OFF EQ _CMPILE_YES			;
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_POSLSI_OUTPUT_TOTAL_PLS+4,R0			;出力ﾊﾟﾙｽを入力とする
+	MOV.L	@R0,R1						;
+	MOV	R1,R2						;
+
+	.AELSE
+	MOV.L	#_HD_CMP_PLS_A1,R0				;ﾃﾞﾊﾞｯｸ時cpuaからの位置で動作
+	MOV.L	@R0,R1						;
+	MOV	R1,R2						;
+	.AENDI
+
+ .AENDI
+
+;;;;;;;;;	------------ ﾃﾞﾊﾞｯｸ[ﾃﾞﾊﾞｯｸ終了時はｺﾒﾝﾄにすること]----------------
+;;;;;;;;	FAR_JSR	#_API_WDT_DEBUG_USEFUL,R0	;WDT異常検出禁止[0x5AA5]2015-02-25
+;;;;;;;;	TST	R0,R0				;
+;;;;;;;;	TST_BIT_OF POS_LOAD_DEBUG1_EXT		;
+;;;;;;;;	MOV.L	#_CB_SEQ_CB_COM340,R0		;
+;;;;;;;;	MOV.W	@R0,R0				;
+;;;;;;;;	AND	#(BIT3+BIT2),R0			;340.3 340.2
+;;;;;;;;	CMP/EQ	#(BIT3+0),R0			;340.3=1
+;;;;;;;;	BF	POS_LOAD_DEBUG1_100		;
+;;;;;;;;
+;;;;;;;;	MOV.W	#D'500,R0			;
+;;;;;;;;	SUB	R0,R1				;
+;;;;;;;;	SUB	R0,R2				;
+;;;;;;;;	M_BRA	POS_LOAD_DEBUG1_EXT		;
+;;;;;;;;
+;;;;;;;;POS_LOAD_DEBUG1_100
+;;;;;;;;	CMP/EQ	#(0+BIT2),R0			;340.2=1
+;;;;;;;;	BF	POS_LOAD_DEBUG1_EXT		;
+;;;;;;;;
+;;;;;;;;	MOV.W	#D'500,R0			;
+;;;;;;;;	ADD	R0,R1				;
+;;;;;;;;	ADD	R0,R2				;
+;;;;;;;;POS_LOAD_DEBUG1_EXT
+;;;;;;;;;	------------ ﾃﾞﾊﾞｯｸ[ﾃﾞﾊﾞｯｸ終了時はｺﾒﾝﾄにすること]----------------
+
+
+
+
+
+
+
+
+
+
+
+	MOV.L	#_CHK_LSI_LOAD_POS_CNT,R4		;
+	MOV.L	@R4,R0					;
+	CMP/EQ	R1,R0					;
+	BF	POS_LSI_ENCLD_010			;変化有りOK
+	MOV	R2,R1					;
+POS_LSI_ENCLD_010:					;
+	MOV.L	R1,@R4					;NEW SAVE
+;	--------------------------------------------------------
+
+;	=========== 2015-07-14 [自分のﾛｰﾀﾞ値記憶+相手へ通知]================
+	MOV.L	#_LSI_LOAD_PLS,R0		;
+	MOV.L	R1,@R0				;自分のﾛｰﾀﾞﾊﾟﾙｽ記憶
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_HD_CMP_PLS_A1,R0		;0:00CC=0:0204
+	MOV.L	R1,@R0				;CPUA=>CPUB
+	.AELSE
+	MOV.L	#_HD_CMP_PLS_B1,R0		;0:00CC=0:0204
+	MOV.L	R1,@R0				;CPUB=>CPUA
+	.AENDI
+
+
+	MOV.L	#_SET1_INCDIR_SEL1,R2		;
+	MOV.W	@R2,R0				;
+	TST	R0,R0
+	TST_BIT_OF POS_LSI_ENCLD_020		;
+	NEG	R1,R1				;
+POS_LSI_ENCLD_020:
+
+	M_BRA	POS_LSI_ENCLD_030		;2007-12-27
+
+POS_LSI_ENCLD_030:
+
+
+
+	MOV.L	#_POS_LSI_TOTAL_PLS,R11			;
+	MOV.L	#_POS_LSI_OLDCNT,R12			;
+
+	MOV.W	@R12,R0					;LOAD OLD COUNTER
+	EXTU.W	R1,R1					;
+	EXTU.W	R0,R0					;
+	MOV.W	R1,@R12					;NEW COUNTER SAVE
+;	--- R0:OLD ---					;
+;	--- R1:NEW ---					;
+	SUB	R0,R1					;R1[NEW]-R0[OLD]
+	EXTU.W	R1,R1					;0-FFFF
+
+	MOV.L	#H'7FFF,R0				;
+	CMP/HS	R1,R0					;R1 =< R0 [7FFF]
+	BT	INC_ABS_PLSCG040			;YES
+	EXTS.W	R1,R1					;
+INC_ABS_PLSCG040:					;
+	MOV	R1,R2					;
+	XOR	R1,R1					;
+	CMP/PZ	R2					;
+	BT	INC_ABS_PLSCG060			;
+	ADD	#-1,R1					;
+INC_ABS_PLSCG060:					;R1,R2
+
+;	=== 2003-07-01 1msec差分速度算出用 ==
+	MOV.L	#_ENCPLS_DELT,R5;			;符号付
+	MOV.W	R2,@R5					;
+;	=====================================
+	M_BRA	INC_ABS_PLSCG100			;2007-12-27
+
+
+INC_ABS_PLSCG100:					;R1,R2
+;	------- LOAD OLD ABS DATA ----------				;
+	MOV.L	@R11,R5							;
+	MOV.L	@(4,R11),R6						;
+	ADD8B DT_REGH=R1,DT_REGL=R2,DT_ANS_REGH=R5,DT_ANS_REGL=R6	;
+	MOV.L	R5,@R11							;
+	MOV.L	R6,@(4,R11)						;R1,R2:変化分
+
+	MOV.L	#_POS_LSI_ABSPLS,R1		;
+	MOV.L	R5,@R1				;
+	MOV.L	R6,@(4,R1)			;
+
+	MOV.L	#_POS_LSI_OFFSET1,R4		;
+	MOV.L	@R4+,R1				;
+	MOV.L	@R4,R2				;
+	ADD8B DT_REGH=R1,DT_REGL=R2,DT_ANS_REGH=R5,DT_ANS_REGL=R6	;
+
+	MOV.L	#_POS_LSI_OFFSET2,R4		;
+	MOV.L	@R4+,R1				;
+	MOV.L	@R4,R2				;
+	ADD8B DT_REGH=R1,DT_REGL=R2,DT_ANS_REGH=R5,DT_ANS_REGL=R6	;
+
+	MOV.L	#_POS_LSI_CTL_NOWPLS,R4		;
+	MOV.L	R5,@R4				;
+	MOV.L	R6,@(4,R4)			;
+
+	MOV.L	#_LINK_PV_ABSPLS,R4	;
+	MOV.L	R5,@R4				;
+	MOV.L	R6,@(4,R4)			;
+	SUB_END
+	M_RTS
+
+;	***************************************************
+;	***						***
+;	***	待機点時のｻﾝﾌﾟﾘﾝｸﾞ処理			***
+;	***						***
+;	***************************************************
+	.EXPORT	_ORGIN_MODE_INI		;
+	.EXPORT	_ORGIN_MODE_SMP		;
+	.EXPORT	_ORGIN_MODE_END		;
+
+;	***************************************************
+;	***						***
+;	***	待機点時の最上ﾎﾞﾙｽﾀ位置ｻﾝﾌﾟﾘﾝｸﾞ開始時	***
+;	***		+ｲﾝｸﾘﾒﾝﾀﾙｻﾝﾌﾟﾘﾝｸﾞ開始		***
+;	***	(Ｎ回目の２工程をはじめるとき呼ばれる)	***
+;	***						***
+;	***************************************************
+_ORGIN_MODE_INI:
+	SUB_START				;
+
+;	------ 2011-03-22 MC 原点復帰方法変更-----
+	MOV.L	#_WPAR_ORGDRV_MD2,R1		;
+	MOV.W	@R1,R0				;
+	CMP/EQ	#1,R0				;
+	BF	ORGIN_MODINI_005		;
+	FAR_JSR	#_ORGIN2_MODE_INI,R0		;
+	M_BRA	ORGIN_MODINI_EXT		;
+ORGIN_MODINI_005:				;
+;	------------------------------------------
+
+
+;	------- 2009-03-11 ----
+	MOV.L	#_WPAR_MCNRNA_SEL,R1		;//1:機械でﾘﾆｱｽｹｰﾙを使用しない構造･･原点復帰
+	MOV.W	@R1,R0				;
+	CMP/EQ	#1,R0				;
+	BF	ORGIN_MODINI_010		;
+	FAR_JSR	#_VER360_ORGIN_INI,R0		;2009-03-11
+	M_BRA	ORGIN_MODINI_EXT		;
+ORGIN_MODINI_010:				;
+
+
+	MOV.L	#_POS_LSI_ABSPLS,R5		;
+	MOV.L	#_RNA_ABS_POS,R6		;
+	DI_PUSH_SR_SHn	WK_REG1=R1,WK_REG2=R2	;
+	MOV.L	@R5+,R1				;
+	MOV.L	@R5,R2				;
+	MOV.L	@R6+,R3				;
+						;;;;2002-12-22ﾊﾞｸﾞ発見	MOV.L	@R6,R4		;
+	XOR	R4,R4				;2002-12-22
+	CMP/PZ	R3				;2002-12-22
+	BT	ORGIN_MODINI_020		;2002-12-22
+	ADD	#-1,R4				;2002-12-22
+ORGIN_MODINI_020:				;2002-12-22
+
+
+	EI_POP_SR_SHn 				;
+
+	MOV.L	#_INC_ABS_ORGWORK,R0		;//ﾘﾆｱを記憶時のｲﾝｸﾘﾒﾝﾀﾙ角度
+	MOV.L	R1,@R0				;
+	MOV.L	R2,@(4,R0)			;
+
+	MOV.L	#_RNA_ABS_ORGWORK,R0		;//記憶位置:待機点復帰時に反転した位置 2回目
+	MOV.L	R3,@R0				;
+;;;2011-03-23 不要	MOV.L	R4,@(4,R0)			;[不要のﾃﾞｰﾀ]
+
+ORGIN_MODINI_EXT:				;
+
+
+	SUB_END
+	M_RTS
+
+
+
+;	***************************************************
+;	***						***
+;	***	待機点時の最上ﾎﾞﾙｽﾀ位置ｻﾝﾌﾟﾘﾝｸﾞ		***
+;	***		+ｲﾝｸﾘﾒﾝﾀﾙｻﾝﾌﾟﾘﾝｸﾞ		***
+;	***************************************************
+_ORGIN_MODE_SMP:
+	SUB_START
+
+;	----------- 2011-03-22 MC 原点復帰方法変更
+	MOV.L	#_WPAR_ORGDRV_MD2,R1		;
+	MOV.W	@R1,R0				;
+	CMP/EQ	#1,R0				;
+	BF	ORGIN_MODSMP_005		;
+	FAR_JSR	#_ORGIN2_MODE_SMP,R0		;
+	M_BRA	ORGIN_MODESMP_EXT		;
+ORGIN_MODSMP_005:				;
+;	--------------------------------------------
+
+
+;	------- 2009-03-11 ----
+	MOV.L	#_WPAR_MCNRNA_SEL,R1		;//1:機械でﾘﾆｱｽｹｰﾙを使用しない構造･･原点復帰
+	MOV.W	@R1,R0				;
+	CMP/EQ	#1,R0				;
+	BF	ORGIN_MODSMP_010		;
+
+	FAR_JSR	#_VER360_ORGIN_SMP,R0		;
+
+	M_BRA	ORGIN_MODESMP_EXT		;
+ORGIN_MODSMP_010:				;
+
+
+	MOV.L	#_POS_LSI_ABSPLS,R5		;
+	MOV.L	#_RNA_ABS_POS,R6		;
+	DI_PUSH_SR_SHn	WK_REG1=R1,WK_REG2=R2	;
+	MOV.L	@R5+,R1				;ﾊﾟﾙｽR1,R2
+	MOV.L	@R5,R2				;
+	MOV.L	@R6+,R3				;ﾘﾆｱR3,R4
+						;;;;2002-12-22ﾊﾞｸﾞ発見	MOV.L	@R6,R4		;
+	XOR	R4,R4				;2002-12-22[不要のﾃﾞｰﾀ]
+	CMP/PZ	R3				;2002-12-22
+	BT	ORGIN_MODSMP_020		;2002-12-22
+	ADD	#-1,R4				;2002-12-22
+ORGIN_MODSMP_020:				;2002-12-22
+	
+	EI_POP_SR_SHn 				;
+
+	MOV.L	#_RNA_ABS_ORGWORK,R0						;//記憶位置:待機点復帰時に反転した位置 2回目
+	MOV.L	@R0,R5								;
+;;;;;2011-03-23	MOV.L	@(4,R0),R6						;[不要のﾃﾞｰﾀ]
+;;;;;2011-03-23	SUB8B DT_REGH=R3,DT_REGL=R4,DT_ANS_REGH=R5,DT_ANS_REGL=R6	;
+	SUB	R3,R5								;2011-03-23
+
+	CMP/PZ	R5							;R5,R6(ﾘﾆｱ) >= NEW data
+	BT	ORGIN_MODESMP_EXT					;
+
+	MOV.L	R3,@R0							;ﾘﾆｱﾘﾌﾚｯｼｭ
+;;;;;2011-03-23	MOV.L	R4,@(4,R0)					;
+
+	MOV.L	#_INC_ABS_ORGWORK,R0				;//ﾘﾆｱを記憶時のｲﾝｸﾘﾒﾝﾀﾙ角度save
+	MOV.L	R1,@R0						;
+	MOV.L	R2,@(4,R0)					;
+
+ORGIN_MODESMP_EXT:
+
+	SUB_END
+	M_RTS
+
+;	***************************************************
+;	***						***
+;	***	待機点復帰の２工程目終了		***
+;	***						***
+;	***************************************************
+
+	.ALIGN	4			;2010-08-23
+_ORGIN_MODE_END:
+	SUB_START
+
+;	----------- 2011-03-22 MC 原点復帰方法変更
+	MOV.L	#_WPAR_ORGDRV_MD2,R1		;
+	MOV.W	@R1,R0				;
+	CMP/EQ	#1,R0				;
+	BF	ORGIN_MODEEND_003		;
+	FAR_JSR	#_ORGIN2_MODE_SMPEND,R0		;
+	M_BRA	ORGIN_MODEEND_EXT		;
+ORGIN_MODEEND_003:				;
+
+
+
+
+;	------- 2009-03-11 ----
+	MOV.L	#_WPAR_MCNRNA_SEL,R1		;//1:機械でﾘﾆｱｽｹｰﾙを使用しない構造･･原点復帰
+	MOV.W	@R1,R0				;
+	CMP/EQ	#1,R0				;
+	BF	ORGIN_MODEEND_010		;
+
+;	========== ﾘﾆｱ補正=====
+	MOV.L	#_UP360_CHK_LIST,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON ORGIN_MODEEND_005		;
+
+
+;	---------- ﾃﾞﾊﾞｯｸ時異常検知しなくするため----------
+;;;;	MOV.L	#_SET1_INCENC_ELNG,R1		;2010-08-20(位置-PGをみないならこれもやらない)
+;;;;	MOV.W	@R1,R0				;[ﾃﾞﾊﾞｯｸのため]
+;;;;	TST	R0,R0				;
+;;;;	TST_BIT_OF ORGIN_MODEEND_005		;
+;	---------- ﾃﾞﾊﾞｯｸのため----------
+
+
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB215,LG=W,BIT=(BIT9),WKRG1=R1,WKRG2=R4
+	MOV.W	#H'2159,R4								;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+	M_BRA	ORGIN_MODEEND_EXT		;
+
+ORGIN_MODEEND_005:
+	FAR_JSR	#_ORGIN_MOST_RENEA_SMPEND,R0		;これは360ｴﾝｺｰﾀﾞ原点でも走ってOK
+
+	MOV.L	#_SET360_UPAREA_PLS1,R4		;2009-03-11
+	MOV.L	@R4,R2				;
+	XOR	R1,R1				;
+	M_BRA	ORGIN_MODEEND_020		;
+
+;	--------- 2009-03-11-----------
+
+ORGIN_MODEEND_010:
+;	========== ﾘﾆｱ補正=====
+	FAR_JSR	#_ORGIN_MOST_RENEA_SMPEND,R0		;これは360ｴﾝｺｰﾀﾞ原点でも走ってOK
+
+;	=========== 原点記憶 ｲﾝｸﾘﾒﾝﾀﾙﾊﾟﾙｽ側終了処理=========
+	MOV.L	#_SET1_UPAREA_PLS1,R4		;(これは待機点に関わらず固定)
+	MOV.L	@R4,R2				;
+	XOR	R1,R1				;原点ﾃﾞｰﾀ角度 360.0度相当
+
+ORGIN_MODEEND_020:				;
+
+
+	MOV.L	#_INC_ABS_ORGWORK,R4		;//ﾘﾆｱを記憶時のｲﾝｸﾘﾒﾝﾀﾙ角度
+	MOV.L	@R4+,R7				;
+	MOV.L	@R4,R8				;
+
+;	----------2010-10-07 3KAI-ADD[A1]-----------------
+;;;???	FAR_JSR	#_ADD_REV_CHG,R0		;
+;	--------------------------------------------------
+;	----------2011-03-22 3KAI-ADD[A1][[[[確認未状態]]]]-----------------
+	FAR_JSR	#_ADD_REV_CHG,R0		;input r7,r7
+;	--------------------------------------------------
+
+	FAR_JSR	#_ORGIN_INC_PLS_SET1,R0		;R1,R2,R7,R8
+	
+	FAR_JSR	#_NOW_POS_PRESET_OUTPLS,R0	;ABSPLS<==INC
+
+
+	FAR_JSR	#_SET_PV_ABS_TO_OBJ,R0		;2014-09-14
+
+	MOV.L	#_ORGIN_END_FLG1,R4		;//電源投入の１回ON:OFFはない
+	MOV.B	#BIT0,R0			;
+	MOV.W	R0,@R4				;
+
+;	=== 原点完了 =====
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_ORG_ELSE_NOMAL_FLG1,LG=W,BIT=BIT0,WKREG=R1	;bit-set
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB206,LG=W,BIT=(BIT6),WKRG1=R1,WKRG2=R4		;ﾓｰｼｮﾝ運転OK
+
+;	====== 段取寸動可能 ===
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_ORG_DND_NOMAL_FLG1,LG=W,BIT=BIT0,WKREG=R1	;bit-set
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB206,LG=W,BIT=(BIT10),WKRG1=R1,WKRG2=R4	;段取寸動OK
+
+
+;	=== 2004-07-05 ﾌﾗｸﾞ/荷重比較ｸﾘｱ===
+	FAR_JSR	#_KJPHOS_FLG_DEF,R0		;2004-07-05(ssa_kjyu.inc)
+	FAR_JSR	#_KJPHOS_SIG_CLR,R0		;
+
+ORGIN_MODEEND_EXT:				;
+
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***	待機点時の最上ﾎﾞﾙｽﾀ位置ｻﾝﾌﾟﾘﾝｸﾞ完了	***
+;	***						***
+;	***************************************************
+	.ALIGN	4			;
+_ORGIN_MOST_RENEA_SMPEND:
+	SUB_START
+	XOR	R0,R0
+	MOV.L	#_RNA_ABS_MD_DT1,R4		;//
+	MOV.L	R0,@R4				;"0" DT1
+
+	MOV.L	#_RNA_ABS_ORGWORK,R1		;//記憶位置:待機点復帰時に反転した位置 2回目
+	MOV.L	@R1,R2				;
+
+	MOV.L	#_RNA_ABS_MEMORG,R3		;//記憶位置:待機点復帰時に反転した位置(最上のﾎﾞﾙｽﾀ位置)
+	MOV.L	R2,@R3				;
+
+
+;	======== 2003-01-31 ======
+	FAR_JSR	#_DRVHOS_MEMORG_SET_INI,R0	;MEMORGに書込を行った場合に行う処理
+	FAR_JSR	#_DRVHOS_ALL_INI,R0		;
+
+;	=======================================
+
+;	======= 原点復帰完了 BIT5:電源投入後保持、BIT4:EMG/再度原点復帰==================
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB206,LG=W,BIT=(BIT5+BIT4),WKRG1=R1,WKRG2=R4
+;	=========================================
+
+;	-------------2011-03-22--------------
+	FAR_JSR	#_ORIGIN_POS_CHK_INI1,R0	;MEMORGを書き換えた場合に行う処理と思う
+
+
+	SUB_END					;
+	M_RTS					;
+
+
+
+;	***************************************************
+;	***						***
+;	***	2009-03-11				***
+;	***	ﾘﾆｱｽｹ-ﾙなし 360ｴﾝｺｰﾀﾞでの原点復帰	***
+;	***	INITAL					***
+;	***						***
+;	***************************************************
+	.ALIGN	4			;
+_VER360_ORGIN_INI
+	SUB_START
+	MOV.L	#_CTL_ENC360,R1			;//360.0度
+	MOV.W	@R1,R0				;
+	MOV.L	#_CTL_ENC360_OLD,R1		;//
+	MOV.W	R0,@R1				;
+
+	XOR	R0,R0				;
+	MOV.L	#_UP360_CHK_LIST,R1		;//進行方向で原点位置が見えたか?list
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_POS_LSI_ABSPLS,R5		;(本来なくてもいい処理)
+	MOV.L	@R5+,R1				;
+	MOV.L	@R5,R2				;
+	MOV.L	#_INC_ABS_ORGWORK,R0		;
+	MOV.L	R1,@R0				;
+	MOV.L	R2,@(4,R0)			;
+
+	SUB_END
+	M_RTS
+
+	.ALIGN	4			;
+_VER360_ORGIN_SMP
+	SUB_START
+	MOV.L	#_CTL_ENC360_OLD,R5		;
+	MOV.W	@R5,R3				;old load
+	MOV.L	#_CTL_ENC360,R1			;//360.0度
+	MOV.W	@R1,R2				;
+	MOV.W	R2,@R5				;OLD REFLASH
+	CMP/EQ	R2,R3				;OLD=NEW?
+	BT	VER360_ORGINSMP_EXT		;YES 
+
+	MOV.L	#_SET360_UPAREA_DIG1,R1		;322.7度の場合322.0
+	MOV.W	@R1,R4				;
+	CMP/EQ	R2,R4				;now=sv?
+	BF	VER360_ORGINSMP_EXT		;NO!
+
+	MOV.L	#_UP360_CHK_LIST,R1		;//進行方向で原点位置が見えたか?
+	MOV.W	@R1,R0				;
+	ADD	#1,R0				;CHK LIST - FLAG
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_POS_LSI_ABSPLS,R5		;
+	MOV.L	@R5+,R1				;ﾊﾟﾙｽR1,R2
+	MOV.L	@R5,R2				;
+	MOV.L	#_INC_ABS_ORGWORK,R0		;
+	MOV.L	R1,@R0				;
+	MOV.L	R2,@(4,R0)			;
+
+VER360_ORGINSMP_EXT
+	SUB_END
+	M_RTS
+	
+
+;	*******************************************
+;	***					***
+;	***	今はCALLしていないが		***
+;	***	原点だし完了時			***
+;	***	回転補正時にクリアでしょう	***
+;	*******************************************
+	.ALIGN	4			;
+_MANUAL_RNA_HOS_CLR:
+	SUB_START
+	XOR	R0,R0
+	MOV.L	#_RNA_ABS_MD_DT0,R4		;//
+	MOV.L	R0,@R4				;"0" DT1
+	MOV.L	#_RNA_ABS_MD_DT1,R4		;//
+	MOV.L	R0,@R4				;"0" DT1
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***		新タイプ		***
+;	***		原点復帰サンプリング	***
+;	***					***
+;	***					***
+;	*******************************************
+
+
+;	***************************************************
+;	***						***
+;	***	待機点時のｻﾝﾌﾟﾘﾝｸﾞ処理			***
+;	***						***
+;	***************************************************
+	.EXPORT	_ORGIN2_MODE_INI		;
+	.EXPORT	_ORGIN2_MODE_SMP		;
+	.EXPORT	_ORGIN2_MODE_SMPEND		;
+;;;;	.EXPORT	_ORGIN2_MODE_END		;
+
+;	***************************************************
+;	***						***
+;	***	待機点時の最上ﾎﾞﾙｽﾀ位置ｻﾝﾌﾟﾘﾝｸﾞ開始時	***
+;	***	(Ｎ回目の２工程をはじめるとき呼ばれる)	***
+;	***						***
+;	***************************************************
+	.ALIGN	4			;
+_ORGIN2_MODE_INI:
+	SUB_START
+
+	MOV.L	#_POS_LSI_ABSPLS,R5		;
+	MOV.L	@R5+,R1				;
+	MOV.L	@R5,R2				;
+
+	MOV.L	#_RNA_ABS_POS,R6		;
+	MOV.L	@R6+,R3				;
+						;
+	XOR	R4,R4				;
+	CMP/PZ	R3				;
+	BT	ORGIN2_MODINI_020		;
+	ADD	#-1,R4				;
+ORGIN2_MODINI_020:				;
+
+	MOV.L	#_INC_ABS_ORGWORK2,R0		;//ﾘﾆｱを記憶時のｲﾝｸﾘﾒﾝﾀﾙ角度
+	MOV.L	R1,@R0				;
+	MOV.L	R2,@(4,R0)			;
+
+	MOV.L	#_INC_ABS_ORGWORK2A,R0		;//ﾘﾆｱを記憶時のｲﾝｸﾘﾒﾝﾀﾙ角度
+	MOV.L	R1,@R0				;
+	MOV.L	R2,@(4,R0)			;
+
+	MOV.L	#_RNA_ABS_ORGWORK2,R0		;//記憶位置:待機点復帰時に反転した位置 2回目
+	MOV.L	R3,@R0				;+0:data
+	MOV.L	#_RNA_ABS_ORGWORK2A,R0		;//待機点検出用ﾜｰｸ
+	MOV.L	R3,@R0				;+0:data
+
+
+	MOV.L	#_ORGIN2_STEP_FLG,R1		;
+	XOR	R0,R0
+	MOV.W	R0,@R1
+
+	SUB_END
+	M_RTS
+
+
+
+;	***************************************************
+;	***						***
+;	***	待機点時の最上ﾎﾞﾙｽﾀ位置ｻﾝﾌﾟﾘﾝｸﾞ		***
+;	***		+ｲﾝｸﾘﾒﾝﾀﾙｻﾝﾌﾟﾘﾝｸﾞ		***
+;	***	(Ｎ回目の２工程中にCALLされる)		***
+;	***						***
+;	***************************************************
+	.ALIGN	4			;
+_ORGIN2_MODE_SMP:
+	SUB_START
+
+	MOV.L	#_ORGIN2_STEP_FLG,R1					;
+	MOV.W	@R1,R0							;
+	TST	#BIT0,R0						;
+	TST_BIT_ON ORGIN2_MODESMP_EXT					;
+
+;	遅延がほしい　フラツキ対策
+;	記録したパルスから100ﾊﾟﾙｽ以上増加した状態でチェック
+
+	XOR	R1,R1							;
+	MOV.W	#D'100,R2						;
+
+	MOV.L	#_INC_ABS_ORGWORK2,R0					;//ﾘﾆｱを記憶時のｲﾝｸﾘﾒﾝﾀﾙ角度
+	MOV.L	@R0,R3							;
+	MOV.L	@(4,R0),R4						;
+	ADD8B DT_REGH=R1,DT_REGL=R2,DT_ANS_REGH=R3,DT_ANS_REGL=R4	;
+
+
+	MOV.L	#_POS_LSI_ABSPLS,R5						;
+	MOV.L	@R5+,R1								;ﾊﾟﾙｽR1,R2
+	MOV.L	@R5,R2								;
+
+	SUB8B DT_REGH=R1,DT_REGL=R2,DT_ANS_REGH=R3,DT_ANS_REGL=R4		;R3,R4(記録+100)-R1,R2
+	CMP/PZ	R3								;
+	BT	ORGIN2_MODESMP_EXT						;100ﾊﾟﾙｽも動かない
+
+	MOV.L	#_RNA_ABS_POS,R6						;
+	MOV.L	@R6,R3								;1000.0000
+
+	MOV.L	#_RNA_ABS_ORGWORK2,R0						;//記憶位置:待機点復帰時に反転した位置 2回目
+	MOV.L	@R0,R5								;
+	CMP/GE	R5,R3								;記録値≦PV 
+	BT	ORGIN2_MODESMP_EXT						;記録より”上”にあればEXIT
+										;記録より下にある
+
+	MOV.L	#_RNA_ABS_ORGWORK2A,R0						;//待機点検出用ﾜｰｸ
+	MOV.L	R3,@R0								;+0:data
+
+	MOV.L	#_INC_ABS_ORGWORK2A,R0						;
+	MOV.L	R1,@R0								;
+	MOV.L	R2,@(4,R0)							;
+
+
+
+;	--------中点からWORK2Aの距離を求める----------------
+;;;	MOV.L	#_SET1_UPAREA_PLS1,R4						;(これは待機点に関わらず固定)
+;;;	MOV.L	@R4,R2								;
+
+	MOV.L	#_INC_ABS_ORGWORK2,R0						;起点
+	MOV.L	@R0,R5								;
+	MOV.L	@(4,R0),R6							;
+
+	MOV.L	#_INC_ABS_ORGWORK2A,R0						;終了
+	MOV.L	@R0,R7								;
+	MOV.L	@(4,R0),R8							;
+
+	SUB8B DT_REGH=R5,DT_REGL=R6,DT_ANS_REGH=R7,DT_ANS_REGL=R8		;R7,R8
+;R7,R8を1/2する
+	SHAR	R7								;
+	ROTCR	R8								;中点からの距離 R7,R8
+
+;;;これをどうするか？	ADD	R2,R8						;
+	MOV	R8,R2								;
+
+	MOV.L	#_INC_OFS_ORGWORK2A,R1				;端数
+	MOV.L	R2,@R1						;
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_ORGIN2_STEP_FLG,LG=W,BIT=BIT0,WKREG=R1	;bit-set
+
+
+ORGIN2_MODESMP_EXT:
+
+	SUB_END
+	M_RTS
+
+;	***************************************************
+;	***						***
+;	***	待機点復帰の２工程目終了		***
+;	***						***
+;	***************************************************
+;	ﾊﾟﾙｽの基準位置は確定する
+;	
+;
+
+	.ALIGN	4			;
+_ORGIN2_MODE_SMPEND:
+	SUB_START
+	MOV.L	#_ORGIN2_STEP_FLG,R1							;
+	MOV.W	@R1,R0									;
+	TST	#BIT0,R0								;
+	TST_BIT_ON ORGIN2_MOD_SMPEND_100						;
+
+;	---下降点が見つからなかった[異常にする必要はないが、書き換えを行わないだけでもいい]---
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB215,LG=W,BIT=(BIT9),WKRG1=R1,WKRG2=R4	;
+;;;;;;;;;;;;;;一時殺す	MOV.W	#H'2159,R4						;順番入れ替え2011
+;;;;;;;;;;;;;;一時殺す		FAR_JSR	#_EMG_STOP,R0					;
+	M_BRA	ORGIN2_MOD_SMPEND_END							;
+
+
+ORGIN2_MOD_SMPEND_100:
+;	(終了点+起点)/2　=点D
+;	(現在位置-点D) => OFFSET・・・・点D=0pls
+;
+
+;	=========== 原点記憶 ｲﾝｸﾘﾒﾝﾀﾙﾊﾟﾙｽ側終了処理=========
+	MOV.L	#_SET1_UPAREA_PLS1,R4						;(これは待機点に関わらず固定)
+	MOV.L	@R4,R2								;
+	XOR	R1,R1								;原点ﾃﾞｰﾀ角度 360.0度相当
+
+	MOV.L	#_INC_ABS_ORGWORK2,R0						;起点
+	MOV.L	@R0,R5								;
+	MOV.L	@(4,R0),R6							;
+
+	MOV.L	#_INC_ABS_ORGWORK2A,R0						;終了
+	MOV.L	@R0,R7								;
+	MOV.L	@(4,R0),R8							;
+
+	ADD8B DT_REGH=R5,DT_REGL=R6,DT_ANS_REGH=R7,DT_ANS_REGL=R8		;R7,R8
+;R7,R8を1/2する
+	SHAR	R7
+	ROTCR	R8
+
+;	----------2011-03-22 3KAI-ADD[A1][[[[確認未状態]]]]-----------------
+	FAR_JSR	#_ADD_REV_CHG,R0		;
+;	--------------------------------------------------
+	FAR_JSR	#_ORGIN_INC_PLS_SET1,R0		;R1,R2,R7,R8
+						;OFFSET1= (R7,R8)*-1
+						;OFFSET2= (R1,R2)
+						;R7,R8の点をR1,R2度と表示する
+						;
+
+	FAR_JSR	#_NOW_POS_PRESET_OUTPLS,R0	;ABSPLS<==INC
+
+	FAR_JSR	#_SET_PV_ABS_TO_OBJ,R0		;2014-09-14
+
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_ORGIN2_STEP_FLG,LG=W,BIT=BIT1,WKREG=R1	;
+
+
+	FAR_JSR	#_ORGIN2_MODE_END,R0		;
+
+	XOR	R0,R0				;
+	MOV.L	#_RST_ERR_CHK_FLG,R1		;
+	MOV.W	R0,@R1				;
+
+
+ORGIN2_MOD_SMPEND_END:
+
+	SUB_END
+	M_RTS
+
+
+
+
+;	***************************************************
+;	***						***
+;	***	待機点復帰の２工程目終了時点で演算	***
+;	***						***
+;	***************************************************
+	.ALIGN	4			;
+_ORGIN2_MODE_END:
+	SUB_START
+
+	MOV.L	#_WPAR_ORGDRV_MD2,R1			;
+	MOV.W	@R1,R0					;
+	CMP/EQ	#1,R0					;
+	BF	ORGIN2_MODEND_END			;
+
+;;	MOV.L	#_INT_DND_CTL_STEP,R5			;いらないはず
+;;	MOV.W	@R5,R0					;
+;;	TST	#BIT1,R0				;
+;;	TST_BIT_OF ORGIN2_MODEND_END			;
+
+	MOV.L	#_ORGIN2_STEP_FLG,R1			;
+	MOV.W	@R1,R0					;
+	TST	#BIT1,R0				;
+	TST_BIT_ON ORGIN2_MODEND_100			;
+	M_BRA	ORGIN2_MODEND_END			;
+
+ORGIN2_MODEND_100:
+
+	MOV.L	#_ORGIN_END_FLG1,R4			;//電源投入の１回ON:OFFはない
+	MOV.B	#BIT0,R0				;
+	MOV.W	R0,@R4					;
+
+
+;	=== 原点完了 =====
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_ORG_ELSE_NOMAL_FLG1,LG=W,BIT=BIT0,WKREG=R1	;bit-set
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB206,LG=W,BIT=(BIT6),WKRG1=R1,WKRG2=R4		;ﾓｰｼｮﾝ運転OK
+
+;	====== 段取寸動可能 ===
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_ORG_DND_NOMAL_FLG1,LG=W,BIT=BIT0,WKREG=R1	;bit-set
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB206,LG=W,BIT=(BIT10),WKRG1=R1,WKRG2=R4	;段取寸動OK
+
+;	=== 2004-07-05 ﾌﾗｸﾞ/荷重比較ｸﾘｱ===
+	FAR_JSR	#_KJPHOS_FLG_DEF,R0		;2004-07-05(ssa_kjyu.inc)
+	FAR_JSR	#_KJPHOS_SIG_CLR,R0		;
+
+;	========== ﾘﾆｱ補正=====
+;;;	MOV.L	#_RNA_ABS_POS,R6		;
+;;;	MOV.L	@R6+,R3				;
+;;;	MOV.L	#_RNA_ABS_ORGWORK,R1		;
+;;;	MOV.L	R3,@R1				;
+
+	FAR_JSR	#_RNA_POS_CALC_UPER_POS,R0	;_RNA_ABS_ORGWORK:ｾｯﾄ
+
+
+	FAR_JSR	#_ORGIN_MOST_RENEA_SMPEND,R0		;これは360ｴﾝｺｰﾀﾞ原点でも走ってOK
+
+ORGIN2_MODEND_END:
+
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***	リニアとエンコーダから下限位置を割りだす	***
+;	***							***
+;	***********************************************************
+;
+;	H+R-R*COS(deg)
+;
+;
+	.ALIGN	4			;
+_RNA_POS_CALC_UPER_POS:
+	SUB_START
+
+	MOV.L	#_INC_OFS_ORGWORK2A,R1				;端数pls
+	MOV.L	@R1,R2						;
+
+	FAR_JSR	#_OFSPLS_DIG_CHANGE1,R0				;InputR2  outputR2 0.001度
+
+	FAR_JSR	#_COS_IN_DEG,R0					;SSA_COM1.SRC input R2 .001度->OUT R21.000 000
+
+	MOV.L	#_RNA_STLORK_HALF,R0				;//設定(半径)
+	MOV.L	@R0,R1						;
+	PUSH_REG1 R1						;
+	MOV.L	#_COS_DIG1_UNIT_COEF,R0				;
+	MOV.L	@R0,R4						;1000000
+	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0			;r*cos(deg)=R2
+	POP_REG1 R1						;
+
+	MOV.L	#_RNA_ABS_ORGWORK2A,R0				;//待機点検出用ﾜｰｸ
+	MOV.L	@R0,R3						;
+	ADD	R1,R3						;h+r
+	SUB	R2,R3						;H+R-RCOS(deg)
+
+	MOV.L	#_RNA_ABS_ORGWORK,R1				;
+	MOV.L	R3,@R1						;上限位置
+
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;	***************************************************
+;	***						***
+;	***	360度ｴﾝｺｰﾀﾞからｴﾝｺｰﾀﾞ位置を求める	***
+;	***	電源投入時				***
+;	***						***
+;	***************************************************
+	.EXPORT		_ORGIN_POS_PLS_SET1	;POWER 
+	.EXPORT		_NOW_POS_PRESET_OUTPLS	;現在位置を目標位置に変える
+	.IMPORT		_POSCHG_LINK_DIG_TO_LINK_PLS;
+
+	.ALIGN	4			;
+_ORGIN_POS_PLS_SET1:
+	SUB_START
+;;;	MOV.L	#_ENC360_HEX,R0				;(360ｴﾝｺｰﾀﾞ)
+;;;	MOV.W	@R0,R2					;360
+;;;	MOV	#D'10,R1				;
+;;;	DMULU.L	R1,R2					;
+;;	STS	MACL,R2					;360.0度
+	MOV.L	#_CTL_ENC360,R1				;360.0度//360ｴﾝｺｰﾀﾞ
+	MOV.W	@R1,R2					;
+	FAR_JSR	#_POSCHG_LINK_DIG_TO_LINK_PLS,R0	;ANS R2
+
+	XOR	R1,R1					;
+
+	MOV.L	#_POS_LSI_ABSPLS,R4		;
+	DI_PUSH_SR_SHn	WK_REG1=R5,WK_REG2=R6	;
+	MOV.L	@R4+,R7				;
+	MOV.L	@R4,R8				;
+	EI_POP_SR_SHn 				;
+
+
+;	----------2011-03-22 3KAI-ADD[A1][[[[確認未状態]]]]-----------------
+	FAR_JSR	#_ADD_REV_CHG,R0		;
+;	--------------------------------------------------
+	FAR_JSR	#_ORGIN_INC_PLS_SET1,R0		;R1,R2,R7,R8
+
+	FAR_JSR	#_NOW_POS_PRESET_OUTPLS,R0		;ABSPLS<==INC
+	SUB_END
+	M_RTS
+
+
+
+;	*******************************************
+;	***					***
+;	***	待機点復帰処理の反転完了	***
+;	***					***
+;	*******************************************
+
+
+;	***********************************************************
+;	***	Input R1,R2 その角度にｲﾝｸﾘﾒﾝﾀﾙがなる様にする	***
+;	***********************************************************
+;	A+B+C=D
+;	(A-D+Z)+B+C=Z
+;	Input R1,R2(OFFSET1)
+;	Input R7,R8(ABS位置+data)
+	.ALIGN	4			;
+_ORGIN_INC_PLS_SET1:
+	SUB_START
+
+	NEG1_64	H_REG=R7,L_REG=R8,WKREG=R4	;
+
+	DI_PUSH_SR_SHn	WK_REG1=R5,WK_REG2=R6	;
+	MOV.L	#_POS_LSI_OFFSET1,R4		;
+	MOV.L	R7,@R4				;
+	MOV.L	R8,@(4,R4)			;ABS+(-ABS)
+
+	MOV.L	#_POS_LSI_OFFSET2,R4		;***.*角度相当のﾊﾟﾙｽ
+	MOV.L	R1,@R4				;
+	MOV.L	R2,@(4,R4)			;
+	EI_POP_SR_SHn 				;
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	現在位置を目標位置に変える	***
+;	***					***
+;	*******************************************
+;	現在位置->目標位置
+;	OFFSET1
+;	MOV.L	#POS_LSI_CTL_NOWPLS,R4
+;
+;	X + A + B = Y
+;	X + A-Y+Z + B =Z
+;	X + A + B - X-A-B +Z =Z
+;	A=A+Z-Y
+	.ALIGN	4			;
+_NOW_POS_PRESET_OUTPLS:
+	SUB_START
+
+	MOV.L	#_LSI_CHK_DBG_CNT4,R1
+	MOV.W	@R1,R0
+	ADD	#1,R0
+	MOV.W	R0,@R1
+
+	FAR_JSR	#_POS_LSI_ENC_LOD,R0			;ABS-POS
+	SUB_END
+	M_RTS
+
+;	*******************************************************************
+;	***	Input R1,R2 その角度に払い出しパルスがなる様にする	***
+;	*******************************************************************
+
+
+;	*******************************************
+;	***					***
+;	***	リニアセンサ関連		***
+;	***					***
+;	*******************************************
+	.EXPORT	_RNA_POS_MAK		;
+	.EXPORT	_RNA_DAIHAITO_MAK	;ﾀﾞｲﾊｲﾄ部ｻﾌﾞﾙｰﾁﾝ
+	.EXPORT	_RNA_PRDPOS_MAK
+	
+	.IMPORT	_RENEA_CENCER_LOAD	;Output R2 dpram まで//SH2と共有
+
+
+_RNA_POS_MAK:
+	SUB_START			;
+	FAR_JSR	#_RENEA_CENCER_LOAD,R0	;Output R2 dpram まで//SH2と共有
+					;_RNA_ABS_POS
+
+	FAR_JSR	#_RNA_DAIHAITO_MAK,R0	;ﾀﾞｲﾊｲﾄ部ｻﾌﾞﾙｰﾁﾝ
+;	===== Output R2 ==
+
+
+	MOV.L	#_RNA_ABS_POS,R1	;//ﾎﾞﾙｽﾀ面高さ(絶対位置)
+	MOV.L	@R1,R7			;0.001mm
+					;
+
+	MOV.L	#_DAI_HOSEI1_FLG,R1	;
+	MOV.W	@R1,R0			;
+	TST	#BIT0,R0		;
+	TST_BIT_OF DAI_HOS1_100		;
+
+;	--------2011-03-23追加-------
+	MOV.L	#_WPAR_DAIHAI_SEL,R1		;
+	MOV.W	@R1,R0				;手動
+	CMP/EQ	#1,R0				;
+	BF	DAI_HOS1_070			;2011-03-22までの通常バージョン
+
+	FAR_JSR	#_MAN_DAIHAI_HOS2_CAL,R0	;クランク機構による演算
+	M_BRA	DAI_HOS1_100			;output _RNA_ABS_MD_DT1
+;	--------------------------------------
+
+DAI_HOS1_070:				;
+					;手動ﾀﾞｲﾊｲﾄ補正の補正中
+	MOV.L	#_RNA_ABS_MD_DT0,R1	;Input R2(開始点)
+	MOV.L	@R1,R3			;
+	MOV	R7,R5			;
+	SUB	R3,R5			;ﾀﾞｲﾊｲﾄ1＋(ﾎﾞﾙｽﾀ位置-ﾎﾞﾙｽﾀ位置記憶)
+	MOV.L	#_RNA_ABS_MD_DT1,R1	;Input R2
+	MOV.L	R5,@R1			;(差分)
+
+
+DAI_HOS1_100:				;
+	MOV.L	#_RNA_ABS_MD_DT1,R1	;Input R2[非補正中は0、補正中はDT1=RNA-DT0　差分だと思う。ｺﾒﾝﾄ2011-03-23]
+	MOV.L	@R1,R5			;
+	ADD	R5,R2			;
+	MOV.L	#_PVX_DAI_POS1,R1	;ﾀﾞｲﾊｲﾄ表示値・制御値
+	MOV.L	R2,@R1			;SAVE R2 -->NEXT CALC USED
+					;ABS+DELT(手動中-手動開始)
+
+	MOV.L	#_RNA_CTL_POS0,R1	;//制御位置
+	SUB	R2,R7			;[下限高さ]
+	MOV.L	R7,@R1			;下死点高さ
+	M_BRA	DAI_HOS1_200		;
+
+
+DAI_HOS1_200:				;
+;	====== ﾀﾞｲﾊｲﾄのｽﾞﾚを反転時の制御値に補正する=========
+	MOV.L	#_SET1_MRTION_SEL1,R1				;
+	MOV.W	@R1,R0						;
+	CMP/EQ	#_DMATH_REVRSE,R0				;DRIVE MATH 反転
+	BF	RNA_CTL_HOS_EXT					;
+
+	MOV.L	#_CB_SEQ_CB_SEL341,R1				;341
+	MOV.W	@R1,R0						;
+	TST	#BIT5,R0					;
+	TST_BIT_OF RNA_CTL_HOS_EXT				;
+
+	MOV.L	#_PVX_DAI_POS1,R1				;ﾀﾞｲﾊｲﾄ表示値・制御値
+	MOV.L	@R1,R3						;SAVE R2 -->NEXT CALC USED
+	MOV.L	#_SET1_DAIHAI_ORG0,R1				;画面設定
+	MOV.L	@R1,R4						;
+	SUB	R4,R3						;実測-設定
+	MOV.L	#_RNA_HOS_DELT,R1				;
+	MOV.L	R3,@R1						;20-19=1mm =>1mm下げる
+	ADD	R3,R7						;補正(設定より1mm上にある)
+
+;	RNA - 基準値　=制御位置
+;	基準が＋１されれば、制御位置は－１される
+;	その結果　＋１の位置に制御する
+
+RNA_CTL_HOS_EXT:
+	MOV.L	#_RNA_CTL_POS1,R1	;//制御位置
+	MOV.L	R7,@R1			;
+
+	FAR_JSR	#_RNA_PRDPOS_MAK,R0
+
+;	---------2013-07-27 ------------
+;	---------2013-08-20 復活
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+	MOV.L	#_PVX_DAI_POS1,R3	;ﾀﾞｲﾊｲﾄ表示値・制御値
+	MOV.L	@R3,R2			;
+	REG1_0CHK REG1=R2		;
+	MOV.L	#_PVP_DYHITO_POS,R4	;
+	MOV.L	R2,@R4			;
+	.AENDI
+
+
+	SUB_END
+	M_RTS
+
+;	===================================================
+;	===	ﾀﾞｲﾊｲﾄ演算[運転中の補正入処理]		===
+;	===================================================
+_RNA_DAIHAITO_MAK:
+	SUB_START
+	MOV.L	#_RNA_ABS_MEMORG,R1	;(原点復帰で作成・１回転)
+	MOV.L	@R1,R2			;
+
+
+;	========2003-01=========================
+	MOV.L	#_DRVHOS_USE_FLG,R1;//BIT1=1,BIT0=1 補正ﾃﾞｰﾀを使用してもいい
+	MOV.W	@R1,R0			;
+	AND	#(BIT2+BIT1+BIT0),R0	;
+	CMP/EQ	#(BIT2+BIT1+BIT0),R0	;有効(BIT0),WAIT,初期が終わって
+	BF	DRV_HOS_CAL_EXT		;(各ﾓｰﾄﾞ及び補正切)
+	MOV.L	#_RNA_ABS_DRVHOS_DT,R1	;//補正ﾃﾞｰﾀ 2003-01-31
+	MOV.L	@R1,R4			;//(補正DATA)
+	ADD	R4,R2			;
+DRV_HOS_CAL_EXT:			;
+;	=================================
+	MOV.L	#_RNA_STLORK,R3		;
+	MOV.L	@R3,R4			;
+	SUB	R4,R2			;最上死点－ストローク（ダイハイト基本）
+	MOV.L	#_PVX_DAI_POS0,R1	;
+	MOV.L	R2,@R1			;SAVE R2 -->NEXT CALC USED
+
+	SUB_END
+	M_RTS
+
+;	===================================
+;	===	生産用ﾀﾞｲﾊｲﾄ演算	===
+;	===================================
+_RNA_PRDPOS_MAK:
+	SUB_START
+
+	MOV.L	#_PRD_DAI_POS0,R1	;//生産下限(生)
+	MOV.L	@R1,R2			;
+
+;;;;	MOV.L	#_RNA_ABS_MD_DT1,R1	;Input R2
+;;;;	MOV.L	@R1,R5			;
+;;;;	ADD	R5,R2			;ここにいれてもだめ消される
+
+	MOV.L	#_PRD_DAI_POS1,R1	;生産下限表示
+	MOV.L	R2,@R1			;
+
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***							***
+;	***							***
+;	***		2011-03-21以前の手動のダイハイト調整	***
+;	***							***
+;	***							***
+;	***********************************************************
+;	flag:_DAI_HOSEI1_FLG
+;	trigger:_CB_SEQ_CB_SEL341;341.3
+;	演算結果
+;		調整中
+;	_RNA_ABS_MD_DT0
+;	_RNA_ABS_MD_DT1
+;		調整完了
+;	_RNA_ABS_MEMORG
+;
+;
+;	*******************************************
+;	***					***
+;	***		ﾀﾞｲﾊｲﾄ手動調整		***
+;	***					***
+;	*******************************************
+	.EXPORT	_DAI_HOSEI1_CTRL
+_DAI_HOSEI1_CTRL:
+	SUB_START
+
+;;	MOV.L	#_CB_SEQ_CB_SEL341,R1		;341
+;;	MOV.W	@R1,R0				;
+;;	MOV.W	#BIT3,R3			;
+;;	OR	R3,R0
+;;	NOT	R3,R3
+;;	AND	R3,R0				;ﾃﾞﾊﾞｯｸ時ＮＯＰ
+;;	MOV.W	R0,@R1				;
+
+;	--------2011-03-22 ｸﾗﾝｸﾀｲﾌﾟ------------
+	MOV.L	#_WPAR_DAIHAI_SEL,R1		;//2;//手動ﾀﾞｲﾊｲﾄの演算方法の変更1:2011-03-22ﾀｲﾌﾟ
+	MOV.W	@R1,R0				;
+	CMP/EQ	#1,R0
+	BF	DAI_HOSEI1_CTL020		;
+	FAR_JSR	#_DAI_HOSEI2_CTRL,R0		;
+	M_BRA	DAI_HOSEI1_CTLEXT		;
+DAI_HOSEI1_CTL020:
+;	---------------------------------------
+
+	MOV.L	#_DAI_HOSEI1_FLG,R1	;
+	MOV.W	@R1,R0			;
+	TST	#BIT0,R0		;
+	TST_BIT_OF DAI_HOSEI1_CTL050	;
+
+	MOV.L	#_CB_SEQ_CB_SEL341,R1		;341
+	MOV.W	@R1,R0				;
+
+;;;;2014-06-03	TST	#BIT3,R0			;
+;;;;2014-06-03	TST_BIT_ON DAI_HOSEI1_CTL100
+
+	MOV.W	#(BIT9+BIT3),R4			;341.3or341.9 [2014-06-03 R02R03自動調整]
+	TST	R4,R0				;
+	TST_BIT_ON DAI_HOSEI1_CTL100
+
+	FAR_JSR	#_DAI_HOS1_END,R0		;
+	M_BRA	DAI_HOSEI1_CTLEXT		;
+
+DAI_HOSEI1_CTL050:
+	MOV.L	#_CB_SEQ_CB_SEL341,R1		;341
+	MOV.W	@R1,R0				;
+
+;;;2014-06-03	TST	#BIT3,R0			;
+;;;2014-06-03	TST_BIT_OF DAI_HOSEI1_CTLEXT		;
+
+	MOV.W	#(BIT9+BIT3),R4			;341.3or341.9 [2014-06-03 R02R03自動調整]
+	TST	R4,R0				;
+	TST_BIT_OF DAI_HOSEI1_CTLEXT		;
+
+
+	FAR_JSR	#_DAI_HOS1_START,R0		;
+
+DAI_HOSEI1_CTL100:
+	FAR_JSR	#_DAI_HOS1_SMPLING,R0
+DAI_HOSEI1_CTLEXT:
+
+
+	SUB_END
+	M_RTS
+
+
+
+;	*******************************************
+;	***					***
+;	***		ﾀﾞｲﾊｲﾄ手動調整		***
+;	***					***
+;	*******************************************
+_DAI_HOSEI2_CTRL:
+	SUB_START
+
+	MOV.L	#_DAI_HOSEI1_FLG,R1	;
+	MOV.W	@R1,R0			;
+	TST	#BIT0,R0		;
+	TST_BIT_OF DAI_HOSEI2_CTL050	;
+
+	MOV.L	#_CB_SEQ_CB_SEL341,R1		;341
+	MOV.W	@R1,R0				;
+
+;;;;2014-06-03	TST	#BIT3,R0			;
+;;;;2014-06-03	TST_BIT_ON DAI_HOSEI2_CTL100
+
+	MOV.W	#(BIT9+BIT3),R4			;341.3or341.9 [2014-06-03 R02R03自動調整]
+	TST	R4,R0				;
+	TST_BIT_ON DAI_HOSEI2_CTL100
+
+	FAR_JSR	#_DAI_HOS1_END,R0		;
+	
+	M_BRA	DAI_HOSEI2_CTLEXT		;
+
+DAI_HOSEI2_CTL050:
+	MOV.L	#_CB_SEQ_CB_SEL341,R1		;341
+	MOV.W	@R1,R0				;
+
+;;;;2014-06-03	TST	#BIT3,R0		;
+;;;;2014-06-03	TST_BIT_OF DAI_HOSEI2_CTLEXT	;
+
+	MOV.W	#(BIT9+BIT3),R4			;341.3or341.9 [2014-06-03 R02R03自動調整]
+	TST	R4,R0				;
+	TST_BIT_OF DAI_HOSEI2_CTLEXT		;
+	FAR_JSR	#_DAI_HOS1_START,R0		;
+	FAR_JSR	#_DAI_HOS2_START_ADD,R0
+
+DAI_HOSEI2_CTL100:
+	FAR_JSR	#_DAI_HOS2_SMPLING,R0
+DAI_HOSEI2_CTLEXT:
+
+
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	手動ﾀﾞｲﾊｲﾄ調整1開始	***
+;	***				***
+;	***********************************
+
+_DAI_HOS1_START:
+	SUB_START
+	MOV.L	#_RNA_ABS_POS,R1	;//ﾎﾞﾙｽﾀ面高さ(絶対位置)
+	MOV.L	@R1,R2			;
+	MOV.L	#_RNA_ABS_MD_DT0,R1	;Input R2
+	MOV.L	R2,@R1			;
+	MOV.L	#_RNA_ABS_MD_DT1,R1	;Input R2
+	MOV.L	R2,@R1			;
+
+;	=====================
+;	==== 2003-02-03 =====
+;	=====================
+;;;///なくてもいいのかな？/あったほうがいいのかな？
+;;;一応ないことの方が正しい?（補正されたまま）	FAR_JSR	#_DRVHOS_MEMORG_SET_INI,R0
+
+	FAR_JSR	#_DRVHOS_MEMORG_SET_INI,R0	;運転入の補正データはない方が正しいような気がする
+;	======================
+
+	MOV.L	#_DAI_HOSEI1_FLG,R1	;
+	MOV.W	@R1,R0			;
+	OR	#BIT0,R0
+	MOV.W	R0,@R1			;
+
+
+;	====2004-09-27(中型ではこれは落とさない)====
+	MOV.L	#_PAR_WTSEL_USE,R0		;
+	MOV.W	@R0,R0				;
+	CMP/EQ	#1,R0				;待機点選択を中型で認識
+	BT	DAI_HOS_ORIGIN_050		;
+
+	MOV.L	#_ORG_ELSE_NOMAL_FLG1,R1	;//原点動作以外動作禁止 0:異常 1:OK
+	XOR	R0,R0				;ﾀﾞｲﾊｲﾄ補正でOFF
+	MOV.W	R0,@R1				;
+	MEM1_BIT0_F_ADCLR MEM=(_SQ_CBWK_TOP+_WKSQCB206),LG=W,BIT=(~BIT6),WKRG1=R1,WKRG2=R4	;ﾓｰｼｮﾝ運転不可
+
+
+DAI_HOS_ORIGIN_050:
+
+
+	MOV.L	#_SET1_MRTION_SEL1,R1		;
+	MOV.W	@R1,R0				;
+	CMP/EQ	#_DMATH_CNTROT,R0		;回転
+	BT	DAI_HOS1_STR050			;回転
+
+	XOR	R0,R0				;
+	MOV.L	#_ORG_DND_NOMAL_FLG1,R1		;//0:異常 1:正常(段取寸動可能)
+	MEM1_BIT0_F_ADCLR MEM=(_SQ_CBWK_TOP+_WKSQCB206),LG=W,BIT=(~BIT10),WKRG1=R1,WKRG2=R4	;段取運転不可
+
+DAI_HOS1_STR050:
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	手動ﾀﾞｲﾊｲﾄ調整中	***
+;	***				***
+;	***********************************
+_DAI_HOS1_SMPLING:
+	SUB_START
+	MOV.L	#_RNA_ABS_POS,R1	;//ﾎﾞﾙｽﾀ面高さ(絶対位置)
+	MOV.L	@R1,R2			;
+	MOV.L	#_RNA_ABS_MD_DT1,R1	;Input R2
+	MOV.L	R2,@R1			;[これは意味無しと思う　2011-03-23のｺﾒﾝﾄです]
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	手動ﾀﾞｲﾊｲﾄ補正1終了	***
+;	***				***
+;	***********************************
+_DAI_HOS1_END:
+	SUB_START
+;	====== 追加 09-07 ===
+	MOV.L	#_RNA_ABS_MEMORG,R3	;(原点復帰で作成・１回転)
+	MOV.L	@R3,R2			;
+	MOV.L	#_RNA_ABS_MD_DT1,R1	;
+	MOV.L	@R1,R0			;
+	ADD	R0,R2			;
+	MOV.L	R2,@R3			;MEMORG
+	XOR	R0,R0			;
+	MOV.L	R0,@R1			;
+	MOV.L	#_RNA_ABS_MD_DT0,R1	;
+	MOV.L	R0,@R1			;
+;	=====================
+
+	MOV.L	#_DAI_HOSEI1_FLG,R1	;
+	MOV.W	@R1,R0			;
+	AND	#LOW ~BIT0,R0		;
+	MOV.W	R0,@R1			;
+
+;	-------------2011-03-22--------------
+	FAR_JSR	#_ORIGIN_POS_CHK_INI1,R0	;MEMORGを書き換えた場合に行う処理と思う
+
+	SUB_END
+	M_RTS
+
+
+;	***********************************************************
+;	***							***
+;	***							***
+;	***							***
+;	***	2011-03-21のクランク機構の手動のダイハイト調整	***
+;	***							***
+;	***							***
+;	***********************************************************
+;	flag:_DAI_HOSEI1_FLG
+;	trigger:_CB_SEQ_CB_SEL341;341.3[341.9　追加2014-06-03 ]
+;	演算結果
+;		調整中
+;		_RNA_ABS_MD2_C2
+;		_RNA_ABS_MD2_C1
+;	_RNA_ABS_MD_DT1
+;		調整完了
+;	_RNA_ABS_MEMORG
+;	_RNA_ABS_MD_DT1=0
+;	***************************************************
+;	***						***
+;	***	2011-03-22				***
+;	***	クランク機構のダイハイトの反映部	***
+;	***						***
+;	***************************************************
+;	使用せず
+_MAN_DAIHAI_HOS2_CAL:
+	SUB_START
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***	クランク機構手動ﾀﾞｲﾊｲﾄ開始演算	***
+;	***	2011-03-22			***
+;	*******************************************
+	.MACRO	MUL10_REG CALREG,WKREG
+	ADD	\CALREG,\CALREG		;*2
+	PUSH_REG1 \WKREG
+	MOV	\CALREG,\WKREG		;
+	ADD	\CALREG,\CALREG		;*4
+	ADD	\CALREG,\CALREG		;*8
+	ADD	\WKREG,\CALREG		;*10
+	POP_REG1 \WKREG
+	.ENDM
+
+	.MACRO	MEM_TO_MEM_4B	SRC,DST
+	MOV.L	#\SRC,R1
+	MOV.L	#\DST,R0
+	MOV.L	@R1+,R2
+	MOV.L	R2,@R0
+	.ENDM
+
+	.MACRO	MEM_TO_MEM_8B	SRC,DST
+	MOV.L	#\SRC,R1
+	MOV.L	#\DST,R0
+	MOV.L	@R1+,R2
+	MOV.L	R2,@R0
+	MOV.L	@R1+,R2
+	MOV.L	R2,@(4,R0)
+	.ENDM
+
+	.MACRO	MEM_TO_MEM_16B	SRC,DST
+	MOV.L	#\SRC,R1
+	MOV.L	#\DST,R0
+	MOV.L	@R1+,R2
+	MOV.L	R2,@R0
+	MOV.L	@R1+,R2
+	MOV.L	R2,@(4,R0)
+	MOV.L	@R1+,R2
+	MOV.L	R2,@(8,R0)
+	MOV.L	@R1+,R2
+	MOV.L	R2,@(12,R0)
+	.ENDM
+
+
+;θ,eが変数だが、θは起動時の角度
+
+
+_DAI_HOS2_START_ADD
+	SUB_START
+	XOR	R0,R0
+	MOV.L	#_RNA_ABS_MD2_C2,R1
+	MOV.L	R0,@R1
+
+;	--------C1=L-s-r-DH1 DH1=上限-2r 作成------------
+	MOV.L	#_SVP_VOLST_L,R1	;サーボパラメータBC　　ﾎﾞｽﾙﾀ面
+	MOV.L	@R1,R2			;
+	MUL10_REG R2,R0			;0.01mmdata-->0.001
+
+	MOV.L	#_SVP_SLIDE_S,R1	;サーボパラメータBD　　中心
+	MOV.L	@R1,R3			;
+	MUL10_REG R3,R0			;
+
+	SUB	R3,R2			;L-S
+	MOV.L	#_RNA_STLORK_HALF,R1	;//設定(半径)
+	MOV.L	@R1,R4			;
+	SUB	R4,R2			;L-S-r
+	MOV.L	#_RNA_ABS_MEMORG,R1	;上限
+	MOV.L	@R1,R5			;
+	SUB	R4,R5			;
+	SUB	R4,R5			;DH1=下限=上限-2r
+
+	SUB	R5,R2			;
+	MOV.L	#_RNA_ABS_MD2_C1,R1	;
+	MOV.L	R2,@R1			;C1=L-S-r-DH1　起動時に決定
+
+;	----- C2=√
+;		   {[-e+√(C1^2-R^2+R^2*COS^2)]^2
+;		      +R^2-R^2*COS^2}
+;
+;	WORK1=R*COSθ
+;	WORK2=(R*COSθ)^2=R^2*COS^2
+;	WORK3=R^2
+;	WORK4=C1^2
+;	WORK5=√(R^2*COS^2-R^2+C1^2)
+;
+;	WORK6=√(C1^2- R^2+R^2*COS^2)=√{C1^2 - (R^2-R^2*COS^2)}=√(C1^2-WORK5)
+;
+;	----- C2=√
+;		   {(-e+WORK6)^2
+;		      +WORK5}
+;
+;
+;	----WORK1=R*COSθ[4b]---
+	MOV.L	#_INC_LINK_NOWROT_OFSPLS_P,R1			;[[[実測 1REV PLS]]]
+	MOV.L	@R1,R2						;
+	FAR_JSR	#_OFSPLS_DIG_CHANGE1,R0				;PLS->DEG
+	FAR_JSR	#_COS_IN_DEG,R0					;COS 但し 1000000[ANS.R2]
+	MOV.L	#_RNA_STLORK_HALF,R0				;//設定(半径)
+	MOV.L	@R0,R1						;
+	MOV.L	#_COS_DIG1_UNIT_COEF,R0				;
+	MOV.L	@R0,R4						;1000000
+	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0			;r*cos(deg)=R2
+	MOV.L	#_DAIHAI_CALC_WORK1,R1				;WORK1=r*COSθ　1000.000mm
+	MOV.L	R2,@R1						;----ANS R2= R*COSθ---
+
+;	--WORK2= (R*COSθ)^2 8B ----
+	DMULS.L	R2,R2						;
+	MOV.L	#_DAIHAI_CALC_WORK2,R0				;
+	STS	MACH,R3
+	MOV.L	R3,@R0						;
+	STS	MACL,R4						;
+	MOV.L	R4,@(4,R0)					;
+
+;	--WORK3= R^2 8B ----------
+	MOV.L	#_RNA_STLORK_HALF,R0				;//設定(半径)
+	MOV.L	@R0,R2						;
+	DMULS.L	R2,R2						;
+	MOV.L	#_DAIHAI_CALC_WORK3,R0				;
+	STS	MACH,R3
+	MOV.L	R3,@R0						;
+	STS	MACL,R4						;
+	MOV.L	R4,@(4,R0)					;
+
+;	--WORK4= C1^2 8B ----------
+	MOV.L	#_RNA_ABS_MD2_C1,R0	;
+	MOV.L	@R0,R2						;
+	DMULS.L	R2,R2						;
+	MOV.L	#_DAIHAI_CALC_WORK4,R0				;
+	STS	MACH,R3
+	STS	MACL,R4						;
+	MOV.L	R3,@R0						;
+	MOV.L	R4,@(4,R0)					;WORK4=C1^2
+
+;	-- WORK5= (r*COSθ)^2-r^2+C1^2 = WORK2-WORK3+WORK4 8B---
+	MOV.L	#_DAIHAI_CALC_WORK2,R0				;
+	MOV.L	@R0+,R1
+	MOV.L	@R0,R2
+
+	MOV.L	#_DAIHAI_CALC_WORK3,R0				;
+	MOV.L	@R0+,R3
+	MOV.L	@R0,R4
+	SUB8B DT_REGH=R3,DT_REGL=R4,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;
+
+	MOV.L	#_DAIHAI_CALC_WORK4,R0					;C1^2
+	MOV.L	@R0+,R3
+	MOV.L	@R0,R4
+	ADD8B DT_REGH=R3,DT_REGL=R4,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;
+
+	MOV.L	#_DAIHAI_CALC_WORK5,R0				;
+	MOV.L	R1,@R0						;
+	MOV.L	R2,@(4,R0)					;
+
+
+;	-- WORK6=√ (r*COSθ)^2-r^2+C1^2 = WORK2-WORK3+WORK4 8B---
+	FAR_JSR	#_ROOT2_64R1R2_ANS_R2,R0			;
+	MOV.L	#_DAIHAI_CALC_WORK6,R0				;4BYTE
+	MOV.L	R2,@R0						;
+
+
+
+
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***	クランク機構手動ﾀﾞｲﾊｲﾄ調整中	***
+;	***	2011-03-22			***
+;	*******************************************
+;	1000.000mm*4=4000.000 余裕の4BYTE
+;	----- C2=√
+;		   {(-e+WORK6[4B])^2
+;		      +WORK5[8B]}
+
+_DAI_HOS2_SMPLING:
+	SUB_START
+
+	MOV.L	#_RNA_ABS_POS,R0			;//ﾎﾞﾙｽﾀ面高さ(絶対位置)
+	MOV.L	@R0,R2					;
+	MOV.L	#_RNA_ABS_MD_DT0,R0			;
+	MOV.L	@R0,R1					;
+	SUB	R1,R2					;"e"変化分
+
+	DMULS.L	R2,R2					;
+	STS	MACH,R3					;
+	STS	MACL,R4					;e^2
+
+	MOV.L	#_DAIHAI_CALC_WORK6,R0			;
+	MOV.L	@R0,R1					;
+	ADD	R2,R2					;
+	NEG	R2,R2					;-2e
+	DMULS.L	R1,R2					;-2e *WORK6 
+							;-2e*√(WORK5)
+	STS	MACH,R1					;
+	STS	MACL,R2					;
+	ADD8B DT_REGH=R3,DT_REGL=R4,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;-2e *WORK6 +e^2
+
+	MOV.L	#_DAIHAI_CALC_WORK4,R0					;C1^2
+	MOV.L	@R0+,R3							;
+	MOV.L	@R0,R4							;
+	ADD8B DT_REGH=R3,DT_REGL=R4,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;+C1^2
+
+	FAR_JSR	#_ROOT2_64R1R2_ANS_R2,R0				;
+
+	MOV.L	#_RNA_ABS_MD2_C2,R1					;
+	MOV.L	R2,@R1							;C2
+
+;	----------------------------------------
+	MOV.L	#_RNA_ABS_MD2_C2,R1
+	MOV.L	@R1,R0
+	MOV.L	#_RNA_ABS_MD2_C1,R1
+	MOV.L	@R1,R3
+	SUB	R0,R3			;
+	MOV.L	#_RNA_ABS_MD_DT1,R1	;
+	MOV.L	R3,@R1			;
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+	FAR_JSR	#_DEBUG_MONI_MOVE,R0
+	.AENDI
+	
+	SUB_END
+	M_RTS
+
+
+
+
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+_DEBUG_MONI_MOVE
+	SUB_START
+
+
+	MEM_TO_MEM_4B	SRC=_RNA_ABS_POS,DST=_DEBUG_MONI_ABS_POS	;
+	MEM_TO_MEM_4B	SRC=_RNA_ABS_MD_DT0,DST=_DEBUG_MONI_MD_DT0	;
+	MEM_TO_MEM_4B	SRC=_RNA_ABS_MD_DT1,DST=_DEBUG_MONI_MD_DT1	;
+
+	MEM_TO_MEM_4B	SRC=_RNA_ABS_MD2_C1,DST=_DEBUG_MONI_C1		;
+	MEM_TO_MEM_4B	SRC=_RNA_ABS_MD2_C2,DST=_DEBUG_MONI_C2		;
+
+
+	MEM_TO_MEM_8B	SRC=_DAIHAI_CALC_WORK1	,DST=_DEBUG_MONI_WORK1	;実質4B
+	MEM_TO_MEM_8B	SRC=_DAIHAI_CALC_WORK2	,DST=_DEBUG_MONI_WORK2	;実質8B
+	MEM_TO_MEM_8B	SRC=_DAIHAI_CALC_WORK3	,DST=_DEBUG_MONI_WORK3	;実質8B
+	MEM_TO_MEM_8B	SRC=_DAIHAI_CALC_WORK4	,DST=_DEBUG_MONI_WORK4	;実質8B
+	MEM_TO_MEM_8B	SRC=_DAIHAI_CALC_WORK5	,DST=_DEBUG_MONI_WORK5	;実質8B
+	MEM_TO_MEM_8B	SRC=_DAIHAI_CALC_WORK6	,DST=_DEBUG_MONI_WORK6	;実質4B
+
+	SUB_END
+	M_RTS
+
+	.AENDI
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;
+;
+;;
+;;_DAI_HOS2_START_ADD
+;;	SUB_START
+;;	XOR	R0,R0
+;;	MOV.L	#_RNA_ABS_MD2_C2,R1
+;;	MOV.L	R0,@R1
+;;
+;;;	--------C1=L-s-r-DH1 DH1=上限-2r 作成------------
+;;	MOV.L	#_SVP_VOLST_L,R1	;サーボパラメータBC　　ﾎﾞｽﾙﾀ面
+;;	MOV.L	@R1,R2			;
+;;	MUL10_REG R2,R0			;0.01mmdata-->0.001
+;;
+;;	MOV.L	#_SVP_SLIDE_S,R1	;サーボパラメータBD　　中心
+;;	MOV.L	@R1,R3			;
+;;	MUL10_REG R3,R0			;
+;;
+;;	SUB	R3,R2			;L-S
+;;	MOV.L	#_RNA_STLORK_HALF,R1	;//設定(半径)
+;;	MOV.L	@R1,R4			;
+;;	SUB	R4,R2			;L-S-r
+;;	MOV.L	#_RNA_ABS_MEMORG,R1	;上限
+;;	MOV.L	@R1,R5			;
+;;	SUB	R4,R5			;
+;;	SUB	R4,R5			;DH1=下限=上限-2r
+;;
+;;	SUB	R5,R2			;
+;;	MOV.L	#_RNA_ABS_MD2_C1,R1	;
+;;	MOV.L	R2,@R1			;C1=L-S-r-DH1　起動時に決定
+;;
+;;;	----- C2=√
+;;;		   {[-e+√(C1^2-R^2+R^2*COS^2)]^2
+;;;		      +R^2-R^2*COS^2}
+;;;
+;;;	 WORK1=R*COSθ
+;;;	 WORK2=(R*COSθ)^2=R^2*COS^2
+;;;	 WORK3=R^2
+;;;	 WORK4=C1^2
+;;;	*WORK5=R^2*COS^2-R^2+C1^2
+;;;	*WORK6=4R^2-4R^2･COS^2-2C1^2
+;;;	*WORK7=C1^4
+;;;
+;;;
+;;;	----WORK1=R*COSθ[4b]　使用しない[2013-09-30]---
+;;	MOV.L	#_INC_LINK_NOWROT_OFSPLS_P,R1			;[[[実測 1REV PLS]]]
+;;	MOV.L	@R1,R2						;
+;;	FAR_JSR	#_OFSPLS_DIG_CHANGE1,R0				;PLS->DEG
+;;	FAR_JSR	#_COS_IN_DEG,R0					;COS 但し 1000000[ANS.R2]
+;;	MOV.L	#_RNA_STLORK_HALF,R0				;//設定(半径)
+;;	MOV.L	@R0,R1						;
+;;	MOV.L	#_COS_DIG1_UNIT_COEF,R0				;
+;;	MOV.L	@R0,R4						;1000000
+;;	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0			;r*cos(deg)=R2
+;;	MOV.L	#_DAIHAI_CALC_WORK1,R1				;WORK1=r*COSθ　1000.000mm
+;;	MOV.L	R2,@R1						;----ANS R2= R*COSθ---
+;;
+;;;	--WORK2= (R*COSθ)^2 8B ----
+;;	DMULS.L	R2,R2						;
+;;	MOV.L	#_DAIHAI_CALC_WORK2,R0				;
+;;	STS	MACH,R3
+;;	MOV.L	R3,@R0						;
+;;	STS	MACL,R4						;
+;;	MOV.L	R4,@(4,R0)					;WORK2[8B]=(R*COSθ)^2
+;;
+;;;	--WORK3= R^2 8B ----------
+;;	MOV.L	#_RNA_STLORK_HALF,R0				;//設定(半径)
+;;	MOV.L	@R0,R2						;
+;;	DMULS.L	R2,R2						;
+;;	MOV.L	#_DAIHAI_CALC_WORK3,R0				;
+;;	STS	MACH,R3
+;;	MOV.L	R3,@R0						;
+;;	STS	MACL,R4						;
+;;	MOV.L	R4,@(4,R0)					;WORK3[8B]=R^2
+;;
+;;;	--WORK4= C1^2 8B ----------
+;;	MOV.L	#_RNA_ABS_MD2_C1,R0	;
+;;	MOV.L	@R0,R2						;
+;;	DMULS.L	R2,R2						;
+;;	MOV.L	#_DAIHAI_CALC_WORK4,R0				;
+;;	STS	MACH,R3
+;;	MOV.L	R3,@R0						;
+;;	STS	MACL,R4						;
+;;	MOV.L	R4,@(4,R0)					;WORK4[8B]=C1^2
+;;
+;;;	-- WORK5= (r*COSθ)^2-r^2+C1^2 = WORK2+WORK4(R3,R4)-WORK3 8B---
+;;	MOV.L	#_DAIHAI_CALC_WORK2,R0					;
+;;	MOV.L	@R0+,R1
+;;	MOV.L	@R0,R2
+;;	ADD8B DT_REGH=R3,DT_REGL=R4,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;WORK2[R~2･COS~2]+WORK4[C1^2]
+;;
+;;
+;;	MOV.L	#_DAIHAI_CALC_WORK3,R0				;[R^2]
+;;	MOV.L	@R0+,R3
+;;	MOV.L	@R0,R4
+;;	SUB8B DT_REGH=R3,DT_REGL=R4,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;R1,R2=R1,R2-R3,R4
+;;
+;;	MOV.L	#_DAIHAI_CALC_WORK5,R0				;
+;;	MOV.L	R1,@R0						;
+;;	MOV.L	R2,@(4,R0)					;
+;;
+;;
+;;;	-- WORK6= 
+;;	MOV.L	#_DAIHAI_CALC_WORK3,R0				;[R^2]
+;;	MOV.L	@R0+,R1
+;;	MOV.L	@R0,R2
+;;
+;;	MOV.L	#_DAIHAI_CALC_WORK2,R0				;[R^2*COS^2]
+;;	MOV.L	@R0+,R3
+;;	MOV.L	@R0,R4
+;;	SUB8B DT_REGH=R3,DT_REGL=R4,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;R1,R2=R1,R2-R3,R4
+;;;*4
+;;	ADD8B DT_REGH=R1,DT_REGL=R2,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;*2
+;;	ADD8B DT_REGH=R1,DT_REGL=R2,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;*4
+;;
+;;
+;;	MOV.L	#_DAIHAI_CALC_WORK4,R0					;C1^2
+;;	MOV.L	@R0+,R3							;
+;;	MOV.L	@R0,R4							;
+;;	ADD8B DT_REGH=R3,DT_REGL=R4,DT_ANS_REGH=R3,DT_ANS_REGL=R4	;*2･C1^2
+;;	
+;;
+;;	SUB8B DT_REGH=R3,DT_REGL=R4,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;R1,R2[4(R^2-R^2･COS^2)-2C1^2]
+;;	MOV.L	#_DAIHAI_CALC_WORK6,R0					;
+;;	MOV.L	R1,@R0							;
+;;	MOV.L	R2,@(4,R0)						;4(R^2-R^2･COS^2)-2C1^2
+;;
+;;
+;;
+;;	MOV.L	#_DAIHAI_CALC_WORK4,R0					;C1^2
+;;	MOV.L	@R0+,R1							;
+;;	MOV.L	@R0,R2							;
+;;	MOV	R1,R5
+;;	MOV	R2,R6
+;;	FAR_JSR	#_SMUL1_R1R2_MUL_R5R6_ANS,R0	;R1,R2*R5,R6 ANS=R5,R6,R1,R2
+;;
+;;	MOV.L	#_DAIHAI_CALC_WORK7X,R0		;C1^4
+;;	MOV.L	R5,@R0
+;;	MOV.L	R6,@(4,R0)
+;;	MOV.L	R1,@(8,R0)
+;;	MOV.L	R2,@(12,R0)
+;;
+;;	SUB_END
+;;	M_RTS
+;;
+;;
+;;;	*******************************************
+;;;	***					***
+;;;	***	クランク機構手動ﾀﾞｲﾊｲﾄ調整中	***
+;;;	***	2011-03-22			***
+;;;	*******************************************
+;;;	1000.000mm*4=4000.000 余裕の4BYTE
+;;;	----- C2=√
+;;;		   {(-e+WORK6[4B])^2
+;;;		      +WORK5[8B]}
+;;	.MACRO	MEM_TO_MEM_4B	SRC,DST
+;;	MOV.L	#\SRC,R1
+;;	MOV.L	#\DST,R0
+;;	MOV.L	@R1+,R2
+;;	MOV.L	R2,@R0
+;;	.ENDM
+;;
+;;	.MACRO	MEM_TO_MEM_8B	SRC,DST
+;;	MOV.L	#\SRC,R1
+;;	MOV.L	#\DST,R0
+;;	MOV.L	@R1+,R2
+;;	MOV.L	R2,@R0
+;;	MOV.L	@R1+,R2
+;;	MOV.L	R2,@(4,R0)
+;;	.ENDM
+;;
+;;	.MACRO	MEM_TO_MEM_16B	SRC,DST
+;;	MOV.L	#\SRC,R1
+;;	MOV.L	#\DST,R0
+;;	MOV.L	@R1+,R2
+;;	MOV.L	R2,@R0
+;;	MOV.L	@R1+,R2
+;;	MOV.L	R2,@(4,R0)
+;;	MOV.L	@R1+,R2
+;;	MOV.L	R2,@(8,R0)
+;;	MOV.L	@R1+,R2
+;;	MOV.L	R2,@(12,R0)
+;;	.ENDM
+;;
+;;
+;;_DAI_HOS2_SMPLING:
+;;	SUB_START
+;;
+;;	MOV.L	#_RNA_ABS_POS,R0			;//ﾎﾞﾙｽﾀ面高さ(絶対位置)
+;;	MOV.L	@R0,R2					;
+;;	MOV.L	#_RNA_ABS_MD_DT0,R0			;
+;;	MOV.L	@R0,R1					;
+;;	SUB	R1,R2					;"e"変化分 e=RNA-MD_DT0
+;;	DMULS.L	R2,R2					;e^2
+;;	STS	MACH,R1
+;;	STS	MACL,R2					;
+;;	MOV.L	#_DAIHAI_CALC_WORK8,R0			;e^2
+;;	MOV.L	R1,@R0					;
+;;	MOV.L	R2,@(4,R0)				;
+;;
+;;
+;;	MOV.L	#_DAIHAI_CALC_WORK6,R0					;
+;;	MOV.L	@R0,R5							;
+;;	MOV.L	@(4,R0),R6						;
+;;	ADD8B DT_REGH=R1,DT_REGL=R2,DT_ANS_REGH=R5,DT_ANS_REGL=R6	;e^2+WORK6
+;;
+;;	FAR_JSR	#_SMUL1_R1R2_MUL_R5R6_ANS,R0	;R1,R2*R5,R6 ANS=R5,R6,R1,R2 e^2*(WORK6+e^2)
+;;
+;;	MOV.L	#_DAIHAI_CALC_WORK7X,R0					;
+;;	CLRT
+;;	MOV.L	@(12,R0),R4			;
+;;	ADDC	R4,R2				
+;;	MOV.L	@(8,R0),R4			;
+;;	ADDC	R4,R1				
+;;	MOV.L	@(4,R0),R4			;
+;;	ADDC	R4,R6				;
+;;	MOV.L	@R0,R4				;
+;;	ADDC	R4,R5				;分子 e^2*(WORK6+e^2)+C1^2
+;;
+;;	MOV.L	#_DAIHAI_CALC_WORK9X,R0		;ﾃﾞﾊﾞｯｸ用
+;;	MOV.L	R5,@R0
+;;	MOV.L	R6,@(4,R0)
+;;	MOV.L	R1,@(8,R0)
+;;	MOV.L	R2,@(12,R0)
+;;
+;;	MOV.L	#_DAIHAI_CALC_WORK5,R0		;
+;;	MOV.L	@R0+,R3				;
+;;	MOV.L	@R0,R4				;
+;;
+;;	FAR_JSR	#_DIVS1_16B_DIV_8B_ANS_8B,R0				;R5,R6,R1,R2/R3,R4 ANS=R1,R2
+;;
+;;	MOV.L	#_DAIHAI_CALC_WORK10,R0		;
+;;	MOV.L	R1,@R0				;
+;;	MOV.L	R2,@(4,R0)			;ﾃﾞﾊﾞｯｸ用
+;;	
+;;
+;;	FAR_JSR	#_ROOT2_64R1R2_ANS_R2,R0				;
+;;	SHAR	R2
+;;
+;;	MOV.L	#_RNA_ABS_MD2_C2,R1					;
+;;	MOV.L	R2,@R1							;C2
+;;
+;;;	----------------------------------------
+;;	MOV.L	#_RNA_ABS_MD2_C2,R1
+;;	MOV.L	@R1,R0
+;;	MOV.L	#_RNA_ABS_MD2_C1,R1
+;;	MOV.L	@R1,R3
+;;	SUB	R0,R3			;
+;;	MOV.L	#_RNA_ABS_MD_DT1,R1	;
+;;	MOV.L	R3,@R1			;
+;;
+;;
+;;;	========== ﾁｪｯｸ電卓 8B*8B=16B =============
+;;;;;ﾃﾞﾊﾞｯｸ用	MOV.L	#_DAIHAI_CALC_WORK11,R0;//DEBUG
+;;;;;ﾃﾞﾊﾞｯｸ用	MOV.L	@R0+,R1
+;;;;;ﾃﾞﾊﾞｯｸ用	MOV.L	@R0+,R2
+;;;;;ﾃﾞﾊﾞｯｸ用
+;;;;;ﾃﾞﾊﾞｯｸ用	MOV.L	#_DAIHAI_CALC_WORK12,R0;//DEBUG
+;;;;;ﾃﾞﾊﾞｯｸ用	MOV.L	@R0+,R5
+;;;;;ﾃﾞﾊﾞｯｸ用	MOV.L	@R0+,R6
+;;;;;ﾃﾞﾊﾞｯｸ用
+;;;;;ﾃﾞﾊﾞｯｸ用	FAR_JSR	#_SMUL1_R1R2_MUL_R5R6_ANS,R0	;R1,R2*R5,R6 ANS=R5,R6,R1,R2 e^2*(WORK6+e^2)
+;;;;;ﾃﾞﾊﾞｯｸ用
+;;;;;ﾃﾞﾊﾞｯｸ用	MOV.L	#_DAIHAI_CALC_WORK13X,R0	;
+;;;;;ﾃﾞﾊﾞｯｸ用	MOV.L	R5,@R0
+;;;;;ﾃﾞﾊﾞｯｸ用	MOV.L	R6,@(4,R0)
+;;;;;ﾃﾞﾊﾞｯｸ用	MOV.L	R1,@(8,R0)
+;;;;;ﾃﾞﾊﾞｯｸ用	MOV.L	R2,@(12,R0)
+
+;;	SUB_END
+;;	M_RTS
+
+
+
+
+
+
+;;
+;;_DAI_HOS2_START_ADD
+;;	SUB_START
+;;	XOR	R0,R0
+;;	MOV.L	#_RNA_ABS_MD2_C2,R1
+;;	MOV.L	R0,@R1
+;;
+;;;	--------C1=L-s-r-DH1 DH1=上限-2r 作成------------
+;;	MOV.L	#_SVP_VOLST_L,R1	;サーボパラメータBC　　ﾎﾞｽﾙﾀ面
+;;	MOV.L	@R1,R2			;
+;;	MUL10_REG R2,R0			;0.01mmdata-->0.001
+;;
+;;	MOV.L	#_SVP_SLIDE_S,R1	;サーボパラメータBD　　中心
+;;	MOV.L	@R1,R3			;
+;;	MUL10_REG R3,R0			;
+;;
+;;	SUB	R3,R2			;L-S
+;;	MOV.L	#_RNA_STLORK_HALF,R1	;//設定(半径)
+;;	MOV.L	@R1,R4			;
+;;	SUB	R4,R2			;L-S-r
+;;	MOV.L	#_RNA_ABS_MEMORG,R1	;上限
+;;	MOV.L	@R1,R5			;
+;;	SUB	R4,R5			;
+;;	SUB	R4,R5			;DH1=下限=上限-2r
+;;
+;;	SUB	R5,R2			;
+;;	MOV.L	#_RNA_ABS_MD2_C1,R1	;
+;;	MOV.L	R2,@R1			;C1=L-S-r-DH1　起動時に決定
+;;
+;;;	----- C2=√
+;;;		   {[-e+√(C1^2-R^2+R^2*COS^2)]^2
+;;;		      +R^2-R^2*COS^2}
+;;;
+;;;	WORK1=R*COSθ
+;;;	WORK2=(R*COSθ)^2=R^2*COS^2
+;;;	WORK3=R^2
+;;;	WORK4=C1^2
+;;;	WORK5=R^2-R^2*COS^2
+;;;	WORK6=√(C1^2- R^2+R^2*COS^2)=√{C1^2 - (R^2-R^2*COS^2)}=√(C1^2-WORK5)
+;;;
+;;;	----- C2=√
+;;;		   {(-e+WORK6)^2
+;;;		      +WORK5}
+;;;
+;;;
+;;;	----WORK1=R*COSθ[4b]---
+;;	MOV.L	#_INC_LINK_NOWROT_OFSPLS_P,R1			;[[[実測 1REV PLS]]]
+;;	MOV.L	@R1,R2						;
+;;	FAR_JSR	#_OFSPLS_DIG_CHANGE1,R0				;PLS->DEG
+;;	FAR_JSR	#_COS_IN_DEG,R0					;COS 但し 1000000[ANS.R2]
+;;	MOV.L	#_RNA_STLORK_HALF,R0				;//設定(半径)
+;;	MOV.L	@R0,R1						;
+;;	MOV.L	#_COS_DIG1_UNIT_COEF,R0				;
+;;	MOV.L	@R0,R4						;1000000
+;;	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0			;r*cos(deg)=R2
+;;	MOV.L	#_DAIHAI_CALC_WORK1,R1				;WORK1=r*COSθ　1000.000mm
+;;	MOV.L	R2,@R1						;----ANS R2= R*COSθ---
+;;
+;;;	--WORK2= (R*COSθ)^2 8B ----
+;;	DMULS.L	R2,R2						;
+;;	MOV.L	#_DAIHAI_CALC_WORK2,R0				;
+;;	STS	MACH,R3
+;;	MOV.L	R3,@R0						;
+;;	STS	MACL,R4						;
+;;	MOV.L	R4,@(4,R0)					;
+;;
+;;;	--WORK3= R^2 8B ----------
+;;	MOV.L	#_RNA_STLORK_HALF,R0				;//設定(半径)
+;;	MOV.L	@R0,R2						;
+;;	DMULS.L	R2,R2						;
+;;	MOV.L	#_DAIHAI_CALC_WORK3,R0				;
+;;	STS	MACH,R3
+;;	MOV.L	R3,@R0						;
+;;	STS	MACL,R4						;
+;;	MOV.L	R4,@(4,R0)					;
+;;
+;;;	--WORK4= C1^2 8B ----------
+;;	MOV.L	#_RNA_ABS_MD2_C1,R0	;
+;;	MOV.L	@R0,R2						;
+;;	DMULS.L	R2,R2						;
+;;	MOV.L	#_DAIHAI_CALC_WORK4,R0				;
+;;	STS	MACH,R3
+;;	MOV.L	R3,@R0						;
+;;	STS	MACL,R4						;
+;;	MOV.L	R4,@(4,R0)					;WORK4=C1^2
+;;
+;;;	-- WORK5= r^2-(r*COSθ)^2 = WORK3-WORK2 8B---
+;;	MOV.L	#_DAIHAI_CALC_WORK3,R0				;
+;;	MOV.L	@R0+,R1
+;;	MOV.L	@R0,R2
+;;
+;;	MOV.L	#_DAIHAI_CALC_WORK2,R0				;
+;;	MOV.L	@R0+,R3
+;;	MOV.L	@R0,R4
+;;	SUB8B DT_REGH=R3,DT_REGL=R4,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;
+;;
+;;	MOV.L	#_DAIHAI_CALC_WORK5,R0				;
+;;	MOV.L	R1,@R0						;
+;;	MOV.L	R2,@(4,R0)					;
+;;
+;;;	-- WORK6= √(C1^2- R^2+R^2*COS^2)=√{C1^2 - (R^2-R^2*COS^2)}=√(C1^2-WORK5) =4B
+;;	MOV.L	#_DAIHAI_CALC_WORK4,R0					;
+;;	MOV.L	@R0+,R3							;
+;;	MOV.L	@R0,R4							;
+;;	SUB8B DT_REGH=R1,DT_REGL=R2,DT_ANS_REGH=R3,DT_ANS_REGL=R4	;C1^2-WORK5=R3,R4
+;;	MOV	R3,R1
+;;	MOV	R4,R2
+;;	FAR_JSR	#_ROOT2_64R1R2_ANS_R2,R0				;
+;;
+;;	MOV.L	#_DAIHAI_CALC_WORK6,R0				;
+;;	MOV.L	R2,@R0						;
+;;
+;;
+;;	SUB_END
+;;	M_RTS
+;;
+;;
+;;;	*******************************************
+;;;	***					***
+;;;	***	クランク機構手動ﾀﾞｲﾊｲﾄ調整中	***
+;;;	***	2011-03-22			***
+;;;	*******************************************
+;;;	1000.000mm*4=4000.000 余裕の4BYTE
+;;;	----- C2=√
+;;;		   {(-e+WORK6[4B])^2
+;;;		      +WORK5[8B]}
+;;
+;;_DAI_HOS2_SMPLING:
+;;	SUB_START
+;;
+;;	MOV.L	#_RNA_ABS_POS,R0			;//ﾎﾞﾙｽﾀ面高さ(絶対位置)
+;;	MOV.L	@R0,R2					;
+;;	MOV.L	#_RNA_ABS_MD_DT0,R0			;
+;;	MOV.L	@R0,R1					;
+;;	SUB	R1,R2					;"e"変化分
+;;	NEG	R2,R2					;
+;;
+;;	MOV.L	#_DAIHAI_CALC_WORK6,R0				;
+;;	MOV.L	@R0,R1						;
+;;	ADD	R1,R2						;-e+WORK6
+;;	DMULS.L	R2,R2						;
+;;	STS	MACH,R1
+;;	STS	MACL,R2						;
+;;
+;;	MOV.L	#_DAIHAI_CALC_WORK5,R0					;
+;;	MOV.L	@R0+,R3							;
+;;	MOV.L	@R0,R4							;
+;;	ADD8B DT_REGH=R3,DT_REGL=R4,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;
+;;
+;;	FAR_JSR	#_ROOT2_64R1R2_ANS_R2,R0				;
+;;
+;;	MOV.L	#_RNA_ABS_MD2_C2,R1					;
+;;	MOV.L	R2,@R1							;C2
+;;
+;;;	----------------------------------------
+;;	MOV.L	#_RNA_ABS_MD2_C2,R1
+;;	MOV.L	@R1,R0
+;;	MOV.L	#_RNA_ABS_MD2_C1,R1
+;;	MOV.L	@R1,R3
+;;	SUB	R0,R3			;
+;;	MOV.L	#_RNA_ABS_MD_DT1,R1	;
+;;	MOV.L	R3,@R1			;
+;;
+;;
+;;	SUB_END
+;;	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	運転ダイハイト補正	***
+;	***	ｻﾝﾌﾟﾘﾝｸﾞｲﾆｼｬﾙ		***
+;	***				***
+;	***********************************
+	.INCLUDE	"ssa_dai1.inc"		; //
+;;2003-07-09	.INCLUDE	"ssa_dai1.inc"		; //==>ssa_dai1_a.inc
+;;2003-02	.INCLUDE	"ssa_dai2.inc"		; //旧ｿﾌﾄ
+
+;	***********************************
+;	***				***
+;	***	荷重比較		***
+;	***	2004-07-06		***
+;	***				***
+;	***********************************
+	.INCLUDE	"ssa_kjyu.inc"		; //
+
+;	***************************
+;	***			***
+;	***			***
+;	***			***
+;	***************************
+	.EXPORT	_CYCLE_TIME_REFLASH_START
+	.EXPORT	_CYCLE_TIME_REFLASH_END
+	.EXPORT	_CYCLE_TIME_REFLASH_CLR
+
+_CYCLE_TIME_REFLASH_START:
+	SUB_START
+	MOV.L	#_CYCLE_TIME_FLG,R1		;//(ﾌﾗｸﾞON)
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON CYCLE_TIME_REFSTR_050	;
+	MOV.L	#_CYCLE_TIME_DAT,R1		;//(起動時0　ﾌﾗｸﾞON中ｶｳﾝﾄ　ﾌﾗｸﾞOFF中保持)
+	XOR	R2,R2				;
+	MOV.L	R2,@R1				;
+
+	MOV.L	#_CYCLE_TIME_FLG,R1		;//(ﾌﾗｸﾞON)
+	MOV.W	#BIT0,R0			;
+	MOV.W	R0,@R1				;
+CYCLE_TIME_REFSTR_050:
+	SUB_END
+	M_RTS
+
+_CYCLE_TIME_REFLASH_END:
+	SUB_START
+
+	MOV.L	#_CYCLE_TIME_FLG,R1		;//(ﾌﾗｸﾞON)
+	XOR	R2,R2				;
+	MOV.W	@R1,R0				;
+	MOV.W	R2,@R1				;
+
+	TST	#BIT0,R0			;始まっていたか?
+	TST_BIT_OF CYCLE_TIME_REFEND_050	;
+
+	MOV.L	#_CYCLE_TIME_DAT,R1;//(起動時0　ﾌﾗｸﾞON中ｶｳﾝﾄ　ﾌﾗｸﾞOFF中保持)
+	MOV.L	@R1,R2			;
+	MOV.L	#_CYCLE_TIME_PV,R1	;
+	MOV.L	R2,@R1			;
+
+	FAR_JSR	#_DISP_KAJYUU_RPM_DAT_SET,R0	;2011-01-18(2010-12-27)W
+	
+CYCLE_TIME_REFEND_050:
+	SUB_END
+	M_RTS
+
+_CYCLE_TIME_REFLASH_CLR:
+	SUB_START
+	XOR	R0,R0
+	MOV.L	#_CYCLE_TIME_FLG,R1	;//(ﾌﾗｸﾞON)
+	MOV.W	R0,@R1
+	MOV.L	#_CYCLE_TIME_DAT,R1;//(起動時0　ﾌﾗｸﾞON中ｶｳﾝﾄ　ﾌﾗｸﾞOFF中保持)
+	MOV.L	R0,@R1			;
+	MOV.L	#_CYCLE_TIME_PV,R1	;
+	MOV.L	R0,@R1			;
+
+	SUB_END
+	M_RTS
+
+
+
+;	***********************************
+;	***				***
+;	***				***
+;	***				***
+;	***********************************
+	.EXPORT	_DAI_POS_ERR_POSCHK	;ctrl
+_DAI_POS_ERR_POSCHK:
+	SUB_START
+	XOR	R7,R7				;
+;;;	MOV.L	#_CB_SEQ_CB_SEL341,R1		;341
+;;;	MOV.W	@R1,R0				;
+;;;	TST	#BIT4,R0			;
+	MOV.L	#_ORGIN_END_FLG1,R1		;//電源投入の１回ON:OFFはない
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF DAI_POS_ERR_POSCK100		;(OFF EDGEの時の方がいい)
+
+	MOV.L	#_PVX_DAI_POS1,R1		;ﾀﾞｲﾊｲﾄ表示値・制御値
+	MOV.L	@R1,R2				;SAVE R2 -->NEXT CALC USED
+;;;;	MOV.L	#_SET1_RNAPOS_MAXP,R1		;
+	MOV.L	#_SETX_DAIPOS_MAXP,R1		;//	4	;ダイハイト上限
+
+	MOV.L	@R1,R5				;
+;;;;	MOV.L	#_SET1_RNAPOS_MINP,R1		;
+	MOV.L	#_SETX_DAIPOS_MINP,R1		;//	4	;ダイハイト下限
+	MOV.L	@R1,R6				;
+
+	CMP/GE	R2,R5				;
+	BT	DAI_POS_ERR_POSCK050		;
+;;	MOV.W	#BIT12,R4			;R5 < R2 THEN OVER
+	MOV.W	#BIT13,R4			;R5 < R2 THEN OVER
+	OR	R4,R7				;
+DAI_POS_ERR_POSCK050:
+
+	CMP/GE	R6,R2				;
+	BT	DAI_POS_ERR_POSCK100		;
+;;	MOV.W	#BIT13,R4			;R2 < R6 THEN OVER
+	MOV.W	#BIT12,R4			;R2 < R6 THEN OVER
+	OR	R4,R7				;
+DAI_POS_ERR_POSCK100:				;
+
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB211,R4	;
+	MOV.W	@R4,R0				;
+	MOV.W	#LWORD ~(BIT12+BIT13),R1	;
+	AND	R1,R0				;12,13 CLR
+	OR	R7,R0
+	MOV.W	R0,@R4				;
+
+
+;	===================================
+;	===	2002-12-16 ﾀﾞｲﾊｲﾄ比較	===
+;	===================================
+	XOR	R6,R6
+
+	MOV.L	#_ORGIN_END_FLG1,R1		;//電源投入の１回ON:OFFはない
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF DAI_POS_CMP_POSCK200		;(OFF EDGEの時の方がいい)
+
+;;2003-09-01	MOV.L	#_PVX_DAI_POS1,R1					;ﾀﾞｲﾊｲﾄ表示値・制御値
+;;2003-09-01	MOV.L	@R1,R2							;SAVE R2 -->NEXT CALC USED
+
+	MOV.L	#_PRD_DAI_POS1,R1		;2003-09-01 生産下限との比較に変更
+	MOV.L	@R1,R2				;2003-09-01 生産下限
+
+
+	MOV.L	#_SET1_DAIORG0_CMP3DN,R5				;ダイハイト()
+	MOV.L	@R5,R4
+	REG1_CMP_REG2_ROTL REG1=R4,CF=GT,REG2=R2,ANS_REG=R6		;SV_MIN(R4) > PV(R2)
+
+	MOV.L	#_SET1_DAIORG0_CMP3UP,R5				;
+	MOV.L	@R5,R4
+	REG1_CMP_REG2_ROTL REG1=R2,CF=GT,REG2=R4,ANS_REG=R6		;PV(R2) > SV_MAX(R4)
+
+;BIT1,BIT0 ==>BIT3,BIT2
+	SHLL2	R6				;BIT3,BIT2
+
+;;	.AIF	_PRG_CHG20030127 EQ _COMPILE_YES	;ﾌﾟﾛｸﾞﾗﾑ変更箇所(反転仕様以外の標準に入れる変更)
+	MOV.L	#_PVX_DAI_POS1,R1					;ﾀﾞｲﾊｲﾄ表示値・制御値
+	MOV.L	@R1,R2							;SAVE R2 -->NEXT CALC USED
+	MOV.L	#_SET1_DAIORG0_CMP4DN,R5				;ダイハイト()
+	MOV.L	@R5,R3
+	MOV.L	#_SET1_DAIORG0_CMP4UP,R5				;
+	MOV.L	@R5,R4
+	MAX_MIN_RG_CMP4B DT_REG=R2,MAXRG=R4,MINRG=R3			;
+	BT	DAI_POS_CMP_POSCK200					;T=1 範囲内 SEQ=0
+	MOV.W	#BIT14,R1						;
+	OR	R1,R6							;BIT14 SET
+;;	.AENDI
+
+
+
+
+DAI_POS_CMP_POSCK200:
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB211,R4	;
+	MOV.W	@R4,R0				;
+;;	.AIF	_PRG_CHG20030127 EQ _COMPILE_YES	;ﾌﾟﾛｸﾞﾗﾑ変更箇所(反転仕様以外の標準に入れる変更)
+;;	.AENDI
+;;	MOV.W	#(BIT3+BIT2),R1			;
+	MOV.W	#(BIT14+BIT3+BIT2),R1		;
+	AND	R1,R6				;
+	NOT	R1,R1				;
+	AND	R1,R0				;
+	OR	R6,R0				;
+	MOV.W	R0,@R4				;
+
+
+	SUB_END
+	M_RTS
+
+
+;	==== 原点だし完了、非常停止時==
+_ORG_END_SIG_CLR:
+	SUB_START
+;	======= 原点復帰未完了==================
+	MEM1_BIT0_F_ADCLR MEM=(_SQ_CBWK_TOP+_WKSQCB206),LG=W,BIT=(~BIT4),WKRG1=R1,WKRG2=R4
+;	=========================================
+	SUB_END
+	M_RTS
+;	***********************************
+;	***				***
+;	***	過負荷異常検出		***
+;	***				***
+;	***********************************
+;	InputR2
+;	小さければ正常
+	.MACRO	CMP_TIM_CHK1 CMPDTSV,SVTIM,PVTIM,UPBIT
+	MOV.L	#\CMPDTSV,R4	;
+	MOV.W	@R4,R3		;
+	TST	R3,R3		;比較電圧=0で異常を見ない
+	TST_BIT_OF JMP2\@	;data = 0 異常を見ない
+
+	CMP/GT	R3,R2		;SV < PV(異常状態)
+	BT	JMP1\@		;
+	MOV.L	#\SVTIM,R4	;
+	MOV.W	@R4,R3		;
+	MOV.L	#\PVTIM,R4	;
+	MOV.W	R3,@R4		;
+JMP1\@:
+	MOV.L	#\PVTIM,R4	;
+	MOV.W	@R4,R3		;
+	TST	R3,R3		;
+	TST_BIT_ON JMP2\@	;
+	MOV.W	#\UPBIT,R4	;
+	OR	R4,R7		;
+JMP2\@:
+	.ENDM
+
+	.EXPORT		_MOTOR_AMP_CMP		;ssa_else.src
+;;	.IMPORT		_PV_AD_DATA		; 移動平均とった後の0~1000 DATA
+_MOTOR_AMP_CMP:		;ssa_else.src
+	SUB_START
+
+;;2006-09-30	MOV.L	#_PV_AD_DATA,R1			;
+;;2006-09-30	MOV.W	@R1,R2				;
+
+	FAR_JSR	#_PV_AD_CHAGE_UNIT,R0		;
+	MOV.L	#_WPV_ABS_AD_DATA,R1		;
+	MOV.W	@R1,R2				;
+
+
+
+	XOR	R7,R7				;"SEQ BIT"
+;;	MOV.L	#_PVX_IAMP_VLT,R4		;//0~10.0 10.0=10V()
+;;	MOV.W	@R4,R2				;設定単位と同一
+	CMP_TIM_CHK1 CMPDTSV=_SVP_AMPERR_VLT1,SVTIM=_SVP_AMPERR_TIM1,PVTIM=_PVX_AMPERR_TIM1,UPBIT=BIT0
+	CMP_TIM_CHK1 CMPDTSV=_SVP_AMPERR_VLT2,SVTIM=_SVP_AMPERR_TIM2,PVTIM=_PVX_AMPERR_TIM2,UPBIT=BIT1
+	CMP_TIM_CHK1 CMPDTSV=_SVP_AMPERR_VLT3,SVTIM=_SVP_AMPERR_TIM3,PVTIM=_PVX_AMPERR_TIM3,UPBIT=BIT2
+;	========================================
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB212,R4	;
+	MOV.W	@R4,R0				;
+	MOV.W	#LWORD ~(BIT2+BIT1+BIT0),R1	;
+	AND	R1,R0				;
+	OR	R7,R0				;
+	MOV.W	R0,@R4				;
+;	=========================================
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***		2014-10-12		***
+;	***					***
+;	*******************************************
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+;	-------------- 2014-10-12 比較----------
+
+_AD_CH234_CMP:
+	SUB_START
+
+	XOR	R7,R7
+
+
+;;;;2015-08-12	MOV.L	#_CPUD_PV_AD4,R1				;移動平均8回後
+	MOV.L	#_PVX_CPUD_AD4,R1				;補正有り 2015-08-12
+	MOV.W	@R1,R2						;
+	MOV.L	#(_AD4_CMP2-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+	MOV.W	@R1,R3						;
+	REG1_CMP_REG2_ROTL REG1=R2,CF=GE,REG2=R3,ANS_REG=R7	;R2:PV >= R3:SV THEN 1
+
+	MOV.L	#(_AD4_CMP1-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+	MOV.W	@R1,R3						;
+	REG1_CMP_REG2_ROTL REG1=R2,CF=GE,REG2=R3,ANS_REG=R7	;R2:PV >= R3:SV THEN 1
+
+
+;;;;2015-08-12	MOV.L	#_CPUD_PV_AD3,R1				;移動平均8回後
+	MOV.L	#_PVX_CPUD_AD3,R1				;補正有り 2015-08-12
+	MOV.W	@R1,R2						;
+	MOV.L	#(_AD3_CMP2-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+	MOV.W	@R1,R3						;
+	REG1_CMP_REG2_ROTL REG1=R2,CF=GE,REG2=R3,ANS_REG=R7	;R2:PV >= R3:SV THEN 1
+
+	MOV.L	#(_AD3_CMP1-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+	MOV.W	@R1,R3						;
+	REG1_CMP_REG2_ROTL REG1=R2,CF=GE,REG2=R3,ANS_REG=R7	;R2:PV >= R3:SV THEN 1
+
+;;;;2015-08-12	MOV.L	#_CPUD_PV_AD2,R1				;移動平均8回後
+	MOV.L	#_PVX_CPUD_AD2,R1				;補正有り 2015-08-12
+	MOV.W	@R1,R2						;
+	MOV.L	#(_AD2_CMP1-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+	MOV.W	@R1,R3						;
+	REG1_CMP_REG2_ROTL REG1=R2,CF=GE,REG2=R3,ANS_REG=R7	;R2:PV >= R3:SV THEN 1
+
+	SHLL8	R7						;
+	MOV.W	#(BIT12+BIT11+BIT10+BIT9+BIT8),R4
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB227,R1	;
+	MOV.W	@R1,R0				;
+	AND	R4,R7				;
+	NOT	R4,R4				;
+	AND	R4,R0				;
+	OR	R7,R0				;
+	MOV.W	R0,@R1				;
+
+
+	SUB_END
+	M_RTS
+
+	.AENDI		;CPUA
+
+
+;	*******************************************
+;	***					***
+;	***		2015-08-12		***
+;	***					***
+;	*******************************************
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+;	-------------- 2014-10-12 比較----------
+_AD_CH234_CHANGE:
+	SUB_START
+
+	MOV.L	#_CPUD_PV_AD4,R1				;移動平均8回後
+	MOV.W	@R1,R2						;
+
+	MOV.L	#(_AD4_GAIN-_CB_SYS_PARAM000+_W_PARAM_TOP),R0	;
+	MOV.W	@R0,R1						;符号付き
+	MOV.W	#D'10000,R4					;GAIN-LATE
+	MOV.L	#(_AD4_OFS-_CB_SYS_PARAM000+_W_PARAM_TOP),R0	;
+	MOV.W	@R0,R5						;符号付き
+	FAR_JSR	#_AD234_GAIN_OFS_CALC,R0				;
+	MOV.L	#_PVX_CPUD_AD4,R1				;
+	MOV.W	R2,@R1						;
+
+
+	MOV.L	#_CPUD_PV_AD3,R1				;移動平均8回後
+	MOV.W	@R1,R2						;
+	MOV.L	#(_AD3_GAIN-_CB_SYS_PARAM000+_W_PARAM_TOP),R0	;
+	MOV.W	@R0,R1						;符号付き
+	MOV.W	#D'10000,R4					;GAIN-LATE
+	MOV.L	#(_AD3_OFS-_CB_SYS_PARAM000+_W_PARAM_TOP),R0	;
+	MOV.W	@R0,R5						;符号付き
+	FAR_JSR	#_AD234_GAIN_OFS_CALC,R0				;
+	MOV.L	#_PVX_CPUD_AD3,R1				;
+	MOV.W	R2,@R1						;
+
+	MOV.L	#_CPUD_PV_AD2,R1				;移動平均8回後
+	MOV.W	@R1,R2						;
+	MOV.L	#(_AD2_GAIN-_CB_SYS_PARAM000+_W_PARAM_TOP),R0	;
+	MOV.W	@R0,R1						;符号付き
+	MOV.W	#D'10000,R4					;GAIN-LATE
+	MOV.L	#(_AD2_OFS-_CB_SYS_PARAM000+_W_PARAM_TOP),R0	;
+	MOV.W	@R0,R5						;符号付き
+	FAR_JSR	#_AD234_GAIN_OFS_CALC,R0				;
+	MOV.L	#_PVX_CPUD_AD2,R1				;
+	MOV.W	R2,@R1						;
+
+	SUB_END
+	M_RTS
+
+;
+;	PV-AD*(GAIN+10000)/10000 + OFS
+;	GAIN +/- 10000
+_AD234_GAIN_OFS_CALC
+	SUB_START
+	ADD	R4,R1						;
+	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0			;R2*(R1/R4)
+	ADD	R5,R2						;
+	CMP/PZ	R2						;
+	BT	AD234_GAIN_OFSCAL100				;
+	XOR	R2,R2						;
+AD234_GAIN_OFSCAL100
+
+	SUB_END
+	M_RTS
+
+	.AENDI		;CPUA
+
+
+;	*******************************************
+;	***	ｲﾝｸﾘﾒﾝﾀﾙ/ﾘﾆｱｽｹｰﾙ動作ﾁｪｯｸ	***
+;	*******************************************
+	.EXPORT	_MOTOR_MOV_STOP_CHK
+_MOTOR_MOV_STOP_CHK:
+	SUB_START
+;	====
+	MOV.L	#_PVCK_STOP_SMPTIM,R5	;//ﾘﾆｱｾﾝｻ/ｴﾝｺｰﾀﾞの停止判定用ｻﾝﾌﾟﾘﾝｸﾞ時間 200msec
+	MOV.W	@R5,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF MOTOR_MOV_STOPCHK_050	;
+	ADD	#-1,R0				;
+	MOV.W	R0,@R5				;
+	M_BRA	MOTOR_MOV_STOPCHK_500		;
+
+MOTOR_MOV_STOPCHK_050:
+	MOV.L	#_PAR_STOP_SMPTIM,R1		;
+	MOV.W	@R1,R0				;
+;	=====================
+;;;;;	MOV.W	#D'200,R0
+;	=====================
+
+	MOV.W	R0,@R5				;
+
+	MOV.L	#_PAR_STOP_FILTER,R1		;ﾌｨﾙﾀ
+	MOV.W	@R1,R6				;
+;	=====================
+;;;;;	MOV.W	#4,R6
+;	=====================
+	TST	R6,R6				;
+	TST_BIT_ON MOTOR_MOV_STOPCHK_100	;
+	MOV	#1,R6				;
+MOTOR_MOV_STOPCHK_100:
+
+;	===========================================
+;	===	ﾘﾆｱ R6は上からの続き		===
+;	===========================================
+	MOV.L	#_RNA_ABS_POS,R1		;//ﾎﾞﾙｽﾀ面高さ
+	MOV.L	@R1,R2				;
+
+	MOV.L	#_STOPCHK_RNA_POS,R5		;//(下位4BYTEのみ)
+	MOV.L	#_RNA_STOP_CNT,R7		;//ﾌｨﾙﾀ回数
+	MOV.L	#_PAR_STOP_RNALNG,R1		;ﾘﾆｱｾﾝｻ停止判断用距離      0.020mm 0.001~32.767mm
+	MOV.W	@R1,R3				;
+;	=====================
+;;;;;	MOV.W	#D'20,R3
+;	=====================
+	EXTU.W	R3,R3
+	FAR_JSR	#_MOV_STOP_CHEAK1,R0		;
+	TST	R0,R0				;
+	TST_BIT_ON MOTOR_MOV_STOPCHK_150	;
+;	==== 停止===
+	MEM1_BIT0_F_ADCLR MEM=(_SQ_CBWK_TOP+_WKSQCB209),LG=W,BIT=(~BIT4),WKRG1=R1,WKRG2=R4
+	M_BRA	MOTOR_MOV_STOPCHK_200		;
+
+
+MOTOR_MOV_STOPCHK_150:
+	CMP/EQ	#1,R0				;動作?
+	BF	MOTOR_MOV_STOPCHK_200		;NO　前回値保持
+;	==== 動作===
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB209,R4	;
+	MOV.W	@R4,R3				;
+	MOV.W	#LWORD ~(BIT5),R0		;(符号)
+	AND	R0,R3				;
+	MOV	#BIT4,R0			;
+	TST	R1,R1				;R1=0増加
+	TST_BIT_OF MOTOR_MOV_STOPCHK_170	;
+	MOV.W	#(BIT5+BIT4),R0
+MOTOR_MOV_STOPCHK_170:				;
+	OR	R0,R3				;
+	MOV.W	R3,@R4				;
+	M_BRA	MOTOR_MOV_STOPCHK_200		;
+
+;	===========================================
+;	===	ｲﾝｸﾘﾒﾝﾀﾙ R6は上からの続き	===
+;	===========================================
+MOTOR_MOV_STOPCHK_200:
+	MOV.L	#_POS_LSI_ABSPLS,R1		;
+;;;	MOV.L	@R1,R0				;
+	MOV.L	@(4,R1),R2			;(下位4BYTEのみ)
+
+	MOV.L	#_STOPCHK_INC_POS,R5		;//(下位4BYTEのみ)
+	MOV.L	#_INC_STOP_CNT,R7		;//ﾌｨﾙﾀ回数  -N(4)~0~+N(4)
+	MOV.L	#_PAR_STOP_INCLNG,R1		;INCｴﾝｺｰﾀﾞ停止判断用ﾊﾟﾙｽ数 1pls~32767pls
+	MOV.W	@R1,R3				;
+;	=====================
+;;;;;	MOV.W	#D'100,R3
+;	=====================
+	EXTU.W	R3,R3				;
+	FAR_JSR	#_MOV_STOP_CHEAK1,R0		;
+
+	TST	R0,R0				;
+	TST_BIT_ON MOTOR_MOV_STOPCHK_250	;
+;	==== 停止===
+	MEM1_BIT0_F_ADCLR MEM=(_SQ_CBWK_TOP+_WKSQCB209),LG=W,BIT=(~BIT6),WKRG1=R1,WKRG2=R4
+	M_BRA	MOTOR_MOV_STOPCHK_500		;
+
+
+MOTOR_MOV_STOPCHK_250:
+	CMP/EQ	#1,R0				;動作?
+	BF	MOTOR_MOV_STOPCHK_500		;NO　前回値保持
+;	==== 動作===
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB209,R4	;
+	MOV.W	@R4,R3				;
+	MOV.W	#LWORD ~(BIT7),R0		;(符号)
+	AND	R0,R3				;
+	MOV	#BIT6,R0			;
+	TST	R1,R1				;R1=0増加
+	TST_BIT_OF MOTOR_MOV_STOPCHK_270	;
+	MOV.W	#(BIT7+BIT6),R0
+MOTOR_MOV_STOPCHK_270:				;
+	OR	R0,R3				;
+	MOV.W	R3,@R4				;
+MOTOR_MOV_STOPCHK_500:
+	SUB_END
+	M_RTS
+
+;	***************************************************************************
+;	***									***
+;	***	ANS 	R0=0:STOP	R0=1:MOV R0=-1(不定:前回状態KEEP)	***
+;	***	ANS	R1=0:増加	R1=FF:減少				***
+;	***									***
+;	***************************************************************************
+;	Input R2:NOW_POS
+;	Input R3:LNGTH DATA
+;	Input R5:OLD_POS:ADR
+;	Input R6;ﾌｨﾙﾀ回数(破壊しない)
+;	Input R7:FILTER ADR
+;	これをＮ回連続したら停止/動作とするか
+;       ｶｳﾝﾀ=+:動作
+;	ｶｳﾝﾀ=-:停止
+;
+;	ANS R0:=1 MOV R0=0 STOP
+;	ANS R1:0:増加 1:減少
+;	ANS MEM[R5] OLD_POS
+;	ANS MEM[R7] FILTER CNT
+;
+_MOV_STOP_CHEAK1:
+	SUB_START
+	MOV.L	@R5,R4			;OLD LOAD
+	MOV.L	R2,@R5			;NOW=>OLD REF
+	SUB	R4,R2			;NOW-OLD
+	XOR	R1,R1			;
+	CMP/PZ	R2			;
+	BT	MOV_STOP_CHK1_050	;
+	MOV	#-1,R1			;SHIN
+	NEG	R2,R2			;
+MOV_STOP_CHK1_050:			;
+	CMP/GT	R3,R2			;R2<R3-LNGTH
+	BT	MOV_STOP_CHK1_100	;動作した
+	MOV.W	@R7,R8			;停止
+	ADD	#-1,R8			;
+	M_BRA	MOV_STOP_CHK1_120	;
+
+MOV_STOP_CHK1_100:			;
+	MOV.W	@R7,R8			;動作
+	ADD	#1,R8			;
+MOV_STOP_CHK1_120:			;
+
+	MOV	#-1,R0			;不定(前回値保持)
+
+	CMP/GE	R6,R8			;
+	BF	MOV_STOP_CHK1_150	;R6(4)> R8
+;	==== R6(4)<=R8 ==
+	MOV	R6,R8			;(動作)
+	MOV	#1,R0			;
+	M_BRA	MOV_STOP_CHK1_200	;
+MOV_STOP_CHK1_150:			;
+	NEG	R6,R4			;
+	CMP/GT	R4,R8			;
+	BT	MOV_STOP_CHK1_200	;R4(-4) < R8
+	MOV	R4,R8			;(停止)
+	XOR	R0,R0			;
+MOV_STOP_CHK1_200:			;
+	MOV.W	R8,@R7			;
+
+	SUB_END
+	M_RTS
+
+;	***************************************************
+;	***						***
+;	***	2011-03-22				***
+;	***	異常比較関係ｽﾗｲﾄﾞ動作 停止ﾁｪｯｸ		***
+;	***						***
+;	***************************************************
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+	.EXPORT		_SLID_ALM_ELSE_CHK	;2011-03-22 ｽﾗｲﾄﾞ関連ﾁｪｯｸ　SSA_ELSE1.SRC
+	.EXPORT		_INSERT_TEACH_POS		;
+	
+	.INCLUDE	"ssa_else.inc"		; //
+
+	.AENDI
+
+
+
+;	***************************************************
+;	***						***
+;	***	2011-03-22				***
+;	***	原点位置決めの幅が大丈夫かのチェック	***
+;	***	[ｸﾗﾝｸ機構]				***
+;	***************************************************
+;	RNA_ABS_POS+r*(1-COSθ）<=>原点記憶時ﾃﾞｰﾀ
+_ORIGIN_POS_HAB_CHK:
+	SUB_START
+	MOV.L	#_CB_SEQ_CB_SEL342,R1		;342
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT5,R4
+	TST	R4,R0				;
+	TST_BIT_ON ORIGIN_POSHAB_CHK_100	;
+
+	MEM1_BIT0_F_ADCLR MEM=_SQ_CBWK_TOP+_WKSQCB211,LG=W,BIT=~(BIT15),WKRG1=R1,WKRG2=R4
+	M_BRA	ORIGIN_POSHAB_CHK_500		;
+
+ORIGIN_POSHAB_CHK_100:
+
+	FAR_JSR	#_CMP_ORIGIN_POSHAB_CHK,R0
+
+ORIGIN_POSHAB_CHK_500:
+	SUB_END
+	M_RTS
+
+
+
+_CMP_ORIGIN_POSHAB_CHK:
+	SUB_START
+	MOV.L	#_ORGPOS_LATCH1_INC_OFFSET_PLS,R1		;//位置決め完了時
+	MOV.L	@R1,R2						;
+
+	FAR_JSR	#_OFSPLS_DIG_CHANGE1,R0				;InputR2  outputR2 0.001度
+	FAR_JSR	#_COS_IN_DEG,R0					;R2　
+	MOV.L	#_COS_DIG1_UNIT_COEF,R0				;
+	MOV.L	@R0,R4						;1000000
+	SUB	R4,R2						;COSθ-1
+	NEG	R2,R2						;
+	MOV.L	#_RNA_STLORK_HALF,R0				;//設定(半径)
+	MOV.L	@R0,R1						;
+
+	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0			;r*(COS-LATE-COSθ)/COS-LATE=R2
+
+	MOV.L	#_ORGPOS_LATCH1_RNA_ABS_DAT,R1			;
+	MOV.L	@R1,R4						;
+	ADD	R4,R2						;RNA+θ補正分
+	MOV.L	#_ORGPOS_SERCH_RNA_ABS_DAT,R1			;//ｻｰﾁﾀｲﾌﾟの原点出の下限位置の基準
+	MOV.L	@R1,R3						;
+	SUB	R3,R2						;
+	CMP/PZ	R2	
+	BT	ORIGIN_POSHAB_CHK_250				;
+	NEG	R2,R2
+ORIGIN_POSHAB_CHK_250:
+	MOV.L	#_WPAR_ORGPOS_LNG1,R1				;//比較距離
+	MOV.W	@R1,R3						;
+	CMP/HS	R2,R3						;R2=<R3
+	BT	ORIGIN_POSHAB_CHK_300				;
+
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB211,LG=W,BIT=(BIT15),WKRG1=R1,WKRG2=R4
+
+ORIGIN_POSHAB_CHK_300:
+	SUB_END
+	M_RTS
+
+
+_ORIGIN_POS_CHK_INI1:
+	SUB_START
+
+	MOV.L	#_RNA_ABS_MEMORG,R1		;//記憶位置:待機点復帰時に反転した位置(最上のﾎﾞﾙｽﾀ位置)
+	MOV.L	@R1,R2				;
+	MOV.L	#_ORGPOS_SERCH_RNA_ABS_DAT,R1	;
+	MOV.L	R2,@R1				;
+
+	SUB_END
+	M_RTS
+
+;	********** 通常位置決めの原点復帰完了**********
+	.EXPORT	_ORIGIN_POS_CHK_INI2
+_ORIGIN_POS_CHK_INI2:
+	SUB_START
+	MOV.L	#_INC_LINK_NOWROT_OFSPLS_P,R1			;[[[実測 1REV PLS]]]
+	MOV.L	@R1,R2						;
+	MOV.L	#_ORGPOS_LATCH1_INC_OFFSET_PLS,R1		;//位置決め完了時
+	MOV.L	R2,@R1						;
+
+	MOV.L	#_RNA_ABS_POS,R1				;
+	MOV.L	@R1,R2						;
+	MOV.L	#_ORGPOS_LATCH1_RNA_ABS_DAT,R1			;	//位置決め完了時 RNA
+	MOV.L	R2,@R1						;
+
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	2013-09-30		***
+;	***	EPｾﾝｻﾁｪｯｸ		***
+;	***				***
+;	***********************************
+;BIT0 START
+;BIT1	"H"
+;BIT2	"L"
+;BIT3	"H"
+;BIT4	"L"
+;BIT6 ERR
+;BIT7 END
+
+
+;;;;[2014-06-04]	.EXPORT	_EPSENCER_CHECK
+;;;;[2014-06-04]
+;;;;[2014-06-04]_EPSENCER_CHECK:
+;;;;[2014-06-04]	SUB_START
+;;;;[2014-06-04]	MOV.L	#_EPSENCER_CHK_FLG,R5	;//BIT0,1,2,3,4 BIT6=1 END
+;;;;[2014-06-04]	MOV.W	@R5,R0			;
+;;;;[2014-06-04]	TST	#BIT7,R0		;
+;;;;[2014-06-04]	TST_BIT_OF EPSENCER_CHK050	;
+;;;;[2014-06-04]	M_BRA	EPSENCER_CHKEND		;
+;;;;[2014-06-04]
+;;;;[2014-06-04]EPSENCER_CHK050:
+;;;;[2014-06-04]	TST	#BIT0,R0		;
+;;;;[2014-06-04]	TST_BIT_ON EPSENCER_CHK100	;
+;;;;[2014-06-04]
+;;;;[2014-06-04]	MOV.L	#_dq1_cb_out1,R1	;//+0:制御出力(203)
+;;;;[2014-06-04]	MOV.W	@R1,R0			;
+;;;;[2014-06-04]	TST	#_WOANT,R0		;ANTI
+;;;;[2014-06-04]	TST_BIT_OF EPSENCER_CHK080	;
+;;;;[2014-06-04]
+;;;;[2014-06-04]	MOV.L	#_EPSENCER_CHK_FLG,R5	;//BIT0,1,2,3,4 BIT6=1 END
+;;;;[2014-06-04]	MOV.B	#BIT0,R0
+;;;;[2014-06-04]	MOV.W	R0,@R5			;
+;;;;[2014-06-04]
+;;;;[2014-06-04]	MOV.L	#(_PAR_EPSENCR_TIM-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+;;;;[2014-06-04]	MOV.W	@R1,R2							;
+;;;;[2014-06-04]	MOV.L	#_EPSENCER_TIMPV,R1					;
+;;;;[2014-06-04]	MOV.W	R2,@R1							;
+;;;;[2014-06-04]EPSENCER_CHK080:
+;;;;[2014-06-04]	M_BRA	EPSENCER_CHKEND						;
+;;;;[2014-06-04]
+;;;;[2014-06-04]
+;;;;[2014-06-04]EPSENCER_CHK100:
+;;;;[2014-06-04]	MOV.L	#_CB_SEQ_CB_COM349,R1		;
+;;;;[2014-06-04]	MOV.W	@R1,R2				;
+;;;;[2014-06-04]	MOV.W	#BIT10,R4			;349.10
+;;;;[2014-06-04]	AND	R4,R2				;
+;;;;[2014-06-04]	MOV.L	#_EP_BRKVALV_ON,R1		;
+;;;;[2014-06-04]	MOV.W	R2,@R1				;BIT10=0/BIT10=1
+;;;;[2014-06-04]
+;;;;[2014-06-04]	MOV.L	#_di2_cb_ctl2_dt,R1	;
+;;;;[2014-06-04]	MOV.W	@R1,R6			;
+;;;;[2014-06-04]	MOV.W	#BIT4,R7		;SEQ.BIT
+;;;;[2014-06-04]
+;;;;[2014-06-04]	MOV.L	#_EPSENCER_CHK_FLG,R5	;//BIT0,1,2,3,4 BIT6=1 END
+;;;;[2014-06-04]	MOV.W	@R5,R0			;
+;;;;[2014-06-04]
+;;;;[2014-06-04]	MOV.L	#_EPSENCER_TIMPV,R1	;
+;;;;[2014-06-04]	MOV.W	@R1,R2			;
+;;;;[2014-06-04]	TST	R2,R2			;
+;;;;[2014-06-04]	TST_BIT_OF EPSENCER_CHK150	;TIME.UP
+;;;;[2014-06-04]	ADD	#-1,R2
+;;;;[2014-06-04]	MOV.W	R2,@R1			;
+;;;;[2014-06-04]	M_BRA	EPSENCER_CHK200		;
+;;;;[2014-06-04]
+;;;;[2014-06-04]
+;;;;[2014-06-04]EPSENCER_CHK150:
+;;;;[2014-06-04];	------- ﾀｲﾑｯﾌﾟ-------------
+;;;;[2014-06-04]	OR	#(BIT7+BIT6),R0		;
+;;;;[2014-06-04]	MOV.W	R0,@R5			;
+;;;;[2014-06-04]
+;;;;[2014-06-04];	-------- SEQ[ﾀｲﾑｱｯﾌﾟ]-------------
+;;;;[2014-06-04]	MOV.L	#_SQ_CBWK_TOP+_WKSQCB227,R1	;
+;;;;[2014-06-04]	MOV.W	@R1,R2				;
+;;;;[2014-06-04]	MOV.W	#(BIT9),R4			;
+;;;;[2014-06-04]	OR	R4,R2				;
+;;;;[2014-06-04]	MOV.W	R2,@R1				;
+;;;;[2014-06-04]	M_BRA	EPSENCER_CHK900			;
+;;;;[2014-06-04]
+;;;;[2014-06-04]
+;;;;[2014-06-04]EPSENCER_CHK200:
+;;;;[2014-06-04]
+;;;;[2014-06-04]	TST	#BIT1,R0			;
+;;;;[2014-06-04]	TST_BIT_ON EPSENCER_CHK300		;
+;;;;[2014-06-04]
+;;;;[2014-06-04]	TST	R7,R6				;
+;;;;[2014-06-04]	TST_BIT_OF EPSENCER_CHKEND		;
+;;;;[2014-06-04]	OR	#BIT1,R0			;"H"記憶
+;;;;[2014-06-04]	MOV.W	R0,@R5				;
+;;;;[2014-06-04]	M_BRA	EPSENCER_CHKEND			;
+;;;;[2014-06-04]
+;;;;[2014-06-04]
+;;;;[2014-06-04]EPSENCER_CHK300:
+;;;;[2014-06-04]
+;;;;[2014-06-04]	TST	#BIT2,R0				
+;;;;[2014-06-04]	TST_BIT_ON EPSENCER_CHK400		;
+;;;;[2014-06-04]
+;;;;[2014-06-04]	TST	R7,R6				;
+;;;;[2014-06-04]	TST_BIT_ON EPSENCER_CHKEND		;
+;;;;[2014-06-04]	OR	#BIT2,R0			;"L"記憶
+;;;;[2014-06-04]	MOV.W	R0,@R5				;
+;;;;[2014-06-04]	M_BRA	EPSENCER_CHKEND			;
+;;;;[2014-06-04]
+;;;;[2014-06-04]EPSENCER_CHK400:
+;;;;[2014-06-04]
+;;;;[2014-06-04]	TST	#BIT3,R0				;
+;;;;[2014-06-04]	TST_BIT_ON EPSENCER_CHK500			;
+;;;;[2014-06-04]
+;;;;[2014-06-04]	TST	R7,R6				;
+;;;;[2014-06-04]	TST_BIT_OF EPSENCER_CHKEND		;
+;;;;[2014-06-04]	OR	#BIT3,R0			;"H"記憶
+;;;;[2014-06-04]	MOV.W	R0,@R5				;
+;;;;[2014-06-04]	M_BRA	EPSENCER_CHKEND			;
+;;;;[2014-06-04]
+;;;;[2014-06-04]
+;;;;[2014-06-04]EPSENCER_CHK500:
+;;;;[2014-06-04]
+;;;;[2014-06-04]	TST	#BIT4,R0			;
+;;;;[2014-06-04]	TST_BIT_ON EPSENCER_CHK600		;
+;;;;[2014-06-04]
+;;;;[2014-06-04]	TST	R7,R6				;
+;;;;[2014-06-04]	TST_BIT_ON EPSENCER_CHKEND		;
+;;;;[2014-06-04]	OR	#BIT4,R0			;"L"記憶
+;;;;[2014-06-04]	MOV.W	R0,@R5				;
+;;;;[2014-06-04]	M_BRA	EPSENCER_CHKEND			;
+;;;;[2014-06-04]
+;;;;[2014-06-04]
+;;;;[2014-06-04]EPSENCER_CHK600:
+;;;;[2014-06-04]
+;;;;[2014-06-04]	TST	R7,R6				;
+;;;;[2014-06-04]	TST_BIT_OF EPSENCER_CHKEND		;
+;;;;[2014-06-04]	OR	#BIT7,R0			;"H"記憶
+;;;;[2014-06-04]	MOV.W	R0,@R5				;
+;;;;[2014-06-04]
+;;;;[2014-06-04]	MOV.L	#_SQ_CBWK_TOP+_WKSQCB227,R1	;
+;;;;[2014-06-04]	MOV.W	@R1,R2				;
+;;;;[2014-06-04]	MOV.W	#(BIT8),R4			;
+;;;;[2014-06-04]	OR	R4,R2				;
+;;;;[2014-06-04]	MOV.W	R2,@R1				;
+;;;;[2014-06-04]
+;;;;[2014-06-04]EPSENCER_CHK900:
+;;;;[2014-06-04]	XOR	R0,R0				;
+;;;;[2014-06-04]	MOV.L	#_EP_BRKVALV_ON,R1		;
+;;;;[2014-06-04]	MOV.W	R0,@R1				;
+;;;;[2014-06-04]
+;;;;[2014-06-04]EPSENCER_CHKEND:
+;;;;[2014-06-04]
+;;;;[2014-06-04]	SUB_END
+;;;;[2014-06-04]	M_RTS
+
+;	***********************************
+;	***				***
+;	***				***
+;	***				***
+;	***********************************
+;	_BVLV_START_IN;
+;//	(1)運転釦OFF記憶ﾌﾞﾚｰｷOFF
+;//	(2)運転釦ON記憶ﾌﾞﾚｰｷON
+;//	(3)ON->OFF運転釦OFF記憶
+;//	(4)ｴﾝﾄﾞｰﾀﾞ停止
+;//	(5)遅延時間ｽﾀｰﾄ
+;//	(6)ﾌﾞﾚｰｷOFF
+;
+;;;	_BRK_SADOU_CHG EQ _CMPILE_YES
+
+_BREAK_VALV_CTRL
+	SUB_START
+;;2015-09-06	MOV.L	#(_PAR_BVLVCTL_SEL-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+	MOV.L	#(_PAR_MYU_BRK_SEL-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;NO.093
+	MOV.W	@R1,R0							;
+	CMP/EQ	#1,R0
+	BT	BREAK_VALVCTL0100					;停止制御有効
+	M_BRA	BREAK_VALVCTLEND
+BREAK_VALVCTL0100
+
+
+;	-------- 2014-08-04 [ｾﾙﾌﾁｪｯｸ,EPﾁｪｯｸ]--------------
+	FAR_JSR	#_STOP_VALV_CTRL_CONF,R0
+	TST	R0,R0
+	TST_BIT_OF BREAK_VALVCTL0120
+	M_BRA	BREAK_VALVCTL_VSTOP				;切ﾓｰﾄﾞまたは全OFF
+
+BREAK_VALVCTL0120
+
+
+	MOV.L	#_INP_MODE,R1					;
+	MOV.W	@R1,R0						;
+	TST	#(_W1INC+_W1SGL+_W1CNT+_W1OPT+_W1DIC+_W1DUP),R0	;
+	TST_BIT_ON BREAK_VALVCTL0200				;
+	M_BRA	BREAK_VALVCTL_VSTOP				;切ﾓｰﾄﾞまたは全OFF
+
+BREAK_VALVCTL0200
+;	-------BVLV_CTL_FLG.0:位置決め起動
+;	-------BVLV_CTL_FLG.1:位置決め中ラッチ
+;	-------準備完了
+;	------------
+;	_DRV_ACT_FLG.0  位置決め中
+;	_BVLV_START_IN  
+;
+	MOV.L	#_BVLV_START_IN,R1		;//2014-08- DRV_ACT_FLGだけではカバーできない部分
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON BREAK_VALVCTL_VON		;位置決め中
+
+	MOV.L	#_DRV_START_KEEP,R1
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON BREAK_VALVCTL_VON		;起動前起動処理
+	
+	MOV.L	#_CMPSTEP_POS_START,R1
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON BREAK_VALVCTL_VON		;起動時のﾊﾝﾄﾞｼｪｲｸ中+位置決め中
+
+	M_BRA	BREAK_VALVCTL_VSTOP		;位置決め中ではない[ﾌﾞﾚｰｷﾛｯｸする]
+
+
+BREAK_VALVCTL_VON
+	MOV.B	#BIT0,R0			;
+	MOV.L	#_BVLV_CTL_ON,R1		;
+	MOV.W	R0,@R1				;
+	M_BRA	BREAK_VALVCTLEND
+
+BREAK_VALVCTL_VSTOP
+	XOR	R0,R0				;
+	MOV.L	#_BVLV_CTL_FLG,R1		;(未使用)
+	MOV.W	R0,@R1				;
+
+	XOR	R0,R0
+	MOV.L	#_BVLV_CTL_ON,R1		;
+	MOV.W	R0,@R1				;
+
+BREAK_VALVCTLEND
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;;;[2015-09-06]以前
+;;;[2015-09-06];	***********************************
+;;;[2015-09-06];	***				***
+;;;[2015-09-06];	***				***
+;;;[2015-09-06];	***				***
+;;;[2015-09-06];	***********************************
+;;;[2015-09-06];	_BVLV_START_IN;
+;;;[2015-09-06];//	(1)運転釦OFF記憶ﾌﾞﾚｰｷOFF
+;;;[2015-09-06];//	(2)運転釦ON記憶ﾌﾞﾚｰｷON
+;;;[2015-09-06];//	(3)ON->OFF運転釦OFF記憶
+;;;[2015-09-06];//	(4)ｴﾝﾄﾞｰﾀﾞ停止
+;;;[2015-09-06];//	(5)遅延時間ｽﾀｰﾄ
+;;;[2015-09-06];//	(6)ﾌﾞﾚｰｷOFF
+;;;[2015-09-06];
+;;;[2015-09-06]	.IMPORT	_API_BTTN_ON_SIG
+;;;[2015-09-06]
+;;;[2015-09-06]_BREAK_VALV_CTRL
+;;;[2015-09-06]	SUB_START
+;;;[2015-09-06]	MOV.L	#(_PAR_BVLVCTL_SEL-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+;;;[2015-09-06]	MOV.W	@R1,R0							;
+;;;[2015-09-06]	CMP/EQ	#1,R0
+;;;[2015-09-06]	BT	BREAK_VALVCTL0100					;停止制御有効
+;;;[2015-09-06]	M_BRA	BREAK_VALVCTLEND
+;;;[2015-09-06]BREAK_VALVCTL0100
+;;;[2015-09-06]
+;;;[2015-09-06]
+;;;[2015-09-06];	-------- 2014-08-04 [ｾﾙﾌﾁｪｯｸ,EPﾁｪｯｸ]--------------
+;;;[2015-09-06]	FAR_JSR	#_STOP_VALV_CTRL_CONF,R0
+;;;[2015-09-06]	TST	R0,R0
+;;;[2015-09-06]	TST_BIT_OF BREAK_VALVCTL0120
+;;;[2015-09-06]	M_BRA	BREAK_VALVCTL_VSTOP				;切ﾓｰﾄﾞまたは全OFF
+;;;[2015-09-06]
+;;;[2015-09-06]BREAK_VALVCTL0120
+;;;[2015-09-06]
+;;;[2015-09-06]
+;;;[2015-09-06]
+;;;[2015-09-06]	MOV.L	#_INP_MODE,R1					;
+;;;[2015-09-06]	MOV.W	@R1,R0						;
+;;;[2015-09-06]	TST	#(_W1INC+_W1SGL+_W1CNT+_W1OPT+_W1DIC+_W1DUP),R0	;
+;;;[2015-09-06]	TST_BIT_ON BREAK_VALVCTL0200				;
+;;;[2015-09-06]	M_BRA	BREAK_VALVCTL_VSTOP				;切ﾓｰﾄﾞまたは全OFF
+;;;[2015-09-06]
+;;;[2015-09-06]BREAK_VALVCTL0200
+;;;[2015-09-06]
+;;;[2015-09-06]	TST	#_W1CNT,R0			;
+;;;[2015-09-06]	TST_BIT_OF BREAK_VALVCTL0300		;
+;;;[2015-09-06]
+;;;[2015-09-06];	--------- 連続ﾓｰﾄﾞ--------
+;;;[2015-09-06]	MOV.L	#_BVLV_CTL_FLG,R1		;
+;;;[2015-09-06]	MOV.W	@R1,R0				;
+;;;[2015-09-06]	TST	#BIT1,R0			;
+;;;[2015-09-06]	TST_BIT_ON BREAK_VALVCTL0250		;位置決め中ラッチ
+;;;[2015-09-06]
+;;;[2015-09-06]	TST	#BIT0,R0			;起動中
+;;;[2015-09-06]	TST_BIT_ON BREAK_VALVCTL0250		;
+;;;[2015-09-06]
+;;;[2015-09-06]	MOV.L	#_SET_UP_TIM,R1			;
+;;;[2015-09-06]	MOV.W	@R1,R2				;
+;;;[2015-09-06]	TST	R2,R2				;
+;;;[2015-09-06]	TST_BIT_ON BREAK_VALVCTL0230		;ｾｯﾄｱｯﾌﾟ中?
+;;;[2015-09-06]	M_BRA	BREAK_VALVCTL0400		;
+;;;[2015-09-06]
+;;;[2015-09-06]BREAK_VALVCTL0230
+;;;[2015-09-06]
+;;;[2015-09-06]	MOV.L	#_dq1_cb_out1,R1		;//+0:制御出力(203)
+;;;[2015-09-06]	MOV.W	@R1,R0				;
+;;;[2015-09-06]	TST	#_WORDY,R0			;RDY
+;;;[2015-09-06]	TST_BIT_OF BREAK_VALVCTL0250		;準備未完了
+;;;[2015-09-06]
+;;;[2015-09-06]	FAR_JSR	#_API_BTTN_ON_SIG,R0		;運転釦[外部及びﾌｨﾙﾀ前 生信号BTTN_FLG]
+;;;[2015-09-06]	TST	#BIT2,R0			;
+;;;[2015-09-06]	TST_BIT_ON BREAK_VALVCTL0390		;[起動]
+;;;[2015-09-06]
+;;;[2015-09-06]	MOV.L	#_BTTN_FLG,R1
+;;;[2015-09-06]	MOV.W	@R1,R0				;
+;;;[2015-09-06]	TST	#BIT2,R0			;
+;;;[2015-09-06]	TST_BIT_ON BREAK_VALVCTL0390		;[起動]
+;;;[2015-09-06]
+;;;[2015-09-06]BREAK_VALVCTL0250
+;;;[2015-09-06]	M_BRA	BREAK_VALVCTL0400		;保持
+;;;[2015-09-06]
+;;;[2015-09-06]
+;;;[2015-09-06];	--------------------------------------
+;;;[2015-09-06]BREAK_VALVCTL0300
+;;;[2015-09-06]	TST	#_W1DIC,R0			;
+;;;[2015-09-06]	TST_BIT_OF BREAK_VALVCTL0350		;
+;;;[2015-09-06]
+;;;[2015-09-06]	;---------段取
+;;;[2015-09-06]	MOV.L	#_CB_SEQ_CB_SEL341,R1		;341
+;;;[2015-09-06]	MOV.W	@R1,R0				;
+;;;[2015-09-06]	TST	#BIT1,R0			;
+;;;[2015-09-06]	TST_BIT_OF BREAK_VALVCTL0350		;手動ﾊﾟﾙｻではない
+;;;[2015-09-06]
+;;;[2015-09-06];	---手動ﾊﾟﾙｻ--------
+;;;[2015-09-06]	FAR_JSR	#_API_BTTN_ON_SIG,R0		;運転釦
+;;;[2015-09-06]	TST	#BIT1,R0			;
+;;;[2015-09-06]	TST_BIT_ON BREAK_VALVCTL0390		;片手ON[起動]
+;;;[2015-09-06]
+;;;[2015-09-06];	------------------------------------
+;;;[2015-09-06]	MOV.L	#_BTTN_FLG,R1
+;;;[2015-09-06]	MOV.W	@R1,R0				;
+;;;[2015-09-06]	TST	#BIT1,R0			;
+;;;[2015-09-06]	TST_BIT_ON BREAK_VALVCTL0390		;片手ON[起動]
+;;;[2015-09-06]	M_BRA	BREAK_VALVCTL0400		;
+;;;[2015-09-06]
+;;;[2015-09-06]
+;;;[2015-09-06];	-------段取寸動、寸動、原点復帰,安全一,ｵﾌﾟｼｮﾝ-----------
+;;;[2015-09-06]BREAK_VALVCTL0350
+;;;[2015-09-06]	MOV.L	#_BVLV_CTL_FLG,R1		;
+;;;[2015-09-06]	MOV.W	@R1,R0				;
+;;;[2015-09-06]	TST	#BIT1,R0			;
+;;;[2015-09-06]	TST_BIT_ON BREAK_VALVCTL0380		;位置決め中ラッチ
+;;;[2015-09-06]
+;;;[2015-09-06]	TST	#BIT0,R0			;起動中
+;;;[2015-09-06]	TST_BIT_ON BREAK_VALVCTL0380		;
+;;;[2015-09-06]
+;;;[2015-09-06]	MOV.L	#_dq1_cb_out1,R1		;//+0:制御出力(203)
+;;;[2015-09-06]	MOV.W	@R1,R0				;
+;;;[2015-09-06]	TST	#_WORDY,R0			;RDY
+;;;[2015-09-06]	TST_BIT_OF BREAK_VALVCTL0380		;準備未完了[原点復帰にのみ必要]
+;;;[2015-09-06]
+;;;[2015-09-06]	FAR_JSR	#_API_BTTN_ON_SIG,R0		;運転釦
+;;;[2015-09-06]	TST	#BIT2,R0			;
+;;;[2015-09-06]	TST_BIT_ON BREAK_VALVCTL0390		;[起動]
+;;;[2015-09-06]
+;;;[2015-09-06]	MOV.L	#_BTTN_FLG,R1
+;;;[2015-09-06]	MOV.W	@R1,R0				;
+;;;[2015-09-06]	TST	#BIT2,R0			;
+;;;[2015-09-06]	TST_BIT_ON BREAK_VALVCTL0390		;[起動]
+;;;[2015-09-06]
+;;;[2015-09-06]BREAK_VALVCTL0380
+;;;[2015-09-06]	M_BRA	BREAK_VALVCTL0400		;保持
+;;;[2015-09-06]
+;;;[2015-09-06];;;;;	TST	#_W1SGL,R0		;
+;;;[2015-09-06];;;;;	TST_BIT_OF BREAK_VALVCTL0340		;
+;;;[2015-09-06];;;;;
+;;;[2015-09-06];	--------- 安全一ﾓｰﾄﾞ,原点復帰ﾓｰﾄﾞ--------
+;;;[2015-09-06];	①準備完了で両手起動釦でﾊﾞﾙﾌﾞON
+;;;[2015-09-06];	②"運転処理終了"でｴﾝｺｰﾀﾞ停止でﾊﾞﾙﾌﾞOFF
+;;;[2015-09-06];;;;;
+;;;[2015-09-06];;;;;	MOV.L	#_BVLV_CTL_FLG,R1		;
+;;;[2015-09-06];;;;;	MOV.W	@R1,R0				;
+;;;[2015-09-06];;;;;	TST	#BIT1,R0			;
+;;;[2015-09-06];;;;;	TST_BIT_ON BREAK_VALVCTL0320		;位置決め中ラッチ
+;;;[2015-09-06];;;;;
+;;;[2015-09-06];;;;;	TST	#BIT0,R0			;起動中
+;;;[2015-09-06];;;;;	TST_BIT_ON BREAK_VALVCTL0320		;
+;;;[2015-09-06];;;;;
+;;;[2015-09-06];;;;;	MOV.L	#_dq1_cb_out1,R1		;//+0:制御出力(203)
+;;;[2015-09-06];;;;;	MOV.W	@R1,R0				;
+;;;[2015-09-06];;;;;	TST	#_WORDY,R0			;RDY
+;;;[2015-09-06];;;;;	TST_BIT_OF BREAK_VALVCTL0320		;準備未完了
+;;;[2015-09-06];;;;;
+;;;[2015-09-06];;;;;	FAR_JSR	#_API_BTTN_ON_SIG,R0		;運転釦
+;;;[2015-09-06];;;;;	TST	#BIT2,R0			;
+;;;[2015-09-06];;;;;	TST_BIT_ON BREAK_VALVCTL0390		;起動
+;;;[2015-09-06];;;;;BREAK_VALVCTL0320
+;;;[2015-09-06];;;;;	M_BRA	BREAK_VALVCTL0400		;保持
+;;;[2015-09-06];;;;;
+;;;[2015-09-06];;;;;
+;;;[2015-09-06];;;;;
+;;;[2015-09-06];;;;;
+;;;[2015-09-06];;;;;
+;;;[2015-09-06];;;;;;	---------------- 安一、連続以外----------------
+;;;[2015-09-06];;;;;BREAK_VALVCTL0340
+;;;[2015-09-06];;;;;	TST	#_W1DIC,R0			;
+;;;[2015-09-06];;;;;	TST_BIT_OF BREAK_VALVCTL0360		;
+;;;[2015-09-06];;;;;
+;;;[2015-09-06];;;;;;手動ﾊﾟﾙｻ
+;;;[2015-09-06];;;;;	MOV.L	#_CB_SEQ_CB_SEL341,R1		;341
+;;;[2015-09-06];;;;;	MOV.W	@R1,R0				;
+;;;[2015-09-06];;;;;	TST	#BIT1,R0			;
+;;;[2015-09-06];;;;;	TST_BIT_OF BREAK_VALVCTL0360		;手動ﾊﾟﾙｻではない
+;;;[2015-09-06];;;;;
+;;;[2015-09-06];;;;;	FAR_JSR	#_API_BTTN_ON_SIG,R0		;運転釦
+;;;[2015-09-06];;;;;	TST	#BIT1,R0			;
+;;;[2015-09-06];;;;;	TST_BIT_ON BREAK_VALVCTL0390		;片手ON
+;;;[2015-09-06];;;;;
+;;;[2015-09-06];;;;;;	------------------------------------
+;;;[2015-09-06];;;;;	MOV.L	#_BTTN_FLG,R1
+;;;[2015-09-06];;;;;	MOV.W	@R1,R0				;
+;;;[2015-09-06];;;;;	TST	#BIT1,R0			;
+;;;[2015-09-06];;;;;	TST_BIT_ON BREAK_VALVCTL0390		;片手ON
+;;;[2015-09-06];;;;;
+;;;[2015-09-06];;;;;	M_BRA	BREAK_VALVCTL0400		;
+;;;[2015-09-06];;;;;
+;;;[2015-09-06];;;;;
+;;;[2015-09-06];;;;;;寸動、段取寸動
+;;;[2015-09-06];;;;;BREAK_VALVCTL0360
+;;;[2015-09-06];;;;;	FAR_JSR	#_API_BTTN_ON_SIG,R0		;運転釦
+;;;[2015-09-06];;;;;	TST	#BIT2,R0			;
+;;;[2015-09-06];;;;;	TST_BIT_ON BREAK_VALVCTL0390		;両手ON
+;;;[2015-09-06];;;;;	M_BRA	BREAK_VALVCTL0400		;
+;;;[2015-09-06]
+;;;[2015-09-06]
+;;;[2015-09-06];	----------------------------------------------------
+;;;[2015-09-06]BREAK_VALVCTL0390
+;;;[2015-09-06];"運転釦ON"
+;;;[2015-09-06]	M_BRA	BREAK_VALVCTL_VONTIMSET
+;;;[2015-09-06]
+;;;[2015-09-06]
+;;;[2015-09-06]
+;;;[2015-09-06];	--------------運転釦離している最中の処理-------------
+;;;[2015-09-06]BREAK_VALVCTL0400
+;;;[2015-09-06];;;;;;2014-08-04	MOV.L	#_DRV_ACT_FLG,R1		;//運転動作ﾌﾗｸﾞ BIT0:運転中
+;;;[2015-09-06]	MOV.L	#_BVLV_START_IN,R1		;_DRV_ACT_FLG->_BVLV_START_IN
+;;;[2015-09-06]						;違いは原点復帰完了でOFF,
+;;;[2015-09-06]	MOV.W	@R1,R0				;206.0
+;;;[2015-09-06]	TST	#BIT0,R0			;
+;;;[2015-09-06]	TST_BIT_ON BREAK_VALVCTL_VONPOSLT	;位置決め中:VALV-ON
+;;;[2015-09-06]
+;;;[2015-09-06]	VLV_STS_CPUBA_LOAD			;CPUB->A情報
+;;;[2015-09-06]	TST	#(BIT0),R0			;
+;;;[2015-09-06]	TST_BIT_ON BREAK_VALVCTL_VONPOSLT	;位置決め中:VALV-ON
+;;;[2015-09-06]
+;;;[2015-09-06];;;;	TST	#(BIT6),R0			;
+;;;[2015-09-06];;;;	TST_BIT_ON BREAK_VALVCTL_VONTIMSET	;相手側INC動作中
+;;;[2015-09-06]
+;;;[2015-09-06];;;;	MOV.L	#_SQ_CBWK_TOP+_WKSQCB209,R1	;
+;;;[2015-09-06];;;;	MOV.W	@R1,R0				;
+;;;[2015-09-06];;;;	TST	#BIT6,R0			;209.6 ｲﾝｸﾘﾒﾝﾀﾙ動作中
+;;;[2015-09-06];;;;	TST_BIT_ON BREAK_VALVCTL_VONTIMSET	;INC動作中
+;;;[2015-09-06]
+;;;[2015-09-06]	MOV.L	#_BVLV_CTL_PVTIM,R1		;
+;;;[2015-09-06]	MOV.W	@R1,R0				;
+;;;[2015-09-06]	TST	R0,R0
+;;;[2015-09-06]	TST_BIT_OF BREAK_VALVCTL500		;ﾀｲﾑｱｯﾌﾟしたら以降はﾛｯｸのまま
+;;;[2015-09-06]	ADD	#-1,R0				;
+;;;[2015-09-06]	MOV.W	R0,@R1				;
+;;;[2015-09-06];;;;2015-02-20	M_BRA	BREAK_VALVCTL_VON
+;;;[2015-09-06]
+;;;[2015-09-06]	VLV_STS_CPUBA_LOAD			;CPUB->A情報
+;;;[2015-09-06]	MOV.L	#_SQ_CBWK_TOP+_WKSQCB209,R1	;
+;;;[2015-09-06]	MOV.W	@R1,R1				;
+;;;[2015-09-06]	AND	R1,R0				;
+;;;[2015-09-06]	TST	#BIT6,R0			;209.6 ｲﾝｸﾘﾒﾝﾀﾙ動作中
+;;;[2015-09-06]	TST_BIT_ON BREAK_VALVCTL_VONTIMSET	;(ON,ONなら動作中)
+;;;[2015-09-06]	M_BRA	BREAK_VALVCTL_VON		;[ﾀｲﾏをﾌﾟﾘｾｯﾄしない]
+;;;[2015-09-06]
+;;;[2015-09-06]
+;;;[2015-09-06]BREAK_VALVCTL500
+;;;[2015-09-06]	M_BRA	BREAK_VALVCTL_VSTOP		;
+;;;[2015-09-06]
+;;;[2015-09-06]
+;;;[2015-09-06]
+;;;[2015-09-06];	------------ 位置決め中信号----------------
+;;;[2015-09-06]BREAK_VALVCTL_VONPOSLT
+;;;[2015-09-06]	MOV.L	#_BVLV_CTL_FLG,R1		;
+;;;[2015-09-06]	MOV.W	@R1,R0				;
+;;;[2015-09-06]	OR	#BIT1,R0			;
+;;;[2015-09-06]	MOV.W	R0,@R1				;
+;;;[2015-09-06]
+;;;[2015-09-06]BREAK_VALVCTL_VONTIMSET
+;;;[2015-09-06]	MOV.L	#_BVLV_CTL_FLG,R1		;ﾊﾞﾙﾌﾞ開放
+;;;[2015-09-06]	MOV.W	@R1,R0				;
+;;;[2015-09-06]	OR	#BIT0,R0			;
+;;;[2015-09-06]	MOV.W	R0,@R1				;
+;;;[2015-09-06]	FAR_JSR	#_BREAK_VALV_TIMSET,R0		;
+;;;[2015-09-06]
+;;;[2015-09-06]BREAK_VALVCTL_VON
+;;;[2015-09-06]	MOV.B	#BIT0,R0			;
+;;;[2015-09-06]	MOV.L	#_BVLV_CTL_ON,R1		;
+;;;[2015-09-06]	MOV.W	R0,@R1				;
+;;;[2015-09-06]	M_BRA	BREAK_VALVCTLEND
+;;;[2015-09-06]
+;;;[2015-09-06]BREAK_VALVCTL_VSTOP
+;;;[2015-09-06]	XOR	R0,R0				;
+;;;[2015-09-06]	MOV.L	#_BVLV_CTL_FLG,R1		;
+;;;[2015-09-06]	MOV.W	R0,@R1				;
+;;;[2015-09-06]
+;;;[2015-09-06]	XOR	R0,R0
+;;;[2015-09-06]	MOV.L	#_BVLV_CTL_ON,R1		;
+;;;[2015-09-06]	MOV.W	R0,@R1				;
+;;;[2015-09-06]
+;;;[2015-09-06]BREAK_VALVCTLEND
+;;;[2015-09-06]	SUB_END
+;;;[2015-09-06]	M_RTS
+;;;[2015-09-06]
+;;;[2015-09-06]
+;;;[2015-09-06]
+;;;[2015-09-06]
+
+
+
+
+
+
+;	*******************************************
+;	***					***
+;	*******************************************
+;
+;
+;;2015-09-06_BREAK_VALV_TIMSET
+;;2015-09-06	SUB_START
+;;2015-09-06
+;;2015-09-06	MOV.L	#(_PAR_BVLV_INCTM-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+;;2015-09-06	MOV.W	@R1,R2
+;;2015-09-06
+;;2015-09-06	MOV.L	#_INP_MODE,R1				;
+;;2015-09-06	MOV.W	@R1,R0					;
+;;2015-09-06	TST	#_W1INC,R0				;
+;;2015-09-06	TST_BIT_ON BREAK_VALVTMSET_100			;
+;;2015-09-06
+;;2015-09-06	MOV.L	#(_PAR_BVLV_DLYTM-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+;;2015-09-06	MOV.W	@R1,R2
+;;2015-09-06
+;;2015-09-06BREAK_VALVTMSET_100
+;;2015-09-06	MOV.L	#_BVLV_CTL_SVTIM,R1		;
+;;2015-09-06	MOV.W	R2,@R1				;
+;;2015-09-06
+;;2015-09-06	MOV.L	#_BVLV_CTL_PVTIM,R1		;
+;;2015-09-06	MOV.W	R2,@R1				;
+;;2015-09-06
+;;2015-09-06	SUB_END
+;;2015-09-06	M_RTS
+
+;	***************************************************
+;	***						***
+;	***	2014-08-04				***
+;	***	EPﾁｪｯｸ時,この停止制御上はﾊﾞﾙﾌﾞOFF	***
+;	***						***
+;	***************************************************
+_STOP_VALV_CTRL_CONF:
+	SUB_START
+
+	MOV.L	#_EPCHK_FLG,R1		;
+	MOV.W	@R1,R0			;
+	MOV.L	#_EPCHK_COM,R1		;
+	MOV.W	@R1,R2			;
+	OR	R2,R0			;
+	TST	#BIT0,R0			;ｾﾙﾌ中またはｾﾙﾌｺﾏﾝﾄﾞON
+	TST_BIT_ON STOP_VALV_CTRLCNF_STOP
+
+	XOR	R0,R0
+	M_BRA	STOP_VALV_CTRLCNF_END
+
+STOP_VALV_CTRLCNF_STOP:
+	MOV.B	#BIT0,R0		;
+STOP_VALV_CTRLCNF_END:
+
+
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	2014-08-05		***
+;	***	起動時-on		***
+;	***	位置決め完了時off	***
+;	***				***
+;	***********************************
+;
+	.EXPORT	_API_BREAK_VALV_FLG_ON
+	.EXPORT	_API_BREAK_VALV_FLG_OF
+
+_API_BREAK_VALV_FLG_ON
+	SUB_START
+	MOV.B	#BIT0,R0
+	MOV.L	#_BVLV_START_IN,R1	;	//2014-08- DRV_ACT_FLGだけではカバーできない部分
+	MOV.W	R0,@R1			;
+
+	SUB_END
+	M_RTS
+	
+_API_BREAK_VALV_FLG_OF
+	SUB_START
+	XOR	R0,R0			;
+	MOV.L	#_BVLV_START_IN,R1	;	//2014-08- DRV_ACT_FLGだけではカバーできない部分
+	MOV.W	R0,@R1			;
+	SUB_END
+	M_RTS
+	
+
+
+;;;;;	2015-09-06_BREAK_SIG_CPUAB:
+;;;;;	2015-09-06	SUB_START
+;;;;;	2015-09-06	MOV.L	#_SQ_CBWK_TOP+_WKSQCB209,R1	;
+;;;;;	2015-09-06	MOV.W	@R1,R0				;
+;;;;;	2015-09-06	AND	#BIT6,R0			;
+;;;;;	2015-09-06	MOV	R0,R2				;
+;;;;;	2015-09-06
+;;;;;	2015-09-06	MOV.L	#_BVLV_START_IN,R1		;
+;;;;;	2015-09-06	MOV.W	@R1,R0				;
+;;;;;	2015-09-06	AND	#BIT0,R0
+;;;;;	2015-09-06	OR	R2,R0				;BIT0:ACTIVE BIT6:ﾊﾟﾙｽ
+;;;;;	2015-09-06	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+;;;;;	2015-09-06	MOV.L	#_SH4_VLV_SIG,R1		;209.6(ﾊﾟﾙｽ動作),206.0(ACT)
+;;;;;	2015-09-06	.AELSE
+;;;;;	2015-09-06	MOV.L	#_SH2_VLV_SIG,R1		;209.6(ﾊﾟﾙｽ動作),206.0(ACT)
+;;;;;	2015-09-06	.AENDI
+;;;;;	2015-09-06	MOV.W	R0,@R1				;
+;;;;;	2015-09-06	SUB_END
+;;;;;	2015-09-06	M_RTS
+
+
+
+
+
+
+;
+;	0~3A8C,AF3Eまで +1づつOK
+;	
+;
+	.EXPORT	_CALCLATION_CHK
+_CALCLATION_CHK:
+	SUB_START
+
+	MOV.L	#H'00000001,R1
+	MOV.L	#H'00000001,R2
+
+
+CALCLATION_LOP:
+
+	MOV.L	#_DAIHAI_CALC_WORK1,R0		;
+	MOV.L	R1,@R0					;
+	MOV.L	R2,@(4,R0)				;
+
+	MOV	R1,R5
+	MOV	R2,R6					;
+	FAR_JSR	#_SMUL1_R1R2_MUL_R5R6_ANS,R0		;
+	MOV.L	#_DAIHAI_CALC_WORK7X,R0
+	MOV.L	R5,@R0
+	MOV.L	R6,@(4,R0)
+	MOV.L	R1,@(8,R0)
+	MOV.L	R2,@(12,R0)
+
+	MOV.L	#_DAIHAI_CALC_WORK1,R0			;
+	MOV.L	@R0,R3					;
+	MOV.L	@(4,R0),R4				;
+
+	FAR_JSR	#_DIVS1_16B_DIV_8B_ANS_8B,R0		;
+	
+	MOV.L	#_DAIHAI_CALC_WORK2,R0
+	MOV.L	R1,@R0
+	MOV.L	R2,@(4,R0)
+
+	MOV.L	#_DAIHAI_CALC_WORK1,R0		;
+	MOV.L	@R0,R5					;
+	MOV.L	@(4,R0),R6				;
+
+	CMP/EQ	R1,R5
+	BF	CALC_CHK_ERR
+	CMP/EQ	R2,R6
+	BF	CALC_CHK_ERR
+
+;
+
+	XOR	R7,R7			;
+	MOV.L	#H'00001111,R8		;1111Hづつ増やす
+	ADD8B DT_REGH=R7,DT_REGL=R8,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;
+
+
+	MOV.L	#H'7FFFFFFF,R4
+	CMP/EQ	R4,R1
+	BT	CALC_CHK_OK	;
+	M_BRA	CALCLATION_LOP	;"7FFF,FFFF,0000,0000"まで
+
+
+
+
+
+
+
+
+
+CALC_CHK_OK
+	NOP
+	M_BRA	CALC_CHK_OK
+
+
+CALC_CHK_ERR
+	NOP
+	M_BRA	CALC_CHK_ERR
+
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+
+
+;	***************************************************
+;	***						***
+;	***	ON(TIM),OFF(TIM)<=>パルス払出し～Xms	***
+;	***						***
+;	***************************************************
+;	
+;	[80]:OFFﾀｲﾏ		1ms
+;	[81]:ONﾀｲﾏ		1ms
+;	[82]:OFFSET　ONﾀｲﾏ	1ms<ﾊﾟﾙｽ完了ﾓｰﾄﾞで使用>
+
+
+ .AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+
+;;	.IMPORT	_DP_DBG_CPUAB_DRV_START		;
+
+_DBG_AUTO_DRVIE_START
+	SUB_START
+
+	MOV.L	#_DEBUG_MOD_CODE,R1			;
+	MOV.W	@R1,R0					;
+	MOV.W	#H'5AA5,R1				;
+	CMP/EQ	R1,R0					;
+	BF	DBGAUTO_DRV_TYP1_END			;
+
+;	------IDEL-------
+	MOV.L	#_SEQ_DP_TOP+_DPSQ358,R1		;動作指令 SEQ-->C/B
+	MOV.W	@R1,R0					;**5A
+	CMP/EQ	#H'5A,R0				;
+	BF	DBGAUTO_DRV_TYP1_END			;
+
+	DN_TIME LG=W,MEM_ADR=_DBG_ATO_DRV_TIME_PV,WKREG1=R1,WKREG2=R2	;
+
+	MOV.L	#_CB_SEQ_SW_SEL029,R1			;//SEQ 29
+	MOV.W	@R1,R0					;
+	TST	#BIT0,R0				;29.0
+	TST_BIT_ON DBGAUTO_DRV_TYPE1			;ﾀｲﾏﾓｰﾄﾞ
+	M_BRA	DBGAUTO_DRV_TYPE2				;これにより切り替える
+
+
+;	-----------ﾀｲﾏﾓｰﾄﾞ----------
+DBGAUTO_DRV_TYPE1:
+	MOV.L	#_SEQ_DP_TOP+_DPSQ358,R1		;動作指令 SEQ-->C/B(cpuaだけ参照可能)
+	MOV.W	@R1,R0					;**5A
+	CMP/EQ	#H'5A,R0				;
+	BF	DBGAUTO_DRV_TYP1_END			;
+
+	MOV.L	#_DBG_ATO_DRV_TIME_PV,R1		;
+	MOV.W	@R1,R0					;運転釦ON/OFFWAIT時間
+	TST	R0,R0					;
+	TST_BIT_ON DBGAUTO_DRV_TYP1_200			;WAIT
+
+	MOV.L	#_DBG_ATO_DRV_START_FLG,R1	;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON DBGAUTO_DRV_ST1_100		;
+
+	MOV.B	#BIT0,R0			;
+	MOV.L	#_DBG_ATO_DRV_START_FLG,R1	;
+	MOV.W	R0,@R1				;
+
+	MOV.B	#BIT0,R0			;
+	MOV.L	#_DP_DBG_CPUAB_DRV_START,R1	;
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_DBG_ATO_DRV_TIME_SV,R1	;
+	MOV.W	@R1,R0				;
+	ADD	#1,R0				;
+	AND	#H'0F,R0			;
+	MOV.W	R0,@R1				;0,1,2,,,,15
+
+	MOV.L	#_SEQ_DP_TOP+81*2,R1		;ﾀｲﾏ2[ON時間]　１msec
+	MOV.W	@R1,R1				;
+	ADD	R1,R0				;
+	MOV.L	#_DBG_ATO_DRV_TIME_PV,R1	;
+	MOV.W	R0,@R1				;
+	M_BRA	DBGAUTO_DRV_STEXT		;
+
+
+DBGAUTO_DRV_ST1_100:
+	XOR	R0,R0
+	MOV.L	#_DBG_ATO_DRV_START_FLG,R1	;
+	MOV.W	R0,@R1				;
+	MOV.L	#_DP_DBG_CPUAB_DRV_START,R1	;
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_SEQ_DP_TOP+80*2,R1		;ﾀｲﾏ1[Off時間]80
+	MOV.W	@R1,R0				;
+	MOV.L	#_DBG_ATO_DRV_TIME_PV,R1	;
+	MOV.W	R0,@R1				;運転釦OFF時間
+
+
+DBGAUTO_DRV_TYP1_200:
+	M_BRA	DBGAUTO_DRV_STEXT
+
+
+DBGAUTO_DRV_TYP1_END:
+	M_BRA	DBGAUTO_DRV_TYPX_END
+
+
+
+;	-----------------------------------
+;	---				---
+;	---				---
+;	---	ﾊﾟﾙｽ出力完了～		---
+;	---				---
+;	---				---
+;	-----------------------------------
+;
+;
+;
+;
+DBGAUTO_DRV_TYPE2:
+	MOV.L	#_DBG_ATO_DRV_START_FLG,R1	;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON DBGAUTO_DRV_ST2_100		;
+
+	MOV.B	#BIT0,R0			;
+	MOV.L	#_DBG_ATO_DRV_START_FLG,R1	;
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_SEQ_DP_TOP+80*2,R1		;ﾀｲﾏ1[Off時間]80
+	MOV.W	@R1,R0				;
+	MOV.L	#_DBG_ATO_DRV_TIME_PV,R1	;
+	MOV.W	R0,@R1				;運転釦OFF時間=1500ms
+
+	XOR	R0,R0				;
+	MOV.L	#_DP_DBG_CPUAB_DRV_START,R1	;
+	MOV.W	R0,@R1				;
+	M_BRA	DBGAUTO_DRV_STEXT		;
+
+
+;	------ ON中(運転釦OFF)----
+DBGAUTO_DRV_ST2_100
+	MOV.L	#_DBG_ATO_DRV_START_FLG,R1		;
+	MOV.W	@R1,R0					;
+	TST	#BIT1,R0				;
+	TST_BIT_ON DBGAUTO_DRV_ST2_200			;
+
+	MOV.L	#_DBG_ATO_DRV_TIME_PV,R1		;
+	MOV.W	@R1,R0					;運転釦OFF時間=ﾀｲﾏ1
+	TST	R0,R0					;
+	TST_BIT_ON DBGAUTO_DRV_ST2_190			;遅延中
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_DBG_ATO_DRV_START_FLG,LG=W,BIT=BIT1,WKREG=R1	;bit-set
+
+	MOV.L	#_SEQ_DP_TOP+81*2,R1			;ﾀｲﾏ2[ON時間]
+	MOV.W	@R1,R0					;
+	MOV.L	#_DBG_ATO_DRV_TIME_PV,R1		;
+	MOV.W	R0,@R1					;運転釦ON最小保証時間=100ms
+
+	MOV.B	#BIT0,R0				;
+	MOV.L	#_DP_DBG_CPUAB_DRV_START,R1		;2015-03-31:運転TEST用[]出荷時はﾌﾟﾛｸﾞﾗﾑ側をはずす
+	MOV.W	R0,@R1					;
+	
+DBGAUTO_DRV_ST2_190					;
+	M_BRA	DBGAUTO_DRV_STEXT			;
+
+;	---------- ON中----(運転釦ON)----
+DBGAUTO_DRV_ST2_200
+	MOV.L	#_DBG_ATO_DRV_START_FLG,R1		;
+	MOV.W	@R1,R0					;
+	TST	#BIT2,R0				;
+	TST_BIT_ON DBGAUTO_DRV_ST2_300			;
+
+	MOV.L	#_DBG_ATO_DRV_TIME_PV,R1		;
+	MOV.W	@R1,R0					;運転釦OFF時間=500ms
+	TST	R0,R0					;
+	TST_BIT_ON DBGAUTO_DRV_ST2_290			;遅延中
+
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB206,R1		;
+	MOV.W	@R1,R0					;
+	TST	#BIT1,R0				;
+	TST_BIT_ON DBGAUTO_DRV_ST2_290			;払出中
+
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_DBG_ATO_DRV_START_FLG,LG=W,BIT=BIT2,WKREG=R1	;bit-set
+
+	MOV.L	#_DBG_ATO_DRV_TIME_SV,R1		;
+	MOV.W	@R1,R0					;
+	ADD	#1,R0					;
+	AND	#H'0F,R0				;
+	MOV.W	R0,@R1					;0,1,2,,,,15,,,,,,31
+
+	MOV.L	#_SEQ_DP_TOP+82*2,R1			;ﾀｲﾏ2[位置決め完了からのｵﾌｾｯﾄ]
+	MOV.W	@R1,R1					;
+	ADD	R1,R0					;
+
+	MOV.L	#_DBG_ATO_DRV_TIME_PV,R1		;
+	MOV.W	R0,@R1					;位置決め完了からの遅延時間
+
+	MOV.B	#BIT0,R0				;
+	MOV.L	#_DP_DBG_CPUAB_DRV_START,R1		;2015-03-31:運転TEST用[]出荷時はﾌﾟﾛｸﾞﾗﾑ側をはずす
+	MOV.W	R0,@R1					;
+
+DBGAUTO_DRV_ST2_290					;
+	M_BRA	DBGAUTO_DRV_STEXT			;
+
+
+;	---------- ON中----(運転釦ON,遅延中)----
+DBGAUTO_DRV_ST2_300
+
+	MOV.L	#_DBG_ATO_DRV_TIME_PV,R1	;
+	MOV.W	@R1,R0				;運転釦OFF時間=500ms
+	TST	R0,R0				;
+	TST_BIT_ON DBGAUTO_DRV_STEXT		;
+
+
+
+DBGAUTO_DRV_TYPX_END:
+	XOR	R0,R0				;
+	MOV.L	#_DBG_ATO_DRV_START_FLG,R1	;
+	MOV.W	R0,@R1				;
+
+	XOR	R0,R0
+	MOV.L	#_DP_DBG_CPUAB_DRV_START,R1		;2015-03-31:運転TEST用[]出荷時はﾌﾟﾛｸﾞﾗﾑ側をはずす
+	MOV.W	R0,@R1					;
+
+DBGAUTO_DRV_STEXT
+
+;;;;;	MOV.L	#_DBG_ATO_DRV_START_FLG,R1	;
+;;;;;	MOV.W	@R1,R0				;
+;;;;;	MOV.L	#_SQ_CBWK_TOP+_WKSQCB255,R1		;255,256
+;;;;;	MOV.W	R0,@R1					;
+
+	MOV.L	#_DP_DBG_CPUAB_DRV_START,R1		;2015-03-31:運転TEST用[]出荷時はﾌﾟﾛｸﾞﾗﾑ側をはずす
+	MOV.W	@R1,R0					;
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB256,R1		;
+	MOV.W	R0,@R1					;
+
+
+
+	SUB_END
+	M_RTS
+
+ .AENDI
+
+
+
+
+
+
+;	***********************************
+;	***				***
+;	***	2015-10-15		***
+;	***				***
+;	***********************************
+	.EXPORT	_X_PROTMP_CALC			;
+_X_PROTMP_CALC:
+	SUB_START
+
+ .AIF	_CB_CPU_SEL EQ	_CB_CPUA		;
+ .AELSE
+ 	M_BRA X_PROTMP_CALEXT			;(CPUBは元々呼ばれないはず)
+ .AENDI
+
+
+	MOV.L	#_RNA_PROTOCOL_X,R1		;"1"X社製ﾌﾟﾛﾄｺﾙ
+	MOV.W	@R1,R0				;
+	CMP/EQ	#1,R0				;
+	BT	X_PROTMP_CAL050			;
+	M_BRA	X_PROTMP_CALEXT			;
+X_PROTMP_CAL050
+
+	DN_TIME W,_X_PROTCOL_TMP_TIME_PV,R1,R2	;(温度通信ﾀｲﾑｱｳﾄﾁｪｯｸ)
+
+	MOV.L	#_X_PROTCOL_TMP_TIME_PV,R1	;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON X_PROTMP_CAL100		;
+
+	XOR	R0,R0				;TIME-OUTだがそれ自体は別に関係ない
+	MOV.L	#_X_PROTCOL_TMP_EVENTCNT,R1	;
+	MOV.W	R0,@R1				;
+
+X_PROTMP_CAL100:				;
+
+	MOV.L	#_X_PROTCOL_TMP_FLG,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT7,R0			;
+	TST_BIT_ON X_PROTMP_CALEXT		;BIT7:正常終了
+
+	TST	#BIT6,R0			;
+	TST_BIT_OF X_PROTMP_CAL150		;
+;	--------異常終了(ﾀｲﾑｱｳﾄ)-------------
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB224,LG=W,BIT=(BIT15),WKRG1=R1,WKRG2=R4	;224.15
+	M_BRA	X_PROTMP_CALEXT			;
+
+X_PROTMP_CAL150		;
+	TST	#BIT5,R0			;
+	TST_BIT_OF X_PROTMP_CAL200		;
+;	--------異常終了(補正範囲外)-------------
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB224,LG=W,BIT=(BIT14),WKRG1=R1,WKRG2=R4	;224.14
+	M_BRA	X_PROTMP_CALEXT			;
+
+
+X_PROTMP_CAL200:					;
+	TST	#BIT0,R0				;
+	TST_BIT_ON X_PROTMP_CAL300			;
+
+	MOV.L	#_X_PROTCOL_TMP_TIME_PV,R1		;
+	MOV.W	@R1,R0					;
+	TST	R0,R0					;
+	TST_BIT_ON X_PROTMP_CAL250			;
+	MOV.B	#BIT6,R0				;
+	REG_MOV_TO_MEM	DST_ADR=_X_PROTCOL_TMP_FLG,L1=W,DT_REG=R0,WKREG1=R1	;ERR
+	M_BRA	X_PROTMP_CALEXT							;
+
+;	-------------------電源時１秒測定中-------------------
+X_PROTMP_CAL250:					;
+	MOV.L	#_X_PROTCOL_TMP_ANS,R1			;
+	MOV.W	@R1,R0					;
+	CMP/EQ	#1,R0					;
+	BF	X_PROTMP_CALEXT				;
+
+	FAR_JSR	#_XPROTMP_RENEA_HOS_INIT,R0		;BIT0=1 SET
+	M_BRA	X_PROTMP_CALEXT				;
+
+X_PROTMP_CAL300:					;
+
+	FAR_JSR	#_XPROTMP_RENEA_HOS_CALC,R0
+
+
+X_PROTMP_CALEXT:
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	2015-10-15			***
+;	***					***
+;	*******************************************
+;	R3:Yn_1		R5:Xn_1
+;	R2:Yn		R4:Xn
+;	ANS:R2=y	R1:x
+;	limit R6(Yn)
+
+;;	.IMPORT	_PAR_TMPHOS_TMPX1
+;;	.IMPORT	_PAR_TMPHOS_TMPX2
+;;	.IMPORT	_PAR_TMPHOS_LNGY1
+;;	.IMPORT	_PAR_TMPHOS_LNGY2
+;;	.IMPORT	_PAR_TMPHOS_HOSTM	;4 補正時間(1秒単位)20秒
+
+
+_XPROTMP_RENEA_HOS_INIT
+	SUB_START
+
+
+	MOV.L	#_X_PROTCOL_TMP_PV1,R11		;//通信ﾃﾞｰﾀ1ﾊﾞｲﾄ
+	MOV.W	@R11,R1				;
+	EXTS.B	R1,R1				;BYTE->WORD符号拡張
+	MOV.L	#_X_PROTCOL_TMP_PV2,R11		;//通信ﾃﾞｰﾀ1ﾊﾞｲﾄ
+	MOV.W	R1,@R11				;
+
+	MOV.L	#(_PAR_TMPHOS_TMPX1-_CB_SYS_PARAM000+_W_PARAM_TOP),R11		;
+	MOV.W	@R11,R5								;XN_1
+	MOV.L	#(_PAR_TMPHOS_TMPX2-_CB_SYS_PARAM000+_W_PARAM_TOP),R11		;
+	MOV.W	@R11,R4								;XN
+	CMP/GT	R4,R1								;範囲外 R4(MAX)<R1
+	BT	XPROTMP_RENEA_HOSINIT_100
+	CMP/GT	R1,R5								;範囲外 R1<R5(MIN)
+	BT	XPROTMP_RENEA_HOSINIT_100
+
+	MOV.L	#(_PAR_TMPHOS_LNGY1-_CB_SYS_PARAM000+_W_PARAM_TOP),R11		;
+	MOV.W	@R11,R3								;YN_1
+	MOV.L	#(_PAR_TMPHOS_LNGY2-_CB_SYS_PARAM000+_W_PARAM_TOP),R11		;
+	MOV.W	@R11,R2								;YN
+	MOV	R2,R6								;LIMIT
+	FAR_JSR	#_FPU_POS_HOKAN1,R0
+
+	MOV.L	#_X_PROTCOL_TMP_SVLNG,R1					;//補正量
+	MOV.W	R2,@R1								;
+	TST	R2,R2								;
+	TST_BIT_OF XPROTMP_RENEA_HOSINIT_100					;補正量=0
+
+	MOV.L	#_X_PROTCOL_TMP_PVLNG,R1					;//補正量INITAL DATA
+	MOV.W	R2,@R1								;
+
+
+	MOV.L	#(_PAR_TMPHOS_HOSTM-_CB_SYS_PARAM000+_W_PARAM_TOP),R1		;
+	MOV.W	@R1,R2				;補正時間(1秒単位)20秒
+	TST	R2,R2								;
+	TST_BIT_OF XPROTMP_RENEA_HOSINIT_100					;時間=0
+
+	MOV.W	#D'1000,R3			;
+	DMULU.L	R3,R2				;
+	STS	MACL,R2				;
+	MOV.L	#_X_PROTCOL_TMP_LNG_SVTM,R1	;//補正測定時間SV
+	MOV.L	R2,@R1				;
+	MOV.L	#_X_PROTCOL_TMP_LNG_PVTM,R1	;//補正測定時間PV
+	MOV.L	R2,@R1				;
+	MOV.B	#BIT0,R0			;
+	REG_MOV_TO_MEM	DST_ADR=_X_PROTCOL_TMP_FLG,L1=W,DT_REG=R0,WKREG1=R1	;
+
+	M_BRA	XPROTMP_RENEA_HOSINIT_200	;
+
+
+XPROTMP_RENEA_HOSINIT_100
+	MOV.B	#BIT5,R0				;
+	REG_MOV_TO_MEM	DST_ADR=_X_PROTCOL_TMP_FLG,L1=W,DT_REG=R0,WKREG1=R1	;ERR
+XPROTMP_RENEA_HOSINIT_200
+
+
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	2015-10-15			***
+;	***					***
+;	***					***
+;	*******************************************
+_XPROTMP_RENEA_HOS_CALC
+	SUB_START
+	MOV.L	#_X_PROTCOL_TMP_LNG_PVTM,R5	;
+	MOV.L	@R5,R1				;
+	TST	R1,R1				;
+	TST_BIT_OF XPROTMP_RENEA_HOSCAL050	;
+	ADD	#-1,R1
+	MOV.L	R1,@R5				;
+	M_BRA	XPROTMP_RENEA_HOSCAL100		;
+
+XPROTMP_RENEA_HOSCAL050
+	MOV.W	#BIT7,R0			;
+	REG_MOV_TO_MEM	DST_ADR=_X_PROTCOL_TMP_FLG,L1=W,DT_REG=R0,WKREG1=R1	;BIT0=0CLR
+	M_BRA	XPROTMP_RENEA_HOSCALEND						;終了
+
+XPROTMP_RENEA_HOSCAL100
+	MOV.L	#_X_PROTCOL_TMP_LNG_SVTM,R5	;//補正測定時間SV
+	MOV.L	@R5,R4				;
+	MOV.L	#_X_PROTCOL_TMP_SVLNG,R5	;//補正測定時間SV
+	MOV.W	@R5,R2				;
+	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0	;SV-LNG*PV_TIM(DOWN_TIME)/MAX_TIM
+	MOV.L	#_X_PROTCOL_TMP_PVLNG,R5	;//補正量INITAL DATA
+	MOV.W	R2,@R5				;
+
+
+XPROTMP_RENEA_HOSCALEND
+
+	SUB_END
+	M_RTS
+
+	.END

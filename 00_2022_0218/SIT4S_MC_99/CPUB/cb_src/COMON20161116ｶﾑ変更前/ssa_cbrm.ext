@@ -1,0 +1,2983 @@
+;//	*******************************************
+;//	***					***
+;//	***					***
+;//	***	ｓｒａｍ			***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_CB_INT_START_OK;//
+	.GLOBAL	_MAIN_START_OK;
+	
+	.GLOBAL	_BASE_TIM010MS;
+	.GLOBAL	_BASE_TIM100MS;
+	.GLOBAL	_TABLE_ERR_FLG;
+
+;//	***************************
+;//	***	ハード入出力 	***
+;//	***************************
+	.global	_di1_cb_ctl1;//+0:DI(使用)+1　+2()　+3(生) 運転釦(200.*)
+	.global	_di2_cb_ctl2;//+0:DI(使用)+1　+2()　+3(生) LSA,WT1~3(201.*)
+	.global	_di3_cb_inp1;//+0:EMG0,EMG1
+	.global	_di4_cb_inp2;//+0:BIT10,BIT11,BIT12,BIT13(202.*)
+	.global	_dq1_cb_out1;//+0:制御出力(203)
+
+	.global	_di3_cb_inp1_dt;//制御に使用するのは_dt
+
+	.global	_di1_cb_ctl1_dt;// 制御ﾚﾍﾞﾙﾃﾞｰﾀ(ｼｰｹﾝｽ指令も+する)
+	.global	_di1_cb_ctl1_on;// onｴｯｼﾞ
+	.global	_di1_cb_ctl1_of;// offｴｯｼﾞ
+
+	.global	_di2_cb_ctl2_dt;// 制御ﾚﾍﾞﾙﾃﾞｰﾀ(ｼｰｹﾝｽ指令も+する)
+	.global	_di2_cb_ctl2_on;// onｴｯｼﾞ
+	.global	_di2_cb_ctl2_of;// offｴｯｼﾞ
+
+	.GLOBAL	_CNT_STOP_CMD;//連続停止,ﾛｯﾄｶｳﾝﾀ,設定異常
+
+	.global	_CPU_SV_HAND_IN;
+	.global	_CPU_SV_HAND_IN_ON;
+
+	.global	_CPU_SV_HAND_OUT;
+	.global	_OLD_RNAORG_POS1;
+
+;//	***********************************
+;//	***	ハード入力360ｴﾝｺｰﾀﾞ 	***
+;//	***********************************
+	.GLOBAL	_ENC360_INOLD;//ﾋﾞｯﾄ化けを除いた本当の生
+	.GLOBAL	_ENC360_INDT;//生 BCD
+	.GLOBAL	_ENC360_HEX;//HEX data
+	.GLOBAL	_CTL_ENC360;//360.0度
+
+	.GLOBAL	_RNA_ENC360;//0~360
+	.GLOBAL	_INC_ENC360	;//+/-360.0
+	.GLOBAL	_DISP_ENC360;
+	.GLOBAL	_OBJ_ENC360;//0~360.0
+
+;//	***********************************
+;//	***	ﾘﾆｱｴﾝｺｰﾀﾞ	ERR	***
+;//	***********************************
+	.GLOBAL	_RNA_COM_ERR_CNT;//通信失敗ｶｳﾝﾀ
+	.GLOBAL	_RNA_COM_NML_CNT;//正常ｶｳﾝﾀ
+;---20060930ADD
+	.GLOBAL	_RNA_RESET_FLG;//RESET-BOTTON ---SET
+	.GLOBAL	_RNA_RESET_TIM;//1sec
+	.GLOBAL	_ENC_SYSRST_CMD	;//RESET・COMMAND
+	.GLOBAL	_ENC_TIMEXT_FLG	;//ﾀｲﾑｱｳﾄを見ない
+	.GLOBAL	_RNA_CMD_SND_CNT;//ｺﾏﾝﾄﾞ送信回数ｶｳﾝﾀ
+	.GLOBAL	_RNA_CMD_RD_CNT;//ｺﾏﾝﾄﾞ受信回数ｶｳﾝﾀ
+
+;//	***********************************
+;//	***	360度ｴﾝｺｰﾀﾞ	ERR	***
+;//	***********************************
+	.GLOBAL	_ENC360_BITFLW_CNT;//ﾋﾞｯﾄ化けの発生した回数
+	.GLOBAL	_ENC360_BITERR_CNT;//ﾋﾞｯﾄ飛びの発生した回数
+	.GLOBAL	_ENC360_BITNML_CNT;//正常
+
+;//	***********************************
+;//	***	C/B　入力の加工処理	***
+;//	***	DI_LOAD			***
+;//	***********************************
+	.GLOBAL	_BTTN_FLG;	//BIT0:両手ﾌﾘ- BIT1:片手ON　BIT2:両手ON
+	.GLOBAL	_SFTY_IN_DAT;	//安全装置入力 BIT0:前安全　BIT1:後安全装置
+	.GLOBAL	_SFTY_CTL_IN_DAT;
+	
+;SFTY_IN_DAT	BIT0	CPUAorB前安全装置遮光	FACT（安全装置有効／無効の影響を受ける）
+;		BIT1	CPUAorB前安全装置遮光	RACT（安全装置有効／無効の影響を受ける）
+;		BIT2	CPUAorB前安全装置遮光	FEDV（FCYCL）:上昇無効時に参照
+;		BIT3	CPUAorB前安全装置遮光	RDEV（RCYCL）:上昇無効時に参照
+
+
+
+
+
+
+
+
+
+;//	***************************
+;//	***	異常関係	***
+;//	***************************
+	.global	_pass_err_flg1;//異常ﾙｰﾁﾝ
+	.global	_pass_err_flg2;//制御ﾙｰﾁﾝ
+	.global	_emg_lev_flg;//異常状態(生ﾃﾞｰﾀ)
+	.global	_emg_err_flg;//異常ﾗｯﾁ
+	.global	_exq_lev_flg;//急停止状態(生ﾃﾞｰﾀ)
+	
+	.global	_exq_err_flg;//exqﾗｯﾁ
+	.global	_INPUT_MODE_SW;
+	.global	_ELSE_ERR_FLG1;//非常停止(異常で1　正常で0)
+	.global	_ELSE_ERR_FLG2;//BIT0:ﾓｰﾄﾞSW変更
+	.global	_MOV_ERR_FLG1;//BIT0~BIT8
+
+	.GLOBAL	_CMP_ERR_TIM1;
+	.GLOBAL	_MOV_DATA_ERR_FLG1;//反転ﾃﾞｰﾀ異常　BIT0
+	.GLOBAL	_CMP_STEP_ERR_TIM1;//工程二重回路
+
+	.GLOBAL	_ORG_ELSE_NOMAL_FLG1;//原点動作以外動作禁止 0:異常 1:OK
+	.GLOBAL	_ORG_DND_NOMAL_FLG1
+
+
+;//	***************************
+;//	***	リセット関係	***
+;//	***************************
+	.global	_reset_flg;//
+	.globaL	_reset_dly_tim;//20msec
+	.GLOBAL	_ORG_PRESET_TIM;
+
+;//	***************************
+;//	***	ｾﾙﾌﾁｪｯｸ関係	***
+;//	***************************
+	.global	_SELF_FLG	;BIT0:ｾﾙﾌﾁｪｯｸ中
+				;BIT1:ｾﾙﾌﾁｪｯｸ完了
+	.global	_SELF_COM	;BIT0:ｾﾙﾌﾁｪｯｸ指令      ANTI-WR ANTI-CLR
+	.GLOBAL	_SELF_START_WAIT_TM;
+	.GLOBAL	_SELF_CHK_SEL	;BIT0=1(ﾘｾｯﾄ時ｾﾙﾌする) BIT1=1(運転終了時ｾﾙﾌする)
+
+;//	***************************
+;//	***	C/Bﾓｰﾄﾞ情報	***
+;//	***************************
+	.global	_INP_MODE;	//入力　ﾘｾｯﾄ条件に使用 INP_MODE-->MODE_SEL
+	.global	_MODE_SEL;	//ﾘｾｯﾄ時に決定
+				;//bit0:切 bit1寸動 bit2:安一(sgl,opt) bit3:連続 bit4:opt bit5:段取 bit6:待機点復帰
+				;//まずbit0~bit7のいずれかがonする　選択未は切(bit0)
+				;//bit8~bit15:詳細情報
+				;//
+	.global	_MRTION_SEL;	;//回転/反転/往復上/往復下(起動時またはRESET時)
+				;//
+	.GLOBAL	_IN_RDY_FLG;	//内部準備完了(ANTIと同じﾚﾍﾞﾙ)
+	.GLOBAL	_STOP_LATCH;	//BIT0:ｽﾄｯﾌﾟ釦
+	.GLOBAL	_STOP_LATCH_B;	//BIT0:ｽﾄｯﾌﾟ釦
+
+	.GLOBAL	_UP_HOLD_STEP;	//上昇ﾎｰﾙﾄﾞを監視を開始するｽﾃｯﾌﾟ
+	.GLOBAL	_UP_HOLD_STEP1;	//上昇ﾎｰﾙﾄﾞ(往復運転時)
+	.GLOBAL	_UP_HOLD_STEP2;	//上昇ﾎｰﾙﾄﾞ(往復運転時)
+	.GLOBAL	_UP_HOLD_DIG;	//0.1度(165.0):ﾓｰﾀ軸ｴﾝｺｰﾀﾞ角度で比較
+	.GLOBAL	_UP_HOLD_FLG;	//BIT0=1 上昇ﾎｰﾙﾄﾞ状態
+	.GLOBAL	_CAM_CTL_STEP;//ｶﾑ・上昇ﾎｰﾙﾄﾞ用
+	.GLOBAL	_SW_DEV_MASK_FLG;//BIT1=BIT0=0 安全装置無効  BIT1=BIT0=1 安全装置有効
+	.GLOBAL	_FR_CYL_MASK_FLG;//上昇無効中"1"
+	.GLOBAL	_END_CMD_LATCH;
+
+
+;//	***********************************
+;//	***	ｽﾄｯﾋﾟﾝｸﾞﾀｲﾏ		***
+;//	***********************************
+	.GLOBAL	_STOPPING_VLVOFF_POS;//停止処理開始時点の位置
+	.GLOBAL	_STOPPING_STOP_POS;//停止処理測定位置
+	.GLOBAL	_STOPPING_TIM_FLG;//ｽﾄｯﾋﾟﾝｸﾞﾀｲﾏ用ﾌﾗｸﾞ BIT0測定開始 BIT6:停止中
+	.GLOBAL	_STOPPING_STOP_TIM;//停止を測定するタイマ
+	.GLOBAL	_STOPPING_TIM_PV1;//ｽﾄｯﾋﾟﾝｸﾞﾀｲﾏ
+	.GLOBAL	_STOPPING_TIM_PV2;//ｽﾄｯﾋﾟﾝｸﾞﾀｲﾏ
+
+;//	***********************************
+;//	***	ﾛｯﾄｶｳﾝﾀ処理		***
+;//	***********************************
+;//	最終工程で且つ165度より上(回転ならPV≧165 反転なら165≧PV)なら
+;//	ﾛｯﾄｶｳﾝﾀは連続・安一・ｵﾌﾟｼｮﾝでカウント
+	.GLOBAL	_LOT_CNT_FLG;//行程=1で0 最終工程で条件成立で=1()
+;//2016-10-31	.GLOBAL	_LOT_CNT_TO_MOD;
+	.GLOBAL	_LOT_CHK_FLG;
+
+
+
+;//	***********************************
+;//	***	C/B　RDY時の処理	***
+;//	***********************************
+	.GLOBAL	_DRV_ACT_FLG;	//運転動作ﾌﾗｸﾞ BIT0:運転中
+	.GLOBAL	_SAME_TIM;	//運転同時釦
+	.GLOBAL	_SET_UP_TIM;	//ｾｯﾄｱｯﾌﾟ
+
+;//	***********************************
+;//	***				***
+;//	***	二重回路対策		***
+;//	***				***
+;//	***********************************
+	.GLOBAL	_CMPSTEP_CTRL_REDY;//準備完了にしたい
+	.GLOBAL	_CMPSTEP_CTRL_BUSY;//準備未完了にしたい
+	.GLOBAL	_CMPSTEP_POS_START;//起動したい
+	.GLOBAL	_CMPSTEP_SFTY_AUTO;//AUTOにしたい/安全一工程,連続ｶｳﾝﾀ
+	.GLOBAL	_CMPSTEP_NEAR_ZERO;//ﾆｱｾﾞﾛ処理を行いたい
+	.GLOBAL	_CMPSTEP_CNT_STOP;//連続停止
+	.GLOBAL	_CMPSTEP_STEP_END;//位置決め完了としたい
+	.GLOBAL	_NEAR_IN_FLG;
+
+
+;//	***********************************
+;//	***	ﾒｲﾝで作成		***
+;//	***********************************
+;;;;;	.GLOBAL	_LINK_NOWROT_NUM;//現在のROT番号
+	.GLOBAL	_LINK_NOWROT_NUM_ZR;		//回転数
+	.GLOBAL	_LINK_NOWROT_NUMPLS_ZR;[2];	//回転数相当のﾊﾟﾙｽ
+	.GLOBAL	_LINK_NOWROT_OFSPLS;	//RL_OBJ_ABSPLS/nm = xx...1回転角度
+	.GLOBAL	_LINK_NOWROT_OFSPLS_P;	//RL_OBJ_ABSPLS/nm = xx...1回転角度
+
+	.GLOBAL	_INCENC_LINK_NOWROT_NUM_ZR;//回転数
+	.GLOBAL	_INCENC_LINK_NOWROT_NUMPLS_ZR;//RL_OBJ_ABSPLS/nm = 回転数相当のﾊﾟﾙｽ
+	.GLOBAL	_INCENC_LINK_NOWROT_OFSPLS;	//余り角度
+	.GLOBAL	_INC_LINK_NOWROT_OFSPLS_P;	//余り角度
+
+	.GLOBAL	_M_LINK_AREASIG;	//BIT0:待機点範囲
+
+;//	***********************************	//
+;//	***				***	//
+;//	***	待機設定範囲		***	//
+;//	***				***	//
+;//	***********************************	//
+	.GLOBAL		_WSVX_CLNK_UP_POS;	//ｸﾗﾝｸ設定
+	.GLOBAL		_WSVX_CLNK_UP_POS_UP;	//ｸﾗﾝｸ設定
+	.GLOBAL		_WSVX_CLNK_UP_POS_DN;	//ｸﾗﾝｸ設定
+	.GLOBAL		_SETX_LINK_UP_POS_UP;	//ｸﾗﾝｸ設定(範囲比較)
+	.GLOBAL		_SETX_LINK_UP_POS_DN;	//ｸﾗﾝｸ設定(範囲比較)
+
+;//	***********************************
+;//	***	1msecﾒｲﾝで作成		***
+;//	***********************************
+	.GLOBAL	_RNA_LINK_NOWROT_OFSPLS_P;	//余り角度 +ﾃﾞｰﾀ
+	.GLOBAL	_INC_ENC_MM_POS;
+
+
+;//	***********************************
+;//	***	ﾘｾｯﾄ解除時に決定	***
+;//	***	以降			***
+;//	***********************************
+	.GLOBAL	_RESET_ROTNUM_ZR;//この時に使用する待機点
+	.GLOBAL	_RESET_ROTNUMPLS_ZR;[2];//"
+
+;//	***********************************
+;//	***	位置決め演算		***
+;//	***********************************
+;//	段取では下のｽﾃｯﾌﾟﾃﾞｰﾀは使用しない
+
+	.GLOBAL	_SETX_POS_SDAT1_OFSPOS	;[12];//(ﾒｲﾝｽｷｬﾝで動作停止状態で作成) 往路
+	.GLOBAL	_SETX_POS_SDAT1_SPD	;[12];//(ﾒｲﾝｽｷｬﾝで動作停止状態で作成)	   "
+	.GLOBAL	_SETX_POS_SDAT1_TIM	;[12];//(ﾒｲﾝｽｷｬﾝで動作停止状態で作成)    "
+	.GLOBAL	_SETX_POS_SDAT1_CNTSTEP	;[12];//(ﾒｲﾝｽｷｬﾝで動作停止状態で作成)"
+	.GLOBAL	_SETX_POS_SDAT1_INF1	;[12];//(ﾒｲﾝｽｷｬﾝで動作停止状態で作成)   "
+
+	.GLOBAL	_SETX_POS_SDAT2_OFSPOS	;[12];//(ﾒｲﾝｽｷｬﾝで動作停止状態で作成) 復路
+;//2009-10-07復路には不要	.GLOBAL	_SETX_POS_SDAT2_SPD	;[12];//(ﾒｲﾝｽｷｬﾝで動作停止状態で作成)     "
+;//2009-10-07復路には不要	.GLOBAL	_SETX_POS_SDAT2_TIM	;[12];//(ﾒｲﾝｽｷｬﾝで動作停止状態で作成)     "
+;//2009-10-07復路には不要	.GLOBAL	_SETX_POS_SDAT2_CNTSTEP	;[12];//(ﾒｲﾝｽｷｬﾝで動作停止状態で作成) "
+	.GLOBAL	_SETX_POS_SDAT2_INF1	;[12];//(ﾒｲﾝｽｷｬﾝで動作停止状態で作成)    "
+	.GLOBAL	_SETX_POS_MOD_FLG1;	//BIT0:回転-連続//BIT1:回転-寸動//BIT2:どっかで停止する運転か否か
+	.GLOBAL	_SETX_POS_CTL_MATH;	
+	.GLOBAL	_SETX_POS_STEP_MAX;	//設定+1 2~11
+
+
+	.GLOBAL	_CPOS_SDAT1_OFSPOS	;[12];//SETX-->起動時COPY
+	.GLOBAL	_CPOS_SDAT1_SPD		;[12];//SETX-->起動時COPY
+	.GLOBAL	_CPOS_SDAT1_TIM		;[12];//SETX-->起動時COPY
+	.GLOBAL	_CPOS_SDAT1_CNTSTEP	;[12];//SETX-->起動時COPY
+	.GLOBAL	_CPOS_SDAT1_INF1	;[12];//SETX-->起動時COPY
+	.GLOBAL	_CPOS_SDAT1_NUM		;[12];//起動時,その他で演算
+	.GLOBAL	_CPOS_SDAT1_CHGAPOS	;[12];//起動時,その他で演算
+	.GLOBAL	_CPOS_SDAT1_STPAPOS	;[12];//起動時,その他で演算
+	.GLOBAL	_CPOS_MOD_FLG1;//回転時の停止しない連続
+	.GLOBAL	_CPOS_CTL_MATH;	
+	.GLOBAL	_CPOS_STEP_MAX;	//設定+1 2~11
+
+
+	.GLOBAL	_LINK_OBJROT_NUM_ZR;	//NOW ROTATION 番号
+	.GLOBAL	_LINK_OBJROT_NUMPLS_ZR;	//NOW ROTATION番号相当のﾊﾟﾙｽ
+
+
+
+;;;;未使用	.GLOBAL	_LINK_POSS_PLS;	//開始待機点ﾊﾟﾙｽ
+;;;;未使用	.GLOBAL	_LINK_POSE_PLS;	//目標待機点ﾊﾟﾙｽ
+	.GLOBAL	_LINK_1ROT_PLS;	//1回転ﾊﾟﾙｽ()
+	
+	.GLOBAL	_SDAT_WAIT_PVTIM;
+	.GLOBAL	_CPOS_UPAREA_PLS;	//待機点ﾗｯﾁ
+	.GLOBAL	_CLS_RNA_MOST_DOWN_POS;//ﾌﾙｸﾛｰｽﾞ開始時~終了までの最下死点
+	.GLOBAL	_CLS_INC_MOST_DOWN_PLS;//ﾌﾙｸﾛｰｽﾞ開始時~終了までの最下死点
+	.GLOBAL	_CYCL_START_CNT;
+
+	.GLOBAL	_CPOS_SDAT1_UP_OFSPOS;//2014-09-20 上死点 繰返に開始側の待機点も必要
+	.GLOBAL	_CPOS_SDAT1_UP_POS;//2014-09-20 上死点 繰返に開始側の待機点も必要
+
+
+;//	***********************************
+;//	***	C/B 位置決めｲﾝﾀｰﾌｪｲｽ	***
+;//	***********************************
+;//	C/B ==> 位置決め
+	.GLOBAL	_MNWR_POS_CMD;//0000,0000,0000,0000  :ﾊﾟﾙｽ払出即停止
+			;//BIT0:起動
+			;//BIT1:減速停止
+			;//BIT2:待機点停止(連続時)
+			;//
+;	.GLOBAL	_MNWR_POS_MOD	;//BIT0:待機点復帰(原点出し前/後)
+			;//BIT1:段取寸動上昇,段取寸動下限
+			;//BIT2:工程運転+1回転待機点(上死点)停止運転
+			;//BIT3:連続(1回転では止まらない)
+			;//BIT4:寸動
+			;//BIT5:回転ﾓｰﾄﾞ(連続・寸動時減速しない)BIT3/BIT4の時のみ
+
+
+	.GLOBAL	_STR_ENC3600_DIG;	//運転開始時の360.0角度
+	.GLOBAL	_STR_ENC3600_DIG_LNG;	//
+
+	.GLOBAL	_DND_CALC_WORK;
+
+
+;//	***********************************
+;//	***				***
+;//	***	位置決め		***
+;//	***	ﾊﾞｯｸﾙﾌﾟ			***
+;//	***********************************
+	.GLOBAL	_M_LINK_RL_OBJ_ABSPLS;[2];//MAIN用
+
+;//	***********************************
+;//	***				***
+;//	***	位置決め		***
+;//	***				***
+;//	***********************************
+	.GLOBAL	_LINK_RL_OBJ_ABSPLS;[2];//ﾘｱﾙﾀｲﾑ目標絶対位置(ﾊﾞｯｸﾗｯｼなし)
+
+;//	***********************************
+;//	***				***
+;//	***	位置決め		***
+;//	***				***
+;//	***********************************
+;//	==== I/F data
+	.GLOBAL	_LINK_SV_OBJ_ABSPLS;[2];//目標絶対位置 最終目標(設定ﾊﾞｯｸﾗｯｼなし)
+	.GLOBAL	_LINK_SV_OBJ_SPDPLS;//目標速度
+	.GLOBAL	_POS_DRV_DIRECT	;//上死点復帰では必要(どっちからはじめるか)
+				;//段取寸動は必要
+				;//往路・復路でも必要-->ｽﾃｯﾌﾟに組み込まれる
+
+
+	.GLOBAL	_SV_POS_CTL_STEP;	//制御上の見かけ　多分SV=
+	.GLOBAL	_POS_CTRL_SQ_STS;	//位置決めｽﾃｰﾀｽ
+
+;//	===== 異常でもけさない====
+	.GLOBAL	_INT_POS_CTL_STEP;	//
+	
+	.GLOBAL	_INT_DND_CTL_STEP;	//
+	.GLOBAL	_INT_POS_CTL_FLAG;	//
+	.GLOBAL	_INT_POS_STEP_FLG;	//
+	.GLOBAL	_INT_DND_STEP_FLG;	//(上死点復帰の工程管理)
+	.GLOBAL	_INT_CYC_DRV_STS;	//BIT0:CYCLE　END()
+	.GLOBAL	_INT_CLS_CTL_FLG;//BIT0=1 START 起動時ｸﾘｱ
+	.GLOBAL	_INT_CLS_DYL_TIM;//
+
+	.GLOBAL	_INT_DND_NEG_STEP;	//2003-01-27 _NEG_SPEC1 EQ _COMPILE_YES	;
+
+;//	===========================================
+;//	===		払い出しパルス算出	===
+;//	===========================================
+	.GLOBAL	_LNGTH_ADD_DATA;[2];//符号付き
+	.GLOBAL	_LNGTH_TOTAL_OUTPLS;[2];//符号つき TOTAL=TOTAL+ADD ADD_DATA<=0
+	.GLOBAL	_POSLSI_CMP_DATA;//CMP_DATA=CMP_DATA+|ADD_DATA| (符号なし)
+	.GLOBAL	_POSLSI_DELT_POS;//変化分
+	.GLOBAL	_INT_LINK_TOTAL_ABSPLS;[2];//ﾊﾞｯｸﾗｯｼ補正前
+	.GLOBAL	_LINK_PV_ABSPLS;[2];//
+	.GLOBAL	_LINK_POS_OFFSET1;[2];
+	.GLOBAL	_LINK_POS_OFFSET2;[2];
+	.GLOBAL	_OUTPLS_MOD;
+	.GLOBAL	_OUTPLS_DIV;
+	
+	.GLOBAL	_POSLSI_DRIV_SHIN;
+	.GLOBAL	_POSLSI_CHK_RESTPLS;
+	
+	.GLOBAL	_POSLSI_OUTPUT_TOTAL_PLS;
+
+	.GLOBAL	_POSLSI_HENSA_LATCH;
+	
+	.GLOBAL	_POSLSI_CHK_CNT;//UP CNT
+	.GLOBAL	_POSLSI_CHK_DLT;//符号付差分
+	.GLOBAL	_POSLSI_CHK_STS;
+
+;//	***********************************
+;//	***	異常			***
+;//	***********************************
+	.GLOBAL	_HENSA_OVR_OUTPLS;[2];//偏差ｵｰﾊﾞ用OUTPUT_LATCHdata
+	.GLOBAL	_HENSA_OVR_ENCPOS;[2];//BIT0
+
+	.GLOBAL	_STOP_LATCH_OUTPLS;[2];
+	.GLOBAL	_STOP_LATCH_ENCPOS;[2];
+	.GLOBAL	_STOP_LATCH_RNAPOS;[2];//BIT
+	.GLOBAL	_STOP_LATCH_CHK_TIM;//位置決め完了後の遅延時間
+
+	.GLOBAL	_REV_LATCH_OUTPLS;[2];//偏差ｵｰﾊﾞ用OUTPUT_LATCHdata
+	.GLOBAL	_REV_LATCH_ENCPOS;[2];
+	.GLOBAL	_REV_LATCH_RNAPOS;[2];//
+
+	.GLOBAL	_RST_ERR_CHK_FLG;//QST=1 :00
+
+	.GLOBAL	_RST_ERR_CHK_ERR;//
+
+	.GLOBAL	_CMP_ERR_CHK_STSA;
+	.GLOBAL	_CMP_ERR_CHK_STSB;
+	.GLOBAL	_CMP_ERR_STSA_INF1;
+	.GLOBAL	_CMP_ERR_STSA_INF2;
+	.GLOBAL	_CMP_ERR_STSA_INF3;
+	.GLOBAL	_CMP_ERR_STSA_INF4;
+	.GLOBAL	_CMP_ERR_STEP_A;
+	.GLOBAL	_CMP_ERR_STEP_B;
+
+;//	***********************************
+;//	***				***
+;//	***	演算の簡略化定数	***
+;//	***				***
+;//	***********************************
+
+;	//演算簡略化の為シスパラで演算途中を作成しておく
+	.GLOBAL	_CALC_MEM_1REV_MUL_NROT;//1回転パルス(8192)*Ｎ回転(32)=4byte
+	.GLOBAL	_CALC_MEM_1REV_ML_NROT_ML36;//1回転パルス(8192)*Ｎ回転(32)*3600=4byte
+
+;//	***********************************
+;//	***	位置決めＬＳＩカウンタ	***
+;//	***********************************
+	.GLOBAL	_POS_LSI_TOTAL_PLS;
+	.GLOBAL	_POS_LSI_ABSPLS;
+	
+	.GLOBAL	_POS_LSI_OFFSET1;
+	.GLOBAL	_POS_LSI_OFFSET2;
+	.GLOBAL	_POS_LSI_CTL_NOWPLS;
+	
+	.GLOBAL	_POS_LSI_OLDCNT	;
+
+	.GLOBAL	_RNA_ABS_ORGWORK;//待機点検出用ﾜｰｸ
+	.GLOBAL	_INC_ABS_ORGWORK;//ﾘﾆｱを記憶時のｲﾝｸﾘﾒﾝﾀﾙ角度
+
+;//	***********************************
+;//	***	ﾘﾆｱｽｹｰﾙ原点		***
+;//	***********************************
+	.GLOBAL	_RNA_POS_OFFSET1;
+	.GLOBAL	_RNA_POS_OFFSET2;
+	.GLOBAL	_RNA_ABS_POS;//ﾎﾞﾙｽﾀ面高さ(絶対位置)
+	.GLOBAL	_RNA_ABS_MEMORG;
+
+	.GLOBAL	_RNA_STLORK;
+	.GLOBAL	_PVX_DAI_POS0;//基準
+	.GLOBAL	_PVX_DAI_POS1;//表示値
+	.GLOBAL	_PVX_RNA_STLORK;//実測
+	
+	.GLOBAL	_RNA_ABS_MD_DT0;//
+	.GLOBAL	_RNA_ABS_MD_DT1;//
+	.GLOBAL	_RNA_CTL_POS0;//制御位置(旧制御値相当) 2003-01-27 追加
+	.GLOBAL	_RNA_CTL_POS1;//制御位置
+	.GLOBAL	_PVX_DYHITO_POS;//表示
+	.GLOBAL	_RNA_HOS_DELT;//ﾀﾞｲﾊｲﾄ実測-ﾀﾞｲﾊｲﾄ設定 2003-01-27
+
+	.GLOBAL	_DAI_HOSEI1_FLG;
+	
+;//	***************************
+;//	***	ダイハイト比較	***
+;//	***************************
+;//	======= 待機点復帰/通常運転ワーク 
+	.GLOBAL	_RNA_ABS_WKMINPOS;//ｻﾝﾌﾟﾘﾝｸﾞﾜｰｸ起動前RNA_ABS_POS
+	.GLOBAL	_RNA_ABS_WKMAXPOS;//ｻﾝﾌﾟﾘﾝｸﾞﾜｰｸ起動前RNA_ABS_POS
+	.GLOBAL	_RNA_ABS_MINPOS;//最下死点--ﾓｰﾄﾞ起動前RNA_ABS_POS
+	.GLOBAL	_RNA_ABS_MAXPOS;//最上死点--ﾓｰﾄﾞ起動前RNA_ABS_POS
+	.GLOBAL	_DAI_CMP_SMPSTART;//BIT0:ｻﾝﾌﾟﾘﾝｸﾞ開始
+
+;//	*******************************************
+;//	***	上記の方法の変更時発生WORK	***
+;//	*******************************************
+	.GLOBAL	_WPAR_DRVHOS_SEL1;//運転中の補正制御選択=0:旧 =1:下限による補正制御
+	.GLOBAL	_WPAR_DRVHOS_DIG1;//360ｴﾝｺｰﾀﾞ角度上 170.0度(ｻﾝﾌﾟﾘﾝｸﾞ開始可能な角度) 170~359<ｻﾝﾌﾟﾘﾝｸﾞ可>
+	.GLOBAL	_WPAR_DRVHOS_DIG2;//
+	.GLOBAL	_WPAR_DRVHOS_WAITCNT;//初回のｶｳﾝﾄ開始待ち回数
+	.GLOBAL	_WPAR_DRVHOS_AVLCNT;//移動平均の元データ回数
+	.GLOBAL	_WPAR_DRVHOS_NO_USE;//読み飛ばしデータ回数 上限側
+
+	.GLOBAL	_DRVHOS_USE_FLG;//BIT1=1,BIT0=1 補正ﾃﾞｰﾀを使用してもいい
+	.GLOBAL	_DRVHOS_WAIT_CNT_PV;
+	.GLOBAL	_DRVHOS_DEF_CNT_PV;//移動平均回数と一致
+	.GLOBAL	_DRVHOS_IDO_POINT;//ﾊﾞｯﾌｧ管理ﾎﾟｲﾝﾀ
+;	==== 2003-07-14 ==
+	.GLOBAL	_DRVHOS_IDO_CNT;//移動平均回数をｶｳﾝﾄし1個,2個,,,でも平均を出せるようにする
+;	==================
+
+	.GLOBAL	_RNA_ABS_DRVHOS_DT;//補正ﾃﾞｰﾀ 2003-01-31
+	.GLOBAL	_DRVHOS_DEF_RNA_POS;//最下死点の初期値
+	.GLOBAL	_DRVHOS_CAL_RNA_POS;//最下死点の演算値
+	.GLOBAL	_DRVHOS_MOST_DN_RNAPOS;//最下死点のWORK(175~359) 175度でﾃﾞﾌｫﾙﾄを作成
+
+	.GLOBAL	_DRVHOS_IDO_TOTAL;//
+	.GLOBAL	_DRVHOS_IDO_BUF;//
+	.GLOBAL	_DRVHOS_WORK_BUF;//
+
+	.GLOBAL	_DEF_DAI_POS_PV;//2003-07-14
+;//	***********************************
+;//	***				***
+;//	***	荷重補正でのﾀﾞｲﾊｲﾄ補正	***
+;//	***				***
+;//	***********************************
+;//	2004-07-06
+	.GLOBAL	_KJPHOS_USE_FLG;	//BIT0=1 ｲﾆｼｬﾙ完了
+	.GLOBAL	_KJPHOS_IDO_POINT;//ﾊﾞｯﾌｧ管理ﾎﾟｲﾝﾀ
+	.GLOBAL	_KJPHOS_IDO_CNT;//移動平均回数をｶｳﾝﾄし1個,2個,,,でも平均を出せるようにする
+
+	.GLOBAL	_KJPHOS_WAIT_CNT_PV;	;初期回数←_WPAR_DRVHOS_WAITCNT (BIT0=0→1時にｾｯﾄ)
+	.GLOBAL	_KJPHOS_DEF_CNT_PV;	;平均回数←_WPAR_DRVHOS_AVLCNT (BIT1=0→1時にｾｯﾄ)
+
+	.GLOBAL	_KJPHOS_IDO_TOTAL;//
+	.GLOBAL	_KJPHOS_IDO_BUF;//
+
+	.GLOBAL	_KJYUU_IN_DAT_PV;//(DPRAM)2byte->4byte(WORK)
+	.GLOBAL	_KJYUU_DEF_DAT_PV;//4byte
+	.GLOBAL	_KJYUU_NEW_DAT_PV;//4byte
+	.GLOBAL	_KJPHOS_CAL_PRS;//ﾃﾞﾊﾞｯｸ用
+
+
+
+;//	***************************
+;//	***	表示用 I/F	***
+;//	***************************
+	.GLOBAL	_CYCLE_TIME_DAT;//(起動時0　ﾌﾗｸﾞON中ｶｳﾝﾄ　ﾌﾗｸﾞOFF中保持)
+	.GLOBAL	_CYCLE_TIME_PV;
+	.GLOBAL	_CYCLE_TIME_FLG;//(ﾌﾗｸﾞON)
+	.GLOBAL	_DISP_RE_VIEW_FLG;//非常停止解除(ｻｲｸﾙ運転),1CYCLEND,
+
+;//	***************************
+;//	***	ｼｰｹﾝｽ入出力	***
+;//	***************************
+	.global	_CB_SEQ_SW_SEL022	;//SEQ 22 2014-02-20 R02R03
+	.global	_CB_SEQ_SW_SEL024	;//SEQ 24 2004-01-26
+	.global	_CB_SEQ_SW_SEL028	;//SEQ 28
+	.global	_CB_SEQ_SW_SEL029	;//SEQ 29
+
+	.GLOBAL	_CB_SEQ_CB_COM340	;
+	.GLOBAL	_CB_SEQ_CB_SEL341	;
+	.global	_CB_SEQ_CB_SEL342	;
+	.GLOBAL	_CB_SEQ_CB_COM345;//20030709
+	.GLOBAL	_CB_SEQ_CB_COM346;//20030524
+	.GLOBAL	_CB_SEQ_CB_COM347;//200500117
+	.GLOBAL	_CB_SEQ_CB_COM348;//20060728 DEBUG
+	.GLOBAL	_CB_SEQ_CB_COM349;//20100820 
+
+	.GLOBAL	_CB_SEQ_CB_COM350;//20121005
+	.GLOBAL	_CB_SEQ_CB_COM351;//20121005 
+	.GLOBAL	_CB_SEQ_CB_COM352;//20140220
+
+;;;;2016-04-16	.GLOBAL	_ERR_CHK_SW_SEL029;//SEQ 29
+	.GLOBAL	_CAM_POS_STEP_END_FLG1;//各工程の
+	.GLOBAL	_CAM_POS_STEP_END_FLG2;//各工程の
+
+;//	*******************************************
+;//	***	内部設定相当データ		***
+;//	*******************************************
+	.GLOBAL	_LINK_MAX_SPD_PLS;	//ｲﾝｸﾘﾒﾝﾀﾙｴﾝｺｰﾀﾞ換算値　pls/s
+	.GLOBAL	_SETX_UPAREA_PLS;	//4;待機点位置(ｲﾝｸﾘﾒﾝﾀﾙ)
+	.GLOBAL	_SETX_UPAREA_RNA;	//4;待機点位置ﾘﾆｱ位置
+	.GLOBAL	_SETX_UPAREA_DIG;	//4;待機点位置角度
+
+	.GLOBAL	_SET1_UPAREA_POS1;	//待機角度(角度とﾃｰﾌﾞﾙから)
+	.GLOBAL	_POS_FRQ_SPDMAX;
+	.GLOBAL	_POS_LSI_SPDMAX;
+	.GLOBAL	_POS_LSI_SPDLAT;
+	.GLOBAL	_POS_LSI_SPDBAS;
+	.GLOBAL	_POS_LSI_ACCLT1;
+	.GLOBAL	_POS_LSI_ACCLT2;
+
+	.GLOBAL	_ORG_FIRST_OBJPLS;
+	.GLOBAL	_ORG_SECOND_OBJPLS;
+
+
+	.GLOBAL	_SETX_UPDN_CHK_UP_DIG	;312.2度(上死点角度 0.1度)
+	.GLOBAL	_SETX_UPDN_CHK_DN_DIG	;180.0度(下死点角度 180.0)
+	.GLOBAL	_SETX_UPDN_CHK_UP_PLS	;312.2度相当のﾊﾟﾙｽ(上死点角度)
+	.GLOBAL	_SETX_UPDN_CHK_DN_PLS	;180.0度相当のﾊﾟﾙｽ(下死点角度)
+
+	.GLOBAL	_ORGIN_END_FLG1;	//電源投入の１回ON:OFFはない
+
+;//	***********************************
+;//	***	フルクローズ関連	***
+;//	***********************************
+	.GLOBAL	_POS_LSI_CLS_SPDBAS;//ﾌﾙｸﾛｰｽﾞ時のｲﾝﾁﾝｸﾞ
+	.GLOBAL	_POS_LSI_CLSINC_SPDBAS;//ｲﾝﾁﾝｸﾞ時
+	
+	.GLOBAL	_SETX_FULCLS_AREA_DIG;//180.0+80.0=260.0
+	.GLOBAL	_SETX_FULCLS_AREA_PLS;//260.0==>PLS
+	.GLOBAL	_FULL_CLS_OBJ_MM;
+	.GLOBAL	_SDATCLS_OBJPLS;//目標ﾊﾟﾙｽ(+だけ)
+	.GLOBAL	_SDATCLS_OBJMM;//目標ﾊﾟﾙｽから算出されるmm
+	.GLOBAL	_SDATCLS_OBJ_NEAR_UPDNPLS;//
+	.GLOBAL	_SDATCLS_UPOBJ_PLS;待機点
+	.GLOBAL	_SDATCLS_TRG_STEP;//連続の最後のｽﾃｯﾌﾟ
+
+;//	*******************************************
+;//	***					***
+;//	***		実測ﾜｰｸ			***
+;//	***					***
+;//	*******************************************
+
+;//	*******************************************
+;//	***					***
+;//	***		設定値ﾜｰｸ		***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_SET1_CNT_TIM;
+	.GLOBAL	_CONT_MOD_CNT_PV;//連続ﾓｰﾄﾞ・ｶｳﾝﾀ
+	.GLOBAL	_SET1_CNT_CNT;
+	.GLOBAL	_CONT_MOD_TIM_PV;//連続ﾓｰﾄﾞ・ﾀｲﾏ
+
+
+
+;	***************************************************
+;	***	2BYTE  ROMﾊﾟﾗﾒｰﾀ領域			***
+;	***************************************************
+	.global	_SET1_RPARAM_TOP1		;[128];ROMﾊﾟﾗﾒｰﾀ領域
+;	***************************************************
+;	***	ｻｰﾎﾞﾊﾟﾗﾒｰﾀ領域	4/2BYTE領域		***
+;	***************************************************
+	.global	_SET1_INCPLS_1REV		;//	2->4	;PG1回転のﾊﾟﾙｽ選択
+
+	.global	_SET1_RNADIR_SEL1		;//	2	;ﾘﾆｱｾﾝｻ極性
+	.global	_SET1_INCDIR_SEL1		;//	2	;PG極性
+	.global	_SET1_INCPLS_HOSN		;//	2	;PG補正N　ﾓｰﾀN回
+	.global	_SET1_INCPLS_HOSM		;//	2	;PG補正M　ｸﾗﾝｸ角度M
+	.global	_SETX_INCPLS_HOSM		;//1度
+	.global	_SET1_MOTRPM_MAXM		;//	2	;ﾓｰﾀ最大回転数
+
+	.GLOBAL	_SETY_INCPLS_HOSM1XX		;//1度
+	.GLOBAL	_SETY_INCPLS_HOSM01X		;//0.1度
+	.GLOBAL	_SETY_INCPLS_HOSM001		;//0.01度
+	.GLOBAL	_SETY_INCPLS_HOSM0001		;//0.001度
+
+	.GLOBAL	_SETX_OUTPLS_HOSA		;//出力ﾊﾟﾙｽ補正A
+	.GLOBAL	_SETX_OUTPLS_HOSB		;//出力ﾊﾟﾙｽ補正B  INC*A/B-->Output pls
+
+	.global	_SET1_MOTMAX_FREQ		;//	4	;ﾓｰﾀ最大時指令周波数
+	.global	_SET1_RNAORG_POS1		;//	4	;機械原点入力
+	.global	_SET1_RNAPOS_MAXP		;//	4	;機械上限
+	.global	_SET1_RNAPOS_MINP		;//	4	;機械下限
+	.global	_SET1_UPAREA_JUDG		;//	4	;上死点判定範囲
+	.global	_SET1_DNAREA_JUDG		;//	4	;反転設定不可範囲
+	.GLOBAL	_SETX_DNAREA_JG_LNK		;//	4	;反転設定不可範囲LINK
+	.GLOBAL	_SETX_DNAREA_JG_PLS		;//	4	;反転設定不可範囲LINK-PLS
+
+
+	.global	_SETX_DAIPOS_MAXP		;//	4	;ダイハイト上限
+	.global	_SETX_DAIPOS_MINP		;//	4	;ダイハイト下限
+
+
+	.global	_SET1_DNDINC_SPD1		;//	2	;段取速度	
+	.global	_SET1_UPAREA_SPD1		;//	2	;待機点復帰速度	
+	.global	_SET1_STDINC_SPD1		;//	2	;寸動速度	
+	.global	_SET1_REVDAT_SPD1		;//	2	;予備速度１	
+	.global	_SET1_UPCLEEP_SPD		;//
+	
+	.global	_SET1_REVDAT_SPD2		;//	2	;予備速度２	
+	.global	_SET1_REVDAT_SPD3		;//	2	;予備速度３	
+;;2006-07-28	.global	_SET1_TEPDAT_SPD1		;//	2	;手動ﾊﾟﾙｻ速度	
+	.global	_SET1_TEPLAT_DAT1		;//	2	;手動ﾊﾟﾙｻ低倍率	
+	.global	_SET1_TEPLAT_DAT2		;//	2	;手動ﾊﾟﾙｻ高倍率	
+
+	.global	_SET1_INCPOS_KP01		;//	2	;PG位置比例ｹﾞｲﾝ
+	.global	_SET1_RNAPOS_KP01		;//	2	;ﾘﾆｱ位置比例ｹﾞｲﾝ
+	.global	_SET1_ACCLAT_TIM1		;//	2	;加減速時間
+	.global	_SET1_SSCURV_TIM1		;//	2	;Ｓ字時間
+	.global	_SET1_UPAREA_INPX		;//	2	;上死点ｲﾝﾎﾟｼﾞｼｮﾝ
+	.global	_SET1_DNAREA_INPX		;//	2	;下死点ｲﾝﾎﾟｼﾞｼｮﾝ
+	.global	_SET1_OBJARA_INPX		;//	2	;目標位置ｲﾝﾎﾟｼﾞｼｮﾝ
+
+	.global	_SET1_UPAREA_INPXPLS		;//	2	;上死点ｲﾝﾎﾟｼﾞｼｮﾝ
+	.global	_SET1_DNAREA_INPXPLS		;//	2	;下死点ｲﾝﾎﾟｼﾞｼｮﾝ
+	.global	_SET1_OBJARA_INPXPLS		;//	2	;目標位置ｲﾝﾎﾟｼﾞｼｮﾝ
+
+	.global	_SET1_OBJARA_INPXPSX		;//	2	;目標位置ｲﾝﾎﾟｼﾞｼｮﾝ(ふりこ2009-10-07)
+
+	.global	_SET1_INPPOS_TIM1		;//	2	;ｲﾝﾎﾟｼﾞｼｮﾝﾁｪｯｸ時間
+	.GLOBAL	_PVX_INPPOS_TIM1		;//測定時間
+	
+	.global	_SET1_ARACHK_LNG1		;//	2	;上／下死点通過判定量
+	.global	_SET1_UPAREA_DIG1		;//	2	;回転時待機点(上死点)
+	.global	_SET1_ENC360_HOS1		;//	2	;==>上記ﾃﾞｰﾀは単なる補正
+
+	.global	_SET1_INCHEN_ELNG		;//	2	;PG偏差異常幅
+	.global	_SET1_INCENC_ELNG		;//	2	;PG-ENC一致量
+	.global	_SET1_INCRNA_ELNG		;//	2	;PG-ﾘﾆｱ一致量
+	.global	_SET1_INCSTP_ELNG		;//	2	;PG停止異常量
+	.global	_SET1_RNASTP_ELNG		;//	2	;ﾘﾆｱ停止異常量
+	.global	_SET1_INCREV_ELNG		;//	2	;PG逆転異常量
+	.global	_SET1_RNAREV_ELNG		;//	2	;ﾘﾆｱ逆転異常量
+	.global	_SET1_DAIHAI_LNG1		;//	2	;ﾀﾞｲﾊｲﾄ補正比較値(小)
+	.global	_SET1_DAIHAI_LNG2		;//	2	;ﾀﾞｲﾊｲﾄ補正比較値(中)
+	.global	_SET1_DAIHAI_LNG3		;//	2	;ﾀﾞｲﾊｲﾄ補正比較値(大)
+	.GLOBAL	_SET1_FULCLS_MXPLS;
+	.GLOBAL	_CALC_FULCLS_MXPLS;
+
+;	==== 2003-01-27 ====
+	.GLOBAL	_SET1_NEG_OFS_LNG		;//反転下限距離(0.001mm ｻｰﾎﾞﾊﾟﾗﾒｰﾀ)
+	.GLOBAL	_SET1_AMP100P_VLT		;//AMP100%相当時の電圧値 0~10.0v(ｻｰﾎﾞﾊﾟﾗﾒｰﾀ)
+;	====================
+
+	.global	_PVX_AMPERR_TIM1		;//	2	;過負荷時間1
+	.global	_PVX_AMPERR_TIM2		;//	2	;過負荷時間2
+	.global	_PVX_AMPERR_TIM3		;//	2	;過負荷時間3
+	.GLOBAL	_PVX_IAMP_VLT			;//0~10.0 10.0=10V()
+
+;	***************************************************
+;	***	ｸﾗｯﾁ制御画面設定1 4/2BYTE領域		***
+;	***************************************************
+	.global	_SET1_DAIHAI_ORG0		;//	4	;ダイハイト
+	.global	_SET1_DAIORG0_CMP1UP		;//	4	;ダイハイト()
+	.global	_SET1_DAIORG0_CMP1DN		;//	4	;ダイハイト()
+	.global	_SET1_DAIORG0_CMP2UP		;//	4	;ダイハイト()
+	.global	_SET1_DAIORG0_CMP2DN		;//	4	;ダイハイト()
+	.global	_SET1_DAIORG0_CMP3UP		;//	4	;ダイハイト()
+	.global	_SET1_DAIORG0_CMP3DN		;//	4	;ダイハイト()
+	.GLOBAL	_SET1_DAIORG0_CMP4UP		;//	4	;ダイハイト()
+	.GLOBAL	_SET1_DAIORG0_CMP4DN		;//	4	;ダイハイト()
+
+	.global	_SET1_MRTION_SEL1		;//	2	;回転方式
+	.global	_SET1_MTSTEP_MAXM		;//	2	;段数
+
+
+
+	.global	_SET1_UPAREA_POS0		;//4	;待機点位置
+	.global	_SET1_OBJECT_POS_TOP		;
+;	_SET1_OBJECT_PS01~_SET1_OBJECT_PS20	;//4	;20段目目標位置
+
+	.global	_SET1_UPAREA_PLS0		;//4	;待機点位置(ｲﾝｸﾘﾒﾝﾀﾙ)
+	.global	_SET1_UPAREA_PLS1		;//4	;上死亡
+	.global	_SET1_OBJECT_PLS_TOP	;//4BYTE SET1_OBJECT_PS01;01段目目標位置~
+
+	.global	_SET1_UPAREA_SPD0		;//4	;基準速度 2BYTE-->4BYTE
+	.global	_SET1_OBJECT_SPD_TOP		;	;01段目移動速度
+;	_SET1_OBJECT_SP01~_SET1_OBJECT_SP20	;//4	;予備20段目移動速度
+
+	.global	_SET1_UPAREA_TIM0		;//4	;待機時間
+	.global	_SET1_OBJECT_TIM_TOP		;	;01段目停止時間 99.99*10
+;;2015-10-25	.global	_CHK_OBJECT_TIM_TOP		;//4BYTE SET1_OBJECT_TM01;01段目停止時間 99.99*10=1msec
+	.global	_WK_OBJECT_TIM_TOP		;//40=>100 4BYTE SET1_OBJECT_TM01;01段目停止時間 99.99*10=1msec
+	
+;	_SET1_OBJECT_TM01~_SET1_OBJECT_TM20	;//4	;20段目停止時間
+
+
+	.global	_SET1_UPAREA_DIG0		;//	2	;待機点角度
+	.global	_SET1_OBJECT_DIG_TOP		;01段目角度位置
+;	_SET1_OBJECT_DG01~_SET1_OBJECT_DG20	;//2	;01段目角度位置
+
+	.GLOBAL	_SVPX_UPAREA_DIG1;
+
+;	==== 2003-02-21 ===
+	.GLOBAL	_DBG_REVMOD_OBJPLS;
+	.GLOBAL	_DBG_REVMOD_CTLPLS;
+	.GLOBAL	_DBG_REVMOD_UPPLS;
+	.GLOBAL	_DBG_REVMOD_DNPLS;
+	.GLOBAL	_REV_CALC_WORK0;
+	.GLOBAL	_REV_CALC_WORK1;
+	.GLOBAL	_REV_CALC_WORK2;
+
+;//	===================================
+;//	===	ﾘﾆｱ/ｲﾝｸﾘﾒﾝﾀﾙｴﾝｺｰﾀﾞ動作	===
+;//	===================================
+	.GLOBAL	_STOPCHK_RNA_POS;//(下位4BYTEのみ)
+	.GLOBAL	_STOPCHK_INC_POS;//(下位4BYTEのみ)
+	.GLOBAL	_PVCK_STOP_SMPTIM;//ﾘﾆｱｾﾝｻ/ｴﾝｺｰﾀﾞの停止判定用ｻﾝﾌﾟﾘﾝｸﾞ時間 200msec
+	.GLOBAL	_RNA_STOP_CNT;//ﾌｨﾙﾀ回数
+	.GLOBAL	_INC_STOP_CNT;//ﾌｨﾙﾀ回数  -N(4)~0~+N(4)
+
+
+;	***************************************************
+;	***	ｸﾗｯﾁ制御画面設定2 4/2BYTE領域		***
+;	***************************************************
+
+
+
+
+;	*******************************************
+;	***	カム設定 2BYTE領域		***
+;	*******************************************
+	.GLOBAL	_SET1_OBJ_CAM_DIG_TOP		;//+0*2:待機点 +1*2方向 +2*2　目標位置,,+最後 待機点
+						;回転,反転を考慮する最後の待機点は回転なら0度
+	.global	_SET1_RCAMON_POS_TOP		;
+	.global	_SET1_RCAMON_TIM_TOP		;
+	.global	_CAM_OUTPUT_SW;//0,1,2(POS),3(TIM)
+	.global	_CAM_SELECT_SW;//0,1,2     ,3
+	.global	_CAM_OUTPUT_DT;//0,1
+	.global	_CAM_START_FLG;
+	.global	_CAM_START_MODE;
+	.global	_CAM_STEP_NO;
+	.global	_CAM_STEP_NO_OLD;
+	.global	_CAM_STEP_MAX;
+	.GLOBAL	_CAM_NOW_DIG;
+	.global	_CAM_OLD_DIG;
+	.GLOBAL	_CAM_POS_CTL_STEP;	//内部制御工程1~11
+	.GLOBAL	_CAM_CNT_CHG_FLG;	//連続が１ｽﾃｯﾌﾟになった
+;//	***********************************
+;//	***	進角演算		***
+;//	***********************************
+	.GLOBAL	_SINKAKU_INF;		//BIT0:1:ｼｰｹﾝｽ              BIT0=1
+	.GLOBAL	_SINKAKU_ROTCAM_ENBSEL_WK;	//BIT0=1 CH1:ENB
+	.GLOBAL	_SINKAKU_ROTCAM_ENBSEL;	//BIT0=1 CH1:ENB
+	.GLOBAL	_SINKAKU_USESEL_ON_INF;	//ﾛｰﾀﾘｶﾑ1~16 ON行程  1:不可
+	.GLOBAL	_SINKAKU_USESEL_OF_INF;	//ﾛｰﾀﾘｶﾑ1~16 OFF行程
+
+	.GLOBAL	_SIN_RCAM_ON_DIG;
+	.GLOBAL	_SIN_RCAM_OF_DIG;
+
+	.GLOBAL	_WK_SIN_RCAM_ON_DIG;//設定レベル
+	.GLOBAL	_WK_SIN_RCAM_OF_DIG;//設定レベル
+
+	.GLOBAL	_SINWK_CALC_SCAN;//0~15
+
+
+	.GLOBAL	_WK_SIN_RCAM_ON_KOUTEI;		//設定レベル 設定が0以外あれば設定、00位置の場合算出
+	.GLOBAL	_WK_SIN_RCAM_ON_SPD;		//設定レベル
+	.GLOBAL	_WK_SIN_RCAM_OF_KOUTEI;		//設定レベル
+	.GLOBAL	_WK_SIN_RCAM_OF_SPD;		//設定レベル
+	.GLOBAL	_SETD_DEGSPD_MAX;//最大速度で1秒間に何度動作しますか 0.1度/SEC
+
+	.GLOBAL	_WK_SIN_RCAM_SQON1;//設定レベル－ON角度(360ｴﾝｺｰﾀﾞ演算結果0.1)
+	.GLOBAL	_WK_SIN_RCAM_SQOF1;//設定レベル－OFF角度(360ｴﾝｺｰﾀﾞ演算結果0.1)
+
+	.GLOBAL	_WK_SIN_RCAMON_SW1;//
+	.GLOBAL	_WK_SIN_RCAMOF_SW1;//
+
+	.GLOBAL	_SIN_RCAMON_SW1;//
+	.GLOBAL	_SIN_RCAMOF_SW1;//
+
+	.GLOBAL	_SIN_RCAM_ON_ERR1;
+	.GLOBAL	_SIN_RCAM_OF_ERR1;
+
+
+
+;//	***********************************
+;//	***				***
+;//	***	表示			***
+;//	***				***
+;//	***********************************
+	.global	_DISP_SV_DG_DAT;
+	.global	_DISP_SV_MM_DAT;
+
+	.GLOBAL	_SV_CHG_FLG1;//ﾘｾｯﾄ=0
+	.GLOBAL	_SV_CHG_FLG2;//ﾘｾｯﾄ=0
+	.GLOBAL	_SV_DAT_ERR1;//ﾘｾｯﾄに関係なくON/OFF 
+	
+	.GLOBAL	_DUM_UPAREA_DIG0;
+	.GLOBAL	_DUM_SET1_DIG_TOP;
+	.GLOBAL	_DUM_MTSTEP_MAXM;
+	.GLOBAL	_DUM_MRTION_SEL1;
+
+;//	***********************************
+;//	***	SH2 荷重測定ソフト	***
+;//	***********************************
+	.GLOBAL	_COP_DIG_SIG_FLG;//どの方向で横切ったか
+	.GLOBAL	_COP_CB_LD_MONI_SIG;//荷重測定用信号 2003-01-31
+
+	.GLOBAL	_WPAR_COP_CNTROT_ZDG1;//
+	.GLOBAL	_WPAR_COP_CNTROT_ZDG2;//
+	.GLOBAL	_WPAR_COP_CNTROT_SDG1;//
+	.GLOBAL	_WPAR_COP_CNTROT_SDG2;//
+
+	.GLOBAL	_WPAR_COP_REVRSE_ZDG1;//
+	.GLOBAL	_WPAR_COP_REVRSE_ZDG2;//
+	.GLOBAL	_WPAR_COP_REVRSE_SDG1;//
+	.GLOBAL	_WPAR_COP_REVRSE_SDG2;//
+
+	.GLOBAL	_WPAR_COP_ZDG1;//
+	.GLOBAL	_WPAR_COP_ZDG2;//
+	.GLOBAL	_WPAR_COP_SDG1;//
+	.GLOBAL	_WPAR_COP_SDG2;//
+
+;//未使用	.GLOBAL	_COP_ENC3600;
+	.GLOBAL	_COP_OLD_ENC3600;
+
+;//	*******************************************
+;//	***					***
+;//	***	オーバラン異常			***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_START_FLG_AFTER_EMG;
+;//	*******************************************
+;//	***	2003-05-12			***
+;//	***	オーバラン異常			***
+;//	***	/逆転異常/反転異常		***
+;//	*******************************************
+	.GLOBAL		_WPAR_INCOVER_LNG	;//LNG1/LNG2
+	.GLOBAL		_WPAR_INCOVER_LNG1	;//PGｵｰﾊﾞﾗﾝ回転仕様
+	.GLOBAL		_WPAR_INCOVER_LNG2	;//PGｵｰﾊﾞﾗﾝ反転仕様
+	.GLOBAL		_WPAR_INCREV_EDYTM	;//遅延時間
+
+	.GLOBAL		_WPAR_INCSTP_EDYTM1	;//遅延時間
+	.GLOBAL		_WPAR_INCSTP_EDYTM2	;//遅延時間
+	.GLOBAL		_WPAR_INCSTP_EDYTM	;//遅延時間
+
+	.GLOBAL		_WPAR_RNA_SFTY_LNG1	;//安全装置２
+
+	.GLOBAL		_PLS_OUTPUT_FLG		;//0払い出し停止 1払出中
+	.GLOBAL		_SFTYCHK_RNA_POS	;2003-05-24 //_RNA_ABS_POS((通信-原点)×符号)=>0.001mm換算のﾃﾞｰﾀを使用する
+
+;//	*******************************************
+;//	***	2003-06-13			***
+;//	***	ニアゼロタイムアウト		***
+;//	*******************************************
+	.GLOBAL	_NZ_TIM_OUT_SV1		;運転中止(寸動部分)
+	.GLOBAL	_NZ_TIM_OUT_SV2		;異常(機能は入れない)
+	.GLOBAL	_NZ_TIM_OUT_PV1		;運転中止(寸動部分)
+	.GLOBAL	_NZ_TIM_OUT_PV2		;異常(機能は入れない)
+
+;//	*******************************************
+;//	***					***
+;//	***	2003-07-01			***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_WPAR_ZERO_SPD			;//34 実速度算出用 周波数
+	.GLOBAL	_WPAR_BRK_SEL_SPD		;//35 ﾌﾞﾚｰｷ異常見ない速度 10.00%
+	.GLOBAL	_WPAR_BRK1_DLYTM		;//36 msec
+	.GLOBAL	_WPAR_BRK1_ACCTM		;//37 msec
+	.GLOBAL	_WPAR_BRK2_ACCTM		;//38 msec
+						;//39 N.C
+	.GLOBAL	_WPAR_ILNGERR_LNG		;//40 移動量異常ｵｰﾊﾞ許容値
+	.GLOBAL	_WPAR_ILNGERR_DIG		;//41 270.0度異常検知開始角度
+
+	.GLOBAL	_BRK_CHK_COM;//ﾌﾞﾚｰｷﾁｪｯｸ開始ｺﾏﾝﾄﾞ BIT0(BRK1) BIT4(BRK2)
+	.GLOBAL	_BRK_CHK_FLG;//BIT0:BRK1during BIT4 BRK2during
+
+	.GLOBAL	_BRK1_CHKDLY_TM;//開始から10msec
+	.GLOBAL	_BRK2_CHKDLY_TM;//開始から10msec
+
+	.GLOBAL	_BRK1_GEN_SV_FRQ1;//WORK 減速開始時の速度
+	.GLOBAL	_BRK1_GEN_SV_FRQ2;//WORK 周波数のﾌｨﾙﾀ後の速度T1経過
+	.GLOBAL	_BRK1_GEN_SV_DLYTM;//WORK 時間T1
+	.GLOBAL	_BRK1_GEN_SV_ACCTM;//WORK 時間T2
+	.GLOBAL	_BRK1_GEN_PV_DLYTM;//WORK 時間T1
+	.GLOBAL	_BRK1_GEN_PV_ACCTM;//WORK 時間T2
+
+;	----------------------------------------------------
+	.GLOBAL	_BRK1_SV_DN_ACC;//目標加速度((PLS/1000)/S/S)
+	.GLOBAL	_BRK1_CAL_DN_ACC;//OVER LIDE 含む
+	.GLOBAL	_BRK2_SV_DN_ACC;//目標加速度((PLS/1000)/S/S)
+
+;//	*******************************************
+;//	***					***
+;//	***	2003-07-01			***
+;//	***	速度検出部			***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_ENCPLS_SPD_TOTAL;
+	.GLOBAL	_ENC_PLS_SPD;//+/- 1000,000HZ 極性が変わるときは0pls/sになる
+	.GLOBAL	_ABS_ENC_PLS_SPD;// ある速度以下は0 制御時はこれを使用
+	.GLOBAL	_ENC_PLS_SPD_DIR;// 符号 0:"+", -1:"-"
+	.GLOBAL	_ENCPLS_DELT;//符号付
+	.GLOBAL	_ENCPLS_SPD_AVL_TOP;
+	.GLOBAL	_ENCPLS_SPD_POINT;
+	.GLOBAL	_ENCPLS_POINT_SEL;
+	.GLOBAL	_ENCPLS_1000MSEC_LAT;
+
+	.GLOBAL	_OUTPLS_SPD_TOTAL;
+	.GLOBAL	_OUT_PLS_SPD;//+/- 1000,000HZ 極性が変わるときは0pls/sになる
+	.GLOBAL	_ABS_OUT_PLS_SPD;// ある速度以下は0 制御時はこれを使用
+	.GLOBAL	_OUT_PLS_SPD_DIR;// 
+	.GLOBAL	_OUTPLS_DELT;//符号付
+	.GLOBAL	_OUTPLS_SPD_AVL_TOP;
+	.GLOBAL	_OUTPLS_SPD_POINT;
+	.GLOBAL	_OUTPLS_POINT_SEL;
+	.GLOBAL	_OUTPLS_1000MSEC_LAT;
+
+	.GLOBAL	_PV_ENC_SPD_PER;//0~110.00%
+	.GLOBAL	_PV_OUT_SPD_PER;//0~110.00%
+	.GLOBAL	_PVC_BRK_ENC_SPD;//0~110.00% MINLIMIT
+	.GLOBAL	_PVC_BRK_OUT_SPD;//0~110.00% MINLIMIT
+
+;//	*******************************************
+;//	***					***
+;//	***	2003-07-09			***
+;//	***	原点復帰			***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_ORG_DRV_CNT_PV;//0:1回 0なら最後のｽﾃｯﾌﾟにいく
+	.GLOBAL	_ORG_RDY_CTL_FLG;//不本意ながらﾌﾗｸﾞ 起動でBIT0=1 終了でBIT1=1で終了ｺﾏﾝﾄﾞを位置決めへ投げる
+
+;//	*******************************************
+;//	***					***
+;//	***	2003-07-09			***
+;//	***	サイクル表示			***
+;//	***	生産下限表示			***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_CYCL_DSP_DISENB;//0:表示 1:非表示 => 反転して出力
+	.GLOBAL	_CYCL_DSP_CNT_PV;//非表示ｶｳﾝﾀ 2->1->0(表示)
+
+	.GLOBAL	_LOT_CHK_DBG_CNT1;END1
+	.GLOBAL	_LOT_CHK_DBG_CNT2;END2
+;//	*******************************************
+;//	***					***
+;//	***	2003-07-09			***
+;//	***	ｽﾄｯﾋﾟﾝｸﾞﾀｲﾏ比較			***
+;//	***	すべり角度比較			***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_SET1_BREAK_TIM1		;//ブレーキタイマ設定10msec
+	.GLOBAL	_STOP_ERR_LATCH			;// BIT0:TIM BIT1:POS
+	.GLOBAL	_SET1_BREAK_DIG			;//0.1度
+	.GLOBAL	_VALV_OFF_DIG_CLANK		;
+	.GLOBAL	_LINK_CLANK_PV;//0.1度
+
+
+
+;//	*******************************************
+;//	***					***
+;//	***	2003-07-09			***
+;//	***	生産下限			***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_PRD_DAI_POS0;//生産下限(生)
+	.GLOBAL	_PRD_DAI_POS1;//生産下限 制御値(10回平均後のﾃﾞｰﾀ)->手動補正ﾃﾞｰﾀは上死点のものを使用
+	.GLOBAL	_PRD_DAI_CMP_ENB;//BIT0=1:比較 比較不可
+
+;//	***************************************************
+;//	***	異常履歴に伴い通常でも使えるﾃﾞｰﾀ	***
+;//	***************************************************
+	.GLOBAL	_LT_LINK_SV_OBJ_ABSPLS;//abs停止目標位置(設定ﾊﾞｯｸﾗｯｼなし)
+	.GLOBAL	_LT_INT_LINK_RL_OBJ_ABSPLS;
+	.GLOBAL	_LT_LNGTH_ADD_DATA;//符号付き
+	.GLOBAL	_LT_LNGTH_TOTAL_OUTPLS;//符号つき
+
+	.GLOBAL	_FREQ_SV_SPD;
+	.GLOBAL	_SV_OBJ360;//
+
+;//	***************************************************
+;//	***	10段仕様+連続寸動一行程			***
+;//	***************************************************
+;//	2004-01-26
+
+	.GLOBAL	_WFSYS_OPT_CNT_SEL	;SEL=1 連寸一、連続一行程有効
+;;;2015-10-25	.GLOBAL	_WFSYS_MAX_STEP_SEL	;
+
+	.GLOBAL	_CCS_BTTN_OFF		;//下降中は停止ｺﾏﾝﾄﾞ発行,上昇中は運転釦を見ず停止ﾗｯﾁ
+
+;//	*******************************************
+;//	***					***
+;//	***	オーバラン不具合検索ソフト	***
+;//	***	2004-01-28			***
+;//	*******************************************
+
+	.GLOBAL	_ACCESS_ERR1;
+	.GLOBAL	_WK_ERR_INFO_CPU_TOP;
+	.GLOBAL	_ERR_INFO_DLY_TIM;
+	.GLOBAL	_ERR_INFO_SAVE_FLG;
+	.GLOBAL	_ERR_INFO_SAVE_LATCH;
+
+;//	===== OVER - RUN
+	.GLOBAL	_ENC360_OVER_FLG;
+	.GLOBAL	_ENC360_OVER_ENC;
+
+	.GLOBAL	_SVX_OVER_ERR_DIG;//待機点+５度
+	.GLOBAL	_SVX_OVER_JGSTR_DIG;//待機点-10度
+
+;//	*******************************************
+;//	***	位置決めＬＳＩ異常		***
+;//	*******************************************
+	.GLOBAL	_LSI_PLSCLR_RETRY_CNT1;//CLR処理そのもの
+	.GLOBAL	_LSI_PLSSET_RETRY_CNT1;//
+	.GLOBAL	_POS_LSI_ACS_ERR_FLG1;//異常ﾌﾗｸﾞ
+	.GLOBAL	_POS_CALC_ERR_FLG1;//異常ﾌﾗｸﾞ
+	.GLOBAL	_POS_CALC_ERR_FLG2;//異常ﾌﾗｸﾞ
+
+	.GLOBAL	_POS_LSI_ACS_ERR_INF1;//異常ﾌﾗｸﾞ
+	.GLOBAL	_POS_CALC_ERR_INF1;//異常ﾌﾗｸﾞ
+	.GLOBAL	_POS_CALC_ERR_INF2;//異常ﾌﾗｸﾞ
+
+	.GLOBAL	_LSI_PLSCMP_RETRY_CNT1;//二重化ﾘﾄﾗｲ
+	.GLOBAL	_LSI_PLSCMP_NG_CNT1;//二重化 TOTAL
+
+	.GLOBAL	_LSI_PLSCMP_AC_CNT1;//TOTALｶｳﾝﾀ ﾁｪｯｸ用
+	.GLOBAL	_LSI_PLSRD_NG_CNT1;//TOTALｶｳﾝﾀ ﾁｪｯｸ用
+
+;//	ﾄｰﾀﾙｶｳﾝﾀ ﾓﾆﾀ用
+	.GLOBAL	_LSI_PLSCLR_AC_CNT1;//TOTALｶｳﾝﾀ ﾁｪｯｸ用
+	.GLOBAL	_LSI_PLSCLR_NG_CNT1;//TOTALｶｳﾝﾀ ﾁｪｯｸ用
+	.GLOBAL	_LSI_PLSCLR_NG_CNT2;//TOTALｶｳﾝﾀ ﾁｪｯｸ用
+	.GLOBAL	_LSI_PLSSET_AC_CNT1;//TOTALｶｳﾝﾀ ﾁｪｯｸ用
+	.GLOBAL	_LSI_PLSSET_AC_CNT2;//TOTALｶｳﾝﾀ ﾁｪｯｸ用
+	.GLOBAL	_LSI_PLSSET_NG_CNT1;//TOTALｶｳﾝﾀ ﾁｪｯｸ用
+	.GLOBAL	_LSI_PLSSET_NG_CNT2;//TOTALｶｳﾝﾀ ﾁｪｯｸ用
+	.GLOBAL	_LSI_PLSSET_NG_CNT3;//TOTALｶｳﾝﾀ ﾁｪｯｸ用
+
+;//	2004-03-04
+	.GLOBAL	_LSI_CMPCPUAB_POS_RL;//CPUA-B間の残りﾊﾟﾙｽの差
+	.GLOBAL	_LSI_CMPCPUAB_POSMAX;//CPUA-B間の残りﾊﾟﾙｽの差 最大(1回転)
+	.GLOBAL	_NEW_POSLSI_RESTPLS;
+	.GLOBAL	_POSLSI_DRV_FRQ;
+
+	.GLOBAL	_FREQ_PLSI_MAX_FRQ;
+	.GLOBAL	_FREQ_BAS_SV_SPD;
+	.GLOBAL	_CMP2_BAS_TOTAL_NG_CNT;
+	.GLOBAL	_CMP2_TOP_TOTAL_NG_CNT;
+	.GLOBAL	_CMP2_LAT_TOTAL_NG_CNT;
+	.GLOBAL	_CMP2_ACC_TOTAL_NG_CNT;
+	.GLOBAL	_CMP2_NOW_TOTAL_NG_CNT;
+
+	.GLOBAL	_CMP2_BAS_NG_CNT;
+	.GLOBAL	_CMP2_TOP_NG_CNT;
+	.GLOBAL	_CMP2_LAT_NG_CNT;
+	.GLOBAL	_CMP2_ACC_NG_CNT;
+	.GLOBAL	_CMP2_NOW_NG_CNT;
+
+;//	*******************************************
+;//	***	位置決めＬＳＩ	ｺﾏﾝﾄﾞﾊﾞﾌｧ	***
+;//	*******************************************
+	.GLOBAL	_LSI_BUF_PLS_BitComdL;//
+
+	.GLOBAL	_DBG_CNT_STOP_FLG;
+	.GLOBAL	_DBG_CNT_STOP_CNT;
+	.GLOBAL	_DBG_CNT_STOP_SPC;
+
+	.GLOBAL	_DBG_STEP12_CHG_TIM		;//STEP1->2
+	.GLOBAL	_DBG_STEP23_CHG_TIM		;//STEP2->3
+	.GLOBAL	_DBG_STEPCD_CHG_TIM		;//CYCLE CHG
+	.GLOBAL	_DBG_CNT_GPOSINT			;
+
+
+	.GLOBAL	_DBG_STEP12_CHG_DIG;
+	.GLOBAL	_DBG_STEP23_CHG_DIG;
+	.GLOBAL	_DBG_STEPCD_CHG_DIG;
+
+	.GLOBAL	_DBG_STEP12_CHG_POS;
+	.GLOBAL	_DBG_STEP23_CHG_POS;
+	.GLOBAL	_DBG_STEPCD_CHG_POS;
+
+	.GLOBAL	_DBG_STEP12_CHG_SPD;
+	.GLOBAL	_DBG_STEP23_CHG_SPD;
+	.GLOBAL	_DBG_STEPCD_CHG_SPD;
+
+	.GLOBAL	_DBG_STEP12_CHG_RSTP;
+	.GLOBAL	_DBG_STEP23_CHG_RSTP;
+	.GLOBAL	_DBG_STEPCD_CHG_RSTP;
+
+	.GLOBAL	_DBG_STEPCD_CHG_GPS;
+
+
+
+;//	***********************************
+;//	***				***
+;//	***	割り込み停止		***
+;//	***				***
+;//	***********************************
+	.GLOBAL	_IRQ_EMG_FLG;
+	.GLOBAL	_IRQ_EMG_CNT;
+	.GLOBAL	_IRQ_SFY_FLG;
+	.GLOBAL	_IRQ_SFY_CNT;
+	.GLOBAL	_IRQ_STP_FLG;
+	.GLOBAL	_IRQ_STP_CNT;
+
+	.GLOBAL	_INT_SFY_INP_DAT;//(停止要因 FACT/RACT)
+	.GLOBAL	_INT_STP_INP_DAT;//(停止要因 EMG/)
+	.GLOBAL	_INT_STP_INP_DAT1;//
+	.GLOBAL	_INT_STP_INP_DAT2;//
+	.GLOBAL	_INT_STP_INP_DAT3;//
+
+;//	*********************************
+	.GLOBAL	_ENC360_LINK_AREASIG;	//BIT0:待機点範囲 BIT1:下降
+
+
+;//	================================
+	.GLOBAL	_WXPV_ERR_DISP;[64*8];//64byte *8 page
+;//	***********************************
+;//	***				***
+;//	***	中型処理		***
+;//	***				***
+;//	***********************************
+	.GLOBAL	_LSI_SET_SPD_SV;
+	.GLOBAL	_LSI_SET_SPD_MAXLMT;
+	.GLOBAL	_LSI_SET_SPD_MINLMT;
+	.GLOBAL	_ORIGN_OBJ_CTL_FLG;	//
+;//	***********************************
+;//	***				***
+;//	***	回転・連続		***
+;//	***	2004-12-20		***
+;//	***********************************
+	.GLOBAL	_SETX_BANK_USELFUL	;
+	.GLOBAL	_CPOS_BANK_USELFUL	;
+	.GLOBAL	_CNT_STOP_CTRL_FLG	;BIT0,BIT1:差し引き終了
+	.GLOBAL	_CPOS_SDAT1_CHGAPOS2;[2*16];//WORK 8byte*16段
+	.GLOBAL	_CPOS_SDAT1_STPAPOS2;[2*16];//WORK 
+	.GLOBAL	_BANK1_LK_END_OBJ_ABSPLS;//待機点1
+	.GLOBAL	_BANK2_LK_END_OBJ_ABSPLS;//待機点2
+	.GLOBAL	_LINKX_SV_OBJ_ABSPLS;//
+	.GLOBAL	_CNT_STOP_LNGTH;//差引量
+	.GLOBAL	_BANK2_LINK_OBJROT_NUM_ZR	;//NOW ROTATION 番号
+	.GLOBAL	_BANK2_LINK_OBJROT_NUMPLS_ZR	;//NOW ROTATION番号相当のﾊﾟﾙｽ
+
+	.GLOBAL	_BANK1_CALC_ROT_NUM_ZR;
+
+	.GLOBAL	_CONT_STOP_END_SUBPLS;	//
+	.GLOBAL	_CNT_BANK_CALC_ERR;
+;//	***********************************
+;//	***				***
+;//	***	残りﾊﾟﾙｽ補正		***
+;//	***				***
+;//	***********************************
+	.GLOBAL	_CNT_REST_SPD_HOSEI_DAT;
+	.GLOBAL	_CNT_REST_SPD_HOSEI_FLG;
+
+
+;//	===================================================
+;//	===	対策ソフト部分 2005-04-14-E(4/18)	===
+;//	===================================================
+	.GLOBAL	_CMP_LNGTH_AD_ERR_CNT;
+	.GLOBAL	_CMP_RESTP_SR_ERR_CNT;
+
+;//	===================================
+;//	===	運転釦フィルタ		===
+;//	===	2005-10-03		===
+;//	===================================
+	.GLOBAL	_BTTN_ON_TIME;
+
+;//	===================================
+;//	===	セルフチェック改善	===
+;//	===================================
+	.GLOBAL	_SELF_FIRST_END_FLG;//first(_SELF_CHECK_ACT set)
+	.GLOBAL	_SELF_TIMING_SIG;//0:ﾘｾｯﾄからのｾﾙﾌ 1:運転終了からのｾﾙﾌ
+	.GLOBAL	_SELF_CHK_MATHED;//emg(BIT1,0) DRV(BIT5,4)
+	.GLOBAL	_SELF_BRK_LOCK;
+
+	.GLOBAL	_SELF_SECOND_ACT_FLG;
+	.GLOBAL	_SELF_SECOND_STEP;
+	.GLOBAL	_SELF_AD_LATCH;
+
+	.GLOBAL	_SELF_START_POS_LATCH;
+	.GLOBAL	_SELF_MOV_LENGTH;// PLS(換算値)
+	.GLOBAL	_SELF_MOV_SPEED;//  PLS(換算値)
+
+;//	===================================
+;//	===				===
+;//	===	準備完了状態での遮光	===
+;//	===				===
+;//	===================================
+	.GLOBAL	_RDY_SFTY_LOCK;//BIT0:LOCK
+	.GLOBAL	_RDY_SFTY_WAIT_TIM;//
+
+;//	===================================
+;//	===				===
+;//	===	LSA FILTER		===
+;//	===	2006-07-16		===
+;//	===================================
+	.GLOBAL	_LSA_ENC_DIG;//
+	.GLOBAL	_LSA_ENC_MOV_LNG1A;//角度の加算
+	.GLOBAL	_LSA_ENC_MOV_LNG1B;//角度の加算
+	.GLOBAL	_LSA_ENC_MOV_LNG2;//角度の加算
+	.GLOBAL	_LSA_SIG_DT;//
+	.GLOBAL	_LSA_SIG_OLD_DT;//
+	.GLOBAL	_LSA_SIG_OLD_WRK;//
+	.GLOBAL	_LSA1_FILETR_TIM;//
+	.GLOBAL	_LSA2_FILETR_TIM;//
+	.GLOBAL	_WPAR_LSA_FILTIM;
+	.GLOBAL	_SET1_LSAABN_AGL1;	//360ENCの距離
+	.GLOBAL	_SET1_LSAABN_AGL2;	//360ENCの距離
+	.GLOBAL	_LSA_ERR_SIG;//
+	.GLOBAL	_LSA_CHK_DELAY_TM;
+
+
+;//	===================================
+;//	===				===
+;//	===	荷重計カム処理(CPUB)	===
+;//	===	2006-07-28		===
+;//	===================================
+	.GLOBAL	_SET1_KJSTR_STEP1;	//0,1~工程 
+	.GLOBAL	_SET1_KJSTR_DIG1;	//359.0
+	.GLOBAL	_SET1_KJEND_STEP1;	//0,1~工程
+	.GLOBAL	_SET1_KJEND_DIG1;	//359.0
+	.GLOBAL	_KJ_AREA_SIG;		//BIT4:AREA-ON BIT5:END
+	.GLOBAL	_KJ_AREA_BT0_OLD;//2013-06-19
+
+;//	===================================
+;//	===				===
+;//	===	段取一旦停止機能	===
+;//	===	2006-07-28		===
+;//	===================================
+	.GLOBAL	_SET1_DND_STOP_SW;//どこにとめるか 0(non,stop),BIT0(上),BIT1(SV1),BIT2(SV2) MAX:3STEP
+	.GLOBAL	_SET1_DND_STOPDIG_UP;//上死点
+	.GLOBAL	_SET1_DND_DIGTOP;//+0,上死点 +1:段取停止角度 0~358.0
+	.GLOBAL	_SET1_DND_PLSTOP;//上死点
+	.GLOBAL	_SET1_DND_UPPLS;
+
+;//	-------- 制御ﾃﾞｰﾀ--------
+	.GLOBAL	_DNDINC_CTRL_STEP;//非常停止時のみクリア段取の初回起動及び入・切で再度演算
+	.GLOBAL	_CPOS_DND_STOP_SW;
+	.GLOBAL	_CPOS_DND_STOP_SWOLD;
+	.GLOBAL	_CPOS_DND_STOP_DIRECTOLD;
+	.GLOBAL	_CPOS_DND_DIGTOP;//+0,上死点 +1:段取停止角度 0~358.0
+	.GLOBAL	_CPOS_DND_PLSTOP;//上死点
+
+;//	===================================
+;//	===				===
+;//	===	演算MISS		===
+;//	===	2006-07-28		===
+;//	===================================
+	.GLOBAL	_CALC_MISS_FLG1;//
+
+
+;//	===================================
+;//	===				===
+;//	===	手動ぱるさ		===
+;//	===	2006-07-28		===
+;//	===================================
+	.GLOBAL	_SET1_PLSALO_PLS;//パルサ倍率低
+	.GLOBAL	_SET1_PLSAHI_PLS;//パルサ倍率高
+
+;//	===================================
+;//	===				===
+;//	===	手動パルサ		===
+;//	===	2006-07-28		===
+;//	===================================
+	.GLOBAL	_SET1_TEPCTL_SPD1;//手動ﾊﾟﾙｻ速度(段取速度)
+	.GLOBAL	_TEP_POS_ADD_CNT;//
+;;;2013-06-05 未使用	.GLOBAL	_TEP_POS_ADD_CNTOLD;//
+	.GLOBAL	_TEP_IN_ADD;//入力側で作成起動時0にする
+	.GLOBAL	_NEW_TEP_CNT;//
+	.GLOBAL	_TEP_MODE_DRV;//起動時に判定
+	.GLOBAL	_TEP_STEP_FLG;
+	.GLOBAL	_TEP_STEP_WTTM;	//WAIT
+
+	.GLOBAL	_TEP_INPLS_FLG;//2013-06-20
+
+;;	------ 2013-06-05--------
+	.GLOBAL	_TEP_STEP_SVWTTM1;//2013-06-05
+	.GLOBAL	_TEP_STEP_SVSMPTM;//
+	.GLOBAL	_TEP_ADDCHK_SVPLS;//
+	.GLOBAL	_TEP_MIN_SPD_PLS;
+	.GLOBAL	_TEP_MIN_SPD_FRQ;//自起動速度
+	
+	.GLOBAL	_TEP_CHG_SPD1;
+	.GLOBAL	_TEP_CHG_SPD2;
+
+;//	===================================
+;//	===				===
+;//	===	原点復帰2段式		===
+;//	===	2006-07-28(07-31)	===
+;//	===================================
+	.GLOBAL	_WPAR_ORGMOD2_TIM;//SV
+	.GLOBAL	_ORGIN_MOD2_SEL;//0:ｻｰﾁ動作 1:待機点動作
+	.GLOBAL	_ORGIN_MOD2_CHKTIM;//2.0sec
+	.GLOBAL	_ORGIN_MOD2_START_FLG;//起動管理
+
+;//	===================================
+;//	===				===
+;//	===	2006-09-19		===
+;//	===	ｵｰﾊﾞﾗｲﾄﾞ		===
+;//	===				===
+;//	===================================
+	.GLOBAL	_POSCTL_SV_PLS;//設定位置
+	.GLOBAL	_POSCTL_RL_PLS;//ﾘｱﾙﾀｲﾑ位置
+
+	.GLOBAL	_POSCTL_SET_SPD;//目標速度(PLS/S)設定
+	.GLOBAL	_POSCTL_SV_SPD;//目標速度(PLS/S)
+	.GLOBAL	_POSCTL_RL_SPD;//内部演算リアルタイム速度(PLS/S)
+
+	.GLOBAL	_POSCTL_SV_UP_ACC;//目標加速度((PLS/1000)/S/S)
+	.GLOBAL	_POSCTL_SV_DN_ACC;//目標加速度((PLS/1000)/S/S)
+
+	.GLOBAL	_POSCTL_SV_OFS_SPD;//自起動 PLS/S
+
+	.GLOBAL	_POSCTL_STEP_CMD;//0:EMG停止(速度=0) 1:起動ｺﾏﾝﾄﾞ 2:(減速停止)
+	.GLOBAL	_POSCTL_STEP_FLG;//0(IDLE) 1:起動 FF:END
+	.GLOBAL	_POSCTL_CALC_ERR;//BIT0(停止しない状態での起動),BIT1(符号)
+
+;//	--------- 速度をきちんと扱うために--------
+	.GLOBAL	_SET_CLS_SPDBAS_PLS;//PLS/S
+	.GLOBAL	_SET_SPDBAS_PLS;//PLS/S
+	.GLOBAL	_SET_CLSINC_SPDBAS_PLS;//PLS/S
+
+
+;//	***********************************
+;//	***				***
+;//	***	オーバライド処理	***
+;//	***	SEQ			***
+;//	***********************************
+	.GLOBAL	_OVER_RIDE_LATE_FLG;//
+	.GLOBAL	_OVER_RIDE_LATE_REQ;//1~127% OVER-RIDE無効時100%
+	.GLOBAL	_OVER_RIDE_LATE_ANS;//1~127% OVER-RIDE無効時100%
+	.GLOBAL	_SET_SEQ_SPD_OVRLIDE;
+	.GLOBAL	_SET_SEQ_ACC_OVRLIDE;
+
+;//	***********************************
+;//	***				***
+;//	***	オーバライド処理	***
+;//	***	画面			***
+;//	***********************************
+	.GLOBAL	_WPAR_OVRLIDE_GMN;//"1"画面ｵｰﾊﾞﾗｲﾄﾞ有効
+	.GLOBAL	_OVERLIDE_DT_SEL;
+	.GLOBAL	_SET1_OVERLIDE_COF;//1%
+	.GLOBAL	_GMN_OVER_LIDE_FLG;
+	.GLOBAL	_SET_GMN_SPD_OVRLIDE;
+	.GLOBAL	_SET_GMN_ACC_OVRLIDE;
+
+;//	***********************************
+;//	***				***
+;//	***	オーバライド処理	***
+;//	***	選択			***
+;//	***********************************
+	.GLOBAL	_SET_SPD_OVRLIDE;
+	.GLOBAL	_SET_ACC_OVRLIDE;
+
+;//	***********************************
+;//	***				***
+;//	***	加減速時間ｵｰﾊﾞﾗｲﾄﾞ	***
+;//	***	1~127=時間*100/(1~127	***
+;//	***	運転釦ON時のみ演算	***
+;//	***	(一旦停止では変えない)	***
+;//	***	2005-01-17		***
+;//	***********************************
+	.GLOBAL	_OVER_RIDE_USEFUL;	//1~127
+	.GLOBAL	_CMP_POS_LSI_ACCLT1;
+	.GLOBAL	_OVER_UPDN_DBGCNT;
+
+;//	--------- ｵｰﾊﾞﾗｲﾄﾞ機能----------
+	.GLOBAL	_OVER_LIDE_ANS_TIM;//LATE (100*100)/(OVER*OVER) ﾃﾞﾊﾞｯｸ用
+	.GLOBAL	_SET_UP_ACC_LATE;//目標加速度(PLS/S/S)
+	.GLOBAL	_SET_DN_ACC_LATE;//目標加速度(PLS/S/S)
+	.GLOBAL	_POSCTL_OVER_SPD_LAT;//1~127% 1CYCLE 反映値(画面ﾃﾞｰﾀはﾘｱﾙﾀｲﾑ)
+	.GLOBAL	_POSCTL_OVER_ACC_LAT;//1~127% 1CYCLE 反映値(画面･ｼｰｹﾝｽとも1回転)
+
+;//	***********************************
+;//	***				***
+;//	***	新型補正		***
+;//	***				***
+;//	***********************************
+	.GLOBAL	_MONI_CPUAB_PLSDELT;//
+
+;//	*******************************************
+;//	***					***
+;//	***	バイトアクセス可能ｒａｍ	***
+;//	***	ｓｒａｍ			***
+;//	***	(sh2内臓/sh4　sdram)		***
+;//	*******************************************
+
+;//	*******************************************
+;//	***					***
+;//	***					***
+;//	***		位置決め部		***
+;//	***					***
+;//	*******************************************
+
+
+;//	*******************************************
+;//	***					***
+;//	***	dualportram			***
+;//	***	大文字				***
+;//	***					***
+;//	*******************************************
+;//	=== 減速ﾎﾟｲﾝﾄ対策 2004-04-16 ===
+;//	速度ﾃﾞｰﾀ変更がなされた場合
+	.GLOBAL	_IN_POS_GPOINT_POS;//生
+	.GLOBAL	_POS_GPOINT_POS;//基準値()
+
+
+;//	*******************************************
+;//	***	同期ズレ 調査機能		***
+;//	*******************************************
+	.GLOBAL	_CNT_SYNC_ERR_FLG;
+	.GLOBAL	_CNT_SYNC_STS_FLG;
+	.GLOBAL	_CNT_PLSOUT_STOP_CNT;//調査用
+
+
+;//	*******************************************
+;//	***	同期ズレ 対策			***
+;//	*******************************************
+	.GLOBAL	_HENSA_OVER_MOVE_CNT;
+	.GLOBAL	_HENSA_OVER_STOP_CNT;
+	.GLOBAL	_SV_CONST_SUB_PV;
+	.GLOBAL	_SV_REAL_PLS;
+	.GLOBAL	_SV_REAL_SUB_PV;
+	
+	.GLOBAL	_CNT_SYNC_HOS_DAT1;
+	.GLOBAL	_CNT_SYNC_HOS_DAT2;
+	.GLOBAL	_CNT_SYNC_HOS_FLAG;
+	.GLOBAL	_CNT_SYNC_CHK_CNT1
+	.GLOBAL	_CNT_SYNC_CHK_CNT2
+	.GLOBAL	_CNT_SYNC_HOS_CNT1;
+	.GLOBAL	_CPUy_RESTPLS_LTFLG;(内部ﾌﾗｸﾞ)
+
+;//	*******************************************
+;//	***	PARAM				***
+;//	*******************************************
+;	========2006-09-30 MONITOR=================
+	.GLOBAL	_WPAR_ANAIN_SEL	;//0:0~10V:X%(SIT3-TYPE) 1:-100%~(0)5~10V(100%):
+;	========2006-09-30(ｵｰﾊﾞﾗｲﾄﾞ加減速時間)=========
+	.GLOBAL	_WPAR_ACCTYP_SEL	;//0:加速距離一定(SIT3ｴｸｾﾃﾞｨ) 1:加速度一定 2:加速時間一定 
+
+;//	*******************************************
+;//	***	ANALOG				***
+;//	*******************************************
+	.GLOBAL	_WPV_AD_DATA;// +/- AD DATA
+	.GLOBAL	_WPV_ABS_AD_DATA;// ABS
+	.GLOBAL	_WPV_POWER_MONI	;// ﾊﾟﾜｰﾓﾆﾀ(0~300%)orTRQ
+
+;//	***************************************************
+;//	***	(上昇無効解除からのLOCKｿﾌﾄの遅延)	***
+;//	***	2006-11-21				***
+;//	***************************************************
+	.GLOBAL	_SFTY_LOCK_DLYTM;
+	.GLOBAL	_PRD_KJP_CMP_ENB;//
+
+;//	*******************************************
+;//	***	2006-12-06			***
+;//	*******************************************
+	.GLOBAL	_SELF_LOCK_FLG;
+
+;//	***************************
+;//	***	2007-01-16	***
+;//	***************************
+	.GLOBAL	_DRV_START_KEEP;
+
+
+;//	***************************************************
+;//	***	2007-03-02				***
+;//	***************************************************
+	.GLOBAL	_CMP_RECOVER_FLG;
+
+;//	***************************************************
+;//	***	2007-11-26				***
+;//	***************************************************
+	.GLOBAL	_CHK_LSI_LOAD_POS_CNT;//
+	.GLOBAL	_CHK_LSI_LOAD_OUT_CNT;
+
+
+;//	***************************************************
+;//	***	2007-12-12				***
+;//	***************************************************
+	.GLOBAL	_SHOT_MOST_DOWN_POS;
+	.GLOBAL	_SHOT_MOST_DOWN_POSWK;
+
+;//	***************************************************
+;//	***	2008-04-30				***
+;//	***************************************************
+	.GLOBAL	_ORIGN_180ARA_FLG;
+
+;//	*******************************************
+;//	***	2008-11-11	H2Wからの移植	***
+;//	*******************************************
+;//	***************************
+;//	***	2008-05-10	***
+;//	***************************
+;//	***************************
+;//	***	2008-06-10	***
+;//	***************************
+;//	***************************
+;//	***	2008-01-26	***
+;//	***************************
+	.GLOBAL	_SQ_RNA_ALMRST_OLD;
+	.GLOBAL	_IN_PARAM_RNA_CHK;
+	.GLOBAL	_RNA_PROTOCOL_SEL;//0 1:NEW
+
+;	------------ 2015-10-13-------------------
+	.GLOBAL	_RNA_PROTOCOL_X		;//"1"X社製ﾌﾟﾛﾄｺﾙ
+
+;//	***************************
+;//	***	2009-03-11	***
+;//	***************************
+	.GLOBAL	_WPAR_MCNRNA_SEL		;//1:機械でﾘﾆｱｽｹｰﾙを使用しない構造･･原点復帰
+	.GLOBAL	_WPAR_CUPCHK_SEL		;//1:SIT2用ｶｯﾌﾟﾘﾝｸﾞﾁｪｯｸ
+	.GLOBAL	_WPAR_360STP_HAB		;//0:未使用 2:停止中2度は許容する 358-359-0度-1-2
+
+	.GLOBAL	_CTL_ENC360_OLD		;//
+	.GLOBAL	_UP360_CHK_LIST		;//進行方向で原点位置が見えたか?
+
+	.GLOBAL	_SET360_UPAREA_DIG1		;//1度単位　23.4-->23.0
+	.GLOBAL	_SET360_UPAREA_PLS1		;//1度単位　23.4-->23.0
+
+;//	***********************************
+;//	***	2009-03-11		***
+;//	***	SIT4のメカのLSAの移植	***
+;//	***				***
+;//	***********************************
+	.GLOBAL	_LSA_SIG_DT2		;//
+	.GLOBAL	_DIR_FLG			;//
+	.GLOBAL	_VALV_ON_FLG		;//
+;//	*******************************************
+;//	***	2009-03-11			***
+;//	***	360ｴﾝｺｰﾀﾞ停止なのに動いた異常	***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_STOP_360ENC_DIG;
+
+;//	***************************************************
+;//	***						***
+;//	***		ふり子　戻り			***
+;//	***						***
+;//	***		_DMATH_DNDRIV			***
+;//	***	2009-10-07(2007-04-02)			***
+;//	***						***
+;//	***************************************************
+;//	222.6と_PVP_TAIKITEN_POSで描画を行う
+;//
+;//	--->STOP(まだ　DIR=0)
+;//	--->DIR=1:起動() 
+;//	EMG SET_FLG=0
+;//	EXQ SET_FLG=keep
+;//	--------- 処理注意-------
+;//	MOTION
+;//	ERR
+;//	AREA-SIG
+;//	CAM
+;//
+	.GLOBAL	_DNM_SET1_UPAREA_PLS0		;//4B待機点位置(ｲﾝｸﾘﾒﾝﾀﾙ)
+	.GLOBAL	_DNM_SET1_OBJECT_PLS_TOP	;//4BYTE SET1_OBJECT_PS01;01段目目標位置~
+	.GLOBAL	_DNM_SET1_UPAREA_DIG0		;//待機点
+	.GLOBAL	_DNM_SET1_OBJECT_DIG_TOP	;//2BYTE SET1_OBJECT_DG01;01段目角度
+	.GLOBAL	_DNM_DIR_SET_FLG		;//2BYTE 0:往路 1:復路(動作中保証：停止時に切り替わり)
+	.GLOBAL	_DNM_DIR_NOW_FLG		;//
+	.GLOBAL	_DNM_DIR_SAM_FLG		;//2BYTE 0:往路 1:復路(動作中保証：停止時に切り替わり)
+	.GLOBAL	_DNM_DIR_CHG_FLG		;//各ｿﾌﾄ(CAM,ERR検知)にDIRが変わったことを通知する
+	.GLOBAL	_DNM_DIR_CHG_TIM		;//10scanｶｳﾝﾀ
+	.GLOBAL	_DNM_CTL_INC3600		;//
+
+	.GLOBAL	_DNM_SETX_UPAREA_PLS	;//4;待機点位置(ｲﾝｸﾘﾒﾝﾀﾙ):上死点
+	.GLOBAL	_DNM_SETX_UPAREA_DIG	;//2;回転/反転時待機点
+	.GLOBAL	_DNM_WSVX_CLNK_UP_POS	;//
+	.GLOBAL	_DNM_WSVX_CLNK_UP_POS_UP	;//
+	.GLOBAL	_DNM_WSVX_CLNK_UP_POS_DN	;//
+	.GLOBAL	_DNM_SETX_LINK_UP_POS_UP	;//ｸﾗﾝｸ設定(範囲比較)
+	.GLOBAL	_DNM_SETX_LINK_UP_POS_DN	;//ｸﾗﾝｸ設定(範囲比較)
+
+;//	===========入れ替え有り===========
+	.GLOBAL	_SETXY_UPAREA_PLS	;//4;待機点位置(ｲﾝｸﾘﾒﾝﾀﾙ):上死点
+	.GLOBAL	_SETXY_UPAREA_DIG	;//2;回転/反転時待機点
+	.GLOBAL	_WSVXY_CLNK_UP_POS	;//
+	.GLOBAL	_WSVXY_CLNK_UP_POS_UP	;//
+	.GLOBAL	_WSVXY_CLNK_UP_POS_DN	;//
+	.GLOBAL	_SETXY_LINK_UP_POS_UP	;//ｸﾗﾝｸ設定(範囲比較)
+	.GLOBAL	_SETXY_LINK_UP_POS_DN	;//ｸﾗﾝｸ設定(範囲比較)
+
+;//	==============荷重関係でふりこによる追加================
+;//	==============2007-09-06　ふりこ ===========
+	.GLOBAL	_WPARX_COP_DNDRV1_ZDG1;//ふりこ往路
+	.GLOBAL	_WPARX_COP_DNDRV1_ZDG2;
+	.GLOBAL	_WPARX_COP_DNDRV1_SDG1;
+	.GLOBAL	_WPARX_COP_DNDRV1_SDG2;
+	.GLOBAL	_WPARX_COP_DNDRV2_ZDG1;//ふりこ復路
+	.GLOBAL	_WPARX_COP_DNDRV2_ZDG2;
+	.GLOBAL	_WPARX_COP_DNDRV2_SDG1;
+	.GLOBAL	_WPARX_COP_DNDRV2_SDG2;
+
+	.GLOBAL	_SETX_KJSTR_DIG1;//往路
+	.GLOBAL	_SETX_KJEND_DIG1;//往路
+	.GLOBAL	_SETY_KJSTR_DIG1;//復路
+	.GLOBAL	_SETY_KJEND_DIG1;//復路
+
+	.GLOBAL	_SETC_KJSTR_DIG1;//演算
+	.GLOBAL	_SETC_KJEND_DIG1;//演算
+
+	.GLOBAL	_DNM_DIR_FLG_OLD;
+
+;//	===================================
+;//	===				===
+;//	===		2010-08-20 	===
+;//	===				===
+;//	===================================
+	.GLOBAL	_WPAR_BRKTOUT_SPD;2;
+	.GLOBAL	_WPAR_BRKTCHK_SPD;2;
+	.GLOBAL	_WPAR_SFYOPT_USEL;2;0[現行]:1[上昇無効にしない]:2[上昇無効にする]
+
+;//	--------- 制動試験------
+	.GLOBAL	_BRKTST_MOD_FLG;//
+	.GLOBAL	_BRKTST_OUTSPD_PLS;//
+	.GLOBAL	_BRKTST_CHKSPD_PLS;//
+
+;//	----- 制動試験追加 2011-09-14---
+	.GLOBAL	_BRKTST_INPUT_CMD;//BIT0:制動試験指令[349.0の替わり],BIT1:制動試験停止指令
+	.GLOBAL	_WPARX_BRKTST_STPDEGX	;//360ｴﾝｺｰﾀﾞ上角度
+	.GLOBAL	_WPARX_BRKTST_STPPLS	;//
+	.GLOBAL	_WPARX_BRKTST_STPLNG	;//相対ﾊﾟﾙｽ
+	.GLOBAL	_BRKTST_STP_ABSPLS	;//
+	.GLOBAL	_BRKTST_STR_FLG		;//
+	.GLOBAL	_BRKTST_SW_IN		;
+	.GLOBAL	_BRKTST_AREA_SIG	;BIT0/BIT4[待機点]
+
+	.GLOBAL	_BRKTST_CLNK_UP_POS_UP	;//ｸﾗﾝｸ設定[0.1DIG]
+	.GLOBAL	_BRKTST_CLNK_UP_POS_DN	;//ｸﾗﾝｸ設定[0.1DIG]
+	.GLOBAL	_BRKTST_LINK_UP_POS_UP	;//LINK設定[0.1DIG](範囲比較)
+	.GLOBAL	_BRKTST_LINK_UP_POS_DN	;//LINK設定[0.1DIG](範囲比較)
+
+;----------------------------
+	.GLOBAL	_BRKTST_BAKUP_FLG_SV1	;ﾊﾞｯｸｱｯﾌﾟﾌﾗｸﾞBAKUP戻し
+	.GLOBAL	_BRKTST_BAKUP_FLG_SV2	;ﾊﾞｯｸｱｯﾌﾟﾌﾗｸﾞBAKUP戻し
+	.GLOBAL	_BRKTST_BAKUP_FLG_PV1	;ﾊﾞｯｸｱｯﾌﾟﾌﾗｸﾞBAKUPﾃﾞｰﾀ
+	.GLOBAL	_BRKTST_BAKUP_FLG_PV2	;ﾊﾞｯｸｱｯﾌﾟﾌﾗｸﾞBAKUPﾃﾞｰﾀ
+
+
+;//	===================================
+;//	===				===
+;//	===		2010-08-20 	===
+;//	===				===
+;//	===================================
+;//	--------- ブレーキチェック----
+	.GLOBAL	_SETX_BREAK_DIG2;//0.1度
+	.GLOBAL	_SETX_BREAK_TIM2;//1msec
+
+
+;//	===================================
+;//	===				===
+;//	===		2010-08-20 	===
+;//	===				===
+;//	===================================
+;//	------ 加振動制御 ------
+	.GLOBAL	_KAJLIV_TTL_TOTAL;
+	.GLOBAL	_WPAR_KJYU_STOPTBL;//
+	.GLOBAL	_KAJLIV_TTL_POINT;
+	.GLOBAL	_KAJLIV_TTL_IDOBUF;//
+	.GLOBAL	_WPVX_KAJLIV_TTL;//
+	.GLOBAL	_SET1_VIB_KJYU_TTL;//
+	.GLOBAL	_SET1_MAX_KJYU;//最大荷重設定(ｵﾌﾟｼｮﾝにしかない)(2010-08-23 koma)
+
+	.GLOBAL	_VIB_STEP_FLG;//BIT0:停止ラッチ BIT6:ﾀｲﾑｱｯﾌﾟ
+	.GLOBAL	_VIB_STEP_COM;//1:払い出し中 0:停止中
+	.GLOBAL	_VIB_GET_SET_TIM;
+	.GLOBAL	_VIB_USE_SET_TIM;//
+	.GLOBAL	_VIB_PV_UP_TIM;//
+	.GLOBAL	_VIB_DLY_TIM;
+
+;//	***************************************************
+;//	***	2010-10-07	待機点0度対策		***
+;//	***************************************************
+	.GLOBAL	_LINK_2ROT_PLS		;
+	.GLOBAL	_LINK_3ROT_PLS		;
+	.GLOBAL	_LINK_4ROT_PLS		;
+	.GLOBAL	_LINK_1000ROT_PLS	;
+
+
+	.GLOBAL	_WPAR_STOPING_TIM	;//予備、ｽﾄｯﾋﾟﾝｸﾞﾀｲﾏ,ﾌﾞﾚｰｷﾀｲﾏ用時間(2010-08-20以前は50ms固定)
+
+	.GLOBAL	_WPAR_ACC_MATHED	;
+
+
+	.GLOBAL	_ACC_REST_ABS_PLS	;//
+	.GLOBAL	_ACC_REST_FLG		;//0:減速ﾁｪｯｸしなくていい(500,000*30sec以上距離がある)
+
+;//	***********************************
+;//	***				***
+;//	***	ふりこ加速に関して	***
+;//	***	通常演算の簡略化	***
+;//	***	2010-09-22		***
+;//	***	(ACC演算はCPUAだけ)	***
+;//	***				***
+;//	***********************************
+	.GLOBAL	_DNM_ACC_CALFLG		;//0/1
+
+
+;//	***************************************************
+;//	***	2010-10-21				***
+;//	***************************************************
+	.global	_cbsys_tbl_err		;cbsysの加速度ﾃｰﾌﾞﾙ異常
+					;bit0=1:ｺｰﾄﾞなし
+					;bit1=1:距離ﾃｰﾌﾞﾙなし
+					;bit2=1:加速度1なし
+					;bit3=1:加速度2なし
+					;bit4=1:加速度3なし
+
+;//	表示関連に使用する最大速度
+	.GLOBAL	_SETD_LINK_MAX_SPD_PLS	;//ｲﾝｸﾘﾒﾝﾀﾙｴﾝｺｰﾀﾞ換算値　pls/s
+	.GLOBAL	_SETD_MOTRPM_MAXM	;//	2	;ﾓｰﾀ最大回転数
+
+;	---------------------------------------------------
+	.GLOBAL		_TBL_USE_POS0		;待機点の距離
+	.GLOBAL		_TBL_ANS_ACCTIM		;
+	.GLOBAL		_TBL_ANS_MAXSPM		;
+	.GLOBAL		_TBL_ANS_ACC_SEL	;//(0,1),2[TBL2],3[TBL3]
+
+	.GLOBAL		_SVX_DNM_MAXSPM		;//ふりこの最大速度
+
+
+;//	*******************************************
+;//	***	ふりこ追加による異常追加	***
+;//	*******************************************
+	.GLOBAL		_CHK_ADD_DATA_LATCH	;
+	.GLOBAL		_DND_OVERCHK_DIG	;
+
+	.GLOBAL	_ACC_MONITOR_DAT1	;
+	.GLOBAL	_ACC_MONITOR_DAT2	;
+	.GLOBAL	_ACC_MONITOR_DAT3	;
+	.GLOBAL	_ACC_MONITOR_DAT4	;
+	.GLOBAL	_ACC_MONITOR_DAT5	;
+	.GLOBAL	_ACC_MONITOR_DAT6	;
+	.GLOBAL	_ACC_MONITOR_DAT7	;
+	.GLOBAL	_ACC_MONITOR_DAT8	;
+
+
+;//	***********************************
+;//	***				***
+;//	***	スキャン分割		***
+;//	***	2010-12-08		***
+;//	***				***
+;//	***********************************
+	.GLOBAL	_INT1MS_SCAN_02MS	;
+	.GLOBAL	_INT1MS_SCAN_03MS	;//時間に関係ない処理
+	.GLOBAL	_INT1MS_SCAN_05MS1	;
+	.GLOBAL	_INT1MS_SCAN_05MS2	;
+	.GLOBAL	_INT1MS_SCAN_10MS	;
+
+;//	-----------ｽｷｬﾝ分割したことによる弊害
+	.GLOBAL	_ERR_LEV_IN2	;
+	.GLOBAL	_ERR_LEV_IN3	;
+	.GLOBAL	_ERR_LEV_IN4	;
+	.GLOBAL	_ERR_LEV_IN5	;
+	.GLOBAL	_ERR_LEV_IN6	;
+
+;//	***********************************
+;//	***				***
+;//	***	時間データ		***
+;//	***	2010-12-08		***
+;//	***				***
+;//	***********************************
+	.GLOBAL	_WPAR_CMP_ERR_TIM1	;//PG,_EQ_追加 2003-01-28
+	.GLOBAL	_WPAR_CMP_ERR_TIM2	;//PG,_EQ_追加 2003-01-28
+
+;//	***************************************************
+;//	***						***
+;//	***	2011-01-18(2010-12-27)			***
+;//	***	荷重表示切替のためのサイクル速度比較	***
+;//	***						***
+;//	***************************************************
+	.GLOBAL	_CYCLE_SPD_CMP_FLG1	;//BIT0
+	.GLOBAL	_CYCLE_SPD_CMP_PV_DAT	;//実測
+	.GLOBAL	_WPAR_COP_DISP_SPM1	;//2010-12-27 荷重切替サイクル速度比較1spm単位
+
+
+;//	***************************************************
+;//	***						***
+;//	***	2011-01-18(2010-12-27)			***
+;//	***	反転のインチングの手前減速		***
+;//	***						***
+;//	***************************************************
+	.GLOBAL	_NEG_CTRL_BEFOR_OBJ_PLS;//目標－手前
+	.GLOBAL	_NEG_CTRL_BEFOR_SLW_PLS;//目標－手前－速度減速
+	.GLOBAL	_NEG_CTL_OBJ_POS_PUSH;//
+
+
+;//	***************************************************
+;//	***						***
+;//	***	2011-03-22				***
+;//	***						***
+;//	***************************************************
+	.GLOBAL	_WPAR_ORGDRV_MD2		;
+	.GLOBAL	_ORGIN2_STEP_FLG;//
+
+;//	***************************************************
+;//	***						***
+;//	***	2011-03-22				***
+;//	***						***
+;//	***************************************************
+	.GLOBAL	_RNA_STLORK_HALF;//設定(半径)
+
+	.GLOBAL	_RNA_ABS_ORGWORK2;//待機点検出用ﾜｰｸ
+	.GLOBAL	_RNA_ABS_ORGWORK2A;//待機点検出用ﾜｰｸ
+	.GLOBAL	_INC_ABS_ORGWORK2;//ﾘﾆｱを記憶時のｲﾝｸﾘﾒﾝﾀﾙ角度
+	.GLOBAL	_INC_ABS_ORGWORK2A;//ﾘﾆｱを記憶時のｲﾝｸﾘﾒﾝﾀﾙ角度
+	.GLOBAL	_INC_OFS_ORGWORK2A;//
+
+	.GLOBAL	_RNA_ABS_MD2_C1;//
+	.GLOBAL	_RNA_ABS_MD2_C1A;//
+	.GLOBAL	_RNA_ABS_MD2_C2;//
+
+	.GLOBAL	_DAIHAI_CALC_WORK1;
+	.GLOBAL	_DAIHAI_CALC_WORK2;
+	.GLOBAL	_DAIHAI_CALC_WORK3;
+	.GLOBAL	_DAIHAI_CALC_WORK4;
+	.GLOBAL	_DAIHAI_CALC_WORK5;
+	.GLOBAL	_DAIHAI_CALC_WORK6;
+	.GLOBAL	_DAIHAI_CALC_WORK7X;//16B
+	.GLOBAL	_DAIHAI_CALC_WORK8;
+	.GLOBAL	_DAIHAI_CALC_WORK9X;//16B DEBUG
+	.GLOBAL	_DAIHAI_CALC_WORK10;//DEBUG
+
+	.GLOBAL	_DAIHAI_CALC_WORK11;//DEBUG
+	.GLOBAL	_DAIHAI_CALC_WORK12;//DEBUG
+	.GLOBAL	_DAIHAI_CALC_WORK13X;//DEBUG
+
+	.GLOBAL	_WPAR_DAIHAI_SEL		;//2;//手動ﾀﾞｲﾊｲﾄの演算方法の変更1:2011-03-22ﾀｲﾌﾟ
+
+;//	***************************************************
+;//	***						***
+;//	***	2011-03-22				***
+;//	***						***
+;//	***************************************************
+	.GLOBAL	_WPAR_SLDALM_LNG		;//ｽﾗｲﾄﾞ移動異常検出用　ｽﾗｲﾄﾞ移動量 2011-03-22[ｸﾗﾝｸ機構MC　H1F]
+	.GLOBAL	_WPAR_SLDALM_TIM		;//ｽﾗｲﾄﾞ移動異常検出用　ｽﾗｲﾄﾞ移動測定時間2011-03-22[ｸﾗﾝｸ機構MC　H1F]
+
+	.GLOBAL	_SLIDALM_CHK_FLG		;//
+	.GLOBAL	_SLIDALM_CHK_TIM		;//計測時間
+	.GLOBAL	_SLIDALM_CHK_POS		;//計測時間後の位置
+	.GLOBAL	_SLIDALM_POS_PULAS		;//最大位置
+	.GLOBAL	_SLIDALM_POS_MINAS		;//最小位置
+
+
+;//	***************************************************
+;//	***						***
+;//	***	2011-03-22				***
+;//	***	位置決め原点復帰時の誤差検出		***
+;//	***************************************************
+	.GLOBAL	_ORGPOS_LATCH1_INC_OFFSET_PLS;	//位置決め完了時
+	.GLOBAL	_ORGPOS_LATCH1_RNA_ABS_DAT;	//位置決め完了時 RNA
+	.GLOBAL	_ORGPOS_SERCH_RNA_ABS_DAT;	//ｻｰﾁﾀｲﾌﾟの原点出の下限位置の基準
+	.GLOBAL	_WPAR_ORGPOS_LNG1;//比較距離
+
+
+;//	***************************************************
+;//	***						***
+;//	***	2011-05-05				***
+;//	***	ロットカウント１回前信号		***
+;//	***						***
+;//	***************************************************
+	.GLOBAL	_CNT_STOP_CMD_BEF1	;
+
+;//	***********************************************************
+;//	***							***
+;//	***	2011-05-11	制動試験用原点復帰完了角度	***
+;//	***							***
+;//	***********************************************************
+	.GLOBAL	_WPAR_BRKTST_ORGDEG	;//制動試験時の原点復帰完了角度 270.0度
+	.GLOBAL	_WPARX_BRKTST_ORGDEGX	;//
+	.GLOBAL	_WPARX_BRKTST_ORGPLS	;//
+
+;//	***************************************************
+;//	***						***
+;//	***************************************************
+	.GLOBAL	_TEPA_PLS_ZERO_TIM;	//
+
+;//	***************************************************
+;//	***						***
+;//	***************************************************
+	.GLOBAL	_BBN_MESURE_SPOS_BUF;	//8byte
+	.GLOBAL	_BBN_MESURE_SSPD_BUF;	//4byte
+	.GLOBAL	_BBN_MESURE_SSPD;	//4byte
+
+	.GLOBAL	_BBN_MESURE_PPOS_BUF;	//8byte
+	.GLOBAL	_BBN_MESURE_PSPD_BUF;	//4byte
+	.GLOBAL	_BBN_MESURE_PSPD;	//4byte
+
+	.GLOBAL	_BBN_MEUSRE_SV_ACC_SRC;
+	.GLOBAL	_BBN_MEUSRE_PV_ACC_SRC;
+
+	.GLOBAL	_BBN_MEUSRE_SV_ACC;
+	.GLOBAL	_BBN_MEUSRE_PV_ACC;
+
+	.GLOBAL	_BBN_MESURE_POINT;
+	.GLOBAL	_BBN_SET_TIME;//MAX20msec
+
+;	---------------------------------
+	.GLOBAL	_BBN_MESURE_SSPD_DLYBUF;//8byte2011-08-29
+	.GLOBAL	_BBN_MESURE_DLY_SSPD;//4byte2011-08-29
+	.GLOBAL	_BBN_MESURE_DLY_POINT;//3byte2011-08-29
+
+
+;//	***************************************************
+;//	***	加速度異常2011-07-04			***
+;//	***************************************************
+	.GLOBAL	_SETX_MAX_ACC_LATE;	//最大周波数*1000/時間
+
+;;;2014-10-23	.GLOBAL	_SETX_ACCERR_ZEROHAB;
+;;;2014-10-23	.GLOBAL	_SETX_ACCERR_ERR1DAT;
+;;;2014-10-23	.GLOBAL	_SETX_ACCERR_ERR2DAT;
+
+	.GLOBAL	_SETX_ACCERR_ERR3DAT;
+	.GLOBAL	_ACCERR_ACC_PV;
+	.GLOBAL	_ACCERR_ACC_OBJ;
+	.GLOBAL	_ACCERR_ACC_HENSA;
+	.GLOBAL	_ACCERR_ERR_CNT;
+	.GLOBAL	_SETX_ACCERR_DLY1;//加速度=0時の異常遅延
+;;;2014-10-23	.GLOBAL	_SETX_ACCERR_DLY2;//加速度>0時の異常遅延
+
+
+
+	.GLOBAL	_SETX_ACCERR_SEL;2011-07-11
+;;;2014-10-23	.GLOBAL	_SETX_ACCERR2_DLY1;//加速度=0時の異常遅延
+	.GLOBAL	_ACCERR_DLY_PV_TIM;
+
+
+;//	*** 2011-09-01
+	.GLOBAL	_SETX_UPERR_ERRCMPDAT;
+	.GLOBAL	_SETX_HOLD_CMP1_DEG;
+	.GLOBAL	_DNM_SETX_HOLD_CMP1_DEG;//2014-10-23
+
+	.GLOBAL	_LSI_CHK_DBG_CNT1;
+	.GLOBAL	_LSI_CHK_DBG_CNT2;
+	.GLOBAL	_LSI_CHK_DBG_CNT3;
+	.GLOBAL	_LSI_CHK_DBG_CNT4;
+
+
+
+;//	***************************************************
+;//	***		金型タッチ位置[加速度算出]	***
+;//	***************************************************
+	.GLOBAL	_RNA_BBN_MESURE_SPOS_BUF;//0.01mm
+	.GLOBAL	_RNA_BBN_MESURE_SSPD_BUF;//0.01mm /1msec
+	.GLOBAL	_RNA_BBN_MESURE_SSPD;
+	.GLOBAL	_RNA_BBN_MEUSRE_ACC_SRC;//0.01mm
+	.GLOBAL	_RNA_BBN_MEUSRE_ACC;
+
+	.GLOBAL	_RNA_BBN_SET_TIME;//MAX20msec
+	.GLOBAL	_RNA_BBN_MESURE_POINT;
+
+
+
+
+;//	***********************************************************
+;//	***							***
+;//	***		1回転で範囲内に入ったら１回チェック	***
+;//	***							***
+;//	***********************************************************
+	.GLOBAL	_RNA_TECH_POSBUF;
+	.GLOBAL	_RNA_TECH_POINT;
+	.GLOBAL	_RNA_INSERT_CHKFLG;
+	.GLOBAL	_SETX_RNA_ACC_BEFTIM;
+	.GLOBAL	_SETX_RNA_ACC_CHKPOS;	// ****.**mm /S/S 100.00mm-> 10000.00mm/s/s
+	.GLOBAL	_RNA_OLD_STEP;
+
+
+
+;//	***************************************************
+;//	***		金型タッチ位置-実荷重		***
+;//	***************************************************
+;//	2012-10-18
+	.GLOBAL	_TECH2_KJYU_LT1KN;//FIRST  KN
+	.GLOBAL	_TECH2_KJYU_LT1PLS;//
+	.GLOBAL	_TECH2_KJYU_LT1PLS_OFS;//
+	.GLOBAL	_TECH2_KJYU_LT2KN;//SECOND KN
+	.GLOBAL	_TECH2_KJYU_LT2PLS;//
+	.GLOBAL	_TECH2_KJYU_LT2PLS_OFS;//
+	.GLOBAL	_TECH2_KJYU_PLSX;//ﾀｯﾁ位置PLS
+	.GLOBAL	_TECH2_KJYU_LNG;//演算ｼﾌﾄ+ｼｽﾊﾟﾗｽﾌﾄ
+	.GLOBAL	_TECH2_KJYU_PLS;//ﾀｯﾁ位置-ｼﾌﾄ
+	.GLOBAL	_TECH2_KJYU_DIG;//0.1度
+	.GLOBAL	_TECH2_KN_FLG;//BIT0(FIRST),BIT1(SECOND),BIT6(END)
+
+
+;//	***************************************************
+;//	***		金型タッチ位置実測		***
+;//	***************************************************
+;//	==== 2011-07-28 =====
+;//	==== 2011-07-28,2013-02-20 =====
+	.GLOBAL	_PVX_MOTINS_PS2;	
+	.GLOBAL	_PVX_MOTINS_POS;	
+	.GLOBAL	_PVX_MOTINS_PS3;	
+
+	.GLOBAL	_PVX_MOTINS_AG2;	
+	.GLOBAL	_PVX_MOTINS_AG2X;
+
+	.GLOBAL	_PVX_MOTINS_AGL;	
+	.GLOBAL	_PVX_MOTINS_AGLX;
+
+	.GLOBAL	_PVX_MOTINS_AG3;	
+	.GLOBAL	_PVX_MOTINS_AG3X;
+
+
+	.GLOBAL	_PVX_MOTINS_DANBEF;
+	.GLOBAL	_PVX_MOTINS_DAN;
+	.GLOBAL	_PVX_MOTINS_DANAFT;
+
+	.GLOBAL	_PVX_MOTINS_INF;
+
+
+	.GLOBAL	_TECH_WK_PLS1;
+	.GLOBAL	_TECH_WK_DIG1;
+	.GLOBAL	_TECH_WK_DIG2;
+	.GLOBAL	_TECH_WK_DIG3;
+	.GLOBAL	_TECH_WK_DIG4;
+
+;//	2013-02-20
+	.GLOBAL	_SET1_KATTCH_SPD		;//金型タッチ速度
+	.GLOBAL	_TECH_USED_F			;//　2013-03-10
+
+;//	***************************************************
+;//	***						***
+;//	***	ROMﾊﾟﾗﾒｰﾀをﾜｰｸにCOPYする		***
+;//	***	ｺｰﾄﾞがおかしい場合0とする		***
+;//	***	2011-09-14				***
+;//	***************************************************
+	.GLOBAL	_W_PARAM_TOP;	//
+
+;//	*******************************************
+;//	***					***
+;//	*** 	CPUA,B共通ﾊﾞｯｸｱｯﾌﾟ用ﾜｰｸ		***
+;//	***	2011-09-14			***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_CBSTS_LOAD_FLG;
+
+;//	*******************************************
+;//	***					***
+;//	*** 	CPUB専用ﾊﾞｯｸｱｯﾌﾟ用ﾜｰｸ		***
+;//	***	2011-09-14			***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_CBSTS_SAVE_CMDWK;
+
+
+;//	*******************************************
+;//	***					***
+;//	*** 	CPUA専用ﾊﾞｯｸｱｯﾌﾟ用ﾜｰｸ		***
+;//	***	2011-09-14			***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_CBSTS_SAVE_DAT;//
+
+
+
+;//	***************************************************
+;//	***						***
+;//	***	2011-09-20				***
+;//	***						***
+;//	***************************************************
+	.GLOBAL	_WPARX_BRKTST_DNDLMT	;//100.00%->PLS/S
+
+
+;//	***************************************************
+;//	***		インポジション			***
+;//	***		2012-03-06			***
+;//	***************************************************
+	.GLOBAL	_INP_ERR_FLG;
+
+;//	***************************************************
+;//	***		逆転異常 2012-02-22[H2W]	***
+;//	***		2012-03-06			***
+;//	***************************************************
+	.GLOBAL	_REV_ERR_WAIT_TIMPV;
+	.GLOBAL	_REVCHK_DRIV_SHIN;//BIT0
+	.GLOBAL	_REVCHK_MASK_PVTIM;//
+	.GLOBAL	_ERRCHK_ENC360;
+	.GLOBAL	_REVMOD_REVDN_DIG;//反転設定＋不可範囲
+
+;//	***************************************************
+;//	***		制動試験監視２			***
+;//	***		2012-03-06			***
+;//	***************************************************
+;//	加速度算出
+	.GLOBAL	_BKTMCL_SPDBUF;
+	.GLOBAL	_BKTMCL_ACCDAT;
+	.GLOBAL	_BKTMCL_ACCDAT_UNIT;// PLS/S/S
+
+	.GLOBAL	_BKTMCL_ACCPOINT		;
+	.GLOBAL	_BKTMCL_POINTMAX		;//0,1~50 0=1
+
+;//	方向判別
+	.GLOBAL	_BKTMCL_OLD_PLSPOS	;//PLS
+	.GLOBAL	_BKTMCL_ENC_DIR		;//BIT0=0,BIT1=0:停止 BIT0=1,BIT1=0:下降 BIT0=1,BIT1=1:上昇
+					;//反転した状態が停止
+
+;//
+	.GLOBAL	_BKTMCL_TMSTEP_FLG	;//ｽﾃｯﾌﾟ管理
+	.GLOBAL	_BKTMCL_TMSTEP_STS	;//2012-03-19[]
+
+	.GLOBAL	_BKTMCL_TOTAL_TIMPV	;//
+	.GLOBAL	_BKTMCL_STOP_TIMPV	;//
+	.GLOBAL	_BKTMCL_BBNFLT_TIMPV	;//演算時
+	.GLOBAL	_BKTMCL_TMDEF_PV		;//固定時
+	.GLOBAL	_BKTMCL_SETX_TMDEF	;//T0演算に使用(計算結果または固定)
+
+;//
+	.GLOBAL	_WPAR_BKTMCL_ACCCK	;pls/s/s
+	.GLOBAL	_BKTMCL_STOP_SPD	;//PLS/S
+	.GLOBAL	_BKTMCL_BRKSTR_SPD	;//PLS/S
+	.GLOBAL	_BKTMCL_BRKSTP_SPD	;//PLS/Sブレーキ制動停止速度2012-03-19
+
+	.GLOBAL	_BKTMCL_BRK_TIMPV	;//最大速度時のﾌﾞﾚｰｷ時間
+
+
+	.GLOBAL	_BKTMCL_BRKSTX_SPD	;//2段目速度2012-03-26
+	.GLOBAL	_BKTMCL_BRKSTX_TIMPV	;//2段目時間2012-03-26
+	.GLOBAL	_BKTMCL_BRKSTX_TIMSV	;//2段目時間2012-03-26
+
+;//	-----2013-11-05 -----
+	.GLOBAL	_BKTMCL_BRX_AREA_IN	;//生
+	.GLOBAL	_BKTMCL_BRX_AREA_INLT	;//停止時のｴﾘｱ信号 INのﾗｯﾁ
+
+;//	----------------------------------------
+	.GLOBAL	_DEBUG_ENC360_STS	;2012-05-07
+	.GLOBAL	_DEBUG_ENC360_STS2	;//2012-05-07
+	
+	.GLOBAL	_DURING_TIM_FX		;//2012-05-15
+
+
+;//	2012-05-30
+	.GLOBAL	_FUL_CLS_DLYTM_SV	;
+	.GLOBAL	_FUL_CLS_MAXOVER_F	;
+
+
+
+;//	--------------2012-09-25----------
+	.GLOBAL	_UPMSK2_MOD		;//0:参照しない 1:参照する
+	.GLOBAL	_UPMSK2_MOD_IN_SW	;//0,1(生　待機点2)
+	.GLOBAL	_UPMAK2_MOD_USE_SW	;//0,1(反映ﾀｲﾐﾝｸﾞ後)
+	.GLOBAL	_UPMSK2_MATH		;//0:参照しない 1:参照する　2012-10-15
+	.GLOBAL	_UPMSK2_DRVSEL		;//2013-02-23
+	.GLOBAL	_UPMSK2_MOD_IN_SWOLD	;//2014-02-20
+
+
+;//	--------------2012-09-25----------
+	.GLOBAL	_SETX_OVERH_LNGTH	;//1mm Main->OVERH SOFT
+	.GLOBAL	_SETX_OVERH_AMP		;//OVERH->AMP閾値
+	.GLOBAL	_OVERH_MODE_SEL		;//0[回転]/1[反転]/2[ふりこ]/3[ふりこ]
+	.GLOBAL	_SQ_OVERH_CMP		;//OVERH-> MAIN
+	.GLOBAL	_OVERH_CALC_USE		;//MODE,
+
+;//	---------- 2012-10-05 ----------------
+	.GLOBAL	_NEG_EXITTIM;//超変な針の穴を通すタイマ(追い込み失敗の遅延)  2012-10-05
+
+;//	---2012-10-19 DEBUG
+	.GLOBAL	_OBJDIG_CLANK;
+
+
+;//	------------------- 2012-10-19 -------
+	.GLOBAL	_WPARX_ELSE_ORGPLS	;//
+	.GLOBAL	_WPARX_ELSE_ORGDEGX	;//349.5復活 制動試験とは別の目的
+
+;//	-------- 2012-12-15 
+	.GLOBAL	_DNM_DEBUG_STS1;
+	.GLOBAL	_DNM_DEBUG_CNT;
+
+;	--------2013-02-05 ------------
+	.GLOBAL	_SVCHK_SCAN;
+
+;//	-----------------------------------
+;//	---	2013-02-05		---
+;//	-----------------------------------
+	.GLOBAL	_PVX_DNMOD_DLYTIM	;//
+
+;//	-------------------------------------------
+;//	---	2013-02-15	寸動速度制限	---
+;//	-------------------------------------------
+	.GLOBAL	_UPLIMIT_SV_SPD;//(上限共通DATA)
+	.GLOBAL	_UPLIMIT_START_F;//BIT0:寸動からの指令
+
+;//	-------------------------------------------
+;//	---	2013-02-15	ﾐｭｰﾃﾝｸﾞ方式	---
+;//	-------------------------------------------
+	.GLOBAL	_MYUTING_MOD_STOPSEL;//1:いつでも遮光有効(ﾐｭｰﾃﾝｸﾞ無効)
+
+;//	-------------------------------------------
+;//	---	2013-02-20			---
+;//	-------------------------------------------
+	.GLOBAL	_PVX_CKSPD_OVBIT		;//赤表示(BIT0~BIT9 BIT15:戻速度)
+	.GLOBAL	_CHKSPDWORK1;//PLS/S
+	.GLOBAL	_CHKSPDWORK2;//PLS/
+	.GLOBAL	_CHKPOSWORK1;//PLS
+	.GLOBAL	_CHKPOSWORK2;//PLS
+	.GLOBAL	_CHKSPDWORKANS;//PLS/S
+	.GLOBAL	_CHKSPDWORKVMAX;//PLS/S
+	.GLOBAL	_CHKSPDWORKTMAX;//ms
+	.GLOBAL	_CHKSPDANSPER;// 1%単位ﾃﾞｰﾀ 100.00
+	.GLOBAL	_CHKPOSWORKANS;//PLS(位置ﾁｪｯｸ用)
+	
+	.GLOBAL	_CHKSPDPERWORK1;//0.1
+	.GLOBAL	_CHKSPDPERWORK2;//0.1
+
+	.GLOBAL	_CHKSPDPOSINFO;//2014-06-10
+	.GLOBAL	_CHKSPDPOSOFS;//2014-06-10
+	.GLOBAL	_CHKPOSANSDIG;//ｸﾗﾝｸ角度
+
+;
+	.GLOBAL	_PVX_CKAGL_OVBIT;
+
+;//	------2016-04-19 前前段情報--------------
+	.GLOBAL	_CHKSPDWORK0;		//前前行程PLS/S
+	.GLOBAL	_CHKPOSWORK0;		//前前行程PLS
+	.GLOBAL	_CHKSPDPERWORK0;	//前前行程0.1
+
+;//	-----2016-04-19 前/後加速情報--------
+	.GLOBAL	_CHKACCINF0;
+	.GLOBAL	_CHKACCINF1;
+	.GLOBAL	_CHKACCINF2;
+
+	.GLOBAL	_CHKPOS_Ln1;//
+
+;//	純粋なワーク
+	.GLOBAL	_CALSPDWORK1;//前行程PLS/S
+	.GLOBAL	_CALSPDWORK2;//評価する現行程PLS/
+	.GLOBAL	_CALPOSWORK1;//前行程PLS
+	.GLOBAL	_CALPOSWORK2;//評価する現行程PLS
+	.GLOBAL	_CALSPDWORKANS;//PLS/S
+	.GLOBAL	_CALSPDANSPER;//0.1%単位ﾃﾞｰﾀ 100
+	.GLOBAL	_CALPOSANSLNG;
+	
+	.GLOBAL	_CALPOSLNWORK;//
+
+;//	-----------------------------------
+;//	---	2013-02-25		---
+;//	-----------------------------------
+	.GLOBAL	_DNM_MAX_GENSOK_LENGTH	;//100%時→0時の減速距離
+
+;//	-----------------------------------
+;//	---	2013-04-14		---
+;//	-----------------------------------
+	.GLOBAL	_PLS_OUT_END_STS;
+
+;//	-----------------------------------
+;//	---	2013-05-26		---
+;//	-----------------------------------
+	.GLOBAL	_TEP_DND_SPD_PLS;
+	.GLOBAL	_TEP_CNTSMP_TIM;
+	.GLOBAL	_TEP_REVPLS_LT_FLG;
+
+
+;//	-----------------------------------
+;//	---	2013-07-18		---
+;//	-----------------------------------
+	.GLOBAL	_SCAN_TIM_TOTAL		;
+	.GLOBAL	_SCAN_TIM_IDOBUF	;
+	.GLOBAL	_SCAN_TIM_POINT		;
+
+	.GLOBAL	_MAIN_CLK		;
+	.GLOBAL	_CHK_CLK_SIG		;
+	.GLOBAL	_SCAN_TIM_IN		;
+	.GLOBAL	_WPV_SCAN_TIM_REAL	;//[REAL]
+	.GLOBAL	_WPV_SCAN_TIM_AVL	;
+
+	.GLOBAL	_SCAN_SMP_SIG		;
+	.GLOBAL	_WPV_SCAN_MAX10		;
+	.GLOBAL	_WPV_SCAN_MAX01		;
+
+
+;//	-----------------------------------
+;//	---	2013-07-22		---
+;//	-----------------------------------
+	.GLOBAL	_EMG_SCANCUT_FLG		;
+
+;//	***********************************
+;//	***	2013-07-25		***
+;//	***********************************
+	.GLOBAL	_SCAN_DBG_CNT			;
+
+
+;//	***********************************
+;//	***	2013-09-30		***
+;//	***********************************
+;//[[[[]]]]	.GLOBAL	_EP_BRKVALV_ON;
+;//[[[[]]]]	.GLOBAL	_EPSENCER_SIG;
+;//[[[[]]]]	.GLOBAL	_EPSENCER_CHK_FLG;//BIT0,1,2,3,4 BIT6=1 END
+;//[[[[]]]]	.GLOBAL	_EPSENCER_TIMPV;
+
+;//	***********************************
+;//	***				***
+;//	***	2013-09-30		***
+;//	***				***
+;//	***				***
+;//	***********************************
+	.GLOBAL	_BVLV_CTL_FLG;//
+	.GLOBAL	_BVLV_CTL_ON;	//ﾌﾞﾚｰｷON(開放)　ON=1ならON ：開放側に対して >340.1=1>本信号
+;;2015-09-06	.GLOBAL	_BVLV_CTL_SVTIM;//ﾓｰﾄﾞ
+;;2015-09-06	.GLOBAL	_BVLV_CTL_PVTIM;//
+	.GLOBAL	_BVLV_START_IN;
+
+
+
+;//	***********************************
+;//	***	2014-06-09(2014-03-14)	***
+;//	***********************************
+;//	-------------------------------
+	.GLOBAL	_W4_PV_FLT_KJYU_TTL		;//ﾌｨﾙﾀ値 +/-
+	.GLOBAL	_W4_PV_FLT_KJYU_TTL_P		;//ﾌｨﾙﾀ値[ﾌﾟﾗｽのみ]
+	.GLOBAL	_W4_PV_CTL_KJYU_TTL_P		;//制御値=ﾌｨﾙﾀ値予定
+
+	.GLOBAL	_KJYUCLS_OBJ_KN;	//その行程のターゲット
+	.GLOBAL	_KJYUCLS_KN_HENSA;	//荷重の偏差
+	.GLOBAL	_KJYUCLS_KN_HENSA_PLS;	//荷重の偏差相当のパルス
+
+	.GLOBAL	_FULCLS_MATHED;//0:位置 1:荷重
+
+;	-------------------------------
+	.GLOBAL	_SETX_FULCLS_MATEHD_SW;
+	.GLOBAL	_CPOS_FULCLS_MATEHD_SW;
+	.GLOBAL	_SETX_KJYUCLS_OBJ;
+	.GLOBAL	_CPOS_KJYUCLS_OBJ;
+	.GLOBAL	_KJYU_CHK_NEARSIG;
+	.GLOBAL	_FULCLS_TIM_SETFLG;//BIT0:SET BIT1:ﾀｲﾑｱｯﾌﾟ()
+;//	2015-03-15[R01 2014-08-20]
+	.GLOBAL	_FULCLS_ELSE_STS;	//BIT0=0->1:初めての荷重制御開始
+
+
+
+;//	***********************************
+;//	***				***
+;//	***	外部起動釦処理		***
+;//	***				***
+;//	***********************************
+	.GLOBAL	_CB_IN_HANYO;//BIT8,9,10,11,12,13 6点(SQ004相当)
+	.GLOBAL	_EXTDRV_BTTN_USE;//SYSPARAM+各条件
+	.GLOBAL	_EXTDRV_UTINUKI_FLG;//打抜記憶
+
+;//	-----------------釦---------------
+	.GLOBAL	_EXT_BTTN_FLG;
+
+;//	---------------- 異常-------------
+	.GLOBAL	_EXTDRV_BTTN_ERR_TIM;
+
+
+;//	===================================
+;//	===				===
+;//	===	ﾄﾚﾝﾄﾞ用荷重ｶﾑ処理	===
+;//	===				===
+;//	===================================
+	.GLOBAL	_SET1_KAJAREA_SNO;
+	.GLOBAL	_SET1_KAJAREA_ENO;
+
+	.GLOBAL	_SET1_KJSTR_DIG2;	//359.0
+	.GLOBAL	_SET1_KJEND_DIG2;	//359.0
+
+	.GLOBAL	_SETX_KJSTR_DIG2;//往路
+	.GLOBAL	_SETX_KJEND_DIG2;//往路
+	.GLOBAL	_SETY_KJSTR_DIG2;//復路
+	.GLOBAL	_SETY_KJEND_DIG2;//復路
+	.GLOBAL	_SETC_KJSTR_DIG2;//演算
+	.GLOBAL	_SETC_KJEND_DIG2;//演算
+
+	.GLOBAL	_KJ_AREATRD_SIG;
+	.GLOBAL	_KJ_AREATRD_SIG_OLD;//2013-06-19
+	.GLOBAL	_SET1_KAJAREA_SEL;//ﾄﾚﾝﾄﾞ荷重表示選択0:(最大),1:(最小),2(幅)
+
+;//	===================================
+;//	===				===
+;//	===	型タッチ		===
+;//	===				===
+;//	===================================
+	.GLOBAL	_SET1_KATTCH_SAG;
+	.GLOBAL	_SET1_KATTCH_EAG;
+
+
+;//	===================================
+;//	===				===
+;//	===	荷重比較		===
+;//	===				===
+;//	===================================
+	.GLOBAL	_KJYU_CMP_CMD;		//BIT0=1 :ｵｰﾊﾞﾛｰﾄﾞ比較(区間内) BIT1=1ﾛｱﾘﾐｯﾄ比較(区間過)
+;;	.GLOBAL	_KJYU_CMP_SELSW1;	//ｵｰﾊﾞﾛｰﾄﾞ項目選択
+;;	.GLOBAL	_KJYU_CMP_SELSW2;	//ﾛｱﾘﾐｯﾄ項目選択
+	.GLOBAL	_CB_SEQ_SW_SEL058;
+
+	.GLOBAL	_KJYU_CMP_SEQMINS;	//最小値(ﾏｲﾅｽ側) ｵｰﾊﾞBIT0(左),BIT1(右),BIT2(合計)
+	.GLOBAL	_KJYU_CMP_SEQHABA;	//幅             ｵｰﾊﾞBIT0(左),BIT1(右),BIT2(合計)
+
+
+;//cpuaのみ使用
+	.INCLUDE	"ssa_cop1psrm.ext"		; //
+
+
+;//	---------EPｾﾝｻﾁｪｯｸ---------------
+	.GLOBAL	_EPCHK_COM;//
+	.GLOBAL	_EPCHK_FLG;//BIT7=1 完了
+	.GLOBAL	_EPCHK_STEP;//
+	.GLOBAL	_EPCHK_DLY_TIM;//
+	.GLOBAL	_EPCHK_ERR_TIM;//
+	.GLOBAL	_EPCHK_RETRY_CNT;
+	.GLOBAL	_EPCHK_STS;
+	.GLOBAL	_EPCHK_FORCE_VONCMD;
+
+
+;//	===================================
+;//	===				===
+;//	===	ｽﾗｲﾄﾞ自動待機		===
+;//	===	2014-08-30		===
+;//	===================================
+	.GLOBAL	_POS_HLDSTOP1_CHKTIM;	//
+	.GLOBAL	_POS_HLDSTOP1_FLG;	//位置決め状態、準備未完了状態にて行う
+	.GLOBAL	_POS_HLDSTOP1_SIG1TIM;	//20msecだけ再起動をONする
+	.GLOBAL	_POS_HLDSTOP1_SIG2TIM;	//20msecだけ通過時もしくは再起動時ONする[2015-02-20]
+
+
+	.GLOBAL	_SET1_INTLIM_AGL;	//
+	.GLOBAL	_SET2_INTLIM_AGL;	//
+	.GLOBAL	_SET1_INTLIM_PLS;
+	.GLOBAL	_SET2_INTLIM_PLS;
+	.GLOBAL	_SETX_SDAT1_INTLIMOFS;//往路,回転,反転
+	.GLOBAL	_SETX_SDAT2_INTLIMOFS;//往路,回転,反転
+
+	.GLOBAL	_SETY_SDAT1_INTLIMOFS;//往路,回転,反転
+	.GLOBAL	_SETY_SDAT2_INTLIMOFS;//往路,回転,反転
+
+	.GLOBAL	_POSHLD1_STOP_STEPWK;[11];//11個
+	.GLOBAL	_POSHLD1_STOP_STEP;//1~11[]
+	.GLOBAL	_POSHLD1_STOPSPDWK;//[]ｽﾃｯﾌﾟ速度
+
+	.GLOBAL	_POSHLD1_GENSKPOSWK;[11];//目標角度
+	.GLOBAL	_POSHLD1_GENSK_STEP;[11];//1~11[]
+
+	.GLOBAL	_POSHLD1_SDAT1_HOLDPOS;//停止位置
+	.GLOBAL	_POSHLD1_SDAT2_HOLDPOS;//停止位置
+
+
+;	//	--------2014-09-12-----------
+	.GLOBAL	_POSHLD_SET_DN_ACC;//位置決めキャンセル減速
+	.GLOBAL	_POSHLD1_STOPLATCH;//停止前、停止中に停止釦相当が発生したか?
+
+;//	===========================================
+;//	===	ｽﾗｲﾄﾞ自動待機を含めたhold処理	===
+;//	===========================================
+	.GLOBAL	_POS_HOLD_RESTARTCMD;
+	.GLOBAL	_POS_HOLD_CMD;
+	.GLOBAL	_POS_HOLD_FLG;
+	.GLOBAL	_POS_HOLD_RDY_EXITF;//しょうがない
+	.GLOBAL	_POS_HOLD_RDY_EXITF2;//しょうがない
+
+	.GLOBAL	_POS_HOLDABS_CALCF;
+	.GLOBAL	_POSHLD1_CHKLST_FLG;//
+
+;//	===========================================
+;//	===	調査用				===
+;//	===========================================
+	.GLOBAL	_MONI_RESET_STEP;
+	.GLOBAL	_MONI_RDY_STEP;
+	.GLOBAL	_MONI_SELF_STS1;
+	.GLOBAL	_MONI_SELF_STS2;
+	
+;//	===================================================
+;//	===	異常後はじめての起動=位置プリセット	===
+;//	===================================================
+	.GLOBAL	_ERR_FIRST_ST;//異常時0000(RESET)
+
+
+;//	===========================
+;//	===	ｽﾌﾟｰﾙ異常	===
+;//	===========================
+	.GLOBAL	_SPLCHK_FLG;//BIT0:ONﾗｯﾁ BIT1:OFFﾗｯﾁ
+	.GLOBAL	_SPLCHK_TIM;//ﾀｲﾏ
+
+;//	===========================================
+;//	===	ふりこ　どこからでも起動	===
+;//	===========================================
+	.GLOBAL	_DNM_RESET_AREA;//BIT7(左)/BIT4(右側)
+
+
+;//	===========================================
+;//	===	繰り返し工程			===
+;//	===========================================
+	.GLOBAL	_SET1_MOTREP_USEFUL	;//ROMﾊﾟﾗ及びSWの入/切(ROMPARAM,繰返回数,入/切)
+	.GLOBAL	_SET1_MOTREP_STGS	;//繰り返し開始行程 0,1~11,"*"
+	.GLOBAL	_SET1_MOTREP_STGE	;//繰り返し終了行程
+	.GLOBAL	_SET1_MOTREP_SPD		;//繰り返し戻り速度
+	.GLOBAL	_SET1_MOTREP_CNT		;//繰り返し回数
+
+;//	===========================================
+;//	===	繰り返し工程カム		===
+;//	===========================================
+	.GLOBAL	_SET1_ROTCAM_ONR		;//ﾛｰﾀﾘｶﾑ ON行程 ﾘﾋﾟｰﾄ戻り
+	.GLOBAL	_SET1_ROTCAM_OFR		;//ﾛｰﾀﾘｶﾑ OFF行程 ﾘﾋﾟｰﾄ戻り
+	.GLOBAL	_SET1_EJECAM_ONR		;//ｴｼﾞｪｸﾀ ON行程 ﾘﾋﾟｰﾄ戻り
+	.GLOBAL	_SET1_EJECAM_OFR		;//ｴｼﾞｪｸﾀ OFF行程 ﾘﾋﾟｰﾄ戻り
+	.GLOBAL	_SET1_MISCAM_ONR		;//ﾐｽﾌｨｰﾄﾞON行程 ﾘﾋﾟｰﾄ戻り
+	.GLOBAL	_SET1_MISCAM_OFR		;//ﾐｽﾌｨｰﾄﾞOFF行程 ﾘﾋﾟｰﾄ戻り
+
+
+;//	---------------ﾓｰｼｮﾝ(MOT)繰り返し機能(REP)-----------------------
+	.GLOBAL	_SETX_MOTREP_DIR		;//設定上どっちの方向　  1:-1
+	.GLOBAL	_DNM_SETX_MOTREP_DIR		;//設定上どっちの方向　  1:-1
+	.GLOBAL	_MOT_REP_F		;//BIT0(ﾚﾋﾟｰﾄ演算しろ),BIT1(ﾘﾋﾟｰﾄ戻実行中)
+	.GLOBAL	_MOT_REP_CNT		;//BIT0(ﾚﾋﾟｰﾄ演算しろ),BIT1(ﾘﾋﾟｰﾄ戻実行中)
+	.GLOBAL	_NOW_MOTREP_DIR		;//動作                0:(非動作)1:(正転)-1:(逆転)
+	.GLOBAL	_REP_CAMOBJ_DIG		;//ｶﾑ用の戻り目標角度
+
+
+;//	===========================================
+;//	===	速度一定			===
+;//	===========================================
+
+;//	===========================================
+;//	===	寸動どこからでも起動		===
+;//	===	2014-09-25			===
+;//	===========================================
+	.GLOBAL	_INC_RESET_STEP;	//0,1:1ｽﾃｯﾌﾟから起動 2~11
+	.GLOBAL	_INC_RESET_USE_F;//STEPを参照して!
+
+;//	-------2014-11-07----------------------------
+	.GLOBAL	_MOVE_MODE_MATH_LATCH;	//0:(ふりこ以外 または 段取・原点モード)1:(ふりこでﾓｰｼｮﾝしていた)
+	.GLOBAL	_DNM_DIR_FLG_INC_LATCH;	//ふりこの場合の前回までの動作方向
+
+;//	***********************************
+;//	***	cpud,cpub正常動作ﾁｪｯｸ	***
+;//	***	2015-01-21		***
+;//	***********************************
+	.GLOBAL	_CPUD_CHK_OLDCNT;
+	.GLOBAL	_CPUD_CHK_TIME;
+
+	.GLOBAL	_RM1_CHK_OLDSTS;
+	.GLOBAL	_RM1_CHK_TIME;
+
+	.GLOBAL	_RM2_CHK_OLDSTS;
+	.GLOBAL	_RM2_CHK_TIME;
+
+	.GLOBAL	_CPUABD_WDTOK_FLG;
+
+;//	*******************************************
+;//	***					***
+;//	***	2015-02-10			***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_SPL_ERR_INIT_WAIT_TIM;
+
+
+;//	荷重
+	.GLOBAL	_W4_PVP_KAJLIV_TTL		;//荷重生（TON）(2word)
+
+;//	*******************************************
+;//	***					***
+;//	***	2015-04-08			***
+;//	***	ﾃﾞﾊﾞｯｸﾓｰﾄﾞ			***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_DEBUG_MOD_CODE;	//5AA5
+
+	.GLOBAL	_DBG_ATO_DRV_START_FLG;
+	.GLOBAL	_DBG_ATO_DRV_TIME_PV;
+	.GLOBAL	_DBG_ATO_DRV_TIME_SV;
+	.GLOBAL	_DBG_ATO_DRV_TIME_PV2;//2016-07-15
+	.GLOBAL	_DBG_ATO_DRV_TIME_SV2;//2016-07-15
+
+
+;//	*******************************************
+;//	***					***
+;//	***	2015-04-08			***
+;//	***	寸動含む工程終了ﾊﾝﾄﾞｼｪｲｸ	***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_ENDHAND_TIMOUT_PV;
+
+
+
+
+;//	*******************************************
+;//	***	2015-05-20			***
+;//	*******************************************
+	.GLOBAL	_INSERT_MOT_SV_CHGF;
+;;2015-10-26	.GLOBAL	_DUM_SET1_SPD_TOP;
+
+
+	.GLOBAL	_SETX_KJYU_INCPOS_KP01	;2015-06-22
+
+
+
+;============================================================
+;//	*******************************************
+;//	***					***
+;//	***	2015-07-14			***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_PON_ERR_WAIT_TIM;//5秒
+
+;//	*******************************************
+;//	***					***
+;//	***	2015-07-14			***
+;//	***					***
+;//	*******************************************
+;//	CPUAはCPUCを
+;//	CPUCはCPUAを
+	.GLOBAL	_DPCHK_ERR_SIG;			//BIT0(WDT),BIT1(DI)
+	.GLOBAL	_DPCHK_CPU_ERR_TIM;		//
+	.GLOBAL	_DPCHK_WR_COD;			//
+
+
+;//	*******************************************
+;//	***					***
+;//	***	2015-07-14			***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_DPCHK_DI_ERR_TIM;		//二重回路２ 10msec
+
+;//	*******************************************
+;//	***					***
+;//	***	2015-07-14			***
+;//	***	CPUC側ﾊﾟﾗﾒｰﾀSEND		***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_CPUX_PARAM_SEND_FLG;//1~512:512まで送ったら終了
+	.GLOBAL	_CPUX_PARAM_SEND_NO;//1~512
+
+;//	*******************************************
+;//	***					***
+;//	***	2015-07-14			***
+;//	***	CPUA側受信			***
+;//	***					***
+;//	*******************************************
+;//	送信ﾜｰﾄﾞ毎にﾍﾞﾘﾌｧｲﾁｪｯｸする
+	.GLOBAL	_CPUC_PARAM_ERR_NO;//ﾍﾞﾘﾌｧｲ異常
+	.GLOBAL	_CPUB_PARAM_ERR_NO;//ﾍﾞﾘﾌｧｲ異常
+
+
+;//	*******************************************
+;//	***					***
+;//	***	2015-07-14			***
+;//	***	不一致				***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_LSI_LOAD_PLS;
+
+
+;//	*******************************************
+;//	***					***
+;//	***	2015-02-25			***
+;//	***	遮光停止３			***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_SFTYCHK_CLANK_DEG;
+	.GLOBAL	_SFTYCHK_LINK_PLS;
+
+
+;//	*******************************************
+;//	***					***
+;//	***	2015-02-25			***
+;//	***	パルス停止			***
+;//	***					***
+;//	*******************************************
+;//	モーション運転
+;//		最終行程の払出完了時のエンコーダ値記憶
+	.GLOBAL	_PLSOUTEND_PVPLS;	//
+	.GLOBAL	_PLSOUTEND_SHIN;	//
+	.GLOBAL	_PLSOUTEND_FLG;		//BIT6=1:停止監視状態 (BIT0=1:払出有)
+
+
+;//	*******************************************
+;//	***					***
+;//	***	2015-03-06			***
+;//	***	終了時のﾓｰﾀ停止までの遅延	***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_POS_END_WAIT_TIM;
+
+;//	*******************************************
+;//	***					***
+;//	***	2015-03-16			***
+;//	***	終了時				***
+;//	***	PAR_MYU_BRK_SEL==0		***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_POS_END_MYUTIG_STOPTIM;//終了後この時間であれば動力遮断する時間
+	.GLOBAL	_POS_END_MYUTIG_KEEPTIM;//終了後上昇無効を継続する時間
+
+
+
+
+
+
+;//	*******************************************
+;//	***					***
+;//	***	2015-03-18			***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_UPHOLD_SPDERR_OK_FLG;
+
+
+;//	*******************************************
+;//	***					***
+;//	***	2015-03-18			***
+;//	***	逆転異常2			***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_REV_ERR_FLG;		//BIT0=1:上昇ﾎｰﾙﾄﾞにて起動
+;					//BIT1=1:ｲﾝﾎﾟｼﾞｼｮﾝに入った
+;					//BIT4=0(正)/1(逆) 方向
+	.GLOBAL	_REV_ERR_LT_PGPOS;	//[]
+	.GLOBAL	_REV_ERR_LT_SVPOS;	//
+
+
+
+
+
+;//	***********************************
+;//	***		2015-05-19	***
+;//	***********************************
+	.GLOBAL	_EPCHK_STOP_DISENB;
+
+
+
+
+
+
+
+
+;//	***********************************
+;//	***				***
+;//	***	2015-09-30		***
+;//	***	100段数仕様(98段)	***
+;//	***				***
+;//	***********************************
+;//	dpramを一旦受ける
+	.GLOBAL	_SYS_STEP_MAX;		//
+
+	.GLOBAL	_SYS_100STEP_USE;	//100段ｿﾌﾄ
+	.GLOBAL	_SYS_100STEP_DNM_SEL;	//100段時の振子
+
+	.GLOBAL	_SVPX1_OBJECT_POS_TOP;	//目標位置
+	.GLOBAL	_SVPX1_OBJECT_DIG_TOP;	//目標角度
+	.GLOBAL	_SVPX1_OBJECT_SPD_TOP;	//目標速度
+	.GLOBAL	_SVPX1_OBJECT_TIM_TOP;	//停止時間
+	.GLOBAL	_SVPX1_OBJECT_PRS_TOP;	//目標圧力
+	.GLOBAL	_SVPX1_MOT_INF;		//ﾓｰｼｮﾝ情報bit0(位置/荷重)
+	.GLOBAL	_SVPX1_FED_DEG;		//ﾌｨｰﾀﾞ角度(予備)
+	.GLOBAL	_SVPX1_FED_POS;		//ﾌｨｰﾀﾞ位置(予備)
+
+
+
+
+
+;//	***********************************
+;//	***				***
+;//	***	2015-09-30		***
+;//	***	100段数仕様(98段)	***
+;//	***	リミット表示		***
+;//	***				***
+;//	***********************************
+	.GLOBAL	_MOTION_CHK_START_FLG;		//2:ﾃﾞｰﾀCHK開始 0:ﾃﾞｰﾀﾁｪｯｸ終了
+	
+	.GLOBAL	_PVPX1_CKLMT_AGLTOP;	//cpua=>cpud 角度ﾘﾐｯﾄ
+	.GLOBAL	_PVPX1_CKLMT_SPDTOP;	//cpua=>cpud 速度ﾘﾐｯﾄ
+	.GLOBAL	_WK_PVP_MOT_STS			;//BIT0:速度赤丸　CKSPD_OVBT
+						;//BIT1:角度赤丸　CKAGL_OVBT
+						;//BIT2:青丸表示　CKSPD_STPBT
+
+
+;//	***********************************
+;//	***				***
+;//	***	2015-09-30		***
+;//	***	100段数仕様(98段)	***
+;//	***				***
+;//	***********************************
+
+
+
+
+
+
+;//	***********************************
+;//	***				***
+;//	***	2015-10-14		***
+;//	***	MTS温度読み出し		***
+;//	***				***
+;//	***********************************
+;//	
+	.GLOBAL	_X_PROTCOL_TMP_FLG;	//
+	.GLOBAL	_X_PROTCOL_TMP_PV2;	//通信ﾃﾞｰﾀ1ﾊﾞｲﾄ
+	.GLOBAL	_X_PROTCOL_TMP_SVLNG;	//補正量
+	.GLOBAL	_X_PROTCOL_TMP_PVLNG;	//補正量
+	.GLOBAL	_X_PROTCOL_TMP_LNG_SVTM;	//補正測定時間SV
+	.GLOBAL	_X_PROTCOL_TMP_LNG_PVTM;	//補正測定時間PV
+;//
+	.GLOBAL	_X_PROTCOL_TMP_EVENTCNT;	//
+	.GLOBAL	_X_PROTCOL_TMP_TIME_PV;	//(ﾀｲﾑｱｳﾄ)
+
+;//	-------- 通信部側--------------
+	.GLOBAL	_X_PROTCOL_TMP_REQ;	//REQ:1:START
+	.GLOBAL	_X_PROTCOL_TMP_ANS;	//ANS:1:END(nomaL) -1:END(err)
+	.GLOBAL	_X_PROTCOL_TMP_PV1;	//通信ﾃﾞｰﾀ1ﾊﾞｲﾄ
+
+	.GLOBAL	_TMP_SCI_DEBUG;
+
+
+;//	***************************
+;//	***	2015-10-26	***
+;//	***************************
+;//	データ変更に対するイベント発生を一元化
+	.GLOBAL	_DUM_SET1_UPAREA_SPD0;
+	.GLOBAL	_DUM_SET1_SPD_TOP;
+	.GLOBAL	_DUM_OVERLIDE_COF;
+
+	.GLOBAL	_CHK_SET1_UPAREA_TIM0		;//4	;待機時間
+	.GLOBAL	_CHK_OBJECT_TIM_TOP		;//40=>100 4BYTE SET1_OBJECT_TM01;01段目停止時間 99.99*10=1msec
+
+
+;//	***********************************
+;//	***				***
+;//	***	2015-11-17		***
+;//	***				***
+;//	***********************************
+;
+	.GLOBAL	_ACCLW_SET_SPD;		//INPUT モーション演算部からの速度 (オーバライド前)
+	.GLOBAL	_ACCLW_REAL_SPD1MS;	//
+	.GLOBAL	_ACCLW_USE_CONF;	/BIT0:非運転中に決定される条件
+
+;
+
+	.GLOBAL	_ACCLW_CALC_FLG;//BIT0:起動[API]
+
+;					//BIT1:
+;					//BIT6:[減速開始]
+;					//BIT7:演算完了[停止行程まで演算不要：もう低速設定がない]
+	.GLOBAL	_ACCLW_GET_STEP_NO;	//BIT1=1時の対象行程
+	.GLOBAL	_ACCLW_GET_SET_SPD;	//BIT1=1時の対象速度
+	.GLOBAL	_ACCLW_OUT_SET_SPD;	//出力速度
+
+	.GLOBAL	_ACCLW_GEN_MAX_LNG;	//最大速度時の減速距離
+
+;//	***********************************
+;//	***				***
+;//	***	2016-04-18		***
+;//	***	各段加減速方式指定	***
+;//	***				***
+;//	***********************************
+;//	(ﾒﾓﾘは低速優先と共通化しない)
+	.GLOBAL	_ACCST_SET_SPD;		//INPUT モーション演算部からの速度 (オーバライド前)
+	.GLOBAL	_ACCST_REAL_SPD1MS;	//
+	.GLOBAL	_ACCST_USE_CONF;	//BIT0:非運転中に決定される条件
+	.GLOBAL	_ACCST_CALC_FLG;	//BIT0:起動[API]
+;			//BIT1:
+;			//BIT6:[減速開始]
+;			//BIT7:演算完了[停止行程まで演算不要：もう低速設定がない]
+	.GLOBAL	_ACCST_GET_STEP_NO;	//BIT1=1時の対象行程
+	.GLOBAL	_ACCST_ACC_MATH_SEL;	//BIT0=0(後)/1(前)
+;					//BIT1=0(加速)/1(減速):設定レベル
+;
+
+	.GLOBAL	_ACCST_GET_SET_SPD;	//BIT1=1時の対象速度
+	.GLOBAL	_ACCST_OUT_SET_SPD;	//出力速度
+	.GLOBAL	_ACCST_GEN_MAX_LNG;	//最大速度時減速距離+最大速度/1000
+
+
+
+;//	*******************************************
+;//	***					***
+;//	***	2016-04-16 段取速度指定		***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_CB_SEQ_CB_COM356;//
+
+;//	*******************************************
+;//	***	2016-04-18			***
+;//	*******************************************
+	.GLOBAL	_SET1_MOT_INF;		//ﾓｰｼｮﾝ情報bit0(位置/荷重)
+	.GLOBAL	_MOTION_SPD_CHKCNT;
+
+
+;//	*******************************************
+;//	***					***
+;//	***	2016-04-15			***
+;//	***	2016-01-10			***
+;//	***	行程二重回路のリカバー		***
+;//	***	ハンドシェイク時の行程のみ実行	***
+;//	***					***
+;//	*******************************************
+	.GLOBAL	_EXQ_LT_GET_FLG;		//
+	.GLOBAL	_EXQ_LT_CMPSTEP_STEP_END;	//_HAND_STEP2_FLG;	//STEP2ﾗｯﾁ
+	.GLOBAL	_EXQ_LT_PROC_CNT1;
+	.GLOBAL	_EXQ_LT_PROC_CNT2;
+	.GLOBAL	_EXQ_LT_PROC_CNT3;
+	.GLOBAL	_EXQ_LT_PROC_CNT4;
+
+
+;//	2016-10-31
+;//	_PROC_CMPERR_CHG2016
+;//	***************************************************
+;//	***						***
+;//	***	2016-10-31(2016-05-08)			***
+;//	***	位置決めキャンセルによる行程リカバー	***
+;//	***						***
+;//	***************************************************
+	.GLOBAL	_POSCANSEL_CMD;//
+	.GLOBAL	_DNM_RST_SPEC_AREASIG;//2016-06-21
+
+;//	***************************************************
+;//	***						***
+;//	***	2016-10-31(2016-06-13)			***
+;//	***	振り子処理調査				***
+;//	***						***
+;//	***************************************************
+	.GLOBAL	_DBG_DNM_STR_CNT;
+	.GLOBAL	_DBG_DNM_END_CNT;
+	.GLOBAL	_DBG_DNM_CLR_CNT;
+
+
+;//	***************************************************
+;//	***						***
+;//	***	2016-10-31(2016-06-21)			***
+;//	***	行程２重回路調査			***
+;//	***						***
+;//	***************************************************
+	.GLOBAL	_STEP_CMPERR_TIMX1;
+
+
+;//	***************************************************
+;//	***	2016-10-31(2016-08-11)			***
+;//	***	連続停止釦対策				***
+;//	***************************************************
+	.GLOBAL	_CNT_STOP_WAIT_TIM;
+	.GLOBAL	_CNT_STOP_DBG_CNT;//2016-08-22 CHECK

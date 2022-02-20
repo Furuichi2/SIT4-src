@@ -1,0 +1,450 @@
+;	***************************************************
+;	***						***
+;	***						***
+;	***	位置関連のテーブル演算			***
+;	***						***
+;	***						***
+;	***************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"		; //共通定義:必ず実行ﾌﾟﾛｸﾞﾗﾑにｲﾝｸﾙｰﾄﾞする事
+	.INCLUDE	"shn_cmd1.mac"		; //
+	.INCLUDE	"ssa_kmc1.mac"		; //
+	.INCLUDE	"ssa_pfom.equ"		; //equ定義
+	.INCLUDE	"ssa_khad.equ"		; //equ定義
+	.INCLUDE	"ssa_wrmk.ext"		; //
+	.INCLUDE	"dp_cpuab.ext"		; //
+	.INCLUDE	"ssa_krom.ext"		; //
+	.INCLUDE	"ssa_ver1.equ"		; //
+	
+	.LIST	ON
+
+
+	.SECTION	P,CODE			;
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 PROGRAM	***
+;	//	***********************************
+
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 MEMORY,HARD	***
+;	//	***********************************
+	.IMPORT	_DIG_PLS_CHG_INF1_TOP		;SSA_TBL1.SRC
+	.IMPORT	_DIG_PLS_CHG_TBL1_TOP		;
+
+
+	.IMPORT	_PLS_DIG_CHG_INF1_TOP		;
+	.IMPORT	_PLS_DIG_CHG_TBL1_TOP		;下りSSA_TBL1.SRC
+	.IMPORT	_PLS_DIG_CHG_TBL2_TOP		;上り
+
+;	//	***********************************
+;	//	***	PUBLIC 宣言 PROGRAM	***
+;	//	***********************************
+	.export	_DIG36000_CHG_RENEA1		;表示+制御+異常
+	.EXPORT	_RENEA_1ROT_PLS_AND_DIG_MAK1	;原点出し用,表示用
+	.EXPORT	_RENEA_1ROT_PLS_AND_DIG_MAK2	;
+
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+
+
+;	***********************************************************
+;	***							***
+;	***	ﾘﾆｱｽｹｰﾙ次元の位置入力と360.0からﾊﾟﾙｽを求める	***
+;	***							***
+;	***********************************************************
+;	Input R2 0~360.0度(360度ｴﾝｺｰﾀﾞ)or R2:1回転ﾊﾟﾙｽ
+;	Input R5 ﾘﾆｱｽｹｰﾙ位置(0.001mm)
+;	上死点設定~下死点（180）の間は下降
+;	ﾘﾆｱ位置と方向判別からﾘﾆｱの角度またはﾊﾟﾙｽを求める
+;	
+;	"Cでも使える:ﾃﾞｰﾀ変換  そのままﾁｪｯｸﾌﾟﾛｸﾞﾗﾑに使用できる"
+;
+_RENEA_1ROT_PLS_AND_DIG_MAK1:
+	SUB_START
+	MOV.L	#_SETX_UPDN_CHK_DN_DIG,R4	;(下死点~上死点)
+	MOV.L	@R4,R1				;
+	MOV.L	#_SETX_UPDN_CHK_UP_DIG,R4	;
+	MOV.L	@R4,R3				;
+	FAR_JSR	#_DIG_AREA_CHK0,R0		;(R0=1 ARAE内 上昇)
+	MOV	R0,R14				;方向
+	M_BRA	RENEA_1ROT_PLS_MAK_STR
+
+;	Input R2 ﾊﾟﾙｽ 1回転内
+_RENEA_1ROT_PLS_AND_DIG_MAK2:
+	SUB_START
+	MOV.L	#_SETX_UPDN_CHK_DN_PLS,R4		;
+	MOV.L	@R4,R1					;
+	MOV.L	#_SETX_UPDN_CHK_UP_PLS,R4		;
+	MOV.L	@R4,R3					;
+	CMP/GE	R1,R3					;R1 =< R3 (必ずこうならなければいけない)
+	BT	RENEA_1ROT_PLSMK2_050			;
+;	==== 180~10 == 上昇
+	CMP/GE	R1,R2					;
+	BT	RENEA_1ROT_PLSMK2_200			;上昇
+	CMP/GE	R2,R3					;
+	BT	RENEA_1ROT_PLSMK2_200			;上昇
+	M_BRA	RENEA_1ROT_PLSMK2_100			;下降
+
+RENEA_1ROT_PLSMK2_050:
+;	==== 180~350 ===
+	CMP/GE	R1,R2					;R1=<R2
+	BF	RENEA_1ROT_PLSMK2_100			;
+	CMP/GE	R2,R3					;R2=<R3
+	BT	RENEA_1ROT_PLSMK2_200			;上昇
+RENEA_1ROT_PLSMK2_100:
+	XOR	R14,R14					;0:下降
+	M_BRA	RENEA_1ROT_PLS_MAK_STR
+
+RENEA_1ROT_PLSMK2_200:
+	MOV	#1,R14					;上昇
+RENEA_1ROT_PLS_MAK_STR:
+;;;;;	MOV.L	#_RNA_CTL_POS1,R1			;//制御位置
+;;;;;	MOV.L	@R1,R2					;
+	MOV	R5,R2					;Input data
+	FAR_JSR	#_RENEA_CHG1_DIG_INCPLS,R0		;(ﾊﾟﾙｽを作成) InputR2(mm),R14(DIR)
+;	===Output R2 ====
+	PUSH_REG1 R2					;1REV
+
+	MOV.L	#_SETY_INCPLS_HOSM01X,R0		;//0.1度
+	MOV.L	@R0,R1					;
+
+	MOV.L	#_CALC_MEM_1REV_MUL_NROT,R0		;
+	MOV.L	@R0,R4					;R2:X回転
+;;	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0		;R2*1REV*HOSN/HOSM
+	FAR_JSR	#_X_R2_MUL_R1_DIV_R4,R0
+
+
+	MOV	R2,R3					;DIG
+	POP_REG1 R2					;R2:ﾊﾟﾙｽ
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***	角度 0~360.000==>0.000~500.000mm	***
+;	***						***
+;	***************************************************
+;	=== ﾃﾞﾊﾞｯｸ用として 360.0(360.00)ｴﾝｺｰﾀﾞからﾘﾆｱｴﾝｺｰﾀﾞを作る====
+;	Input R2 360.000度 4byte(符号注意)
+;	ANS   R2 0~+***.***mm
+;
+;	TBL_N= dig_x(360000)/deltx(50)...MODx(50)
+;	TBL_N_1	==>YN_1(0~10000%) Yn_1'= YN_1 *RENEA_STL/10000
+;	TBL_N	==>Yn  (0~10000%) Yn'  = YN   *RENEA_STL/10000
+;			XN_1=(TBL_N-1)*deltx
+;			XN  =TBL_N*deltx
+;	
+;	y=(Yn'-Yn_1')/(XN-XN_1) * (dig_x-XN_1) + Yn_1'
+;	y=(Yn'-Yn_1')/(deltx) * (MODx) + Yn_1'
+;
+;
+_DIG36000_CHG_RENEA1:
+	SUB_START
+	MOV.L	#_DIG_PLS_CHG_INF1_TOP,R0			;
+	LDC	R0,GBR						;
+	MOV.L	@(_DG_PS_INF_UNIT,GBR),R0			;D'50(0.050)
+	MOV	R0,R4						;
+	MOV	R0,R8						;"ﾃﾞｰﾀ退避"
+	FAR_JSR	#_FPU_DIVS_32REG2_DIV_32REG4_R2_MOD_R1,R0	;R2...R1
+	MOV	R2,R3
+	MOV.L	@(_DG_PS_INF_CONT,GBR),R0			;ﾃｰﾌﾞﾙMAX D'7200(7201個のﾃｰﾌﾞﾙ作成する)
+	ADD	#-1,R0						;
+	CMP/HS	R3,R0						;7199
+	BT	DIG36000_CHG_RNA1_050				;(36000はありえない)
+	MOV	R0,R3						;7199
+	XOR	R1,R1						;
+DIG36000_CHG_RNA1_050						;
+	SHLL	R3
+	MOV.L	#_DIG_PLS_CHG_TBL1_TOP+1*2,R5			;
+	ADD	R3,R5						;
+	MOV.W	@R5+,R2						;"7200" 7201個のﾃｰﾌﾞﾙを作成
+	EXTU.W	R2,R2
+	MOV.W	@R5,R6						;ﾃﾞｰﾀ退避
+	EXTU.W	R6,R6
+	SHLR	R3						;
+	CMP/HS	R3,R0						;
+	BT	DIG36000_CHG_RNA1_100				;7199
+	MOV.L	@(_DG_PS_INF_LATE,GBR),R0			;ﾃｰﾌﾞﾙのMAX(10000)
+	MOV	R0,R6						;
+DIG36000_CHG_RNA1_100						;
+
+;	==== 0~100.00%===
+	MOV.L	@(_DG_PS_INF_LATE,GBR),R0			;100.00%
+	MOV	R0,R4
+	MOV	R1,R7						;余り PUSH
+	MOV.L	#_RNA_STLORK,R0					;
+	MOV.L	@R0,R1						;
+;;	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0			;R2(0~100.00)*STL/100.00 [R2以外はﾚｼﾞｽﾀ保証有り]
+	FAR_JSR	#_X_R2_MUL_R1_DIV_R4,R0
+	MOV	R2,R3						;Yn_1
+	MOV	R6,R2						;R2(Yn),R3(Yn_1),余り(R1)
+;;	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0			;R2 Yn(mm変換)
+	FAR_JSR	#_X_R2_MUL_R1_DIV_R4,R0
+	MOV	R7,R1						;
+	MOV	R8,R4						;R4(Xn-Xn_1)
+	MOV	R3,R6						;<異常ﾃﾞｰﾀ時の処理ﾃﾞｰﾀ>
+;	===== 直線補間 ====
+;	R3:Yn_1	(0.001mm単位)
+;	R2:Yn	(0.001mm単位)	R4:Xn - Xn_1(50 0.050度)
+;	ANS:R2=y		R1:x  - Xn_1(余り 0.001度単位)
+;	limit R6(Yn)
+	FAR_JSR	#_FPU_TIM_HOKAN1,R0				;Yn
+	SUB_END
+	M_RTS
+
+;	=== ｲﾝｸﾘﾒﾝﾀﾙﾊﾟﾙｽからmmへの変換(0.001度と対して変わらない精度だよ)===
+;	16回転 360
+;	360/(16*8192)=0.002746度[1pls]
+
+;	***************************************************
+;	***						***
+;	***	0.000~500.000mm==>角度 0~360.000	***
+;	***	0.000~500.000mm==>角度 ｲﾝｸﾘﾒﾝﾀﾙﾊﾟﾙｽ	***
+;	***						***
+;	***************************************************
+;	=====mmから角度への変換===
+;	RENEA-->
+;	EXCELの試しの式
+;			(-1*RENEA+STL)*180.00/STL
+;			 36000-(-1*RENEA+STL)*180.00/STL
+;
+;	Input R2 mm ﾘﾆｱ(下死点高さ位置 ﾏｲﾅｽはなくす)
+;	Input "どっちのテーブルを使うか判別できるデータ" R14==0:TBL1 R14!==1:TBL2
+;	Input R10:角度を求めたいか?ﾊﾟﾙｽを求めたいか?
+;
+;
+;
+;
+;	TBL_N= (renea_x(mm)*10000/STL) *1/1 TABLEが選ばれる.余りはない
+;	TBL_N_1	==>YN_1(0~360.00) Yn_1'= YN_1*10 
+;	TBL_N	==>Yn  (0~360.00) Yn'  = YN  *10 
+;	XN_1mm=TBL_N*STL/10000%
+;	XNmm  =(TBL_N+1)*STL/10000%
+;			XN_1=(TBL_N)*deltx
+;			XN  =(TBL_N+1)*50*deltx
+;	renea_x*10000/STL =TBLn...Mod
+;	10000を無次元として扱う
+;	XN_1=TBLn_1*STL  /10000=0.001mm
+;	XN  =TBLn  *STL  /10000=0.001mm
+;	y=(Yn'-Yn_1')/(XN-XN_1) * (X-XN_1) + Yn_1'
+;
+;	R9==0 RENEA==>360.000変換
+;	R9!=0
+;	ﾘﾆｱﾃｰﾌﾞﾙは4BYTE
+_RENEA_CHG1_DIG_INCPLS:
+	SUB_START
+	MOV	#1,R10				;
+	M_BRA	RENEA_CHG1_DIG_COM1		;
+
+_RENEA_CHG1_DIG36000:
+	SUB_START
+	XOR	R10,R10				;
+
+
+RENEA_CHG1_DIG_COM1:
+	MOV.L	#_PLS_DIG_CHG_INF1_TOP,R0			;
+	LDC	R0,GBR						;
+	CMP/PZ	R2						;
+	BT	RENEA_CHG1_DIG1_020				;
+	XOR	R2,R2						;
+RENEA_CHG1_DIG1_020:						;
+	MOV.L	#_RNA_STLORK,R0					;
+	MOV.L	@R0,R8						;
+	MOV	R8,R4						;R8:RENEA_STLORK退避(R8=STLORK_MAX)
+
+	CMP/GE	R2,R4						;=< R4
+	BT	RENEA_CHG1_DIG1_040				;
+	MOV	R4,R2						;
+RENEA_CHG1_DIG1_040:						;
+	MOV	R2,R9						;PVdata ﾃﾞｰﾀ退避(R9=PV_RENEA_POS)
+								;R9:RENEA_POS
+
+	MOV.L	@(_PS_DG_INF_CONT,GBR),R0			;ﾃｰﾌﾞﾙMAX 10000(基数)
+	MOV	R0,R1						;R1:MAX 
+	MOV	R0,R11						;ﾃﾞｰﾀ退避(R11=10000)
+
+;	R4:MAXmm
+;	R2:PVmm
+;;	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0			;PV_STL*0~10000/STL_MAX
+	FAR_JSR	#_X_R2_MUL_R1_DIV_R4,R0
+	MOV	R2,R3						;
+
+	ADD	#-1,R1						;10000-1
+	CMP/HS	R3,R1						;9999
+	BT	RENEA_CHG1_DIG1_050				;
+	MOV	R1,R3						;TBLn_1
+RENEA_CHG1_DIG1_050:						;
+	MOV	R3,R7						;TBLn_1:退避"R7=ﾃｰﾌﾞﾙn_1"
+
+
+	SHLL	R3
+	MOV.L	#_PLS_DIG_CHG_TBL1_TOP+1*2,R5			;(下降)
+	TST	R14,R14
+	TST_BIT_OF RENEA_CHG1_DIG1_080				;
+	MOV.L	#_PLS_DIG_CHG_TBL2_TOP+1*2,R5			;(上昇)
+RENEA_CHG1_DIG1_080:						;
+
+	ADD	R3,R5						;
+	MOV.W	@R5+,R2						;"360.00" 10001個のﾃｰﾌﾞﾙを作成
+	EXTU.W	R2,R2						;
+	MOV.W	@R5,R6						;"360.00"
+	EXTU.W	R6,R6						;
+	SHLR	R3						;
+
+
+	CMP/HS	R3,R1						;
+	BT	RENEA_CHG1_DIG1_100				;
+	MOV.L	@(_PS_DG_INF_LATE,GBR),R0			;360.00
+	MOV	R0,R6						;
+RENEA_CHG1_DIG1_100:						;
+
+	TST	R10,R10						;
+	TST_BIT_ON RENEA_CHG1_DIG1_220				;以降R10使用可能
+;	=======R2(Yn_1),R6(Yn):は角度の次元だ ====
+	FAR_JSR	#_DIG36000_CHG_DIG360000,R0			;Yn_1
+	PUSH_REG1 R2						;R6(Yn),R2(Yn_1)
+	MOV	R6,R2
+	FAR_JSR	#_DIG36000_CHG_DIG360000,R0			;Yn
+	POP_REG1 R6						;R2(Yn),R6(Yn_1)
+	M_BRA	RENEA_CHG1_DIG1_240				;
+
+RENEA_CHG1_DIG1_220:						;
+;;;;;miss　2007-03-02　補間になってない	MOV	R6,R2						;0.001mm
+	FAR_JSR	#_DIG36000_CHG_INC_PLS,R0			;
+	PUSH_REG1 R2						;R6(Yn),R2(Yn_1)
+	MOV	R6,R2
+	FAR_JSR	#_DIG36000_CHG_INC_PLS,R0			;
+	POP_REG1 R6						;R2(Yn),R6(Yn_1)
+RENEA_CHG1_DIG1_240:						;
+	MOV	R2,R12						;data 退避(R12=Yn R6=Yn_1)
+
+;	===========================
+	MOV	R7,R2						;ﾃｰﾌﾞﾙ
+	MOV	R11,R4						;ﾃﾞｰﾀ退避(10000)
+	MOV	R8,R1						;TBL*STL/10000
+;;	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0			;R2(0~100.00)*STL/100.00 [R2以外はﾚｼﾞｽﾀ保証有り]
+	FAR_JSR	#_X_R2_MUL_R1_DIV_R4,R0
+	MOV	R2,R10						;R10=Xn_1
+	MOV	R7,R2						;
+	ADD	#1,R2						;
+;;	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0			;R2=Xn
+	FAR_JSR	#_X_R2_MUL_R1_DIV_R4,R0
+
+
+;	増加時用  Sn > Sn_1条件(減少方向で使用する場合は入れ替えて使用可能:R6に注意)
+;	Input
+;	R3:Yn_1		R5:Xn_1
+;	R2:Yn		R4:Xn
+;	ANS:R2=y	R1:x
+;	limit R6(Yn)
+	MOV	R2,R4						;Xn
+	MOV	R10,R5						;Xn_1
+	MOV	R9,R1						;x
+	MOV	R12,R2						;Yn
+	MOV	R6,R3						;Yn_1
+	MOV	R2,R6						;(360.000の可能性がある:)
+	FAR_JSR	#_FPU_POS_HOKAN1,R0				;ANS角度0~360.000またはﾊﾟﾙｽ
+
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	Input R2		***
+;	***	360.00 data==> 360.000	***
+;	***********************************
+;	=======R2(Yn_1)は角度の次元だ ====
+;	R6,R7~R14を壊さない事を保証する事
+_DIG36000_CHG_DIG360000:
+	SUB_START
+;;	ADD	R2,R2		;
+;;	MOV	R2,R0		;*2
+;;	ADD	R2,R2		;*4
+;;	ADD	R2,R2		;*8
+;;	ADD	R0,R2		;*10
+
+	ADD	R2,R2		;
+	MOV	R2,R0		;*2
+	ADD	R2,R2		;*4
+	ADD	R2,R2		;*8
+	ADD	R0,R2		;*10
+
+	SUB_END
+	M_RTS
+;	***************************************************
+;	***	Input R2				***
+;	***	360.000 data==> ｲﾝｸﾘﾒﾝﾀﾙｴﾝｺｰﾀﾞ換算	***
+;	***************************************************
+;	"360.000"  0~360.000 * N回転(16) *ﾊﾟﾙｽ(8192)/(360.000)
+;	Input R2
+;	R6,R7~R14は壊さないことを保証する
+;	<1REVを越えないようにﾘﾐｯﾀを切る>
+;	Input 1REV以下のﾊﾟﾙｽ
+;	Input   R2:
+;
+;	_CALC_MEM_1REV_MUL_NROT,R1	;(8192*32)
+;
+_DIG36000_CHG_INC_PLS:
+	SUB_START
+	MOV.L	#_CALC_MEM_1REV_MUL_NROT,R0		;(N*PLS) 8192*18((1回転[360]ではない))
+	MOV.L	@R0,R1					;
+	MOV.L	#_SETY_INCPLS_HOSM001,R0		;//0.01度 180.00
+	MOV.L	@R0,R4					;
+
+
+;;;	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0		;R2=Xn
+	FAR_JSR	#_X_R2_MUL_R1_DIV_R4,R0
+
+;	-------- 2007-03-02--------
+	MOV.L	#_LINK_1ROT_PLS,R0
+	MOV.L	@R0,R1
+;	--------------------------
+
+	CMP/GT	R2,R1					;1REV以下
+	BT	DIG36000_CHG_INCPLS_050			;
+	MOV	R1,R2					;1REV未満にした方がいいのでは
+DIG36000_CHG_INCPLS_050:				;ﾊﾟﾙｽ
+	SUB_END
+	M_RTS
+
+
+
+	.EXPORT	_NOW_RNA_DIG_MAK		;
+;	***********************************************************
+;	***							***
+;	***		ﾘﾆｱｾﾝｻから1回転内角度及びﾊﾟﾙｽ		***
+;	***							***
+;	***********************************************************
+_NOW_RNA_DIG_MAK:
+	SUB_START
+	SUB_END
+	M_RTS
+
+
+;	***************************
+;	***			***
+;	***			***
+;	***			***
+;	***************************
+	.EXPORT	_NOW_INCPLS_CHG_MM_MAK
+_NOW_INCPLS_CHG_MM_MAK:
+	SUB_START
+	SUB_END
+	M_RTS
+
+
+
+
+;	***********************************
+;	***				***
+;	***				***
+;	***				***
+;	***********************************
+
+	.END

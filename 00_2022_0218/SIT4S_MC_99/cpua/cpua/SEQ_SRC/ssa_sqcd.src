@@ -1,0 +1,1514 @@
+;	***************************************************
+;	***						***
+;	***						***
+;	***	ÉVÅ[ÉPÉìÉXÉRÅ[Éhïœä∑É\ÉtÉg		***
+;	***						***
+;	***						***
+;	***************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"		; EQU
+	.INCLUDE	"sh7750rg.ext"		; 
+	.INCLUDE	"ssa_swrm.ext"		; 
+	.INCLUDE	"shn_cmd1.mac"		; 
+	.INCLUDE	"ssa_wram.ext"		; 
+	.INCLUDE	"ssa_seq1.ext"		; 
+	.INCLUDE	"ssa_seq1.equ"		; 
+;;ïsóv	.INCLUDE	"dp_cpuab.ext"		; 
+;;ïsóv	.INCLUDE	"dp_cpud.ext"		; //[2013-11-29 MC]
+
+	.LIST	ON
+
+
+	.SECTION	P,CODE			;
+
+
+
+
+
+;	//	***********************************
+;	//	***	EXTERN êÈåæ PROGRAM	***
+;	//	***********************************
+
+;	//	***********************************
+;	//	***	EXTERN êÈåæ MEMORY,HARD	***
+;	//	***********************************
+
+;	//	***********************************
+;	//	***	PUBLIC êÈåæ PROGRAM	***
+;	//	***********************************
+
+
+
+;	*****************************************************
+;	*****		ÉVÅ[ÉPÉìÉXèàóù			*****
+;	*****************************************************
+;
+;	/********************************************************************
+;	/*****  R5  ÅÅ Ç`ÇqÇf						*****
+;	/*****  R6  ÅÅ ÇmÇqÇfÅi00000001 or 00000000Åj			*****
+;	/*****  R7  ÅÅ ÇlÇqÇfÅiÇaÇhÇsÇPÇTÅ`ÇaÇhÇsÇOÅj			*****
+;	/********************************************************************
+
+;	*********************************************************************
+;	*****	Read command				22+2byte	*****
+;	*********************************************************************
+;	USE REG R0,R1,R2,R3,R10,R11,R12,R13
+;
+	.ALIGN	4
+_LD_CODE:
+	AND	R6,R5				; ARG and NRG
+	SHLL	R7				; ARG save to MRG
+	OR	R5,R7				;
+
+	MOV.B	#_SEQ_BIT,R3			; ÀﬁØƒ BITÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R3				; æﬁ€ägí£
+	MOV.B	#_SEQ_ADR,R0			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R0,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R0			; read to ARG
+						; Ç±ÇÃñΩóﬂÇÕ∫› ﬂ≤ŸéûÇ…R8Å`14ÇÃñΩóﬂÇ…ïœä∑
+	SWAP.B	R0,R0				; 0~7BIT LOAD THEN NOPÇ…ïœä∑
+	TST	R3,R0				;
+	MOVT	R0				; T->R0
+	XOR	#BIT0,R0			;
+	MOV	R0,R5				; T->ARG
+
+_LD_CODE_END:
+
+;	*********************************************************************
+;	*****	Read Not command			26+2byte	*****
+;	*********************************************************************
+;	USE REG R0,R1,R2,R3,R10,R11,R12,R13
+;
+	.ALIGN	4
+_LDN_CODE:
+	AND	R6,R5				; ARG and NRG
+	SHLL	R7				; ARG save to MRG
+	OR	R5,R7				;
+
+	MOV.B	#_SEQ_BIT,R3			; ÀﬁØƒ BITÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R3				; æﬁ€ägí£
+	MOV.B	#_SEQ_ADR,R0			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R0,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R0			; read to ARG
+						; Ç±ÇÃñΩóﬂÇÕ∫› ﬂ≤ŸéûÇ…R8Å`14ÇÃñΩóﬂÇ…ïœä∑
+	SWAP.B	R0,R0				; 0~7BIT LOAD THEN NOPÇ…ïœä∑
+	TST	R3,R0				;
+	MOVT	R5				; TÇÃîΩì] -> ARG
+
+_LDN_CODE_END:
+
+;	/********************************************************************
+;	/*****  R5  ÅÅ Ç`ÇqÇf						*****
+;	/*****  R6  ÅÅ ÇmÇqÇfÅi00000001 or 00000000Åj			*****
+;	/*****  R7  ÅÅ ÇlÇqÇfÅiÇaÇhÇsÇPÇTÅ`ÇaÇhÇsÇOÅj			*****
+;	/********************************************************************
+
+;	*********************************************************************
+;	*****	And command				18+2byte	*****
+;	*********************************************************************
+;	USE REG R0,R1,R2,R3,R10,R11,R12,R13
+;
+	.ALIGN	4
+_AND_CODE:
+
+	MOV.B	#_SEQ_BIT,R3			; ÀﬁØƒ BITÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R3				; æﬁ€ägí£
+	MOV.B	#_SEQ_ADR,R0			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R0,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R0			; read to ARG
+						; Ç±ÇÃñΩóﬂÇÕ∫› ﬂ≤ŸéûÇ…R8Å`14ÇÃñΩóﬂÇ…ïœä∑
+	SWAP.B	R0,R0				; 0~7BIT LOAD THEN NOPÇ…ïœä∑
+	TST	R3,R0				;
+	MOVT	R0				; T->R0
+	XOR	#BIT0,R0			; T îΩì]
+	AND	R0,R5				; ARG and DATA(T) -> ARG
+_AND_CODE_END:
+
+;	*********************************************************************
+;	*****	And Not command				20byte		*****
+;	*********************************************************************
+;	USE REG R0,R1,R2,R3,R10,R11,R12,R13
+;
+	.ALIGN	4
+_ANDN_CODE:
+
+	MOV.B	#_SEQ_BIT,R3			; ÀﬁØƒ BITÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R3				; æﬁ€ägí£
+	MOV.B	#_SEQ_ADR,R0			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R0,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R0			; read to ARG
+						; Ç±ÇÃñΩóﬂÇÕ∫› ﬂ≤ŸéûÇ…R8Å`14ÇÃñΩóﬂÇ…ïœä∑
+	SWAP.B	R0,R0				; 0~7BIT LOAD THEN NOPÇ…ïœä∑
+	TST	R3,R0				;
+	MOVT	R0				; T->R0
+	AND	R0,R5				; ARG and DATA(T) -> ARG
+
+_ANDN_CODE_END:
+
+
+
+;	*********************************************************************
+;	*****	Or command				 18+2byte	*****
+;	*********************************************************************
+	.ALIGN	4
+_OR_CODE:
+
+	MOV.B	#_SEQ_BIT,R3			; ÀﬁØƒ BITÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R3				; æﬁ€ägí£
+	MOV.B	#_SEQ_ADR,R0			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R0,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R0			; read to ARG
+						; Ç±ÇÃñΩóﬂÇÕ∫› ﬂ≤ŸéûÇ…R8Å`14ÇÃñΩóﬂÇ…ïœä∑
+	SWAP.B	R0,R0				; 0~7BIT LOAD THEN NOPÇ…ïœä∑
+	TST	R3,R0				;
+	MOVT	R0				; T->R0
+	XOR	#BIT0,R0			;
+	OR	R0,R5				; ARG or DATA(T) -> ARG
+
+_OR_CODE_END:
+
+
+;	*********************************************************************
+;	*****	Or command				 18+2byte	*****
+;	*********************************************************************
+	.ALIGN	4
+_ORN_CODE:
+
+	MOV.B	#_SEQ_BIT,R3			; ÀﬁØƒ BITÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R3				; æﬁ€ägí£
+	MOV.B	#_SEQ_ADR,R0			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R0,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R0			; read to ARG
+						; Ç±ÇÃñΩóﬂÇÕ∫› ﬂ≤ŸéûÇ…R8Å`14ÇÃñΩóﬂÇ…ïœä∑
+	SWAP.B	R0,R0				; 0~7BIT LOAD THEN NOPÇ…ïœä∑
+	TST	R3,R0				;
+	MOVT	R0				; T->R0
+	OR	R0,R5				; ARG or DATA(T) -> ARG
+
+_ORN_CODE_END:
+
+
+;	*********************************************************************
+;	*****	Write command				26+2byte	*****
+;	*********************************************************************
+	.ALIGN	4
+_ST_CODE:
+
+	AND	R6,R5				; ARG and NRG
+
+	MOV.B	#_SEQ_BIT,R3			; ÀﬁØƒ BITÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑	BIT7
+	EXTU.B	R3,R3				; æﬁ€ägí£			BIT7
+	SHLL8	R3				; 0~7BIT LOAD THEN NOPÇ…ïœä∑	BIT15
+	NOT	R3,R2				; 				0111111111111111B
+	MOV.B	#_SEQ_ADR,R0			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R0,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R1			; read to ARG			1101010101010101B
+						; Ç±ÇÃñΩóﬂÇÕ∫› ﬂ≤ŸéûÇ…R8Å`14ÇÃñΩóﬂÇ…ïœä∑
+	AND	R2,R1				; æØƒÇ∑ÇÈÀﬁØƒ∏ÿ±		0101010101010101B
+	NEG	R5,R2				; ARG 1 THEN FFFF,0 THEN 0ïœä∑	FFFF
+	AND	R3,R2				; ARG and BIT			1000000000000000B
+	OR	R2,R1				; ARG SET			1101010101010101B
+	MOV.W	R1,@(R0,R14)			; read to ARG
+						; Ç±ÇÃñΩóﬂÇÕ∫› ﬂ≤ŸéûÇ…R8Å`14ÇÃñΩóﬂÇ…ïœä∑
+_ST_CODE_END:								;
+;
+
+
+;	***********************************************************
+;	***	SET BIT CODE CHANGE ROUTINE 		20byte	***
+;	***********************************************************
+	.ALIGN	4
+_SET_CODE:					; 00001110B	E
+	AND	R6,R5				; ARG and NRG
+
+	MOV.B	#_SEQ_BIT,R3			; ÀﬁØƒ BITÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑	BIT7
+	EXTU.B	R3,R3				; æﬁ€ägí£			BIT7
+	SHLL8	R3				; 0~7BIT LOAD THEN NOPÇ…ïœä∑	BIT15
+	MOV.B	#_SEQ_ADR,R0			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R0,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R1			; read to ARG			0101010101010101B
+						; Ç±ÇÃñΩóﬂÇÕ∫› ﬂ≤ŸéûÇ…R8Å`14ÇÃñΩóﬂÇ…ïœä∑
+	NEG	R5,R2				;
+	AND	R3,R2				;
+;;;;;;	OR	R3,R2				;
+	OR	R2,R1				; æØƒ				1101010101010101B
+	MOV.W	R1,@(R0,R14)			; read to ARG
+						; Ç±ÇÃñΩóﬂÇÕ∫› ﬂ≤ŸéûÇ…R8Å`14ÇÃñΩóﬂÇ…ïœä∑
+_SET_CODE_END:
+
+
+;	***********************************************************
+;	***	RESET BIT CODE CHANGE ROUTINE 		20byte	***
+;	***********************************************************
+	.ALIGN	4
+_RST_CODE:					; 00001110B	E
+	AND	R6,R5				; ARG and NRG
+
+	MOV.B	#_SEQ_BIT,R3			; ÀﬁØƒ BITÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑	BIT7
+	EXTU.B	R3,R3				; æﬁ€ägí£			BIT7
+	SHLL8	R3				; 0~7BIT LOAD THEN NOPÇ…ïœä∑	BIT15
+	NEG	R5,R2				;
+	AND	R2,R3				;
+	NOT	R3,R3				; 				0111111111111111B
+	MOV.B	#_SEQ_ADR,R0			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R0,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R1			; read to ARG			1101010101010101B
+						; Ç±ÇÃñΩóﬂÇÕ∫› ﬂ≤ŸéûÇ…R8Å`14ÇÃñΩóﬂÇ…ïœä∑
+	AND	R3,R1				; æØƒ				0101010101010101B
+	MOV.W	R1,@(R0,R14)			; read to ARG
+						; Ç±ÇÃñΩóﬂÇÕ∫› ﬂ≤ŸéûÇ…R8Å`14ÇÃñΩóﬂÇ…ïœä∑
+_RST_CODE_END:
+
+;	***********************************************************
+;	***	ON EDGE 1PULSE ON CODE CHANGE ROUTINE	16byte	***
+;	***********************************************************
+	.ALIGN	4
+_PLS_CODE:					; 00011000B	18
+	MOV.B	#_SEQ_BIT,R2			; ÀﬁØƒ BITÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑	BIT7
+	EXTU.B	R2,R2				; æﬁ€ägí£			BIT7
+	SHLL8	R2				; 0~7BIT LOAD THEN NOPÇ…ïœä∑	BIT15
+	MOV.B	#_SEQ_ADR,R3			; PLS ëOâÒíl AREA TOP ADR. LOAD
+	EXTU.B	R3,R3				; æﬁ€ägí£
+	MOV.L	@(_PLS_CMD,GBR),R0		;
+	JSR	@R0				; INPUT R2,R3
+	NOP					;
+_PLS_CODE_END:
+
+;	***************************************************
+;	***	ON EDGE 1PULSE ON CODE CHANGE SUB	***
+;	***************************************************
+;	INPUT R2:BIT,R3,ADR
+	.ALIGN	4	;2010-12-27
+_PLS_SUB:
+	SUB_START
+
+;;;;2009-11-04	TST	R6,R6				;
+;;;;2009-11-04	BT	_PLS_SUB_END			; NRG = 0 THEN EXIT
+
+	NOT	R2,R4				; ÀﬁØƒÇÃîΩì]			0111111111111111B
+	MOV	R3,R0				; ADR
+	MOV.W	@(R0,R14),R1			; ëOâÒílLOAD			0101010101010101B
+						; Ç±ÇÃñΩóﬂÇÕR14å≈íËÇÃñΩóﬂ
+	MOV	R1,R3				; ëOâÒíl -> R3
+	AND	R4,R1				; æØƒÇ∑ÇÈÀﬁØƒ∏ÿ±		0101010101010101B
+	NEG	R5,R4				; ARG 1 THEN FFFF,0 THEN 0ïœä∑	FFFF
+	AND	R2,R4				; ARG and BIT			1000000000000000B
+	OR	R4,R1				; ARG SET			1101010101010101B
+	MOV.W	R1,@(R0,R14)			; ç°âÒílSAVE
+
+	XOR	R1,R3				; EDGE CHECK		     R1 1101010101010101B
+						;			     R3 0101010101010101B
+	AND	R3,R1				;			 XOR R1 1000000000000000B
+						;			 AND R1 1000000000000000B
+	TST	R2,R1				;
+	MOVT	R1				;
+	TST	R1,R1				;
+	MOVT	R5				; TÇÃîΩì] -> ARG
+
+_PLS_SUB_END:
+	SUB_END
+	M_RTS
+
+
+;	***********************************************************
+;	***	OFF EDGE 1PULSE ON CODE CHANGE ROUTINE	16byte	***
+;	***********************************************************
+	.ALIGN	4
+_PLF_CODE:					; 00011000B	18
+	MOV.B	#_SEQ_BIT,R2			; ÀﬁØƒ BITÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑	BIT7
+	EXTU.B	R2,R2				; æﬁ€ägí£			BIT7
+	SHLL8	R2				; 0~7BIT LOAD THEN NOPÇ…ïœä∑	BIT15
+	MOV.B	#_SEQ_ADR,R3			; PLS ëOâÒíl AREA TOP ADR. LOAD
+	EXTU.B	R3,R3				; æﬁ€ägí£
+	MOV.L	@(_PLF_CMD,GBR),R0		;
+	JSR	@R0				; INPUT R2,R3
+	NOP					;
+_PLF_CODE_END:
+
+;	***************************************************
+;	***	OFF EDGE 1PULSE ON CODE CHANGE SUB	***
+;	***************************************************
+;	INPUT R2:BIT,R3,ADR
+	.ALIGN	4	;2010-12-27
+_PLF_SUB:
+	SUB_START
+
+	TST	R6,R6				;
+	BT	_PLF_SUB_END			; NRG = 0 THEN EXIT
+
+	NOT	R2,R4				; ÀﬁØƒÇÃîΩì]			0111111111111111B
+	MOV	R3,R0				; ADR
+	MOV.W	@(R0,R14),R1			; ëOâÒílLOAD			1101010101010101B
+						; Ç±ÇÃñΩóﬂÇÕR14å≈íËÇÃñΩóﬂ
+	MOV	R1,R3				; ëOâÒíl -> R3
+	AND	R4,R1				; æØƒÇ∑ÇÈÀﬁØƒ∏ÿ±		0101010101010101B
+	NEG	R5,R4				; ARG 1 THEN FFFF,0 THEN 0ïœä∑	0000
+	AND	R2,R4				; ARG and BIT			0000000000000000B
+	OR	R4,R1				; ARG SET			0101010101010101B
+	MOV.W	R1,@(R0,R14)			; ç°âÒílSAVE
+
+	XOR	R1,R3				; EDGE CHECK		     R1 0101010101010101B
+						;			     R3 1101010101010101B
+	NOT	R1,R1				;
+	AND	R1,R3				;			 XOR R3 1000000000000000B
+						;			 AND R1 0000000000000000B
+	TST	R2,R3				; óßâ∫ÇË¥ØºÇÕT=1
+	MOVT	R3				;
+	TST	R3,R3				;
+	MOVT	R5				; T -> ARG
+
+_PLF_SUB_END:
+	SUB_END
+	M_RTS
+
+
+;	/********************************************************************
+;	/*****  R5  ÅÅ Ç`ÇqÇf						*****
+;	/*****  R6  ÅÅ ÇmÇqÇfÅi00000001 or 00000000Åj			*****
+;	/*****  R7  ÅÅ ÇlÇqÇfÅiÇaÇhÇsÇPÇTÅ`ÇaÇhÇsÇOÅj			*****
+;	/********************************************************************
+
+;	*********************************************************************
+;	*****	And MRG command			4step	10clocks	*****
+;	*********************************************************************
+	.ALIGN	4
+_AMRG_CODE:
+	AND	R7,R5				; ARG and MRG		;
+	SHLR	R7				; shift old MRG		;
+_AMRG_CODE_END:
+
+
+;	*********************************************************************
+;	*****	Or MRG command			4step	10clocks	*****
+;	*********************************************************************
+	.ALIGN	4
+_OMRG_CODE:
+	OR	R7,R5				; ARG or MRG
+	SHLR	R7				; shift old MRG		;
+_OMRG_CODE_END:
+;
+
+
+;	*********************************************************************
+;	*****	Write NRG command		4step	 4clocks	*****
+;	*********************************************************************
+	.ALIGN	4
+_WNRG_CODE:
+	AND	R6,R5				; ARG and NRG		; 2
+	MOV	R5,R6				; ARG store to NRG	; 2
+_WNRG_CODE_END:
+
+
+;	*********************************************************************
+;	*****	Write Not NRG command		2step	 5clocks	*****
+;	*********************************************************************
+	.ALIGN	4
+_WNNRG_CODE:
+	SETT					;
+	MOVT	R6				; clear NRG		; 5
+_WNNRG_CODE_END:
+
+
+;	*************************************************************
+;	*****	Write Skip Controlor command 			*****
+;	*************************************************************
+
+	.ALIGN	4	;2010-12-27
+_WSC_CODE:					; 00001110B	E
+	MOV.B	#_SEQ_BIT,R3			; ÀﬁØƒ BITÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑	BIT7
+	EXTU.B	R3,R3				; æﬁ€ägí£			BIT7
+	SHLL8	R3				; 0~7BIT LOAD THEN NOPÇ…ïœä∑	BIT15
+
+	MOV.L	@(_WSC_CMD,GBR),R0		;
+	JSR	@R0				; INPUT R2,R3
+	NOP					;
+
+	MOV.B	#_SEQ_ADR,R0			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R0,R0				; æﬁ€ägí£
+	MOV.W	R1,@(R0,R14)			; read to ARG			0101010101010101B
+						; Ç±ÇÃñΩóﬂÇÕ∫› ﬂ≤ŸéûÇ…R8Å`14ÇÃñΩóﬂÇ…ïœä∑
+
+_WSC_CODE_END:
+
+;	*************************************************************
+;	*****	Write Skip Controlor command subroutine		*****
+;	*************************************************************
+;	INPUT R1 WRITE ADR,R3 BIT
+;	OUTPUT R1
+	.ALIGN	4	;2010-12-27
+_WSC_SUB:
+	SUB_START
+
+	AND	R6,R5			; ARG and NRG
+	TST	R5,R5			;
+	BT	_WSC_S10		; if ARG = 0  then jump
+;
+	MOV	R5,R0			;
+	NEG	R0,R0			;
+	AND	R3,R0			; ÇªÇÃBITÇÃÇ›ON
+	MOV	R0,R1			; store ARG
+_WSC_S10:
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***	Shift Register commnd 			20byte	***
+;	***********************************************************
+	.ALIGN	4
+_WSR_CODE:					; 00011000B	18
+	MOV.B	#_SEQ_DT_LO,R1			; √ﬁ∞¿â∫à 
+	EXTU.B	R1,R1				;
+	MOV.B	#_SEQ_DT_HI,R0			; √ﬁ∞¿è„à 
+	EXTU.B	R0,R0				;
+	SHLL8	R0				;
+	ADD	R0,R1				;
+	SHLL	R1				; CARD*2
+;;;;;	ADD	R1,R3				; SHIFT CARD ADDRESS MAKE
+
+	MOV.L	@(_WSR_CMD,GBR),R0		;
+	JSR	@R0				; INPUT R3
+	NOP					;
+_WSR_CODE_END:
+
+
+;	***********************************************************
+;	***	Shift Register CODE CHANGE ROUTINE		***
+;	***********************************************************
+;	INPUT	R1 SHIFT CARD ADDRESS
+	.ALIGN	4	;2010-12-27
+_WSR_SUB:
+	SUB_START
+
+	AND	R6,R5			; ARG and NRG
+
+	MOV.L	#_SEQ_CARD_RAM,R3	; SEQUENCE BIT AREA TOP
+	MOV.L	#_SEQ_SR_FLG,R2		; SHIFT (OLD ARG) CARD ADDRESS TOP
+	ADD	R1,R3			; CARD TOP + CARD ADDRESS
+	ADD	R1,R2			; SHIFT TOP + CARD ADDRESS
+
+	MOV.W	@R2,R0			; load old ARG
+	MOV.W	R5,@R2			; store new ARG
+	XOR	R5,R0			; (old ARG) xor (new ARG)
+	AND	R5,R0			; and (new ARG)
+	TST	R0,R0			; ON EGDE CHECK
+	BT	_WSR_S10		; if ARG not 0-->1 then jump
+
+	MOV.W	@R3,R0			;
+	SHLL	R0			;
+;;;;2009-11-04	AND	#NBIT0,R0	; MRG ÇSTOREÇ∑ÇÈBIT CLEAR
+	MOV.W	#BIT0,R2		;
+	AND	R7,R2			;
+	OR	R2,R0			;
+	MOV.W	R0,@R3			; ºÃƒÇµÇƒBIT0Ç…MRGÇΩƒ±
+
+_WSR_S10:
+	SUB_END
+	M_RTS
+
+
+
+;	*********************************************************************
+;	*****	Data Set command			14byte		*****
+;	*********************************************************************
+;	  ------------------------------
+;	+0|       ñΩóﬂCODE	(  )   |
+;	  ------------------------------
+;	+1|         ãÛÇ´ 	(  )   |
+;	  ------------------------------
+;	+2|       √ﬁ∞¿è„à 	(  )   |
+;	  ------------------------------
+;	+3|       √ﬁ∞¿â∫à  	(  )   |
+;	  ------------------------------
+;
+	.ALIGN	4
+_DS_CODE:
+	MOV.B	#_SEQ_DT_LO,R1			; √ﬁ∞¿â∫à 
+	EXTU.B	R1,R1				;
+	MOV.B	#_SEQ_DT_HI,R0			; √ﬁ∞¿è„à 
+	EXTU.B	R0,R0				;
+	SHLL8	R0				;
+	ADD	R1,R0				; SET DATA MAKE
+	STC	GBR,R1				;
+	MOV.L	@R1,R1				;
+	MOV.W	R0,@R1				;
+;;;;;	MOV.W	R0,@(DREG,GBR)			; DATA REG SET
+_DS_CODE_END:
+
+
+;	*********************************************************************
+;	*****	Clear Card command			16byte		*****
+;	*********************************************************************
+;	  ------------------------------
+;	+0|       ñΩóﬂCODE	(  )   |
+;	  ------------------------------
+;	+1|         ãÛÇ´ 	(  )   |
+;	  ------------------------------
+;	+2|    OFFSET ADR CODE	(  )   |	R3(0~6)
+;	  ------------------------------
+;	+3|         ADR 	(  )   |	R4
+;	  ------------------------------
+
+	.ALIGN	4
+_CLR_CODE:
+	MOV.B	#_SEQ_ADR,R3			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R0				; æﬁ€ägí£
+;;;;;	SHLL	R0				; CARD ADDRESS * 2
+	ADD	R14,R0				; OFFSET + CARD ADR*2
+	MOV.L	R0,R3				; STORE ADDRESS INPUT
+
+	MOV.L	@(_CLR_CMD,GBR),R0		;
+	JSR	@R0				; INPUT R3
+	NOP					;
+_CLR_CODE_END:
+
+;	***********************************
+;	***	CLRñΩóﬂªÃﬁŸ∞¡›		***
+;	***********************************
+;	INPUT R3
+	.ALIGN	4	;2010-12-27
+_CLR_SUB:
+	SUB_START
+
+	AND	R6,R5				; ARG and NRG
+	TST	R5,R5				;
+	BT	_CLR_SUB_END			; ARG and NRG = 0 THEN EXIT
+
+	MOV.W	#0,R0				; CLEAR DATA
+	MOV.W	R0,@R3				; DATA STORE
+_CLR_SUB_END:
+	SUB_END
+	M_RTS
+
+
+;	*********************************************************************
+;	*****	Write Timmer command			10+2byte	*****
+;	*********************************************************************
+	.ALIGN	4
+_WTMR_CODE:
+	MOV.B	#_SEQ_TMR_DT,R2			; TMR data buffer pointer
+	SHLL2	R2				; TMR No. * 4 
+;;;;;	MOV.W	@R2,R2				;
+	MOV.L	@(_TMR_CMD,GBR),R0		;
+	JSR	@R0				;
+	NOP					;
+;
+_WTMR_CODE_END:
+
+
+;;;;;;;2010-12-27??	SUB_START
+;	*************************************************************
+;	*****	Write Timmer command subroutine			*****
+;	*************************************************************
+	.ALIGN	4	;2010-12-27
+_WTMR_SUB:
+	SUB_START
+;
+	AND	R6,R5				; ARG and NRG
+	MOV.W	#BIT0,R0			;
+	TST	R0,R7				; check MRG
+	BT	_WTMR_S50			; if MRG = 0  then jump ¿≤œñ≥å¯ THEN Ω¿∞ƒBIT OFF,¿≤œílÃﬂÿæØƒ
+;
+;	*** START BIT CHECK ***
+	MOV.L	#_SEQ_TMR_DATA,R4		;
+	MOV	R2,R0				;
+	ADD	#2,R0				; TIMER START FLG AREA
+	MOV.B	@(R0,R4),R1			; store timmer count start bit	
+	TST	R1,R1				;
+	BF	_WTMR_S10_000			; START BIT ON THEN JUMP
+
+;	*** TIMER INITIAL SET ***
+;;;;;	MOV.B	R5,@(R0,R4)			; store timmer count start bit	
+
+	MOV.L	#_SEQ_DRG1_DATA,R1		; DATA REG data load
+	MOV.W	@R1,R1				;
+	MOV	R2,R0				; R2=∂≥›¿≈› ﬁ∞
+	MOV.W	R1,@(R0,R4)			; ¿≤œ√ﬁ∞¿ ÃﬂÿæØƒ
+
+;	*** TIM UP CHECK ***
+_WTMR_S10_000:
+	MOV.L	#_SEQ_TMR_DATA,R4		;
+	MOV	R2,R0				;
+	ADD	#2,R0				; TIMER START FLG AREA
+	MOV.B	R5,@(R0,R4)			; store timmer count start bit	
+
+	TST	R5,R5				;
+	BF	_WTMR_S10_020			;
+	MOV.B	#BIT4,R1			;
+	MOV.B	@(R0,R4),R3			; store timmer count start bit	í«â¡DEBUG
+	OR	R1,R3				;
+	MOV.B	R3,@(R0,R4)			; store timmer count start bit	í«â¡DEBUG
+	M_BRA	_WTMR_SUB_END			;
+
+_WTMR_S10_020:
+	MOV	R2,R0				;
+	MOV.W	@(R0,R4),R1			;
+	TST	R1,R1				; time up check
+	BT	_WTMR_S10			; if time is up then jump
+
+	M_BRA	_WTMR_SUB_END			;
+;
+;	*** ¿≤—±ØÃﬂ THEN ¿≤—±ØÃﬂÀﬁØƒON ***
+_WTMR_S10:
+;	_SEQ_CARD_RAM_TOP Å® _SEQ_CARD_RAMÇ…ÉâÉxÉãïœçXÅià”ñ°çáÇ¢ÇÕìØÇ∂Åj2008-07-30 SAITO
+;	MOV.L	#_SEQ_CARD_RAM_TOP,R1	; 2008-07-30 SAITO
+	MOV.L	#_SEQ_CARD_RAM,R1	; 2008-07-30 SAITO
+	MOV.L	#_SEQ_TMR_CARD_TOP,R0	;
+	ADD	R0,R1			; CARD TOP + TMR AREA TOP
+
+	MOV.L	#_SEQ_SEEK_CARD_TBL,R3	;
+	MOV	R2,R0			; ∂≥›¿≈› ﬁ∞*4
+	SHLR	R0			; ∂≥›¿≈› ﬁ∞/2=*2
+	ADD	R3,R0			;
+	MOV.W	@R0,R0			; ∂≥›¿≈› ﬁ∞ -> CARD NO
+	ADD	R0,R1			; ∂≥›ƒ±ØÃﬂÀﬁØƒ STORE ADDRESS
+	MOV.W	@R1,R4			;
+
+	MOV	R2,R0			; ∂≥›¿≈› ﬁ∞
+;;;;;	SHLL	R0			; ∂≥›¿≈› ﬁ∞ * 2
+	SHLR	R0			; ∂≥›¿≈› ﬁ∞/2=*2
+	MOV.L	#_SEQ_SEEK_WBIT_TBL,R3	;
+	ADD	R3,R0			;
+	MOV.W	@R0,R0			; R0=SETÇ∑ÇÈÀﬁØƒ
+	OR	R0,R4			;
+	MOV.W	R4,@R1			; ∂≥›ƒ±ØÃﬂÀﬁØƒSET
+
+	M_BRA	_WTMR_SUB_END			;
+
+;
+;	*** ¿≤œñ≥å¯ THEN Ω¿∞ƒBIT OFF,¿≤œílÃﬂÿæØƒ ***
+_WTMR_S50:
+	MOV.L	#_SEQ_TMR_DATA,R4		;
+	MOV.L	#_SEQ_DRG1_DATA,R1		; DATA REG data load
+	MOV.W	@R1,R1				;
+	MOV	R2,R0				; R2=∂≥›¿≈› ﬁ∞
+;;;;;	SHLL2	R0				; ¿≤œ≈› ﬁ∞ *4
+	MOV.W	R1,@(R0,R4)			; ¿≤œ√ﬁ∞¿ ÃﬂÿæØƒ
+
+	ADD	#2,R0				; ARG SAVE AREA
+	XOR	R1,R1				;
+	MOV.B	R1,@(R0,R4)			; START BIT CLEAR
+
+;	_SEQ_CARD_RAM_TOP Å® _SEQ_CARD_RAMÇ…ÉâÉxÉãïœçXÅià”ñ°çáÇ¢ÇÕìØÇ∂Åj2008-07-30 SAITO
+;	MOV.L	#_SEQ_CARD_RAM_TOP,R1	; 2008-07-30 SAITO
+	MOV.L	#_SEQ_CARD_RAM,R1	; 2008-07-30 SAITO
+	MOV.L	#_SEQ_TMR_CARD_TOP,R0		;
+	ADD	R0,R1				; CARD TOP + TMR AREA TOP
+
+	MOV.L	#_SEQ_SEEK_CARD_TBL,R3		;
+	MOV	R2,R0				; ∂≥›¿≈› ﬁ∞*4
+	SHLR	R0				; /2=∂≥›¿≈› ﬁ∞*2
+	ADD	R3,R0				;
+	MOV.W	@R0,R0				; ∂≥›¿≈› ﬁ∞ -> CARD NO
+	ADD	R0,R1				; ∂≥›ƒ±ØÃﬂÀﬁØƒ STORE ADDRESS
+	MOV.W	@R1,R4				;
+
+	MOV	R2,R0				; ¿≤œ≈› ﬁ∞*4
+	SHLR	R0				; /2=∂≥›¿≈› ﬁ∞*2
+	MOV.L	#_SEQ_SEEK_WBIT_TBL,R3		;
+	ADD	R3,R0				;
+	MOV.W	@R0,R0				; R0=∏ÿ±Ç∑ÇÈÀﬁØƒ
+	NOT	R0,R0				;
+	AND	R0,R4				; TIME UP BIT CLEAR
+	MOV.W	R4,@R1				; STORE
+
+_WTMR_SUB_END:
+
+	SUB_END
+	M_RTS
+
+;	*********************************************************************
+;	*****	Write Counter command			10+2byte	*****
+;	*********************************************************************
+	.ALIGN	4
+_WCTR_CODE:
+	MOV.B	#_SEQ_CTR_DT,R2			; TMR data buffer pointer
+	SHLL2	R2
+;;;;;	MOV.W	@R2,R2				;
+	MOV.L	@(_CTR_CMD,GBR),R0		;
+	JSR	@R0				;
+	NOP					;
+;
+_WCTR_CODE_END:
+
+
+;	*************************************************************
+;	*****	Write Counter command subroutine		*****
+;	*************************************************************
+;	INPUT R2 :∂≥›¿≈› ﬁ∞*4 (0*4,1*4,2*4,,,,,,)  struct:
+;	SEQ_CTR_DATA 4byteÅ@1234h
+;	+0 ∂≥›¿ê›íË/é¿ë™ è„à Å@12h
+;	+1 ∂≥›¿ê›íË/é¿ë™ â∫à Å@34h
+;	+2 èâä˙âªÃ◊∏ﬁ 0(èâä˙âªäÆóπ)/ff(èâä˙âªïKóv) ff:∂≥›¿ÃﬂÿæØƒ(ê›íË=>é¿ë™)
+;	+3 AregëOâÒíl(∂≥›¿ ﬂŸΩçÏê¨ÇÃÇΩÇﬂ)
+;
+;	Mreg(R7)ÅFóLå¯/ñ≥å¯(ÃﬂÿæØƒ)
+;	Areg(R5)ÅF∂≥›ƒ ﬂŸΩ
+;
+	.ALIGN	4	;2010-12-27
+_WCTR_SUB:
+	SUB_START
+;
+	AND	R6,R5			; ARG and NRG			; 2
+	MOV.W	#BIT0,R0		;
+	TST	R0,R7			; check MRG			; 7 1999-5-26
+	BF	_WCTR_S05		; if MRG = 1  then jump		; 8/15
+
+	M_BRA	_WCTR_S50		; ∂≥›¿ñ≥å¯ THEN èâä˙ílÇ…ÃﬂÿæØƒ
+
+;
+_WCTR_S05:
+	MOV.L	#_SEQ_CTR_DATA,R4	;
+	MOV	R2,R0			;
+;;;;;	SHLR	R0			; ∂≥›¿≈› ﬁ∞ *4/2
+	ADD	#2,R0			; èâä˙ílSET FLG,START/STOP FLG AREA
+;;;;2008-08-08 BUG	MOV.W	@(R0,R4),R1		; INITIAL DATA SET CHECK
+	MOV.B	@(R0,R4),R1		; INITIAL DATA SET CHECK 2008-08-08
+	TST	R1,R1			;
+	BF	_WCTR_S05_10		; SETçœÇ› THEN JUMP
+	M_BRA	_WCTR_S50		; INITIAL DATA SET
+
+_WCTR_S05_10:
+	MOV.L	#_SEQ_CTR_DATA,R4	;
+	MOV	R2,R0			;
+;;;;;2008-08-06 ﬁ∏ﬁ	SHLR	R0			; ∂≥›¿≈› ﬁ∞ *4/2 2008-08-06 SAITO ÉoÉOÇ≈Ç∑
+	ADD	#3,R0			; ARG SAVE AREA
+	MOV.B	@(R0,R4),R1		; load old ARG			; 9
+	MOV.B	R5,@(R0,R4)		; store new ARG			; 5
+	XOR	R5,R1			; (old ARG) xor (new ARG)	; 2
+	AND	R5,R1			; and (new ARG)			; 2
+	TST	R1,R1			;
+	BF	_WCTR_S10		; if ARG change 0 --> 1 then jump ;8/15
+;
+	M_BRA	_WCTR_SUB_END		; if ARG not changed  then return ;29
+
+_WCTR_S10:
+
+;	_SEQ_CARD_RAM_TOP Å® _SEQ_CARD_RAMÇ…ÉâÉxÉãïœçXÅià”ñ°çáÇ¢ÇÕìØÇ∂Åj2008-07-30 SAITO
+;;;	MOV.L	#_SEQ_CARD_RAM_TOP,R1	; 2008-07-30 SAITO
+	MOV.L	#_SEQ_CARD_RAM,R1	; 2008-07-30 SAITO
+	MOV.L	#_SEQ_CTR_CARD_TOP,R0	;
+	ADD	R0,R1			; CARD TOP + TMR AREA TOP
+
+	MOV.L	#_SEQ_SEEK_CARD_TBL,R3	;
+	MOV	R2,R0			; ∂≥›¿≈› ﬁ∞*4
+	SHLR	R0			; /2
+	ADD	R3,R0			;
+	MOV.W	@R0,R0			; ∂≥›¿≈› ﬁ∞ -> CARD NO
+	ADD	R0,R1			; ∂≥›ƒ±ØÃﬂÀﬁØƒ STORE ADDRESS
+	MOV.W	@R1,R4			;16bit
+
+	MOV	R2,R0			; ∂≥›¿≈› ﬁ∞
+	SHLR	R0			; ∂≥›¿≈› ﬁ∞ * 4/2
+	MOV.L	#_SEQ_SEEK_WBIT_TBL,R3	;
+	ADD	R3,R0			;
+	MOV.W	@R0,R0			; R0=¡™Ø∏Ç∑ÇÈÀﬁØƒ
+	AND	R4,R0			;
+	TST	R0,R0			;
+	BT	_WCTR_S15		; if not count upped then jump
+;
+	M_BRA	_WCTR_SUB_END		; if already count upped then ret
+
+_WCTR_S15:
+	MOV.L	#_SEQ_CTR_DATA,R4	;
+	MOV	R2,R0			;
+;;;;;	SHLR	R0			; ∂≥›¿≈› ﬁ∞ *4/2
+	MOV.W	@(R0,R4),R1		; COUNTER DATA LOAD
+	MOV.L	#1,R3			;
+
+	CLRT				; T <- 0 CLEAR
+	SUBC	R3,R1			; COUNER DATA -1
+	XOR	R3,R3			;
+	ADDC	R3,R1			; counter = FF --> 0 set
+	MOV.W	R1,@(R0,R4)		; COUNER DATA -1 SET
+;
+	TST	R1,R1			; counter 0 check		; 2
+	BF	_WCTR_S20		; if not count upped then jump	; 8/15
+
+;	*** ∂≥›ƒ±ØÃﬂÇ»ÇÁ∂≥›ƒ±ØÃﬂÀﬁØƒSET ***
+;	_SEQ_CARD_RAM_TOP Å® _SEQ_CARD_RAMÇ…ÉâÉxÉãïœçXÅià”ñ°çáÇ¢ÇÕìØÇ∂Åj2008-07-30 SAITO
+;;;;;	MOV.L	#_SEQ_CARD_RAM_TOP,R1	; 2008-07-30 SAITO
+	MOV.L	#_SEQ_CARD_RAM,R1	; 2008-07-30 SAITO
+	MOV.L	#_SEQ_CTR_CARD_TOP,R0	;
+	ADD	R0,R1			; CARD TOP + TMR AREA TOP
+
+	MOV.L	#_SEQ_SEEK_CARD_TBL,R3	;
+	MOV	R2,R0			; ∂≥›¿≈› ﬁ∞*4/2
+	SHLR	R0			;
+	ADD	R3,R0			;
+	MOV.W	@R0,R0			; ∂≥›¿≈› ﬁ∞ -> CARD NO
+	ADD	R0,R1			; ∂≥›ƒ±ØÃﬂÀﬁØƒ STORE ADDRESS
+	MOV.W	@R1,R4			;
+
+	MOV	R2,R0			; ∂≥›¿≈› ﬁ∞
+	SHLR	R0			; ∂≥›¿≈› ﬁ∞ * 4/2
+	MOV.L	#_SEQ_SEEK_WBIT_TBL,R3	;
+	ADD	R3,R0			;
+	MOV.W	@R0,R0			; R0=SETÇ∑ÇÈÀﬁØƒ
+	OR	R0,R4			;
+	MOV.W	R4,@R1			; ∂≥›ƒ±ØÃﬂÀﬁØƒSET
+
+_WCTR_S20:
+	M_BRA	_WCTR_SUB_END
+;
+_WCTR_S50:
+	MOV.L	#_SEQ_CTR_DATA,R4	;
+	MOV.L	#_SEQ_DRG1_DATA,R1	; DATA REG data load
+	MOV.W	@R1,R1			;
+	MOV	R2,R0			; R2=∂≥›¿≈› ﬁ∞
+;;;;;	SHLR	R0			; ∂≥›¿≈› ﬁ∞ *4/2
+	MOV.W	R1,@(R0,R4)		; ∂≥›¿√ﬁ∞¿ ÃﬂÿæØƒ
+
+	ADD	#2,R0			;
+	MOV.B	#H'FF,R1		; èâä˙ílSET CODE
+	MOV.B	R1,@(R0,R4)		; INITIAL DATA SET CODE WRITE
+
+	ADD	#1,R0			; ARG SAVE AREA
+	MOV.B	R5,@(R0,R4)		; STORE ARG
+
+;	_SEQ_CARD_RAM_TOP Å® _SEQ_CARD_RAMÇ…ÉâÉxÉãïœçXÅià”ñ°çáÇ¢ÇÕìØÇ∂Åj2008-07-30 SAITO
+;	MOV.L	#_SEQ_CARD_RAM_TOP,R1	; 2008-07-30 SAITO
+	MOV.L	#_SEQ_CARD_RAM,R1	; 2008-07-30 SAITO
+	MOV.L	#_SEQ_CTR_CARD_TOP,R0	;
+	ADD	R0,R1			; CARD TOP + TMR AREA TOP
+
+	MOV.L	#_SEQ_SEEK_CARD_TBL,R3	;
+	MOV	R2,R0			; ∂≥›¿≈› ﬁ∞*4
+	SHLR	R0			; /2
+	ADD	R3,R0			;
+	MOV.W	@R0,R0			; ∂≥›¿≈› ﬁ∞ -> CARD NO
+	ADD	R0,R1			; ∂≥›ƒ±ØÃﬂÀﬁØƒ STORE ADDRESS
+	MOV.W	@R1,R4			;
+
+	MOV	R2,R0			; ∂≥›¿≈› ﬁ∞
+	SHLR	R0			; ∂≥›¿≈› ﬁ∞ * 4/2
+	MOV.L	#_SEQ_SEEK_WBIT_TBL,R3	;
+	ADD	R3,R0			;
+	MOV.W	@R0,R0			; R0=∏ÿ±Ç∑ÇÈÀﬁØƒ
+	NOT	R0,R0			;
+	AND	R0,R4			; BIT CLEAR
+	MOV.W	R4,@R1			; STORE
+
+_WCTR_SUB_END:
+
+	SUB_END
+	M_RTS
+;
+
+
+;	*********************************************************************
+;	*****	LDW command				12byte		*****
+;	*********************************************************************
+;	  ------------------------------
+;	+0|       ñΩóﬂCODE	(  )   |
+;	  ------------------------------
+;	+1|         ãÛÇ´ 	(  )   |
+;	  ------------------------------
+;	+2|    OFFSET ADR CODE	(  )   |	R3(0~6)
+;	  ------------------------------
+;	+3|         ADR 	(  )   |	R4
+;	  ------------------------------
+
+	.ALIGN	4
+_LDW_CODE:
+	MOV.B	#_SEQ_ADR,R3			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R3			; read to µÕﬂ◊›ƒﬁ√ﬁ∞¿
+
+	MOV.L	@(_LDW_CMD,GBR),R0		;
+	JSR	@R0				; INPUT R3
+	NOP					;
+_LDW_CODE_END:
+
+;	***********************************
+;	***	LDWñΩóﬂªÃﬁŸ∞¡›		***
+;	***********************************
+;	INPUT R3
+	.ALIGN	4	;2010-12-27
+_LDW_SUB:
+	SUB_START
+
+	AND	R6,R5				; ARG and NRG
+	TST	R5,R5				;
+	BT	_LDW_SUB_END			; ARG and NRG = 0 THEN EXIT
+
+	MOV.L	@(DREG,GBR),R0			; DATA REG SET
+	MOV.W	R3,@R0				;
+_LDW_SUB_END:
+	SUB_END
+	M_RTS
+
+;	*********************************************************************
+;	*****	èåèÇ»ÇµLDW command			12byte		*****
+;	*********************************************************************
+;	  ------------------------------
+;	+0|       ñΩóﬂCODE	(  )   |
+;	  ------------------------------
+;	+1|         ãÛÇ´ 	(  )   |
+;	  ------------------------------
+;	+2|    OFFSET ADR CODE	(  )   |	R3(0~6)
+;	  ------------------------------
+;	+3|         ADR 	(  )   |	R4
+;	  ------------------------------
+
+	.ALIGN	4
+_LDWU_CODE:
+	MOV.B	#_SEQ_ADR,R3			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R3			; read to µÕﬂ◊›ƒﬁ√ﬁ∞¿
+
+	MOV.L	@(DREG,GBR),R0			; DATA REG SET
+	MOV.W	R3,@R0				;
+
+_LDWU_CODE_END:
+
+
+;	*********************************************************************
+;	*****	STW command				16byte		*****
+;	*********************************************************************
+;	  ------------------------------
+;	+0|       ñΩóﬂCODE	(  )   |
+;	  ------------------------------
+;	+1|         ãÛÇ´ 	(  )   |
+;	  ------------------------------
+;	+2|    OFFSET ADR CODE	(  )   |	R3(0~6)
+;	  ------------------------------
+;	+3|         ADR 	(  )   |	R4
+;	  ------------------------------
+
+	.ALIGN	4
+_STW_CODE:
+	MOV.B	#_SEQ_ADR,R3			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R0				; æﬁ€ägí£
+;;;;;	SHLL	R0				; CARD ADDRESS * 2
+	ADD	R14,R0				; OFFSET + CARD ADR*2
+	MOV.L	R0,R3				; STORE ADDRESS INPUT
+
+	MOV.L	@(_STW_CMD,GBR),R0		;
+	JSR	@R0				; INPUT R3
+	NOP					;
+_STW_CODE_END:
+
+;	***********************************
+;	***	STWñΩóﬂªÃﬁŸ∞¡›		***
+;	***********************************
+;	INPUT R3
+	.ALIGN	4	;2010-12-27
+_STW_SUB:
+	SUB_START
+
+	AND	R6,R5				; ARG and NRG
+	TST	R5,R5				;
+	BT	_STW_SUB_END			; ARG and NRG = 0 THEN EXIT
+
+	MOV.L	@(DREG,GBR),R0			; DATA REG LOAD
+	MOV.W	@R0,R0				;
+	MOV.W	R0,@R3				; DATA STORE
+_STW_SUB_END:
+	SUB_END
+	M_RTS
+
+
+;	*********************************************************************
+;	*****	èåèÇ»ÇµSTW command			16byte		*****
+;	*********************************************************************
+;	  ------------------------------
+;	+0|       ñΩóﬂCODE	(  )   |
+;	  ------------------------------
+;	+1|         ãÛÇ´ 	(  )   |
+;	  ------------------------------
+;	+2|    OFFSET ADR CODE	(  )   |	R3(0~6)
+;	  ------------------------------
+;	+3|         ADR 	(  )   |	R4
+;	  ------------------------------
+
+	.ALIGN	4
+_STWU_CODE:
+	MOV.B	#_SEQ_ADR,R3			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R0				; æﬁ€ägí£
+	ADD	R14,R0				; OFFSET + CARD ADR*2
+	MOV.L	R0,R3				; STORE ADDRESS INPUT
+
+	MOV.L	@(DREG,GBR),R0			; DATA REG LOAD
+	MOV.W	@R0,R0				;
+	MOV.W	R0,@R3				; DATA STORE
+_STWU_CODE_END:
+
+
+;	*********************************************************************
+;	*****	CMP EQ command				12byte		*****
+;	*********************************************************************
+;	  ------------------------------
+;	+0|       ñΩóﬂCODE	(  )   |
+;	  ------------------------------
+;	+1|         ãÛÇ´ 	(  )   |
+;	  ------------------------------
+;	+2|    OFFSET ADR CODE	(  )   |
+;	  ------------------------------
+;	+3|         ADR 	(  )   |
+;	  ------------------------------
+	.ALIGN	4
+_EQ_CODE:
+	MOV.B	#_SEQ_ADR,R3			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R3			; µÕﬂ◊›ƒﬁDATA LOAD
+						; INPUT R3
+
+	MOV.L	@(_EQ_CMD,GBR),R0		;
+	JSR	@R0				;
+	NOP					;
+_EQ_CODE_END:
+
+
+;	***********************************
+;	***	CMP EQñΩóﬂªÃﬁŸ∞¡›	***
+;	***********************************
+;	INPUT R3
+	.ALIGN	4	;2010-12-27
+_EQ_SUB:
+	SUB_START
+
+	AND	R6,R5				; ARG and NRG
+	TST	R5,R5				;
+	BT	_EQ_SUB_END			; ARG and NRG = 0 THEN EXIT
+
+	MOV.L	@(DREG,GBR),R0			; DATA REG LOAD
+	MOV.W	@R0,R0				;
+	CMP/EQ	R3,R0				; DATA REG = µÕﬂ◊›ƒﬁDATA -> DATA REG
+	MOVT	R5				; T->ARG
+
+_EQ_SUB_END:
+	SUB_END
+	M_RTS
+
+
+;	*********************************************************************
+;	*****	CMP NE command				12byte		*****
+;	*********************************************************************
+;	  ------------------------------
+;	+0|       ñΩóﬂCODE	(  )   |
+;	  ------------------------------
+;	+1|         ãÛÇ´ 	(  )   |
+;	  ------------------------------
+;	+2|    OFFSET ADR CODE	(  )   |
+;	  ------------------------------
+;	+3|         ADR 	(  )   |
+;	  ------------------------------
+	.ALIGN	4
+_NE_CODE:
+	MOV.B	#_SEQ_ADR,R3			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R3			; µÕﬂ◊›ƒﬁDATA LOAD
+						; INPUT R3
+
+	MOV.L	@(_NE_CMD,GBR),R0		;
+	JSR	@R0				;
+	NOP					;
+_NE_CODE_END:
+
+
+;	***********************************
+;	***	CMP NEñΩóﬂªÃﬁŸ∞¡›	***
+;	***********************************
+;	INPUT R3
+	.ALIGN	4	;2010-12-27
+_NE_SUB:
+	SUB_START
+
+	AND	R6,R5				; ARG and NRG
+	TST	R5,R5				;
+	BT	_NE_SUB_END			; ARG and NRG = 0 THEN EXIT
+
+	MOV.L	@(DREG,GBR),R0			; DATA REG LOAD
+	MOV.W	@R0,R0				;
+	CMP/EQ	R3,R0				; DATA REG =/= µÕﬂ◊›ƒﬁDATA -> T
+	MOVT	R0				; T->R0
+	TST	R0,R0				;
+	MOVT	R5				; TÇÃîΩì]SET
+
+_NE_SUB_END:
+	SUB_END
+	M_RTS
+
+;	*********************************************************************
+;	*****	CMP GT command				12byte		*****
+;	*********************************************************************
+;	  ------------------------------
+;	+0|       ñΩóﬂCODE	(  )   |
+;	  ------------------------------
+;	+1|         ãÛÇ´ 	(  )   |
+;	  ------------------------------
+;	+2|    OFFSET ADR CODE	(  )   |
+;	  ------------------------------
+;	+3|         ADR 	(  )   |
+;	  ------------------------------
+	.ALIGN	4
+_GT_CODE:
+	MOV.B	#_SEQ_ADR,R3			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R3			; µÕﬂ◊›ƒﬁDATA LOAD
+						; INPUT R3
+
+	MOV.L	@(_GT_CMD,GBR),R0		;
+	JSR	@R0				;
+	NOP					;
+_GT_CODE_END:
+
+
+;	***********************************
+;	***	CMP GTñΩóﬂªÃﬁŸ∞¡›	***
+;	***********************************
+;	INPUT R3
+	.ALIGN	4	;2010-12-27
+_GT_SUB:
+	SUB_START
+
+	AND	R6,R5				; ARG and NRG
+	TST	R5,R5				;
+	BT	_GT_SUB_END			; ARG and NRG = 0 THEN EXIT
+
+	MOV.L	@(DREG,GBR),R0			; DATA REG LOAD
+	MOV.W	@R0,R0				;
+	CMP/GT	R3,R0				; DATA REG > µÕﬂ◊›ƒﬁDATA -> T
+	MOVT	R5				; T->R0
+
+
+_GT_SUB_END:
+	SUB_END
+	M_RTS
+
+
+;	*********************************************************************
+;	*****	CMP LE command				12	byte	*****
+;	*********************************************************************
+;	  ------------------------------
+;	+0|       ñΩóﬂCODE	(  )   |
+;	  ------------------------------
+;	+1|         ãÛÇ´ 	(  )   |
+;	  ------------------------------
+;	+2|    OFFSET ADR CODE	(  )   |
+;	  ------------------------------
+;	+3|         ADR 	(  )   |
+;	  ------------------------------
+	.ALIGN	4
+_LE_CODE:
+	MOV.B	#_SEQ_ADR,R3			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R3			; µÕﬂ◊›ƒﬁDATA LOAD
+						; INPUT R3
+
+	MOV.L	@(_LE_CMD,GBR),R0		;
+	JSR	@R0				;
+	NOP					;
+_LE_CODE_END:
+
+
+;	***********************************
+;	***	CMP LEñΩóﬂªÃﬁŸ∞¡›	***
+;	***********************************
+;	INPUT R3
+	.ALIGN	4	;2010-12-27
+_LE_SUB:
+	SUB_START
+
+	AND	R6,R5				; ARG and NRG
+	TST	R5,R5				;
+	BT	_LE_SUB_END			; ARG and NRG = 0 THEN EXIT
+
+	MOV.L	@(DREG,GBR),R0			; DATA REG LOAD
+	MOV.W	@R0,R0				;
+	CMP/GT	R3,R0				; DATA REG > µÕﬂ◊›ƒﬁDATA -> T
+	MOVT	R0				; T->R0
+	TST	R0,R0				;
+	MOVT	R5				; TÇÃîΩì]SET
+
+_LE_SUB_END:
+	SUB_END
+	M_RTS
+
+
+;	*********************************************************************
+;	*****	ANDW command				12byte		*****
+;	*********************************************************************
+;	  ------------------------------
+;	+0|       ñΩóﬂCODE	(  )   |
+;	  ------------------------------
+;	+1|         ãÛÇ´ 	(  )   |
+;	  ------------------------------
+;	+2|    OFFSET ADR CODE	(  )   |	R3(0~6)
+;	  ------------------------------
+;	+3|         ADR 	(  )   |	R4
+;	  ------------------------------
+	.ALIGN	4
+_ANDW_CODE:
+	MOV.B	#_SEQ_ADR,R3			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R3			; µÕﬂ◊›ƒﬁDATA LOAD
+						; INPUT R3
+
+	MOV.L	@(_ANDW_CMD,GBR),R0		;
+	JSR	@R0				;
+	NOP					;
+_ANDW_CODE_END:
+
+
+;	***********************************
+;	***	ANDWñΩóﬂªÃﬁŸ∞¡›		***
+;	***********************************
+;	INPUT R3
+	.ALIGN	4	;2010-12-27
+_ANDW_SUB:
+	SUB_START
+
+	AND	R6,R5				; ARG and NRG
+	TST	R5,R5				;
+	BT	_ANDW_SUB_END			; ARG and NRG = 0 THEN EXIT
+
+	MOV.L	@(DREG,GBR),R0			; DATA REG LOAD
+	MOV	R0,R1				;
+	MOV.W	@R1,R0				;
+	AND	R3,R0				; DATA REG and µÕﬂ◊›ƒﬁDATA -> DATA REG
+	MOV.W	R0,@R1				; DATA REG SET
+_ANDW_SUB_END:
+	SUB_END
+	M_RTS
+
+
+;	*********************************************************************
+;	*****	ORW command				12byte		*****
+;	*********************************************************************
+;	  ------------------------------
+;	+0|       ñΩóﬂCODE	(  )   |
+;	  ------------------------------
+;	+1|         ãÛÇ´ 	(  )   |
+;	  ------------------------------
+;	+2|    OFFSET ADR CODE	(  )   |	R3(0~6)
+;	  ------------------------------
+;	+3|         ADR 	(  )   |	R4
+;	  ------------------------------
+	.ALIGN	4
+_ORW_CODE:
+	MOV.B	#_SEQ_ADR,R3			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R3			; µÕﬂ◊›ƒﬁDATA LOAD
+						; INPUT R3
+
+	MOV.L	@(_ORW_CMD,GBR),R0		;
+	JSR	@R0				;
+	NOP					;
+_ORW_CODE_END:
+
+
+;	***********************************
+;	***	ORWñΩóﬂªÃﬁŸ∞¡›		***
+;	***********************************
+;	INPUT R3
+	.ALIGN	4	;2010-12-27
+_ORW_SUB:
+	SUB_START
+
+	AND	R6,R5				; ARG and NRG
+	TST	R5,R5				;
+	BT	_ORW_SUB_END			; ARG and NRG = 0 THEN EXIT
+
+	MOV.L	@(DREG,GBR),R0			; DATA REG LOAD
+	MOV	R0,R1
+	MOV.W	@R1,R0				;
+	OR	R3,R0				; DATA REG or µÕﬂ◊›ƒﬁDATA -> DATA REG
+	MOV.W	R0,@R1				; DATA REG SET
+_ORW_SUB_END:
+	SUB_END
+	M_RTS
+
+
+;	*********************************************************************
+;	*****	XORW command				12byte		*****
+;	*********************************************************************
+;	  ------------------------------
+;	+0|       ñΩóﬂCODE	(  )   |
+;	  ------------------------------
+;	+1|         ãÛÇ´ 	(  )   |
+;	  ------------------------------
+;	+2|    OFFSET ADR CODE	(  )   |	R3(0~6)
+;	  ------------------------------
+;	+3|         ADR 	(  )   |	R4
+;	  ------------------------------
+	.ALIGN	4
+_XORW_CODE:
+	MOV.B	#_SEQ_ADR,R3			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R3			; µÕﬂ◊›ƒﬁDATA LOAD
+						; INPUT R3
+
+	MOV.L	@(_XORW_CMD,GBR),R0		;
+	JSR	@R0				;
+	NOP					;
+_XORW_CODE_END:
+
+
+;	***********************************
+;	***	XORWñΩóﬂªÃﬁŸ∞¡›		***
+;	***********************************
+;	INPUT R3
+	.ALIGN	4	;2010-12-27
+_XORW_SUB:
+	SUB_START
+
+	AND	R6,R5				; ARG and NRG
+	TST	R5,R5				;
+	BT	_XORW_SUB_END			; ARG and NRG = 0 THEN EXIT
+
+	MOV.L	@(DREG,GBR),R0			; DATA REG LOAD
+	MOV	R0,R1				;
+	MOV.W	@R1,R0				;
+	XOR	R3,R0				; DATA REG xor µÕﬂ◊›ƒﬁDATA -> DATA REG
+	MOV.W	R0,@R1				; DATA REG SET
+_XORW_SUB_END:
+	SUB_END
+	M_RTS
+
+
+
+;	*********************************************************************
+;	*****	ADD command				12byte		*****
+;	*********************************************************************
+;	  ------------------------------
+;	+0|       ñΩóﬂCODE	(  )   |
+;	  ------------------------------
+;	+1|         ãÛÇ´ 	(  )   |
+;	  ------------------------------
+;	+2|    OFFSET ADR CODE	(  )   |	R3(0~6)
+;	  ------------------------------
+;	+3|         ADR 	(  )   |	R4
+;	  ------------------------------
+	.ALIGN	4
+_ADD_CODE:
+	MOV.B	#_SEQ_ADR,R3			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R3			; µÕﬂ◊›ƒﬁDATA LOAD
+						; INPUT R3
+
+	MOV.L	@(_ADD_CMD,GBR),R0		;
+	JSR	@R0				;
+	NOP					;
+_ADD_CODE_END:
+
+
+;	***********************************
+;	***	ADDñΩóﬂªÃﬁŸ∞¡›		***
+;	***********************************
+;	INPUT R3
+	.ALIGN	4	;2010-12-27
+_ADD_SUB:
+	SUB_START
+
+	AND	R6,R5				; ARG and NRG
+	TST	R5,R5				;
+	BT	_ADD_SUB_END			; ARG and NRG = 0 THEN EXIT
+
+	MOV.L	@(DREG,GBR),R0			; DATA REG LOAD
+	MOV	R0,R1				;
+	MOV.W	@R1,R0				;
+	ADD	R3,R0				; DATA REG + µÕﬂ◊›ƒﬁDATA -> DATA REG
+	MOV.W	R0,@R1				; DATA REG SET
+_ADD_SUB_END:
+	SUB_END
+	M_RTS
+
+;	*********************************************************************
+;	*****	SUB command				12byte		*****
+;	*********************************************************************
+;	  ------------------------------
+;	+0|       ñΩóﬂCODE	(  )   |
+;	  ------------------------------
+;	+1|         ãÛÇ´ 	(  )   |
+;	  ------------------------------
+;	+2|    OFFSET ADR CODE	(  )   |	R3(0~6)
+;	  ------------------------------
+;	+3|         ADR 	(  )   |	R4
+;	  ------------------------------
+
+	.ALIGN	4
+_SUB_CODE:
+	MOV.B	#_SEQ_ADR,R3			; ±ƒﬁ⁄Ω êîílÇÕÇ†Ç∆Ç≈ì¸ÇÍÇ»Ç®Ç∑
+	EXTU.B	R3,R0				; æﬁ€ägí£
+	MOV.W	@(R0,R14),R3			; µÕﬂ◊›ƒﬁDATA LOAD
+						; INPUT R3
+
+	MOV.L	@(_SUB_CMD,GBR),R0		;
+	JSR	@R0				;
+	NOP					;
+_SUB_CODE_END:
+
+
+;	***********************************
+;	***	SUBñΩóﬂªÃﬁŸ∞¡›		***
+;	***********************************
+;	INPUT R3
+	.ALIGN	4	;2010-12-27
+_SUB_SUB:
+	SUB_START
+
+	AND	R6,R5				; ARG and NRG
+	TST	R5,R5				;
+	BT	_SUB_SUB_END			; ARG and NRG = 0 THEN EXIT
+
+	MOV.L	@(DREG,GBR),R0			; DATA REG LOAD
+	MOV	R0,R1				;
+	MOV.W	@R1,R0				;
+	SUB	R3,R0				; DATA REG - µÕﬂ◊›ƒﬁDATA -> DATA REG
+	MOV.W	R0,@R1				; DATA REG SET
+_SUB_SUB_END:
+	SUB_END
+	M_RTS
+
+
+
+;	*********************************************************************
+;	*****	End command				8byte		*****
+;	*********************************************************************
+	.ALIGN	4
+_END_CODE:
+;;;;;	MOV.L	@(_END_CMD,GBR),R0		;
+;;;;;	JSR	@R0				;
+;;;;;	NOP					;
+
+	SUB_END					; ENDñΩóﬂÇÃíÜêg
+	M_RTS					; 
+_END_CODE_END:
+	nop					;2010-12-27
+	nop					;2010-12-27
+	.ALIGN	4				;2010-12-27
+_END_SUB:
+	SUB_START
+
+	SUB_END					; ENDñΩóﬂÇÃíÜêg
+	M_RTS					; 
+
+	SUB_END
+	M_RTS
+
+
+
+;	*********************************************************************
+;	*****	No Operation command		1step	 4clocks	*****
+;	*********************************************************************
+	.ALIGN	4
+_NOP_CODE:
+	NOP					; no operation
+_NOP_CODE_END:
+;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	.END

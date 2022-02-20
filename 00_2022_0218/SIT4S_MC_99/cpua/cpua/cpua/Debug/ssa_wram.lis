@@ -1,0 +1,559 @@
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:47                                                  PAGE     1
+PROGRAM NAME =
+
+    1                               1     ;       ***********************************************************
+    2                               2     ;       ***                                                     ***
+    3                               3     ;       ***             ﾊﾞｰｼﾞｮﾝｱｯﾌﾟｿﾌﾄからくる固定ｱﾄﾞﾚｽﾜｰｸ      ***
+    4                               4     ;       ***             AC040000~AC047FFF                       ***
+    5                               5     ;       ***                                                     ***
+    6                               6     ;       ***********************************************************
+    7                               7             .INCLUDE        "cm_equ1.equ"                   ;
+    8                               1 I1  ;       ***************************
+    9                               2 I1  ;       ***     CONST           ***
+   10                               3 I1  ;       ***************************
+   11                               4 I1  
+   12                               5 I1  ;       *****   ビット   *****
+   13          00000001             6 I1  BIT0            .EQU    B'00000001      ;01H
+   14          00000002             7 I1  BIT1            .EQU    B'00000010      ;02H
+   15          00000004             8 I1  BIT2            .EQU    B'00000100      ;04H
+   16          00000008             9 I1  BIT3            .EQU    B'00001000      ;08H
+   17          00000010            10 I1  BIT4            .EQU    B'00010000      ;10H
+   18          00000020            11 I1  BIT5            .EQU    B'00100000      ;20H
+   19          00000040            12 I1  BIT6            .EQU    B'01000000      ;40H
+   20          00000080            13 I1  BIT7            .EQU    B'10000000      ;80H
+   21          00000100            14 I1  BIT8            .EQU    B'0000000100000000      ;0100H
+   22          00000200            15 I1  BIT9            .EQU    B'0000001000000000      ;0200H
+   23          00000400            16 I1  BIT10           .EQU    B'0000010000000000      ;0400H
+   24          00000800            17 I1  BIT11           .EQU    B'0000100000000000      ;0800H
+   25          00001000            18 I1  BIT12           .EQU    B'0001000000000000      ;1000H
+   26          00002000            19 I1  BIT13           .EQU    B'0010000000000000      ;2000H
+   27          00004000            20 I1  BIT14           .EQU    B'0100000000000000      ;4000H
+   28          00008000            21 I1  BIT15           .EQU    B'1000000000000000      ;8000H
+   29          00010000            22 I1  BIT16           .EQU    H'00010000
+   30          00020000            23 I1  BIT17           .EQU    H'00020000
+   31          00040000            24 I1  BIT18           .EQU    H'00040000
+   32          00080000            25 I1  BIT19           .EQU    H'00080000
+   33          00100000            26 I1  BIT20           .EQU    H'00100000
+   34          00200000            27 I1  BIT21           .EQU    H'00200000
+   35          00400000            28 I1  BIT22           .EQU    H'00400000
+   36          00800000            29 I1  BIT23           .EQU    H'00800000
+   37          01000000            30 I1  BIT24           .EQU    H'01000000
+   38          02000000            31 I1  BIT25           .EQU    H'02000000
+   39          04000000            32 I1  BIT26           .EQU    H'04000000
+   40          08000000            33 I1  BIT27           .EQU    H'08000000
+   41          10000000            34 I1  BIT28           .EQU    H'10000000
+   42          20000000            35 I1  BIT29           .EQU    H'20000000
+   43          40000000            36 I1  BIT30           .EQU    H'40000000
+   44          80000000            37 I1  BIT31           .EQU    H'80000000
+   45                              38 I1  
+   46                              39 I1  ;       *****   ビット   *****
+   47          000000FE            40 I1  NBIT0           .EQU    B'11111110              ;NOT 01H
+   48          000000FD            41 I1  NBIT1           .EQU    B'11111101              ;02H
+   49          000000FB            42 I1  NBIT2           .EQU    B'11111011              ;04H
+   50          000000F7            43 I1  NBIT3           .EQU    B'11110111              ;08H
+   51          000000EF            44 I1  NBIT4           .EQU    B'11101111              ;10H
+   52          000000DF            45 I1  NBIT5           .EQU    B'11011111              ;20H
+   53          000000BF            46 I1  NBIT6           .EQU    B'10111111              ;40H
+   54          0000007F            47 I1  NBIT7           .EQU    B'01111111              ;80H
+   55                              48 I1  
+   56          0000FEFF            49 I1  NBIT8           .EQU    B'1111111011111111      ;NOT 01H
+   57          0000FDFF            50 I1  NBIT9           .EQU    B'1111110111111111      ;02H
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:47                                                  PAGE     2
+PROGRAM NAME =
+
+   58          0000FBFF            51 I1  NBIT10          .EQU    B'1111101111111111      ;04H
+   59          0000F7FF            52 I1  NBIT11          .EQU    B'1111011111111111      ;08H
+   60          0000EFFF            53 I1  NBIT12          .EQU    B'1110111111111111      ;10H
+   61          0000DFFF            54 I1  NBIT13          .EQU    B'1101111111111111      ;20H
+   62          0000BFFF            55 I1  NBIT14          .EQU    B'1011111111111111      ;40H
+   63          00007FFF            56 I1  NBIT15          .EQU    B'0111111111111111      ;80H
+   64                              57 I1  
+   65                              58 I1  ;       **** ビット操作命令 *****
+   66          00000000            59 I1  XBIT0           .EQU    D'0             ;
+   67          00000001            60 I1  XBIT1           .EQU    D'1             ;
+   68          00000002            61 I1  XBIT2           .EQU    D'2             ;
+   69          00000003            62 I1  XBIT3           .EQU    D'3             ;
+   70          00000004            63 I1  XBIT4           .EQU    D'4             ;
+   71          00000005            64 I1  XBIT5           .EQU    D'5             ;
+   72          00000006            65 I1  XBIT6           .EQU    D'6             ;
+   73          00000007            66 I1  XBIT7           .EQU    D'7             ;
+   74                              67 I1  
+   75                              68 I1  ;       *******************************************
+   76                              69 I1  ;       ***             sh2/sh3                 ***
+   77                              70 I1  ;       *******************************************
+   78                              71 I1  ;       ================ WORD ｱｸｾｽ//ﾊﾞｲﾄｱｸｾｽ切替 =========
+   79          00000001            72 I1  L_BYTE          .EQU    1               ;
+   80          00000000            73 I1  H_BYTE          .EQU    0               ;
+   81                              74 I1  
+   82                              75 I1  ;/*     =================================       */
+   83                              76 I1  
+   84                              77 I1  _CMPILE_YES     .DEFINE         "1"
+   85                              78 I1  _CMPILE_NO      .DEFINE         "0"
+   86                              79 I1  
+   87                              80 I1  _Debug_YES      .DEFINE         "1"     ;"_Debug_NO"
+   88                              81 I1  _Debug_NO       .DEFINE         "0"     ;yes then abs //no then inc "_Debug_NO"
+   89                              82 I1  
+   90                              83 I1  
+   91                              84 I1  ;       ***************************************************
+   92                              85 I1  ;       ***                                             ***
+   93                              86 I1  ;       ***             ﾊﾞｰｼﾞｮﾝUP完了ﾁｪｯｸﾃﾞｰﾀ           ***
+   94                              87 I1  ;       ***                                             ***
+   95                              88 I1  ;       ***************************************************
+   96          11AB3739            89 I1  _VUPCHECK_EQU           .EQU    D'0296433465
+   97                              90 I1  
+   98                              91 I1  ;/*     ***********************************     */
+   99                              92 I1  ;/*     ***                             ***     */
+  100                              93 I1  ;/*     ***     ROM SUM_CODE            ***     */
+  101                              94 I1  ;/*     ***                             ***     */
+  102                              95 I1  ;/*     ***********************************     */
+  103          5AA53CC3            96 I1  _DUMMY_SUM_CODE         .EQU    H'5AA53CC3
+  104                              97 I1  
+  105                              98 I1  
+  106                              99 I1  
+  107                             100 I1  ;       *******************************************
+  108                             101 I1  ;       ***     2003-07-01 C/B BAKUP            ***
+  109                             102 I1  ;       *******************************************
+  110          5AA51234           103 I1  _CB_BAK_SUM_COD1        .EQU    H'5AA51234
+  111          A55A4321           104 I1  _CB_BAK_SUM_COD2        .EQU    H'A55A4321
+  112          00005678           105 I1  _CB_BAKUP_CMD1          .EQU    H'5678  ;BAKUP
+  113          00001234           106 I1  _CB_BAKUP_CMD2          .EQU    H'1234  ;1BLK MOVE
+  114                             107 I1  
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:47                                                  PAGE     3
+PROGRAM NAME =
+
+  115          00000040           108 I1  _CB_STS_BUF_1BLK        .EQU    64                                      ;1BLK=64byte
+  116          00000008           109 I1  _CB_STS_BUF_BLKMAX      .EQU    8                                       ;8BLK
+  117          00000200           110 I1  _CB_STS_BUF_MAX         .EQU    _CB_STS_BUF_1BLK*_CB_STS_BUF_BLKMAX     ;512byte 64*8
+  118                             111 I1  
+  119                             112 I1  
+  120                             113 I1  ;;_CB_TRD_DT_LNG                .EQU    4               ;DATA LENGTH
+  121          00000004           114 I1  _CB_TRD_DP_CH                   .EQU    4               ;
+  122                             115 I1  
+  123                             116 I1  
+  124          00000080           117 I1  _CB_TRD_SMP_CNT         .EQU    128             ;個数
+  125          00000060           118 I1  _CB_TRD_BEFORE          .EQU    96              ;96点が前
+  126          00000800           119 I1  _CB_TRD_BUF_MAX         .EQU    4*4*128         ;2048byte 4byte*4ch*128個
+  127                             120 I1  
+  128          00000008           121 I1  _CB_TRD_DP_1CNT         .EQU    8               ;8個 128/16
+  129          00000080           122 I1  _CB_TRD_BUF_DP_MAX      .EQU    4*4*8           ;128byte 4byte*4CH*8個
+  130                             123 I1  
+  131                             124 I1  ;       === 2003-07-14 ===
+  132                             125 I1  ;;;_TRD_WORK_1CH_BUF    .EQU    _CB_TRD_BUF_MAX ;1CH で2048ﾊﾞｲﾄまで確保
+  133                             126 I1  
+  134                             127 I1  ;       ==== 2004-01-27 ===
+  135                             128 I1  ;;2018-11-11 _CB_ERR_INFO_MEM   .EQU    64              ;64byte
+  136          00000080           129 I1  _CB_ERR_INFO_MEM        .EQU    128             ;2018-11-11 128byte
+  137          00000008           130 I1  _CB_ERR_INFO_PSIZE      .EQU    8               ;8 PAGE 2018-11-11
+  138                             131 I1  
+  139                             132 I1  ;       ***************************
+  140                             133 I1  ;       ***     2004-02-19      ***
+  141                             134 I1  ;       ***************************
+  142                             135 I1  ;       製品出荷時はYESにすること
+  143                             136 I1  ;       不具合再現試験用にNOにする
+  144                             137 I1  ;
+  145                             138 I1  ;;;;_PLSI_WR_WT_CHG             .DEFINE         "0"     ;YES:WR WAIT 4CLK(NO 3CLK)
+  146                             139 I1  
+  147                             140 I1  ;       ===== 出荷YES =====
+  148                             141 I1  _PLSI_WR_WT_CHG         .DEFINE         "1"     ;YES:WR WAIT 4CLK(NO 3CLK)
+  149                             142 I1  _PLSI_WRITE_WORD        .DEFINE         "1"     ;YES:LSI WORD(NO LONG)
+  150                             143 I1  _PLSI_ERR_CHK1          .DEFINE         "1"     ;YES:位置決めLSI異常検知有効
+  151                             144 I1  _PLSI_ERR_CHK2          .DEFINE         "1"     ;YES:位置決め演算異常検知有効
+  152                             145 I1  _PLSI_ERR_STOP1         .DEFINE         "1"     ;YES:新規異常検知有効(OVER RUN)
+  153                             146 I1  
+  154                             147 I1  
+  155                             148 I1  ;       ====    出荷時YES 2004-03-29====
+  156                             149 I1  _REST_PLS_MODFY         .DEFINE         "1"     ;YES:CPUAに残ﾊﾟﾙｽをあわせる,異常
+  157                             150 I1  ;;;;;_MOTION_ERR_CPU_B  .DEFINE         "1"     ;YES:CPU-Bのﾓｰｼｮﾝ異常関連(1対1にする)
+  158                             151 I1  
+  159                             152 I1  
+  160                             153 I1  
+  161                             154 I1  ;       ====    出荷時必ず・絶対 "NO" 2004-04-14(絶対NOで出荷)====
+  162                             155 I1  _CPU_A_ERR_STOP         .DEFINE         "0"     ;YES:CPU-A異常検出をやめる。Bのﾃﾞﾊﾞｯｸ用
+  163                             156 I1  ;;;;;0          .DEFINE         "1"     ;YES:CPU-A異常検出をやめる。Bのﾃﾞﾊﾞｯｸ用
+  164                             157 I1  
+  165                             158 I1  
+  166                             159 I1  ;       ====    出荷時必ず・絶対 "NO" 2004-12-20(絶対NOで出荷)====
+  167                             160 I1  _CPU_B_ERR_STOP         .DEFINE         "0"     ;YES:CPU-B異常検出をやめる。Aのﾃﾞﾊﾞｯｸ用
+  168                             161 I1  _CPU_B_CTRL_STOP        .DEFINE         "0"     ;YES:CPU-B制御をやめる。Aのﾃﾞﾊﾞｯｸ用
+  169                             162 I1  
+  170                             163 I1  ;       ==== どうしても回避できない異常====
+  171                             164 I1  _CPUAB_ERR_STOP_CNT     .DEFINE         "1"     ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:47                                                  PAGE     4
+PROGRAM NAME =
+
+  172                             165 I1  
+  173                             166 I1  ;       ***************************
+  174                             167 I1  ;       ***                     ***
+  175                             168 I1  ;       ***     2006-09-19      ***
+  176                             169 I1  ;       ***                     ***
+  177                             170 I1  ;       ***************************
+  178                             171 I1  _LSI_SOFT_CAL_ENB       .DEFINE         "1"
+  179                             172 I1  ;;1     .DEFINE         "0"
+  180                             173 I1  
+  181                             174 I1  
+  182                             175 I1  
+  183                             176 I1  ;       ***************************
+  184                             177 I1  ;       ***                     ***
+  185                             178 I1  ;       ***     2008-09-16      ***
+  186                             179 I1  ;       ***                     ***
+  187                             180 I1  ;       ***************************
+  188                             181 I1  _EMG_MINI               .DEFINE         "1"     ;YES:EMG処理の簡略化
+  189                             182 I1  
+  190                             183 I1  
+  191                             184 I1  ;       ***************************
+  192                             185 I1  ;       ***                     ***
+  193                             186 I1  ;       ***                     ***
+  194                             187 I1  ;       ***                     ***
+  195                             188 I1  ;       ***************************
+  196                             189 I1  _CPUB_TBLCURV           .DEFINE         "1"     ;YES:曲線ﾃｰﾌﾞﾙ(CPUAと同じ) NO:直線タイプ
+  197                             190 I1  ;;1             .DEFINE         "0"     ;YES:曲線ﾃｰﾌﾞﾙ(CPUAと同じ) NO:直線タイプ
+  198                             191 I1  
+  199                             192 I1  
+  200                             193 I1  
+  201                             194 I1  
+  202                             195 I1  ;       ***************************
+  203                             196 I1  ;       ***                     ***
+  204                             197 I1  ;       ***     2013-12-05      ***
+  205                             198 I1  ;       ***                     ***
+  206                             199 I1  ;       ***************************
+  207                             200 I1  _MC_FUNC1_NO            .DEFINE         "0"     ;NO!:異常等の機能をはずす
+  208                             201 I1  
+  209                             202 I1  
+  210          00009876           203 I1  _START_REQ_COD          .EQU    H'9876  ;CPUD=>CPUA
+  211          00004321           204 I1  _START_ACK_COD          .EQU    H'4321  ;
+  212                             205 I1  
+  213                             206 I1  
+  214                             207 I1  
+  215                             208 I1  
+  216                             209 I1  ;       ***************************
+  217                             210 I1  ;       ***                     ***
+  218                             211 I1  ;       ***     2014-03-20      ***
+  219                             212 I1  ;       ***                     ***
+  220                             213 I1  ;       ***************************
+  221                             214 I1  _KJYU_CLS               .DEFINE         "1"     ;YES:反転ﾓｰﾄﾞで荷重でのｸﾛｰｽﾞを行う
+  222                             215 I1  
+  223                             216 I1  
+  224                             217 I1  ;//     ***************************
+  225                             218 I1  ;//     ***     2016-10-31      ***
+  226                             219 I1  ;//     ***************************
+  227                             220 I1  ;//     変更箇所確認用  CE2の2重回路対策の修正箇所のMCへの移植
+  228                             221 I1  _PROC_CMPERR_CHG2016    .DEFINE         "1"
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:47                                                  PAGE     5
+PROGRAM NAME =
+
+  229                             222 I1  
+  230                             223 I1  ;//     ***********************************
+  231                             224 I1  ;//     ***     2016-10-31(2016-07-28)  ***
+  232                             225 I1  ;//     ***********************************
+  233                             226 I1  ;       [行程異常検知による二重回路異常　早めの検知]
+  234                             227 I1  ;;;_DEBUG_CMPERR_DEBUG  .DEFINE         "1"     ;出荷時は必ずNO!
+  235                             228 I1  _DEBUG_CMPERR_DEBUG     .DEFINE         "0"     ;出荷時は必ずNO!
+  236                             229 I1  
+  237                             230 I1  ;//     ***********************************
+  238                             231 I1  ;//     ***     2016-10-31(2016-07-28)  ***
+  239                             232 I1  ;//     ***********************************
+  240                             233 I1  ;;;_DEBUG_AUTO_START    .DEFINE         "1"     ;出荷時はできればnoとする
+  241                             234 I1  _DEBUG_AUTO_START       .DEFINE         "0"     ;出荷時はできればnoとする
+  242                             235 I1  
+  243                             236 I1  ;//     ***************************
+  244                             237 I1  ;//     ***     2015-07-08      ***
+  245                             238 I1  ;//     ***************************
+  246                             239 I1  ;;_DEBUG_SERVO_PLS_OFF  .DEFINE         "1"     ;出荷時は必ずNO!
+  247                             240 I1  _DEBUG_SERVO_PLS_OFF    .DEFINE         "0"     ;出荷時は必ずNO!
+  248                             241 I1  
+  249                             242 I1  
+  250                             243 I1  
+  251                             244 I1  ;       ***************************************************
+  252                             245 I1  ;       ***     出荷してはいけないデバック情報          ***
+  253                             246 I1  ;       ***     バージョン表示をわざと変にする          ***
+  254                             247 I1  ;       ***************************************************
+  255                             248 I1  ;       MC:S01a ->X
+  256                             249 I1  
+  257                             250 I1   .AIF   0 EQ 1  ;出荷時は必ずNO!
+  258                             251     _DEBUG_SET_ERR_VER      .DEFINE         "1"     ;異常
+  259                             252      .AELSE
+  260                             253 C       .AIF        0 EQ 1  ;出荷時はできればno
+  261                             254     _DEBUG_SET_ERR_VER      .DEFINE         "1"     ;異常
+  262                             255         .AELSE
+  263                             256 C           .AIF    0 EQ 1  ;出荷時必ずNO
+  264                             257     _DEBUG_SET_ERR_VER      .DEFINE         "1"     ;異常
+  265                             258             .AELSE
+  266                             259 C   _DEBUG_SET_ERR_VER      .DEFINE         "0"
+  267                             260 C           .AENDI
+  268                             261 C       .AENDI
+  269                             262 C   
+  270                             263 C   
+  271                             264 I1   .AENDI
+  272                             265 I1  
+  273                             266 I1  
+  274                             267 I1  
+  275                             268 I1  ;       ***************************************************
+  276                             269 I1  ;       ***                                             ***
+  277                             270 I1  ;       ***     ｺﾒﾝﾄのためのEQU                         ***
+  278                             271 I1  ;       ***     振り子100段でも10段までは加減速有       ***
+  279                             272 I1  ;       ***                                             ***
+  280                             273 I1  ;       ***************************************************
+  281                             274 I1  _CHG_DNM_20170225       .DEFINE         "1"     ;
+  282                               8     
+  283                               9     ;       ***********************************************************
+  284                              10     ;       ***                                                     ***
+  285                              11     ;       ***                                                     ***
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:47                                                  PAGE     6
+PROGRAM NAME =
+
+  286                              12     ;       ***             疑似dpram空間                           ***
+  287                              13     ;       ***                                                     ***
+  288                              14     ;       ***********************************************************
+  289                              15     
+  290                              16     
+  291                              17     
+  292                              18     
+  293                              19     ;       ***************************************************
+  294                              20     ;       ***                                             ***
+  295                              21     ;       ***             ワークＲＡＭ                    ***
+  296                              22     ;       ***                                             ***
+  297                              23     ;       ***************************************************
+  298                              24             .INCLUDE        "ssa_wram.ext"                  ;
+  299                               1 I1  ;       ***************************************************
+  300                               2 I1  ;       ***                                             ***
+  301                               3 I1  ;       ***             外部ＳＲＡＭ定義                ***
+  302                               4 I1  ;       ***                                             ***
+  303                               5 I1  ;       ***************************************************
+  304                               6 I1          .GLOBAL         _sram_top;
+  305                               7 I1  
+  306                               8 I1          .global         _data_init2_timer       ; ｲﾆｼｬﾙWAITﾀｲﾏ2
+  307                               9 I1  
+  308                              10 I1          .global         _mem_chk_flg
+  309                              11 I1          .GLOBAL         _INT_2MS_SEL
+  310                              12 I1  
+  311                              13 I1  ;20060725 SAITO         .GLOBAL         _IOGA1_CTRL_DAT1        ; GA-PA,PB,PC,PD,PE 入力PO
+                                          RT
+  312                              14 I1  ;20060725 SAITO         .GLOBAL         _IOGA2_CTRL_DAT1        ; GA-PA,PB,PC,PD,PE 入力PO
+                                          RT
+  313                              15 I1  
+  314                              16 I1  ;20060725 SAITO         .GLOBAL         _IOGA1_PA_DT_OLD1       ; 1回前
+  315                              17 I1  ;20060725 SAITO         .GLOBAL         _IOGA1_PB_DT_OLD1       ; 1回前
+  316                              18 I1  ;20060725 SAITO         .GLOBAL         _IOGA1_PC_DT_OLD1       ; 1回前
+  317                              19 I1  ;20060725 SAITO         .GLOBAL         _IOGA1_PD_DT_OLD1       ; 1回前
+  318                              20 I1  ;20060725 SAITO         .GLOBAL         _IOGA1_PE_DT_OLD1       ; 1回前
+  319                              21 I1  
+  320                              22 I1  ;20060725 SAITO         .GLOBAL         _IOGA1_PA_DT_OLD2       ; 2回前
+  321                              23 I1  ;20060725 SAITO         .GLOBAL         _IOGA1_PB_DT_OLD2       ; 2回前
+  322                              24 I1  ;20060725 SAITO         .GLOBAL         _IOGA1_PC_DT_OLD2       ; 2回前
+  323                              25 I1  ;20060725 SAITO         .GLOBAL         _IOGA1_PD_DT_OLD2       ; 2回前
+  324                              26 I1  ;20060725 SAITO         .GLOBAL         _IOGA1_PE_DT_OLD2       ; 2回前
+  325                              27 I1  
+  326                              28 I1  ;20060725 SAITO         .GLOBAL         _IOGA2_PA_DT_OLD1       ; 1回前
+  327                              29 I1  ;20060725 SAITO         .GLOBAL         _IOGA2_PB_DT_OLD1       ; 1回前
+  328                              30 I1  ;20060725 SAITO         .GLOBAL         _IOGA2_PC_DT_OLD1       ; 1回前
+  329                              31 I1  ;20060725 SAITO         .GLOBAL         _IOGA2_PD_DT_OLD1       ; 1回前
+  330                              32 I1  ;20060725 SAITO         .GLOBAL         _IOGA2_PE_DT_OLD1       ; 1回前
+  331                              33 I1  
+  332                              34 I1  ;20060725 SAITO         .GLOBAL         _IOGA2_PA_DT_OLD2       ; 2回前
+  333                              35 I1  ;20060725 SAITO         .GLOBAL         _IOGA2_PB_DT_OLD2       ; 2回前
+  334                              36 I1  ;20060725 SAITO         .GLOBAL         _IOGA2_PC_DT_OLD2       ; 2回前
+  335                              37 I1  ;20060725 SAITO         .GLOBAL         _IOGA2_PD_DT_OLD2       ; 2回前
+  336                              38 I1  ;20060725 SAITO         .GLOBAL         _IOGA2_PE_DT_OLD2       ; 2回前
+  337                              39 I1  
+  338                              40 I1          .GLOBAL         _RMIO_IN_DATA           ; Remote INPUT WORK RAM0~3
+  339                              41 I1          .GLOBAL         _RMIO2_IN_DATA          ; Remote INPUT WORK RAM0~3　2013-12-12[MC]
+  340                              42 I1  
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:47                                                  PAGE     7
+PROGRAM NAME =
+
+  341                              43 I1          .GLOBAL         _DA_CNV_DT0             ;12BIT D/A
+  342                              44 I1  
+  343                              45 I1  ;20060725 SAITO         .GLOBAL         _SQ_CBWK_TOP            ;
+  344                              46 I1  ;20060725 SAITO         .GLOBAL         _SQ_CBWK_RAM            ;
+  345                              47 I1  
+  346                              48 I1  ;20060725 SAITO         .GLOBAL         _CPUA_EMG_IN_FLG        ;
+  347                              49 I1  
+  348 00000000                     25             .SECTION        Bwkram1,DATA            ;
+  349 00000000                     26             .ALIGN  4                               ;
+  350                              27     
+  351 00000000 00000002            28     _data_init2_timer       .SRES   2               ; ｲﾆｼｬﾙWAITﾀｲﾏ2
+  352                              29     
+  353                              30     
+  354                              31     ;       *** IO-GA WORK ***
+  355                              32     ;20060725 SAITO _IOGA1_CTRL_DAT1        .SRES   2*8             ; GA-PA,PB,PC,PD,PE 入力PO
+                                          RT
+  356                              33                                                     ;    PF,PG,PH 出力PORT
+  357                              34     ;20060725 SAITO _IOGA2_CTRL_DAT1        .SRES   2*8             ; GA-PA,PB,PC,PD,PE 入力PO
+                                          RT
+  358                              35                                                     ;    PF,PG,PH 出力PORT
+  359                              36     ;       *** IOGA INPUT WORK RAM ***
+  360                              37     ;20060725 SAITO _IOGA1_PA_DT_OLD1       .SRES   2               ; 1回前
+  361                              38     ;20060725 SAITO _IOGA1_PB_DT_OLD1       .SRES   2               ; 1回前
+  362                              39     ;20060725 SAITO _IOGA1_PC_DT_OLD1       .SRES   2               ; 1回前
+  363                              40     ;20060725 SAITO _IOGA1_PD_DT_OLD1       .SRES   2               ; 1回前
+  364                              41     ;20060725 SAITO _IOGA1_PE_DT_OLD1       .SRES   2               ; 1回前
+  365                              42     
+  366                              43     ;20060725 SAITO _IOGA1_PA_DT_OLD2       .SRES   2               ; 2回前
+  367                              44     ;20060725 SAITO _IOGA1_PB_DT_OLD2       .SRES   2               ; 2回前
+  368                              45     ;20060725 SAITO _IOGA1_PC_DT_OLD2       .SRES   2               ; 2回前
+  369                              46     ;20060725 SAITO _IOGA1_PD_DT_OLD2       .SRES   2               ; 2回前
+  370                              47     ;20060725 SAITO _IOGA1_PE_DT_OLD2       .SRES   2               ; 2回前
+  371                              48     
+  372                              49     ;20060725 SAITO _IOGA2_PA_DT_OLD1       .SRES   2               ; 1回前
+  373                              50     ;20060725 SAITO _IOGA2_PB_DT_OLD1       .SRES   2               ; 1回前
+  374                              51     ;20060725 SAITO _IOGA2_PC_DT_OLD1       .SRES   2               ; 1回前
+  375                              52     ;20060725 SAITO _IOGA2_PD_DT_OLD1       .SRES   2               ; 1回前
+  376                              53     ;20060725 SAITO _IOGA2_PE_DT_OLD1       .SRES   2               ; 1回前
+  377                              54     
+  378                              55     ;20060725 SAITO _IOGA2_PA_DT_OLD2       .SRES   2               ; 2回前
+  379                              56     ;20060725 SAITO _IOGA2_PB_DT_OLD2       .SRES   2               ; 2回前
+  380                              57     ;20060725 SAITO _IOGA2_PC_DT_OLD2       .SRES   2               ; 2回前
+  381                              58     ;20060725 SAITO _IOGA2_PD_DT_OLD2       .SRES   2               ; 2回前
+  382                              59     ;20060725 SAITO _IOGA2_PE_DT_OLD2       .SRES   2               ; 2回前
+  383                              60     
+  384                              61     
+  385                              62     ;       *** REMOTE IO WORK RAM ***
+  386 00000002 00000008            63     _RMIO_IN_DATA           .SRES   2*4             ; Remote INPUT WORK RAM0~3
+  387 0000000A 00000008            64     _RMIO2_IN_DATA          .SRES   2*4             ; Remote INPUT WORK RAM0~3　2013-12-12[MC]
+  388                              65     
+  389                              66     ;       *** DA CONVERTER WORK RAM ***
+  390 00000012 00000002            67     _DA_CNV_DT0             .SRES   2               ;12BIT D/A
+  391                              68     
+  392                              69     
+  393                              70     ;       ***************************
+  394                              71     ;       ***     ﾒﾓﾘﾁｪｯｸ用       ***
+  395                              72     ;       ***************************
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:47                                                  PAGE     8
+PROGRAM NAME =
+
+  396 00000014 00000002            73     _mem_chk_flg            .SRES   2               ;
+  397 00000016 00000002            74     _INT_2MS_SEL            .SRES   2               ;
+  398                              75     
+  399                              76     ;       ***************************
+  400                              77     ;       ***     ﾜｰｸRAM          ***
+  401                              78     ;       ***************************
+  402 00000018                     79             .ALIGN  4                               ;
+  403                              80     
+  404                              81     ;20060725 SAITO _SQ_CBWK_TOP:
+  405                              82     ;20060725 SAITO _SQ_CBWK_RAM            .SRES   2*70            ;
+  406                              83     
+  407                              84     ;20060725 SAITO _CPUA_EMG_IN_FLG        .SRES   2
+  408                              85     
+  409                              86     
+  410                              87     
+  411                              88     ;       ***************************************************
+  412                              89     ;       ***                                             ***
+  413                              90     ;       ***             高速ワークＲＡＭ                ***
+  414                              91     ;       ***             （内蔵ＲＡＭ）                  ***
+  415                              92     ;       ***                                             ***
+  416                              93     ;       ***************************************************
+  417 00000000                     94             .SECTION        BwkIRAM,DATA            ;
+  418 00000000                     95             .ALIGN  4                               ;
+  419 00000000 00000004            96     _IRAM_TOP               .SRES   4
+  420                              97     
+  421                              98     
+  422                              99             .END
+  *****TOTAL ERRORS       0
+  *****TOTAL WARNINGS     0
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:47                                                  PAGE     9
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+BIT0                                      EQU  00000001     13*
+BIT1                                      EQU  00000002     14*
+BIT10                                     EQU  00000400     23*
+BIT11                                     EQU  00000800     24*
+BIT12                                     EQU  00001000     25*
+BIT13                                     EQU  00002000     26*
+BIT14                                     EQU  00004000     27*
+BIT15                                     EQU  00008000     28*
+BIT16                                     EQU  00010000     29*
+BIT17                                     EQU  00020000     30*
+BIT18                                     EQU  00040000     31*
+BIT19                                     EQU  00080000     32*
+BIT2                                      EQU  00000004     15*
+BIT20                                     EQU  00100000     33*
+BIT21                                     EQU  00200000     34*
+BIT22                                     EQU  00400000     35*
+BIT23                                     EQU  00800000     36*
+BIT24                                     EQU  01000000     37*
+BIT25                                     EQU  02000000     38*
+BIT26                                     EQU  04000000     39*
+BIT27                                     EQU  08000000     40*
+BIT28                                     EQU  10000000     41*
+BIT29                                     EQU  20000000     42*
+BIT3                                      EQU  00000008     16*
+BIT30                                     EQU  40000000     43*
+BIT31                                     EQU  80000000     44*
+BIT4                                      EQU  00000010     17*
+BIT5                                      EQU  00000020     18*
+BIT6                                      EQU  00000040     19*
+BIT7                                      EQU  00000080     20*
+BIT8                                      EQU  00000100     21*
+BIT9                                      EQU  00000200     22*
+BwkIRAM                          BwkIRAM  SCT  00000000    417*
+Bwkram1                          Bwkram1  SCT  00000000    348*
+H_BYTE                                    EQU  00000000     80*
+L_BYTE                                    EQU  00000001     79*
+NBIT0                                     EQU  000000FE     47*
+NBIT1                                     EQU  000000FD     48*
+NBIT10                                    EQU  0000FBFF     58*
+NBIT11                                    EQU  0000F7FF     59*
+NBIT12                                    EQU  0000EFFF     60*
+NBIT13                                    EQU  0000DFFF     61*
+NBIT14                                    EQU  0000BFFF     62*
+NBIT15                                    EQU  00007FFF     63*
+NBIT2                                     EQU  000000FB     49*
+NBIT3                                     EQU  000000F7     50*
+NBIT4                                     EQU  000000EF     51*
+NBIT5                                     EQU  000000DF     52*
+NBIT6                                     EQU  000000BF     53*
+NBIT7                                     EQU  0000007F     54*
+NBIT8                                     EQU  0000FEFF     56*
+NBIT9                                     EQU  0000FDFF     57*
+XBIT0                                     EQU  00000000     66*
+XBIT1                                     EQU  00000001     67*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:47                                                  PAGE    10
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+XBIT2                                     EQU  00000002     68*
+XBIT3                                     EQU  00000003     69*
+XBIT4                                     EQU  00000004     70*
+XBIT5                                     EQU  00000005     71*
+XBIT6                                     EQU  00000006     72*
+XBIT7                                     EQU  00000007     73*
+_CB_BAKUP_CMD1                            EQU  00005678    112*
+_CB_BAKUP_CMD2                            EQU  00001234    113*
+_CB_BAK_SUM_COD1                          EQU  5AA51234    110*
+_CB_BAK_SUM_COD2                          EQU  A55A4321    111*
+_CB_ERR_INFO_MEM                          EQU  00000080    136*
+_CB_ERR_INFO_PSIZE                        EQU  00000008    137*
+_CB_STS_BUF_1BLK                          EQU  00000040    115*  117 
+_CB_STS_BUF_BLKMAX                        EQU  00000008    116*  117 
+_CB_STS_BUF_MAX                           EQU  00000200    117*
+_CB_TRD_BEFORE                            EQU  00000060    125*
+_CB_TRD_BUF_DP_MAX                        EQU  00000080    129*
+_CB_TRD_BUF_MAX                           EQU  00000800    126*
+_CB_TRD_DP_1CNT                           EQU  00000008    128*
+_CB_TRD_DP_CH                             EQU  00000004    121*
+_CB_TRD_SMP_CNT                           EQU  00000080    124*
+_DA_CNV_DT0                      Bwkram1  EXPT 00000012    341   390*
+_DUMMY_SUM_CODE                           EQU  5AA53CC3    103*
+_INT_2MS_SEL                     Bwkram1  EXPT 00000016    309   397*
+_IRAM_TOP                        BwkIRAM       00000000    419*
+_RMIO2_IN_DATA                   Bwkram1  EXPT 0000000A    339   387*
+_RMIO_IN_DATA                    Bwkram1  EXPT 00000002    338   386*
+_START_ACK_COD                            EQU  00004321    211*
+_START_REQ_COD                            EQU  00009876    210*
+_VUPCHECK_EQU                             EQU  11AB3739     96*
+_data_init2_timer                Bwkram1  EXPT 00000000    306   351*
+_mem_chk_flg                     Bwkram1  EXPT 00000014    308   396*
+_sram_top                                 IMPT 00000000    304 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:47                                                  PAGE    11
+
+*** SECTION DATA LIST
+
+SECTION                          ATTRIBUTE    SIZE             START
+
+Bwkram1                          REL-DATA    000000018        
+BwkIRAM                          REL-DATA    000000004        

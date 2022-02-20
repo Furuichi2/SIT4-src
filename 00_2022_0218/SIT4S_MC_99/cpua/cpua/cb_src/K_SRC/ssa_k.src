@@ -1,0 +1,1864 @@
+;	***************************************************
+;	***						***
+;	***						***
+;	***	各インターフェイスソフト		***
+;	***						***
+;	***						***
+;	***************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"		; //共通定義:必ず実行ﾌﾟﾛｸﾞﾗﾑにｲﾝｸﾙｰﾄﾞする事
+	.INCLUDE	"ssa_pfom.equ"		; //equ定義
+	.INCLUDE	"ssa_khad.equ"		; //equ定義
+	.INCLUDE	"ssa_wrmk.ext"		; //p4a_wrmk.ext+p4a_wrmy.ext
+;;	.INCLUDE	"ssa_wram.ext"		; //p4a_wrmk.ext+p4a_wrmy.ext
+	.INCLUDE	"shn_cmd1.mac"		; 
+	.INCLUDE	"ssa_kmc1.mac"		; //
+	.INCLUDE	"ssa_ver1.equ"		; //
+
+	.LIST	ON
+
+	.SECTION	P,CODE			;
+;	-------------- バージョン表示[2016-10-30～]----------------
+;;VER_DATE	.EQU		H'1117			;
+;;VER_DATE	.EQU		H'1113			;
+VER_DATE	.EQU		H'0624			;
+VER_NUMBER1	.EQU		"2"				;S01 [1]
+VER_INDEX	.EQU		" "				;e:2016-10-31
+							;f:2016-11-16
+							;g:2017-02-23
+							;h:2017-05-10
+							;i:2017-06-30
+							;j:2017-08-15
+							;k:2017-12-12 AD2~AD4,209.3,
+							;l:2017-12-28 LSA-BELT
+							;m:未出荷 2018-02-10 else.src(ﾛｯﾄｶｳﾝﾀ) ctrl.src(寸動どこでもﾘｾｯﾄ)
+							;n:2018-10-29 振子-復路時の寸動の表示　異常でも復路のままとする
+							;o:2018-11-13 待機点不具合,?見える化自動トリガ
+							;p:2018-12-07 下限
+							;q:test 2019-02-05
+							;r:2019-03-20 cam機能
+							;s:2019-04-10 206.15停止信号条件
+							;t:2019-04-20 206.15停止信号条件
+							;u:2019-06-25
+							;v:2019-08-20 連寸一
+							;w:2020-05-07 PUSH,
+							;w:2020-09-01 LSA
+							;x:ﾊﾞｰｼﾞｮﾝのみ変更
+							;y:2021-06-24 ADC
+							;S02 2021-11-15
+
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 PROGRAM	***
+;	//	***********************************
+	.IMPORT		_CB_BAKUP_LOAD		;ssa_dtmk.src
+	.IMPORT		_PWR_ON_DAT_LOAD	;ssa_dtmk.src 電源のﾊﾝﾄﾞｼｪｲｸ終了時
+	.IMPORT		_SYS_DAT_LOAD		;ssa_dtmk.src 電源のﾊﾝﾄﾞｼｪｲｸ終了時
+	.IMPORT		_SV_DAT_LOAD		;ssa_dtmk.src ﾒｲﾝｽｷｬﾝ:変更要求時
+	.IMPORT		_STEP_DAT_CHANGE1	;ssa_dtmk.src ﾒｲﾝｽｷｬﾝ:位置決め中以外
+	.IMPORT		_FULL_CLOSE_DATA_MOV	;
+	.IMPORT		_DATA_CHK_FLG_INI	;
+	
+	.IMPORT		_CALC_DATA_LOOP_MAKE1	;ssa_dtmk.src
+	.IMPORT		_UP_AREA_INPCHK		;ssa_dtmk.src
+	.IMPORT		_UP_AREA_DATCHK		;ssa_dtmk.src
+	.IMPORT		_HMI_CPU_HAND		;ssa_dtmk.src
+	.IMPORT		_PV_DATA_DP_MOV		;ssa_dtmk.src
+	.IMPORT		_HMI_DISP_COMMUNICATION	;ssa_dtmk.src
+
+	.IMPORT		_POS_LSI_HARD_INITAL	;ssa_pos1.src
+	.IMPORT		_POS_LSI_DATA_INITAL	;ssa_pos1.src
+	.IMPORT		_INT_POS_CTRL		;ssa_pos1.src
+
+	.IMPORT		_CB_INT_MAIN
+	.IMPORT		_MOTOR_AMP_CMP		;ssa_else.src
+	.IMPORT		_DAI_DRVHOS_CHK		;ssa_else.src
+	
+	.IMPORT		_KJPHOS_CHECK	;2004-07-05(ssa_kjyu.inc)
+
+	.import		_AD_LOAD		;
+
+	.IMPORT		_ET1_CPU_MAIN_MOV	;ssa_et1a/b.src
+	.IMPORT		_ET1_CPU_HIGH_MOV	;ssa_et1a/b.src
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	.IMPORT		_CAM_SINKAKU_DAT_CHK1	;ssa_pcal.src
+	.AENDI
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 MEMORY,HARD	***
+;	//	***********************************
+	.IMPORT		_DP_COP_CB_LD_MONI_SIG
+
+
+;	//	***********************************
+;	//	***	PUBLIC 宣言 PROGRAM	***
+;	//	***********************************
+	.EXPORT		_ASM_DMK1_SOFT_INIT;// ﾏｽﾀ/ｽﾚｰﾌﾞ時の呼ばれる
+	.EXPORT		_ASM_DMK1_DATA_INIT;// ﾏｽﾀ/ｽﾚｰﾌﾞ時の呼ばれる
+	.EXPORT		_ASM_K1_CTRL_MAIN;//メインスキャン:出荷試験時は呼ばれない
+	.EXPORT		_ASM_K1_CTRL_INT1;//200usec割込(100usec)
+	.EXPORT		_ASM_K1_CTRL_INT2;//2msec割込(1msec)
+	.EXPORT		_ASM_K1_CTRL_INT3;//10msec程度(温調/通常のﾀｲﾏ計測)
+
+
+	.EXPORT		_ASM_DMK1_SOFT_INIT_OPTION;// ﾏｽﾀ/ｽﾚｰﾌﾞ時の呼ばれる
+	.EXPORT		_ASM_DMK1_SOFT_INIT_MASTER;// ﾏｽﾀ/ｽﾚｰﾌﾞ時の呼ばれる
+	.EXPORT		_ASM_DMK1_DATA_MAIN;// ﾏｽﾀのみ
+	.EXPORT		_ASM_DMK1_DATA_MAIN_MASTER	;//ﾃﾞｰﾀ受信後毎スキャン
+	.EXPORT		_ASM_K2_CTRL_INT2;//2msec割込(1msec)
+	.EXPORT		_ASM_K1_CTRL_INT4;//1msec程度(ﾄﾚﾝﾄﾞ計測)
+
+;;;;	.IMPORT		_ROM_SYSPAR_DP_MOV	;CPUBのみ転送
+	.IMPORT		_KEEPRY_DATA_DP_MOV	;CPUBのみ転送
+
+;
+	.IMPORT		_PAR_PNL_REMOTE
+	.IMPORT		_PAR_PNL_BKLIGHT
+	.IMPORT		_CB_SYS_PARAM000
+	.IMPORT		_SEQAB_DP_TOP
+
+;	----------2015-09-30 100段-------------
+	.IMPORT		_DTMAKE_100STEP_1MS
+	.IMPORT		_DTMAKE_100STEP_MAIN_LOP
+
+;	*******************************************
+;	***					***
+;	***	クラッチ内部パラメータ		***
+;	***	2004-01-26			***
+;	*******************************************
+	.ALIGN	4		;
+	.EXPORT	_FSYS_MAX_STEP_SEL	;
+	.EXPORT	_FSYS_OPT_CNT_SEL	;SEL=1 連寸一、連続一行程有効
+;;_FSYS_MAX_STEP_SEL	.DATA.W		0	;SEL=1:10段仕様　それ以外(0)は5段仕様2004-01-26
+;;_FSYS_OPT_CNT_SEL	.DATA.W		0	;SEL=1 連寸一、連続一行程有効
+_FSYS_MAX_STEP_SEL	.DATA.W		1	;SEL=1:10段仕様　それ以外(0)は5段仕様2004-01-26
+_FSYS_OPT_CNT_SEL	.DATA.W		1	;SEL=1 連寸一、連続一行程有効
+
+;	*******************************************
+;	***					***
+;	***	ﾃﾞｰﾀ転送 符号拡張		***
+;	***	2Bor4B-->2B/4B			***
+;	***	"ssa_opcl.inc"			***
+;	***	"ssa_tdbk.inc"			***
+;	*******************************************
+	.MACRO	DATA_STD_SHN_MOV	SRC,L1,DST,L2
+	MOV.L	#\SRC,R5		;
+	MOV.\L1	@R5,R2			;
+
+	MOV.L	#\DST,R6		;
+	MOV.\L2	R2,@R6			;
+	.ENDM
+
+	.MACRO	DATA_STD_CHG_MOV	SRC,L1,DST,L2,CALLSB
+	MOV.L	#\SRC,R8						;
+	MOV.\L1	@R8,R2							;
+
+	FAR_JSR	#\CALLSB,R0		;
+
+	MOV.L	#\DST,R9		;
+	MOV.\L2	R2,@R9			;
+	.ENDM
+
+	.MACRO	DATA_LOP_SHN_MOV	SRC,L1,DST,L2,LOOP,CNT_REG,DSTADD
+	MOV.W	#\LOOP,\CNT_REG		;
+	MOV.L	#\SRC,R5		;
+	MOV.L	#\DST,R6		;
+
+JMP0\@:					;
+	TST	\CNT_REG,\CNT_REG	;
+	TST_BIT_OF JMP1\@		;
+	MOV.\L1	@R5+,R2			;
+
+	MOV.\L2	R2,@R6			;
+	ADD	#\DSTADD,R6		;
+	ADD	#-1,\CNT_REG		;
+	M_BRA	JMP0\@			;
+
+JMP1\@:					;
+	.ENDM
+
+
+	.ALIGN	4
+;	***********************************************************
+;	***							***
+;	***		ｲﾆｼｬﾙﾃﾞｰﾀ受信前１回			***
+;	***		(割込解除前)				***
+;	***********************************************************
+;	共通
+;[1]呼んでいる
+ .AIF	_CB_CPU_SEL EQ	_CB_CPUA	;2015-10-13追加
+	.IMPORT	_RNA_RESET_PROTOCOL_CHK		;2008-11-11(2008-06-11 DTMK H2W)
+	.IMPORT	_API_X_PRO_SEND_START1		;
+	
+ .AENDI
+
+	.ALIGN	4		;
+_ASM_DMK1_SOFT_INIT:	;
+	SUB_START
+	PUSH_ALL
+
+
+	MOV.W	#H'FFFF,R0
+	mov.l	#_pass_err_flg1,r1	;//異常ﾙｰﾁﾝ(電源投入時)
+	MOV.W	R0,@R1			;
+
+	MOV.W	#H'FFFF,R0
+	mov.l	#_pass_err_flg2,r1	;//異常ﾙｰﾁﾝ(電源投入時)
+	MOV.W	R0,@R1			;
+
+;	=== CPUB SYSPARA MOVE ===
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	NOP				;
+	.AELSE
+
+	FAR_JSR	#_KEEPRY_DATA_DP_MOV,R0	;
+	FAR_JSR	#_CBB_STS_BKUP_LOAD,R0	;2011-09-14
+
+	.AENDI
+	FAR_JSR	#_VER_DATA_MAKE1,R0	;
+
+;	=======================
+	MOV.W	#BIT6+BIT0,R0			;
+	MOV.L	#_STOPPING_TIM_FLG,R1		;//ｽﾄｯﾋﾟﾝｸﾞﾀｲﾏ用ﾌﾗｸﾞ BIT0測定開始 BIT6:停止中
+	MOV.W	R0,@R1				;
+
+
+ .AIF	_CB_CPU_SEL EQ	_CB_CPUA	;2015-10-13追加
+	FAR_JSR	#_RNA_RESET_PROTOCOL_CHK,R0	;2008-11-11(2008-06-11H2W)
+	FAR_JSR	#_API_X_PRO_SEND_START1,R0	;
+
+ .AENDI
+
+
+;	---- 2010-12-08 -------
+	FAR_JSR	#_INT1MS_SCANCNT_DEF,R0		;
+
+
+;	----- 2015-10-22----------
+	FAR_JSR	#_STEPMAX_DNMMODE_SEL,R0	;(設定ﾃﾞｰﾀ受信前に確定させておくこと)
+
+
+;	------2016-04-01[FEED]----------
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	.IMPORT	_CPUA_TO_CPUC_INIT1
+	FAR_JSR	#_CPUA_TO_CPUC_INIT1,R0
+	.AENDI
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***		2015-10-22	***
+;	***				***
+;	***********************************
+	.IMPORT	_PAR_STEPMAX_SEL	;0,1~10は振子時ﾃｰﾌﾞﾙ可能,DPRAM10段I/F参照
+	.IMPORT	_PAR_ACC_MATHED		;
+
+_STEPMAX_DNMMODE_SEL
+	SUB_START
+;	-------- 100段(振子直線,通信でのﾃﾞｰﾀ受信)--------------
+	MOV.L	#_PAR_STEPMAX_SEL,R1		;0,1~10は振子時ﾃｰﾌﾞﾙ可能,DPRAM10段I/F参照
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF STEPMAX_DNMMODESEL050	;
+
+	MOV.W	#1,R3				;//100段ﾊﾝﾄﾞｼｪｲｸ使用する
+	MOV.L	#_SYS_100STEP_USE,R1		;//100段ｿﾌﾄのDPRAMを参照する
+	MOV.W	R3,@R1				;
+
+STEPMAX_DNMMODESEL050:
+
+	MOV.W	#_EQ_STEP_MX2,R2		;10段
+	CMP/HS	R0,R2				;R0=0,1~10 <=R2
+	BT	STEPMAX_DNMMODESEL100		;R2:(10段) 10段以下の場合10段がMAX
+
+	MOV.W	#_EQ_STEP_MX3,R2		;98段
+	CMP/HS	R0,R2				;
+	BT	STEPMAX_DNMMODESEL080		;R0=<98 YES
+	MOV	R2,R0				;98段以下の場合98段がMAX
+STEPMAX_DNMMODESEL080:
+	MOV.L	#_SYS_STEP_MAX,R1		;
+	MOV.W	R0,@R1				;
+
+;;;;;;;;	2016-04-21
+;;;;;;;;	----- 2015-09-29
+;;;;;;;;	MOV.W	#1,R0
+;;;;;;;;	MOV.L	#_SYS_100STEP_USE,R1	;//100段ｿﾌﾄ(参照DPRAMK切替)
+;;;;;;;;	MOV.W	R0,@R1			;
+
+ .AIF _CHG_DNM_20170225 EQ _CMPILE_YES		;
+ .AENDI
+;;;20170225
+;;;20170225	MOV.W	#1,R0
+;;;20170225	MOV.L	#_SYS_100STEP_DNM_SEL,R1;//100段時の振子
+;;;20170225	MOV.W	R0,@R1			;
+	M_BRA	STEPMAX_DNMMODESEL200	;_WPAR_ACC_MATHED=0のままとする()
+
+
+STEPMAX_DNMMODESEL100
+					;10段
+	MOV.L	#_SYS_STEP_MAX,R1	;
+	MOV.W	R2,@R1			;
+
+;---------- 振子ﾃｰﾌﾞﾙ選択-------------------
+	DATA_STD_SHN_MOV SRC=_PAR_ACC_MATHED	,L1=W,DST=_WPAR_ACC_MATHED,L2=W		;WPAR_ACC_MATHED=1:振子ﾃｰﾌﾞﾙﾀｲﾌﾟ
+
+STEPMAX_DNMMODESEL200			;
+
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***		ｲﾆｼｬﾙﾃﾞｰﾀ受信後１回			***
+;	***							***
+;	***********************************************************
+;[2]呼んでいる
+
+	.IMPORT	_PVP_CB_A_VER		;
+	.IMPORT	_PVP_CB_B_VER		;
+	.IMPORT	_PVP_PAR_A_VER		;ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ HEX data
+	.IMPORT	_PVP_PAR_B_VER		;ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ HEX data
+	.IMPORT	_PVP_TBL_A_VER		;ｾﾝｻのﾃｰﾌﾞﾙ番号1~99 HEX data
+	.IMPORT	_PVP_TBL_B_VER		;ｾﾝｻのﾃｰﾌﾞﾙ番号1~99 HEX data
+
+	.IMPORT	_PVP_PAR_A_CHAR	;ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ 末尾ｷｬﾗｸﾀ ASCII(2BYTE)
+	.IMPORT	_PVP_TBL_A_CHAR	;ｾﾝｻのﾃｰﾌﾞﾙ番号()
+
+	.IMPORT	_PVP_PAR_B_CHAR	;ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ 末尾ｷｬﾗｸﾀ ASCII(2BYTE)
+	.IMPORT	_PVP_TBL_B_CHAR	;ｾﾝｻのﾃｰﾌﾞﾙ番号()
+
+	.IMPORT	_SVP_AMPERR_TIM1	;
+	.IMPORT	_SVP_AMPERR_TIM2	;
+	.IMPORT	_SVP_AMPERR_TIM3	;
+
+	.IMPORT	_PAR_SYS_VERDSP		;(ｼｽﾃﾑﾊﾟﾗﾒｰﾀのﾊﾞｰｼﾞｮﾝ表示追加 1~999まで)
+	.IMPORT	_PAR_SYS_VERCHAR	;(ｼｽﾃﾑﾊﾟﾗﾒｰﾀのﾊﾞｰｼﾞｮﾝ表示追加 1~999まで)
+
+	.IMPORT	_DAIHAITO_DATA_DEF_SET	;
+	.IMPORT	_CPU_AB_WDTCHK_INIT	;2015-07-14
+	.IMPORT	_CPU_AB_1MSEC_ERRCHK	;2015-07-14
+
+_ASM_DMK1_DATA_INIT:		;
+	SUB_START
+	PUSH_ALL
+;	----------------------------------------
+	FAR_JSR	#_VER_DATA_MAKE1,R0	;
+;	----------------------------------------
+
+
+	FAR_JSR	#_CB_BAKUP_LOAD,R0		;Data
+
+	FAR_JSR	#_PWR_ON_DAT_LOAD,R0	;電源のﾊﾝﾄﾞｼｪｲｸ終了時
+	FAR_JSR	#_SYS_DAT_LOAD,R0	;電源のﾊﾝﾄﾞｼｪｲｸ終了時
+	FAR_JSR	#_SV_DAT_LOAD,R0	;ﾒｲﾝｽｷｬﾝ:変更要求時
+	FAR_JSR	#_STEP_DAT_CHANGE1,R0	;ﾒｲﾝｽｷｬﾝ:位置決め中以外
+	FAR_JSR	#_FULL_CLOSE_DATA_MOV,R0	;ﾒｲﾝｽｷｬﾝ:位置決め中以外
+
+	FAR_JSR	#_POS_LSI_DATA_INITAL,R0
+	FAR_JSR	#_POS_LSI_HARD_INITAL,R0
+	FAR_JSR	#_DATA_CHK_FLG_INI,R0
+
+;	======================
+;;	.AIF	_NEG_SPEC1 EQ _COMPILE_YES	;
+;;	.AENDI
+	FAR_JSR	#_DAIHAITO_DATA_DEF_SET,R0
+;	======================
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	FAR_JSR	#_COP1_ROT_DT_INI,R0	;SH4の処理
+
+;;;pg容量確保[2012-03-06]	FAR_JSR	#_HIST_DAT_INI_SH4,R0	;2003-07-01
+	.AELSE
+;;;;;;;;;2014-06-04	FAR_JSR	#_COP1_ROT_DT_INI,R0	;SH4だけでいいけどWORKの話なのでSH2も処理
+	.AENDI
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;2011-09-14
+	FAR_JSR	#_CBA_STS_BKUP_LOAD,R0		;2011-09-14
+	.AENDI
+
+
+;	====== 段取寸動可能 ===
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_ORG_DND_NOMAL_FLG1,LG=W,BIT=BIT0,WKREG=R1	;bit-set
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB206,LG=W,BIT=(BIT10),WKRG1=R1,WKRG2=R4	;段取寸動OK
+
+
+;	------- LSA WAIT--------
+	MOV.W	#D'100,R0		;
+	MOV.L	#_LSA_CHK_DELAY_TM,R1	;
+	MOV.W	R0,@R1			;
+
+	FAR_JSR	#_CPU_AB_WDTCHK_INIT,R0	;2015-07-14
+
+	MOV.W	#-1,R0			;
+	MOV.L	#_emg_err_flg,R1	;//異常ﾗｯﾁ
+	MOV.W	R0,@R1			;
+
+	MOV.L	#_CB_INT_START_OK,R1	;
+	MOV	#-1,R0			;
+	MOV.W	R0,@R1			;
+
+
+
+;	------2016-04-01[FEED]----------
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	.IMPORT	_CPUA_TO_CPUC_INIT2
+	FAR_JSR	#_CPUA_TO_CPUC_INIT2,R0
+
+	.AENDI
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***	CPUD=>CPUA/CPUBﾊﾝﾄﾞｼｪｲｸ		***
+;	***	起動時及びﾒｲﾝｽｷｬﾝ		***
+;	***					***
+;	*******************************************
+;	2回ﾊﾝﾄﾞｼｪｲｸが成立すればOK(起動時のｺﾞﾐで1回)
+;
+	.IMPORT	_CPUD_HAND_CNT	;
+	.IMPORT	_CPUD_START_OK	;
+	.IMPORT	_CPUD_START_COD	;CPUD-CPUA DPRAM
+
+	.EXPORT	_CPUD_START_CHK
+_CPUD_START_CHK
+	SUB_START
+	PUSH_ALL
+
+	MOV.L	#_CPUD_START_COD,R5	;
+	MOV.L	#_CPUD_HAND_CNT,R6	;
+	MOV.L	#_CPUD_START_OK,R7	;
+	FAR_JSR	#_CPU_RCV_START_CHK,R0	;2回のﾊﾝﾄﾞｼｪｲｸ
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***		INPUT:R5:DPRAM		***
+;	***		INPUT:R6:CNT		***
+;	***		INPUT:R7:FLG		***
+;	*******************************************
+_CPU_RCV_START_CHK
+	SUB_START
+	MOV.W	#_START_ACK_COD,R3	;ACK CODE CPUD=>CPUA,B
+	MOV.W	#_START_REQ_COD,R4	;SET C0DE CPUA,B=>CPUD
+
+;;	MOV.L	#_CPUD_START_COD,R5	;
+	MOV.W	@R5,R0			;
+	CMP/EQ	R3,R0			;自分のACKが残っている?
+	BT	CPU_RCV_STARTCK_EXT	;YES
+
+	CMP/EQ	R4,R0			;REQ?
+	BF	CPU_RCV_STARTCK_EXT	;CPUDからのREQがこない EXT
+
+	MOV.W	R3,@R5			;ACK返信
+
+;;	MOV.L	#_CPUD_HAND_CNT,R6	;
+	MOV.W	@R6,R0			;
+	ADD	#1,R0			;
+	MOV.W	R0,@R6			;
+
+	MOV.W	#D'2,R8			;
+	CMP/HS	R8,R0			;R8=<R0
+	BF	CPU_RCV_STARTCK_EXT	;NO! R0<R8(2)
+
+;;	MOV.L	#_CPUD_START_OK,R7	;
+	MOV.W	@R7,R0
+	OR	#BIT0,R0
+	MOV.W	R0,@R7
+
+
+CPU_RCV_STARTCK_EXT
+	SUB_END
+	M_RTS
+
+
+
+;	***************************************************
+;	***						***
+;	***	バージョンデータ作成＋			***
+;	***	テーブルデータ正常？チェック		***
+;	***						***
+;	***************************************************
+;	ｲﾆｼｬﾙ時の作成
+	.IMPORT	_DIG_PLS_CHG_INF1_TOP
+	.IMPORT	_PLS_DIG_CHG_INF1_TOP
+
+	.IMPORT	_DIG_PLS_CHG_TBL1_TOP		;
+	.IMPORT	_PLS_DIG_CHG_TBL1_TOP		;
+	.IMPORT	_PLS_DIG_CHG_TBL2_TOP		;
+	.IMPORT	_CLNK_SV_CHG_LINK_TBL_TOP	;
+	.IMPORT	_LINK_PV_CHG_CLNK_TBL_TOP	;
+
+_VER_DATA_MAKE1:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_PVP_CB_A_VER,R6	;
+	.AELSE
+	MOV.L	#_PVP_CB_B_VER,R6	;
+	.AENDI
+
+;	==========================
+	MOV.L	#_VER_DISP_TBL1,R5	;なんとなく"S"
+	MOV.W	@R5+,R0			;
+	MOV.W	R0,@R6			;CHAR1 "S"
+	ADD	#2,R6			;
+
+;	==========================
+	MOV.L	#_VER_DISP_TBL2,R5	;ﾊﾞｰｼﾞｮﾝｲﾝﾃﾞｯｸｽ
+	MOV.W	@R5+,R0			;
+	MOV.W	R0,@R6			;CHAR2 "1"
+	ADD	#2,R6			;
+	MOV.W	@R5+,R0			;
+	MOV.W	R0,@R6			;
+	ADD	#2,R6			;CHAR3 "2"
+;	==========================
+	MOV.L	#_VER_DISP_TBL3,R5	;試作ｲﾝﾃﾞｯｸｽ
+	MOV.W	@R5+,R0			;
+	MOV.W	R0,@R6			;CHAR4
+	ADD	#2,R6			;
+
+;	========================================
+	MOV.L	#_VER_DISP_TBL4,R5		;ｺﾝﾊﾟｲﾙ条件(**仕様)
+	MOV.W	@R5+,R0				;
+	MOV.W	R0,@R6				;CHAR5
+	ADD	#2,R6				;
+
+;	========================================
+	XOR	R3,R3				;
+	MOV.L	#_DIG_PLS_CHG_INF1_TOP,R0			;
+	LDC	R0,GBR						;
+	MOV.L	@(_DG_PS_INF_CHK1,GBR),R0			;
+	MOV.L	#_INFO_CHK1_COD,R4				;
+	CMP/EQ	R4,R0						;
+	BF	TBL_DAT_ERR100					;Infomation err
+
+	MOV.L	@(_DG_PS_INF_CHK2,GBR),R0			;
+	MOV.L	#_INFO_CHK2_COD,R4				;
+	CMP/EQ	R4,R0						;
+	BF	TBL_DAT_ERR100					;Infomation err
+
+	MOV.L	#_PLS_DIG_CHG_INF1_TOP,R0			;
+	LDC	R0,GBR						;
+	MOV.L	@(_DG_PS_INF_CHK1,GBR),R0			;
+	MOV.L	#_INFO_CHK1_COD,R4				;
+	CMP/EQ	R4,R0						;
+	BF	TBL_DAT_ERR100					;Infomation err
+
+	MOV.L	@(_DG_PS_INF_CHK2,GBR),R0			;
+	MOV.L	#_INFO_CHK2_COD,R4				;
+	CMP/EQ	R4,R0						;
+	BF	TBL_DAT_ERR100					;Infomation err
+
+;	===== ﾃｰﾌﾞﾙﾁｪｯｸ ========
+	MOV.L	#_DIG_PLS_CHG_TBL1_TOP,R1	;TBL1
+	MOV.W	@R1,R2				;
+	MOV.L	#_PLS_DIG_CHG_TBL1_TOP,R1	;下り TBL2
+	MOV.W	@R1,R4				;
+	CMP/EQ	R2,R4				;
+	BF	TBL_DAT_ERR100
+	MOV.L	#_PLS_DIG_CHG_TBL2_TOP,R1	;上り TBL3
+	MOV.W	@R1,R4				;
+	CMP/EQ	R2,R4				;
+	BF	TBL_DAT_ERR100
+	MOV.L	#_CLNK_SV_CHG_LINK_TBL_TOP,R1	;TBL4
+	MOV.W	@R1,R4				;
+	CMP/EQ	R2,R4				;
+	BF	TBL_DAT_ERR100			;
+	MOV.L	#_LINK_PV_CHG_CLNK_TBL_TOP,R1	;TBL5
+	MOV.W	@R1,R4				;
+	CMP/EQ	R2,R4				;
+	BF	TBL_DAT_ERR100			;
+;	==== ﾃｰﾌﾞﾙは全て同じ =====
+	MOV	R2,R3				;
+	M_BRA	TBL_DAT_ERR200			;
+
+;	===== ﾃｰﾌﾞﾙ異常 ========
+TBL_DAT_ERR100:					;
+	MOV.L	#_TABLE_ERR_FLG,R1
+
+	.AIF	_MC_FUNC1_NO	EQ	_CMPILE_YES	;NO:異常等の機能をはずす
+	MOV.W	@R1,R0				;
+	OR	#BIT0,R0			;
+	MOV.W	R0,@R1				;
+	.AENDI
+
+TBL_DAT_ERR200:
+	MOV.L	#_VER_DISP_TBL5,R5		;機械機種
+	MOV.W	@R5+,R0				;"30"
+	ADD	R3,R0				;"30+1~"
+	MOV.W	R0,@R6				;CHAR6
+
+
+;	===== ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ,ｾﾝｻﾃｰﾌﾞﾙﾊﾞｰｼﾞｮﾝ
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_PVP_PAR_A_VER,R5	;ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ HEX data
+	MOV.L	#_PVP_TBL_A_VER,R6	;ｾﾝｻのﾃｰﾌﾞﾙ番号1~99 HEX data
+	MOV.L	#_PVP_PAR_A_CHAR,R3	;ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ 末尾ｷｬﾗｸﾀ ASCII(2BYTE)
+	MOV.L	#_PVP_TBL_A_CHAR,R4	;ｾﾝｻのﾃｰﾌﾞﾙ番号()
+	MOV.L	#_PVP_CB_A_VER+5*2,R7	;ｾﾝｻのﾃｰﾌﾞﾙ番号元
+
+	.AELSE
+	MOV.L	#_PVP_PAR_B_VER,R5	;ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ HEX data
+	MOV.L	#_PVP_TBL_B_VER,R6	;ｾﾝｻのﾃｰﾌﾞﾙ番号1~99 HEX data
+	MOV.L	#_PVP_PAR_B_CHAR,R3	;ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝ 末尾ｷｬﾗｸﾀ ASCII(2BYTE)
+	MOV.L	#_PVP_TBL_B_CHAR,R4	;ｾﾝｻのﾃｰﾌﾞﾙ番号()
+	MOV.L	#_PVP_CB_B_VER+5*2,R7
+	.AENDI
+
+	MOV.L	#_PAR_SYS_VERDSP,R1		;(ｼｽﾃﾑﾊﾟﾗﾒｰﾀのﾊﾞｰｼﾞｮﾝ表示追加 1~999まで)
+	MOV.W	@R1,R2				;
+	MOV.W	R2,@R5				;ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝSAVE
+
+	MOV.L	#_PAR_SYS_VERCHAR,R1		;(ｼｽﾃﾑﾊﾟﾗﾒｰﾀのﾊﾞｰｼﾞｮﾝ表示追加 1~999まで)
+	MOV.W	@R1,R2				;
+	MOV.W	R2,@R3				;ﾊﾟﾗﾒｰﾀﾊﾞｰｼﾞｮﾝｷｬﾗｸﾀ
+
+	MOV.L	#_DIG_PLS_CHG_TBL1_TOP,R1	;(ﾃｰﾌﾞﾙのﾊﾞｰｼﾞｮﾝ表示 1~999)
+	MOV.W	@R1,R2				;
+	MOV.W	R2,@R6				;
+
+	MOV.W	@R7,R2				;
+	MOV.W	R2,@R4				;ﾃｰﾌﾞﾙｷｬﾗｸﾀ(DPRAMと同じ)
+
+;	--------- 2016-10-31-------------
+	MOV.W	#VER_DATE,R2
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB254,R4	;
+	MOV.W	R2,@R4
+;	----------------------------------
+
+
+	SUB_END
+	M_RTS
+
+;	===== ABC.DEF ===
+;	A="S"
+;	BC:出荷ﾊﾞｰｼﾞｮﾝ
+;	D:試作ｲﾝﾃﾞｯｸｽ 1->2->3->4---->9->1(0は存在しない)　0は量産対応でBCを決定した時0
+;	E:ｺﾝﾄﾛｰﾗ機種
+;	F:機械機種
+;	1:30S 2:45S..ﾃｰﾌﾞﾙの中身を使用
+;
+;
+;
+;
+_VER_DISP_TBL1:
+	.DATA.W		"A"	;USE CHAR1
+_VER_DISP_TBL2:
+	.DATA.W		"0"	;USE CHAR2 VER
+	.DATA.W		VER_NUMBER1	;USE CHAR3 VER 外部 //以降こちら
+;;;;	.DATA.W		"1"	;USE CHAR3 VER 外部 //以降こちら
+				;S02:2003-07-09
+				;S03:2005-10-03 S02YからS03_
+				;S03:2006-09-19
+				;s04:2006-12-05
+				;s05:2007-01-11
+				;s06:2009-07-27 KOMTRAX対応
+				;--------- 2015-01-22 verS01[]
+
+_VER_DISP_TBL3:
+	.AIF	_CB_TBL_SEL	EQ	_CB_TBL_FLASH
+
+		.AIF	_CPU_A_ERR_STOP EQ _CMPILE_YES
+		.DATA.W		"?"	;出荷品では絶対あってはだめ
+		.AELSE
+			.AIF	_CPU_B_ERR_STOP EQ _CMPILE_YES
+			.DATA.W		"?"	;出荷品では絶対あってはだめ
+			.AELSE
+			.DATA.W		VER_INDEX	;通常ﾊﾞｰｼﾞｮﾝ
+			.AENDI
+		.AENDI
+				;USE CHAR4 VER 外部 //以降こちら
+				;2014-09-14 目標位置に変更
+				;2014-11-07 S00g 二重回路
+				;2014-11-10 S00h ふりこ
+				;2015-01-22 S01_
+				;2015-08-17 S01a ｱﾅﾛｸﾞ補正(05月20日,06月22日後)
+				;2015-08
+				;2015-09-06 S01c ﾌﾞﾚｰｷ処理
+				;2015-11-15 s01d 99段+偏差異常
+				;2016-10-31 A01e(SQ254に日付追加)
+				;
+	.AELSE
+	.DATA.W		"z"	;USE CHAR4 試作ｲﾝﾃﾞｯｸｽ
+				;2002-10-09 a:
+				;2002-10-15 b:
+				;2002-10-** c:ｴﾝｺｰﾀﾞ異常削除
+				;2002-10-24 d:ｴﾝｺｰﾀﾞ異常削除+ﾊﾞﾙﾌﾞ異常200msec
+				;2002-10-24 e:1mm-->0.1mm
+				;2002-11-14 f:ｶﾑのﾀｲﾏのみ変更 SH4のみ変更
+				;2002-12-23 z:(変更ではない):異常
+	.AENDI
+
+_VER_DISP_TBL4:
+ .AIF _DEBUG_SET_ERR_VER EQ _CMPILE_YES
+	.DATA.W		"X"	;2016-10-31 あってはいけないデバック機能
+ .AELSE
+	.DATA.W		"J"	;USE CHAR5 J:日本標準
+ .AENDI
+
+_VER_DISP_TBL5:
+	.DATA.W		"0"	;USE CHAR6 機械機種
+	.ALIGN	4		;
+
+;	***********************************************************
+;	***							***
+;	***		ﾃﾞｰﾀ受信後毎スキャン			***
+;	***							***
+;	***********************************************************
+;	PUSH_ALL不要
+;	ｱｾﾝﾌﾞﾗから呼ばれる[ﾏｽﾀのみ]
+;
+
+
+;	***********************************************************
+;	***							***
+;	***	制御用バックループメインスキャン		***
+;	***							***
+;	***********************************************************
+;	[C]から呼ぶ
+;
+;
+;
+_ASM_K1_CTRL_MAIN;//メインスキャン
+	SUB_START
+	PUSH_ALL
+
+	MOV.L	#_CB_INT_START_OK,R1	;
+	MOV	#-1,R0			;
+	MOV.W	R0,@R1			;
+
+
+	FAR_JSR	#_CALC_DATA_LOOP_MAKE1,R0	;
+	FAR_JSR	#_HMI_CPU_HAND,R0		;設定ﾃﾞｰﾀ受け取り
+;;;;2013-12-19	FAR_JSR	#_PV_DATA_DP_MOV,R0		;ssa_dtmk.src
+	FAR_JSR	#_HMI_DISP_COMMUNICATION,R0	;ssa_dtmk
+
+
+;;;2010-09-17 CPUAは割り込みで読み込み	FAR_JSR	#_AD_LOAD,R0
+;;;CPU-Bは今までどおり
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+	FAR_JSR	#_AD_LOAD,R0
+	.AENDI
+
+	FAR_JSR	#_MOTOR_AMP_CMP,R0		;ssa_else.src
+	FAR_JSR	#_DAI_DRVHOS_CHK,R0
+	FAR_JSR	#_KJPHOS_CHECK,R0		;2004-07-05(ssa_kjyu.inc)
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	FAR_JSR	#_CB_COP_DT_MAK2,R0		;
+	.AELSE
+;;;2010-12-08 全部SH4へ任す	FAR_JSR	#_CB_COP_DT_MAK2,R0	;
+	.AENDI
+
+
+
+;	-------------------------------------
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	
+	FAR_JSR	#_CAM_SINKAKU_DAT_CHK1,R0		;
+
+
+	.AENDI
+
+
+;	-------------------------------------
+
+
+
+
+	FAR_JSR	#_MONI_CB_DISP,R0	;2003-07-09 C/Bﾃﾞﾊﾞｯｸ
+
+
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	.IMPORT	_CPUA_TREND_MAIN
+	.IMPORT	_CPUA_LODER_COMMAND_IF	
+	FAR_JSR	#_CPUA_TREND_MAIN,R0	;
+	FAR_JSR	#_CPUA_LODER_COMMAND_IF,R0
+	.AENDI
+
+	FAR_JSR	#_ET1_CPU_MAIN_MOV,R0	;ssa_et1a/b.src
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+	.IMPORT	_DEBUG_SCAN2_XOR	;
+	FAR_JSR	#_DEBUG_SCAN2_XOR,R0	;
+	.AENDI
+
+
+;	========= 2013-07-18=================
+	MOV.L	#_MAIN_CLK,R1			;
+	MOV.W	@R1,R0				;
+	XOR	#BIT0,R0			;
+	MOV.W	R0,@R1				;
+
+
+
+;	--------- 2013-12-11 ------------
+	FAR_JSR	#_CPUD_START_CHK,R0
+
+
+
+
+
+;	-- ROMﾊﾟﾗﾒｰﾀ等の大きめのﾃﾞｰﾀ送受信CPUB→CPUA ---
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	FAR_JSR	#_RCV_BTOA_CPUBMEMX,R0	;
+	FAR_JSR	#_RCV_DTOA_CPUDMEMX,R0	;
+	
+	.AELSE
+	FAR_JSR	#_SND_BTOA_CPUBMEMX,R0	;
+	.AENDI
+
+
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	
+	.IMPORT	_ROM_SYSPAR_CMP_CHK	;
+
+	MOV.L	#_CPUBX_MEM1_ENDFLG,R5		;
+	MOV.W	@R5,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_OF ASM_K1_CTRL_MN_100		;
+	XOR	R0,R0				;
+	MOV.W	R0,@R5				;
+	FAR_JSR	#_ROM_SYSPAR_CMP_CHK,R0
+
+ASM_K1_CTRL_MN_100;//
+	
+	.AENDI
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+	FAR_JSR	#_CPUB_TO_CPUD_DTMOV1,R0
+
+	.AENDI
+
+;	-------- 2015-01-21
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	FAR_JSR	#_CPUX_CPUA_CHK,R0	;
+	
+	.AENDI
+
+;	----------2015-09-30 100段-------------
+	FAR_JSR	#_DTMAKE_100STEP_MAIN_LOP,R0
+
+
+
+
+
+
+;	------2016-04-01[FEED]----------
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	.IMPORT	_CPUA_TO_CPUC_DATA_MAIN
+	FAR_JSR	#_CPUA_TO_CPUC_DATA_MAIN,R0
+	.AENDI
+
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+
+
+;	***************************************************
+;	***						***
+;	***						***
+;	***						***
+;	***						***
+;	***************************************************
+;
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+
+	.GLOBAL	_dio_top1			;
+_CHK_IOGA_PDR2		.equ	2*2*2		;CPUB-WDT
+
+	.GLOBAL	_dio_top2
+_CHK_IOGA_PDR4		.equ	4*2*2		;ﾘﾓｰﾄ1　BIT6,BIT7
+
+	.GLOBAL	_dio_top3
+
+_CPUX_CPUA_CHK
+	SUB_START
+
+;	-------------- CPUD CHECK---------------
+	MOV.L	#_CPUD_HAND_CNT,R1			;
+	MOV.W	@R1,R0					;
+	MOV.L	#_CPUD_CHK_OLDCNT,R1			;
+	MOV.W	@R1,R2					;
+	MOV.W	R0,@R1					;
+	CMP/EQ	R0,R2					;
+	BT	CPUD_CPUACK100				;同じ
+
+	MOV.W	#D'3000,R0				;
+	MOV.L	#_CPUD_CHK_TIME,R1			;
+	MOV.W	R0,@R1					;
+
+CPUD_CPUACK100:
+
+	MOV.L	#_CPUD_CHK_TIME,R1				;
+	MOV.W	@R1,R2						;
+	TST	R2,R2						;
+	TST_BIT_OF CPUD_CPUACK150				;
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_CPUABD_WDTOK_FLG,LG=W,BIT=BIT0,WKREG=R1	;NOMAL:ON
+	M_BRA	CPUD_CPUACK200							;
+
+CPUD_CPUACK150:
+	MEM1_BIT0_TO_BIT7_ANDCLR MEM=_CPUABD_WDTOK_FLG,LG=W,BIT=~BIT0,WKREG=R1 ;
+CPUD_CPUACK200:
+
+;	-------------- CPUB CHECK---------------
+	MOV.L	#_dio_top1+_CHK_IOGA_PDR2,R1		;立花	
+	MOV.W	@R1,R0					;BIT4=1:CPUB-WDTERR
+	NOT	R0,R0
+	AND	#(BIT4),R0				;0:CPUB-WDTERR
+	MOV	R0,R2					;
+
+	MOV.L	#_CPUABD_WDTOK_FLG,R1			;
+	MOV.W	@R1,R0					;
+	AND	#LOW ~BIT4,R0				;
+	OR	R2,R0					;
+	MOV.W	R0,@R1					;BIT4=1正常
+
+;	--------------- RM01 ----------------------
+	MOV.L	#_dio_top2+_CHK_IOGA_PDR4,R1		;ﾘﾓｰﾄ1　BIT6,BIT7
+	MOV.W	@R1,R0					;
+	AND	#(BIT7|BIT6),R0				;
+	MOV.L	#_RM1_CHK_OLDSTS,R1			;
+	MOV.W	@R1,R2					;
+	MOV.W	R0,@R1					;
+	MOV.W	#(BIT7+BIT6),R4				;
+	CMP/EQ	R4,R0					;通信正常
+	BT	RM1_CPUACK090				;正常
+
+	CMP/EQ	R0,R2					;
+	BT	RM1_CPUACK100				;同じ
+
+RM1_CPUACK090:
+
+	MOV.W	#D'3000,R0				;
+	MOV.L	#_RM1_CHK_TIME,R1			;
+	MOV.W	R0,@R1					;
+
+RM1_CPUACK100:
+	MOV.L	#_RM1_CHK_TIME,R1						;
+	MOV.W	@R1,R2								;
+	TST	R2,R2								;
+	TST_BIT_OF RM1_CPUACK150						;
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_CPUABD_WDTOK_FLG,LG=W,BIT=BIT2,WKREG=R1	;NOMAL:ON
+	M_BRA	RM1_CPUACK200							;
+
+RM1_CPUACK150:
+	MEM1_BIT0_TO_BIT7_ANDCLR MEM=_CPUABD_WDTOK_FLG,LG=W,BIT=~BIT2,WKREG=R1 ;
+RM1_CPUACK200:
+
+;	--------------- RM02 ----------------------
+	MOV.L	#_dio_top3,R1				;ﾘﾓｰﾄ2　BIT0,BIT1
+	MOV.W	@R1,R0					;
+	AND	#(BIT1|BIT0),R0				;
+	MOV.L	#_RM2_CHK_OLDSTS,R1			;
+	MOV.W	@R1,R2					;
+	MOV.W	R0,@R1					;
+
+	MOV.W	#(BIT1+BIT0),R4				;
+	CMP/EQ	R4,R0					;通信正常
+	BT	RM2_CPUACK090				;
+
+	CMP/EQ	R0,R2					;通信異常だがCPUはどうか
+	BT	RM2_CPUACK100				;同じ
+
+RM2_CPUACK090:
+	MOV.W	#D'3000,R0				;3秒
+	MOV.L	#_RM2_CHK_TIME,R1			;
+	MOV.W	R0,@R1					;
+
+RM2_CPUACK100:
+	MOV.L	#_RM2_CHK_TIME,R1						;
+	MOV.W	@R1,R2								;
+	TST	R2,R2								;
+	TST_BIT_OF RM2_CPUACK150						;
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_CPUABD_WDTOK_FLG,LG=W,BIT=BIT3,WKREG=R1	;NOMAL ON
+	M_BRA	RM2_CPUACK200							;
+
+RM2_CPUACK150:
+	MEM1_BIT0_TO_BIT7_ANDCLR MEM=_CPUABD_WDTOK_FLG,LG=W,BIT=~BIT3,WKREG=R1 ;
+RM2_CPUACK200:
+
+	MOV.L	#_CPUABD_WDTOK_FLG,R1		;
+	MOV.W	@R1,R0				;
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB264,R1	;
+	MOV.W	R0,@R1				;
+
+	SUB_END
+	M_RTS
+
+
+_CPUX_CHK_TIM
+	SUB_START
+	DN_TIME LG=W,MEM_ADR=_CPUD_CHK_TIME,WKREG1=R1,WKREG2=R2
+	DN_TIME LG=W,MEM_ADR=_RM1_CHK_TIME,WKREG1=R1,WKREG2=R2
+	DN_TIME LG=W,MEM_ADR=_RM2_CHK_TIME,WKREG1=R1,WKREG2=R2
+	SUB_END
+	M_RTS
+
+	.AENDI
+
+;	***********************************************************
+;	***							***
+;	***		定周期200usec(100usec)			***
+;	***							***
+;	***********************************************************
+_ASM_K1_CTRL_INT1;//200usec割込(100usec)
+	SUB_START
+	PUSH_ALL
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***		定周期1msec				***
+;	***							***
+;	***********************************************************
+	.IMPORT	_CPU_CTRL_CLK	;2004-03-01
+
+_ASM_K1_CTRL_INT2;//1msec割込
+	SUB_START
+	PUSH_ALL
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+;;	MOV.L	#H'00040001,R0
+;;	LDS	R0,FPSCR
+	.AELSE
+	.AENDI
+
+
+	MOV.L	#_CB_INT_START_OK,R1	;
+	MOV.W	@R1,R0			;
+	TST	R0,R0			;
+	TST_BIT_OF ASM_K1_CTL_INT2_EXT	;//2msec割込(1msec)
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_CPU_CTRL_CLK,R1	;
+	MOV.W	@R1,R0			;
+	ADD	#1,R0
+	MOV.W	R0,@R1			;
+	.AENDI
+
+	FAR_JSR	#_CB_INT_MAIN,R0
+	FAR_JSR	#_INT_POS_CTRL,R0	;
+
+;	---------- 2013-12-18 KOMA
+	FAR_JSR	#_PV_DATA_DP_MOV,R0		;ssa_dtmk.src
+
+;	=== 2004-07-02 ===
+;;	FAR_JSR	#_INT_KAJYUU_CMP,R0	;荷重圧力比較(1回転毎に荷重の移動平均をとり１回転毎に比較信号をONする)
+					;(原点復帰、非常停止状態では保持)
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	FAR_JSR	#_CB_COP_SIG_MAK,R0
+
+;	SH4-->SH2へ渡す　2010-12-08[SH2の作成をやめる]
+	MEM_MOV_TO_MEM	SRC_ADR=_COP_CB_LD_MONI_SIG,L1=W,DST_ADR=_DP_COP_CB_LD_MONI_SIG,L2=W,WKREG1=R1,WKREG2=R2,WKREG3=R3
+
+	.AELSE
+
+;;;		SH4-->SH2へ渡す　2010-12-08
+;;;2010-12-08	FAR_JSR	#_CB_COP_SIG_MAK,R0
+	MEM_MOV_TO_MEM	SRC_ADR=_DP_COP_CB_LD_MONI_SIG,L1=W,DST_ADR=_COP_CB_LD_MONI_SIG,L2=W,WKREG1=R1,WKREG2=R2,WKREG3=R3
+	.AENDI
+
+;	------ ET1(2006-10-30) ------
+	FAR_JSR	#_ET1_CPU_HIGH_MOV,R0
+
+
+;	---- [2009-09-25]画面ｻﾝﾌﾟﾘﾝｸﾞ-----------
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+	FAR_JSR	#_GAMEN_SMP2_TRD2_CPUB,R0
+	.AENDI
+
+
+;	------2010-12-08[ｽｷｬﾝ分割 CPUBのみ]------
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+	FAR_JSR	#_INT1MS_SCAN_CNT,R0		;
+	.AENDI
+;	-----------------------------------------
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+
+	.IMPORT	_PV0_KAGEN_POSITIONER
+	.IMPORT	_SH2_DBG_KAGEN			;
+	MOV.L	#_PV0_KAGEN_POSITIONER,R1	;
+	MOV.L	@R1,R0				;
+	MOV.L	#_SH2_DBG_KAGEN,R1		;
+	MOV.L	R0,@R1				;
+	.AENDI
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	FAR_JSR	#_CPUX_CHK_TIM,R0
+	.AENDI
+
+;	------ 2015-07-14-------------
+	FAR_JSR	#_CPU_AB_1MSEC_ERRCHK,R0	;
+
+;	----------2015-09-30 100段-------------
+	FAR_JSR	#_DTMAKE_100STEP_1MS,R0
+
+;	------2016-04-01[FEED]----------
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	.IMPORT	_CPUA_TO_CPUC_INT_MAIN
+	FAR_JSR	#_CPUA_TO_CPUC_INT_MAIN,R0
+	.AENDI
+
+
+ASM_K1_CTL_INT2_EXT:			;//2msec割込(1msec)
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;//	***********************************
+;//	***				***
+;//	***	スキャン分割		***
+;//	***	2010-12-08		***
+;//	***				***
+;//	***********************************
+_INT1MS_SCAN_CNT:
+	SUB_START
+
+;	--------------------------------------
+	MOV.W	#D'2-1,R2		;
+	MOV.L	#_INT1MS_SCAN_02MS,R1	;
+	MOV.W	@R1,R0			;
+	TST	R0,R0			;
+	TST_BIT_OF INT1MS_SCANCNT_050	;
+	ADD	#-1,R0			;
+	MOV	R0,R2			;
+INT1MS_SCANCNT_050:			;
+	MOV.W	R2,@R1			;data=1,0
+
+
+;	--------------------------------------
+	MOV.W	#D'3-1,R2		;
+	MOV.L	#_INT1MS_SCAN_03MS,R1	;
+	MOV.W	@R1,R0			;
+	TST	R0,R0			;
+	TST_BIT_OF INT1MS_SCANCNT_150	;
+	ADD	#-1,R0			;
+	MOV	R0,R2			;
+INT1MS_SCANCNT_150:			;
+	MOV.W	R2,@R1			;data=2,1,0
+
+
+;	--------------------------------------
+	MOV.W	#D'5-1,R2		;
+	MOV.L	#_INT1MS_SCAN_05MS1,R1	;
+	MOV.W	@R1,R0			;
+	TST	R0,R0			;
+	TST_BIT_OF INT1MS_SCANCNT_250	;
+	ADD	#-1,R0			;
+	MOV	R0,R2			;
+INT1MS_SCANCNT_250:			;
+	MOV.W	R2,@R1			;data=4,3,2,1,0
+
+	MOV.W	#D'5-1,R2		;
+	MOV.L	#_INT1MS_SCAN_05MS2,R1	;
+	MOV.W	@R1,R0			;
+	TST	R0,R0			;
+	TST_BIT_OF INT1MS_SCANCNT_350	;
+	ADD	#-1,R0			;
+	MOV	R0,R2			;
+INT1MS_SCANCNT_350:			;
+	MOV.W	R2,@R1			;data=4,3,2,1,0
+
+
+;	------------------------------
+	MOV.W	#D'10-1,R2		;
+	MOV.L	#_INT1MS_SCAN_10MS,R1	;
+	MOV.W	@R1,R0			;
+	TST	R0,R0			;
+	TST_BIT_OF INT1MS_SCANCNT_400	;
+	ADD	#-1,R0			;
+	MOV	R0,R2			;
+INT1MS_SCANCNT_400:			;
+	MOV.W	R2,@R1			;data=9,8,7,6,5,4,3,2,1,0
+
+	SUB_END
+	M_RTS
+
+
+;
+;
+;
+;
+;
+_INT1MS_SCANCNT_DEF
+	SUB_START
+	
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	XOR	R0,R0
+	MOV.L	#_INT1MS_SCAN_02MS,R1	;
+	MOV.W	R0,@R1
+	MOV.L	#_INT1MS_SCAN_03MS,R1	;
+	MOV.W	R0,@R1
+	MOV.L	#_INT1MS_SCAN_05MS1,R1	;
+	MOV.W	R0,@R1
+	MOV.L	#_INT1MS_SCAN_05MS2,R1	;
+	MOV.W	R0,@R1
+	MOV.L	#_INT1MS_SCAN_10MS,R1	;
+	MOV.W	R0,@R1
+
+	.AELSE
+
+	XOR	R0,R0
+	MOV.L	#_INT1MS_SCAN_02MS,R1	;
+	MOV.W	R0,@R1
+
+	XOR	R0,R0
+	MOV.L	#_INT1MS_SCAN_03MS,R1	;
+	MOV.W	R0,@R1
+
+	MOV.W	#1,R0			;
+	MOV.L	#_INT1MS_SCAN_05MS1,R1	;
+	MOV.W	R0,@R1
+
+	MOV.W	#2,R0			;
+	MOV.L	#_INT1MS_SCAN_05MS2,R1	;
+	MOV.W	R0,@R1
+
+	MOV.W	#3,R0			;
+	MOV.L	#_INT1MS_SCAN_10MS,R1	;
+	MOV.W	R0,@R1
+
+	.AENDI
+
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***		定周期10~20msec				***
+;	***							***
+;	***********************************************************
+_ASM_K1_CTRL_INT3;//10msec程度(温調/通常のﾀｲﾏ計測)
+	SUB_START
+	PUSH_ALL
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+
+;	***********************************
+;	***				***
+;	***	未使用			***
+;	***				***
+;	***********************************
+
+_ASM_DMK1_DATA_MAIN:	;//ﾃﾞｰﾀ受信後毎スキャン
+_ASM_DMK1_DATA_MAIN_MASTER:	;//ﾃﾞｰﾀ受信後毎スキャン
+_ASM_DMK1_SOFT_INIT_MASTER;// ﾏｽﾀ/ｽﾚｰﾌﾞ時の呼ばれる
+_ASM_DMK1_SOFT_INIT_OPTION;// ﾏｽﾀ/ｽﾚｰﾌﾞ時の呼ばれる
+_ASM_K2_CTRL_INT2;//2msec割込(1msec)
+_ASM_K1_CTRL_INT4;//1msec程度(ﾄﾚﾝﾄﾞ計測)
+	SUB_START
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+
+	.GLOBAL	_PV_CB_STS_DAT_TOP	;ﾊﾞｯﾌｧ 256byte
+	.GLOBAL	_PV_CB_TRD_DAT_TOP	;128byte
+	.GLOBAL	_PV_CB_STS_POINT	;
+	.GLOBAL	_PV_CB_TRD_POINT	;
+	.GLOBAL	_PV_POWER_ON_CNT	;
+
+;	*******************************************
+;	***	異常履歴	2003-07-09 	***
+;	*******************************************
+	.GLOBAL		_SVP_MONALM_S01		;
+	.GLOBAL		_SVP_MONALM_S02		;
+	.GLOBAL		_SVP_MONALM_S03		;
+	.GLOBAL		_SVP_MONALM_S04		;
+;	*******************************************
+;	***	異常履歴	2003-07-09 	***
+;	*******************************************
+	.GLOBAL		_PVP_MONALM_P01	
+	.GLOBAL		_PVP_MONALM_P02	
+	.GLOBAL		_PVP_MONALM_P03	
+	.GLOBAL		_PVP_MONALM_P04	
+	.GLOBAL		_PVP_MONALM_A01	
+	.GLOBAL		_PVP_MONALM_A02	
+	.GLOBAL		_PVP_MONALM_A03	
+	.GLOBAL		_PVP_MONALM_A04	
+	.GLOBAL		_PVP_MONALM_A05	
+	.GLOBAL		_PVP_MONALM_A06	
+	.GLOBAL		_PVP_MONALM_A07	
+	.GLOBAL		_PVP_MONALM_A08	
+	.GLOBAL		_PVP_MONALM_B01	
+	.GLOBAL		_PVP_MONALM_B02	
+	.GLOBAL		_PVP_MONALM_B03	
+	.GLOBAL		_PVP_MONALM_B04	
+	.GLOBAL		_PVP_MONALM_B05	
+	.GLOBAL		_PVP_MONALM_B06	
+	.GLOBAL		_PVP_MONALM_B07	
+	.GLOBAL		_PVP_MONALM_B08	
+
+	.GLOBAL		_PVP_MONALM_C01	
+	.GLOBAL		_PVP_MONALM_C02	
+	.GLOBAL		_PVP_MONALM_C03	
+	.GLOBAL		_PVP_MONALM_C04	
+	.GLOBAL		_PVP_MONALM_C05	
+	.GLOBAL		_PVP_MONALM_C06	
+	.GLOBAL		_PVP_MONALM_C07	
+	.GLOBAL		_PVP_MONALM_C08	
+
+	.GLOBAL		_CB_STS_SAVE_FLG		;2003-07-01
+	.GLOBAL		_CB_TRD_SAVE_FLG		;2003-07-01
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	.INCLUDE	"ssa_opcl.inc"		;ｵﾌﾟｼｮﾝ用
+	
+	.AELSE
+;;;;;	.INCLUDE	"ssa_opcl.inc"		;ｵﾌﾟｼｮﾝ用
+	.AENDI
+
+;	===2003-07-01====
+	.INCLUDE	"ssa_tdbk.inc"		;ﾄﾚﾝﾄﾞ/ﾊﾞｯｸｱｯﾌﾟｿﾌﾄ cpua用
+
+;	*******************************************
+;	***					***
+;	***	とりあえずROMﾊﾟﾗﾒｰﾀ送信,受信	***
+;	***	CPUB==>CPUA			***
+;	*******************************************
+;	*******************************************
+;	***					***
+;	***	とりあえずｽﾅｯﾌﾟﾃﾞｰﾀ送信,受信	***
+;	***	CPUD==>CPUA			***
+;	*******************************************
+;	*******************************************
+;	***					***
+;	***		CPUB側の送信ソフト	***
+;	***					***
+;	*******************************************
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	.INCLUDE	"ssa_cpumov_a.inc"		;
+	.AELSE
+
+	.INCLUDE	"ssa_cpumov_b.inc"		;
+
+	.AENDI
+
+
+
+
+
+
+
+
+
+
+
+
+;	***********************************
+;	***				***
+;	***	ｸﾞﾗﾌｨｯｸ表示用C関数	***
+;	***				***
+;	***********************************
+	.IMPORT	_RENEA_1ROT_PLS_AND_DIG_MAK1	;
+	.IMPORT	_FPU_DIVS_32REG2_32REG1_R4_32REG2_R2;;/10 0.01mm data
+	.IMPORT	_DIG36000_CHG_RENEA1;
+
+	.EXPORT	_C_ASM_DISP_MM_CHG_DG
+	.EXPORT	_C_ASM_DISP_DG_CHG_MM
+
+	.IMPORT	_SV_CLNK_DG_CHG_LINK_DG1
+	.IMPORT	_PV_LINK_DG_CHG_CLNK_DG1
+;	"mm==>dig"
+_C_ASM_DISP_MM_CHG_DG:
+	SUB_START
+	PUSH_ALL
+	MOV.L	#_DISP_SV_MM_DAT,R1				;0.001mm data
+	MOV.L	@R1,R5						;
+
+	MOV.L	#_DISP_SV_DG_DAT,R1				;0.1度data (OLD data)
+	MOV.L	@R1,R2						;
+	FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0			;(DIG-->DIG変換)(ﾚｼﾞｽﾀのみ)
+
+	FAR_JSR	#_RENEA_1ROT_PLS_AND_DIG_MAK1,R0		;(ﾚｼﾞｽﾀのみ)
+	MOV	R3,R2						;LINK角度
+	FAR_JSR	#_PV_LINK_DG_CHG_CLNK_DG1,R0			;(ﾚｼﾞｽﾀのみ)
+	MOV.L	#_DISP_SV_DG_DAT,R1				;0.1度ﾃﾞｰﾀ
+	MOV.L	R2,@R1						;
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;	"dig==>mm"
+_C_ASM_DISP_DG_CHG_MM:
+	SUB_START
+	PUSH_ALL
+	MOV.L	#_DISP_SV_DG_DAT,R1				;0.1度
+	MOV.L	@R1,R2						;360.0度
+	FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0			;(DIG-->DIG変換)(ﾚｼﾞｽﾀのみ)
+
+	MOV	#100,R4						;
+	DMULS.L	R4,R2						;
+	STS.L	MACL,R2						;
+	FAR_JSR	#_DIG36000_CHG_RENEA1,R0			;360.000度-->0.001mm
+	MOV.L	#_DISP_SV_MM_DAT,R1				;0.001mm
+	MOV.L	R2,@R1						;
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+	.EXPORT	_C_ASM_CHG_ROOT
+_C_ASM_CHG_ROOT
+	SUB_START
+	PUSH_ALL
+	MOV.L	#_ROOT_MAIN_INP,R0
+	MOV.L	@R0,R1		;
+	FAR_JSR	#_ROOT1_32R1,R0
+	MOV.L	#_ROOT_MAIN_OUT,R0
+	MOV.L	R3,@R0
+	POP_ALL
+	SUB_END
+	M_RTS
+
+_ROOT1_32R1:
+	SUB_START
+	XOR	R3,R3				;ANS.
+	XOR	R5,R5				;途中引算ﾃﾞｰﾀ WORK
+	XOR	R6,R6				;R1-->上位2ﾋﾞｯﾄ取出-->R6下位2ﾋﾞｯﾄ WORK
+	MOV.L	#1,R10				;ｲﾝｸﾘﾒﾝﾄ及びﾋﾞｯﾄ0ｾｯﾄ時に使用
+	MOV.L	#D'16,R11			;ｶｳﾝﾀ
+
+;	--------------------------------
+ROOT1_020:
+
+	SHLL	R1				;
+	ROTCL	R6				;
+	SHLL	R1				;
+	ROTCL	R6				;2ﾋﾞｯﾄ取出
+
+	SHLL	R5				;途中ﾃﾞｰﾀ左1ｼﾌﾄ
+	MOV	R5,R4				;
+	OR	R10,R4				;BIT0 SET 引けるかﾃﾞｰﾀ
+
+	CMP/HS	R4,R6				;R6 >= R4 THEN R4を引ける 
+	BT	ROOT1_050			;YES JUMP
+;	----- 引けない時 ------
+;	R5:そのまま + 0
+
+	SHLL	R3				;平方根結果=0
+	M_BRA	ROOT1_100			;
+
+
+ROOT1_050:
+;	----- 引ける時 ------
+	SUB	R4,R6				;R6-R4=R6
+	MOV	R4,R5				;途中演算ﾃﾞｰﾀ
+	ADD	R10,R5				;+1
+
+	SHLL	R3				;
+	OR	R10,R3				;平方根結果=1ｾｯﾄ
+ROOT1_100:
+
+	DT	R11
+	BT	ROOT1_EXIT			;ｶｳﾝﾀ-1=0 END
+	M_BRA	ROOT1_020			;
+
+ROOT1_EXIT:
+	SUB_END
+	M_RTS					;
+
+
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+;	********************************************
+;	***					****
+;	***		ﾌﾟﾛｸﾞﾗﾑSUMﾁｪｯｸ		****
+;	***					****
+;	********************************************
+	.IMPORT		__P_BGN
+	.IMPORT		__PRAM_BGN
+	.IMPORT		__P_END
+
+	.IMPORT		__Pcall_BGN
+	.IMPORT		__PcallRAM_BGN
+	.IMPORT		__Pcall_END
+
+_PROGRAM_VERIFY:
+	SUB_START
+
+;;未使用	MOV.L	#__P_BGN,R0
+;;未使用	MOV.L	@R0,R5			;DATA SORCE
+;;未使用	MOV.L	#__PRAM_BGN,R0
+;;未使用	MOV.L	@R0,R6			;DATA DIST
+;;未使用	MOV.L	#__P_END,R0
+;;未使用	MOV.L	@R0,R4			;
+;;未使用	FAR_JSR	#_P_TO_P_VERIFY,R0	;Input R4,R5,R6 .ANS R0,R5(ADR),R6(ADR),R1(data),R2(data)
+;;未使用
+;;未使用	MOV.L	#_DBG4_MONI_A03,R3	;CNT
+;;未使用	MOV.L	R4,@R3			;
+;;未使用	MOV.L	#_DBG4_MONI_A04,R3	;RESULT
+;;未使用	MOV.L	@R3,R4			;
+;;未使用	OR	R4,R0			;
+;;未使用	MOV.L	R0,@R3			;
+;;未使用
+;;未使用	MOV.L	#_DBG4_MONI_A05,R3	;ADR
+;;未使用	MOV.L	R5,@R3			;
+;;未使用
+;;未使用	MOV.L	#_DBG4_MONI_A06,R3	;
+;;未使用	MOV.L	R1,@R3			;ROM
+;;未使用	MOV.L	#_DBG4_MONI_A07,R3	;
+;;未使用	MOV.L	R2,@R3			;RAM
+
+
+;;未使用	MOV.L	#__Pcall_BGN,R0
+;;未使用	MOV.L	@R0,R5				;DATA SORCE
+;;未使用	MOV.L	#__PcallRAM_BGN,R0
+;;未使用	MOV.L	@R0,R6				;DATA DIST
+;;未使用	MOV.L	#__Pcall_END,R0
+;;未使用	MOV.L	@R0,R4				;
+;;未使用	FAR_JSR	#_P_TO_P_VERIFY,R0	;Input R4,R5,R6
+
+;;未使用	MOV.L	#_DBG4_MONI_B03,R3	;CNT
+;;未使用	MOV.L	R4,@R3			;
+;;未使用	MOV.L	#_DBG4_MONI_B04,R3	;RESULT
+;;未使用	MOV.L	@R3,R4			;
+;;未使用	OR	R4,R0			;
+;;未使用	MOV.L	R0,@R3			;
+
+;;未使用	MOV.L	#_DBG4_MONI_B05,R3	;ADR
+;;未使用	MOV.L	R5,@R3			;
+;;未使用	MOV.L	#_DBG4_MONI_B06,R3	;
+;;未使用	MOV.L	R1,@R3			;ROM
+;;未使用	MOV.L	#_DBG4_MONI_B07,R3	;
+;;未使用	MOV.L	R2,@R3			;RAM
+
+
+	SUB_END
+	M_RTS
+
+	.AENDI
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+
+;	***********************************
+;	***				***
+;	***	Input R5,R6,R4		***
+;	***	ANS R0=0 NOMAL 		***
+;	***	R0!=0 ERR		***
+;	***********************************
+;	====================================
+;	-------------- WDT CLR -------------
+;	====================================
+	.IMPORT	_PDTRB
+
+	.MACRO	_A_WDT_CLR_CP1
+	MOV.L	#_PDTRB,R10
+	MOV.W	@R10,R11
+;;2010-09-21ﾊﾞｸﾞ	MOV.W	#NBIT0,R12	; PORT18
+	MOV.W	#NBIT2,R12	; PORT18
+	AND	R12,R11		;
+	MOV.W	R11,@R10	;
+;;2010-09-21ﾊﾞｸﾞ	MOV.W	#BIT0,R12	;
+	MOV.W	#BIT2,R12	;
+	OR	R12,R11		;
+	MOV.W	R11,@R10	;
+	.ENDM
+
+_P_TO_P_VERIFY:
+	SUB_START
+
+	XOR	R7,R7				;ANS R7
+
+	SUB	R5,R4				;
+	SHLR	R4				;
+
+
+P_TO_P_V_LOOP:
+	CMP/PL	R4
+	BF	P_TO_P_V_END		;ZERO or MINS THEN EXIT
+
+	MOV	R4,R0		;
+	TST	#H'FF,R0	;
+	TST_BIT_ON P_TO_P_V_050	;
+
+	_A_WDT_CLR_CP1
+
+P_TO_P_V_050:
+	MOV.W	@R5+,R2		;R5:ROM R1:data
+	MOV.W	@R6+,R1		;R6:RAM R2:data
+	ADD	#H'FF,R4	;
+	CMP/EQ	R1,R2		;
+	BT	P_TO_P_V_LOOP	;
+
+	MOV	#-1,R7		;R7:ANS
+
+P_TO_P_V_END:
+	MOV	R7,R0		;ANS R0=0 NOMAL
+	SUB_END
+	M_RTS
+
+	.AENDI
+
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	.IMPORT	_PowerON_Reset_SP
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+_STACK_DATA_CHK
+	SUB_START
+
+	MOV.B	#1,R7
+
+;	-----------2007-11-23ﾃﾞﾊﾞｯｸ--------------
+	MOV.L	#_PowerON_Reset_SP-H'7F0+H'10,R1;STACK TOP
+	MOV.W	#H'5AA5,R0			;
+	MOV.W	@R1,R2				;7F0,7F1
+	ADD	#2,R1
+	CMP/EQ	R0,R2				;
+	BF	STACK_DATCHK_ERR		;
+
+	MOV.W	#H'1234,R0			;
+	MOV.W	@R1,R2				;7F2,7F3
+	ADD	#2,R1
+	CMP/EQ	R0,R2				;
+	BF	STACK_DATCHK_ERR		;
+
+	MOV.W	#H'5678,R0			;
+	MOV.W	@R1,R2				;7F4,7F5
+	ADD	#2,R1
+	CMP/EQ	R0,R2				;
+	BF	STACK_DATCHK_ERR		;
+
+	MOV.W	#H'9ABC,R0			;
+	MOV.W	@R1,R2				;7F6,7F7
+	ADD	#2,R1
+	CMP/EQ	R0,R2				;
+	BF	STACK_DATCHK_ERR		;
+
+	MOV.W	#H'DEF0,R0			;
+	MOV.W	@R1,R2				;7F8,7F9
+	ADD	#2,R1
+	CMP/EQ	R0,R2				;
+	BF	STACK_DATCHK_ERR		;
+
+;	-----------2007-11-23ﾃﾞﾊﾞｯｸ--------------
+	MOV.L	#_PowerON_Reset_SP-H'7F0+H'100,R1;STACK TOP
+	MOV.W	#H'A55A,R0			;
+	MOV.W	@R1,R2				;7F0,7F1
+	ADD	#2,R1
+	CMP/EQ	R0,R2				;
+	BF	STACK_DATCHK_ERR		;
+
+	MOV.W	#H'4321,R0			;
+	MOV.W	@R1,R2				;7F2,7F3
+	ADD	#2,R1
+	CMP/EQ	R0,R2				;
+	BF	STACK_DATCHK_ERR		;
+
+	MOV.W	#H'8765,R0			;
+	MOV.W	@R1,R2				;7F4,7F5
+	ADD	#2,R1
+	CMP/EQ	R0,R2				;
+	BF	STACK_DATCHK_ERR		;
+
+	MOV.W	#H'CBA9,R0			;
+	MOV.W	@R1,R2				;7F6,7F7
+	ADD	#2,R1
+	CMP/EQ	R0,R2				;
+	BF	STACK_DATCHK_ERR		;
+
+	MOV.W	#H'0FED,R0			;
+	MOV.W	@R1,R2				;7F8,7F9
+	ADD	#2,R1
+	CMP/EQ	R0,R2				;
+	BF	STACK_DATCHK_ERR		;
+	XOR	R7,R7
+	M_BRA	STACK_DATCHK_END		;
+
+STACK_DATCHK_ERR:
+	NOP
+STACK_DATCHK_END:
+	MOV	R7,R0				;
+	NOT	R7,R2				;
+
+;;未使用	MOV.L	#_DBG4_MONI_A00,R3	;00
+;;未使用	MOV.L	R0,@R3			;
+;;未使用	MOV.L	#_DBG4_MONI_A01,R3	;ADR
+;;未使用	MOV.L	R1,@R3			;
+;;未使用	MOV.L	#_DBG4_MONI_A02,R3	;FF
+;;未使用	MOV.L	R2,@R3			;
+
+	SUB_END
+	M_RTS
+
+	.AENDI
+
+;	***************************************************
+;	***						***
+;	***	輝度					***
+;	***						***
+;	***						***
+;	***************************************************
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+
+	.IMPORT	_PANEL_FRQ_DAT	;
+	.IMPORT	_PANEL_LED_DAT	;
+
+	.IMPORT	_KEY_USE_SEL
+	.AENDI
+
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+_CPUB_TO_CPUD_DTMOV1:
+	SUB_START
+	MOV.L	#(_PAR_PNL_REMOTE-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+	MOV.W	@R1,R0							;
+	MOV.L	#_KEY_USE_SEL,R1					;
+	MOV.W	R0,@R1							;
+
+	MOV.L	#(_PAR_PNL_BKLIGHT-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+	MOV.W	@R1,R0							;
+	EXTU.B	R0,R0							;
+	MOV.L	#_PANEL_FRQ_DAT,R1					;
+	MOV.W	R0,@R1							;
+
+;	--------------- LED SET ----------------
+	XOR	R2,R2
+	MOV.L	#_SEQAB_DP_TOP+344*2,R1			;
+	MOV.W	@R1,R0					;
+
+	TST	#BIT6,R0				;344.6ﾒｲﾝﾓｰﾀ　LD1
+	TST_BIT_OF CPUB_TO_CPUD_LED100			;
+	MOV.B	#BIT0,R4				;
+	OR	R4,R2					;ﾒｲﾝﾓｰﾀ LD1
+CPUB_TO_CPUD_LED100:					;
+
+	TST	#BIT5,R0				;344.5 EMG LD2
+	TST_BIT_OF CPUB_TO_CPUD_LED110			;
+	MOV.B	#BIT1,R4				;LED2 EMG
+	OR	R4,R2					;
+CPUB_TO_CPUD_LED110:
+
+	TST	#BIT4,R0				;344.4準備未完了LD3
+	TST_BIT_OF CPUB_TO_CPUD_LED120			;
+	MOV.B	#BIT2,R4				;LED3 準備未完了
+	OR	R4,R2					;
+CPUB_TO_CPUD_LED120:
+
+	TST	#BIT3,R0				;344.3準備完了LD4
+	TST_BIT_OF CPUB_TO_CPUD_LED130			;
+	MOV.B	#BIT3,R4				;LED4 準備完了
+	OR	R4,R2					;
+CPUB_TO_CPUD_LED130:
+
+	TST	#BIT0,R0				;344.0安全装置LD7
+	TST_BIT_OF CPUB_TO_CPUD_LED140			;
+	MOV.B	#BIT4,R4				;LED5 安全装置
+	OR	R4,R2					;
+CPUB_TO_CPUD_LED140:
+
+	MOV.L	#_PANEL_LED_DAT,R1		;ﾊﾟﾈﾙLED SQ->CPUB->
+	MOV.W	R2,@R1				;
+
+
+	SUB_END
+	M_RTS
+
+
+	.AENDI
+
+
+;	***************************************************
+;	***						***
+;	***	2011-09-14 ﾊﾞｯｸｱｯﾌﾟ処理			***
+;	***						***
+;	***	CPU-B					***
+;	***************************************************
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+	.EXPORT		_CBB_STS_BKUP_SAVE
+	.INCLUDE	"ssa_cbkb.inc"		; //
+	.AENDI
+
+;	***************************************************
+;	***						***
+;	***	2011-09-14 ﾊﾞｯｸｱｯﾌﾟ処理			***
+;	***						***
+;	***	CPU-B					***
+;	***************************************************
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	.EXPORT		_CBA_STS_BKUP_SAVE
+	.INCLUDE	"ssa_cbka.inc"		; //
+
+	.ALIGN	4		;ﾊﾞｯｸｱｯﾌﾟ読み出し時に行いたい処理
+_CBA_BKUPLOD_END_PROC:
+	SUB_START
+
+	MOV.W	#BIT7,R4			;
+	MOV.L	#_CBSTS_SAVE_DAT,R1		;2011-09-14[CPUBはﾊﾞｯｸｱｯﾌﾟされない]
+	MOV.W	@R1,R2				;2011-09-14
+	AND	R4,R2				;
+
+	MOV.L	#_BRKTST_MOD_FLG,R1		;
+	MOV.W	@R1,R0				;
+	NOT	R4,R4				;
+	AND	R4,R0				;
+	OR	R2,R0				;
+	MOV.W	R0,@R1				;
+
+	SUB_END
+	M_RTS
+
+	.AENDI
+
+
+;	***************************************************
+;	***						***
+;	***	2009-09-25 画面ｻﾝﾌﾟﾘﾝｸﾞ処理		***
+;	***						***
+;	***	CPU-B					***
+;	***************************************************
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+	.EXPORT	_GAMEN_SMP2_TRD2_CPUB
+	.INCLUDE	"ssa_gsmp.inc"		; //
+	.AENDI
+
+
+
+
+
+
+
+
+
+	.END
+

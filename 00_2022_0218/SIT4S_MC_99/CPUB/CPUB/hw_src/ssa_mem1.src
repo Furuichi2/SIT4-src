@@ -1,0 +1,259 @@
+;	***********************************************************
+;	***							***
+;	***							***
+;	***		äeóÃàÊíËã`				***
+;	***							***
+;	***							***
+;	***********************************************************
+	.LIST	OFF
+	.include	"cm_equ1.equ"
+	.include	"ssa_had1.equ"
+	.include	"com_et1.equ"
+	.include	"dp_et1.ext"			; V05j
+	.LIST	ON
+
+;	***************************************************
+;	***						***
+;	***		ÇeÇqÇnÇl			***
+;	***						***
+;	***************************************************
+	.SECTION	Bfrom, DATA			; B9000000H
+
+	.ORG	H'0
+	.export		_from_top;
+_from_top:
+
+
+;	***************************************************
+;	***						***
+;	***		ÇeÇqÇnÇl			***
+;	***						***
+;	***************************************************
+	.SECTION	Pcbsys, DATA			; B90B0000H
+
+	.ORG	H'0
+	.export		_CBSYS_TOP;
+_CBSYS_TOP:
+	.INCLUDE	"cb_param.ext"			;
+	.INCLUDE	"cb_param.inc"			;
+
+
+;	***************************************************
+;	***						***
+;	***		ÇcÇoÇqÇ`Çl			***
+;	***		cpuA<=>cpuB			***
+;	***						***
+;	***************************************************
+	.SECTION	BdpramAB, DATA			;
+	.export		_DPRAMAB_TOP
+	.export		_DPRAMAB_END
+
+
+	.include	"dp_cpuab.ext"
+
+	.org	h'0
+_DPRAMAB_TOP			;
+_dpramAB_top:
+	.include	"dp_cpuab.inc"
+
+	.org	h'3FFC
+	.export		_AB_CPUA_RD_CPUB_WR;
+_AB_CPUA_RD_CPUB_WR	.SRES	2			;
+
+	.org	h'3FFE
+	.export		_AB_CPUA_WR_CPUB_RD;
+_AB_CPUA_WR_CPUB_RD	.SRES	2			;
+_DPRAMAB_END			;
+
+;	***************************************************
+;	***						***
+;	***		ÇcÇoÇqÇ`Çl			***
+;	***		cpuD<=>cpuB			***
+;	***						***
+;	***************************************************
+	.SECTION	Bdpram, DATA			; B8000000H
+	.org	h'0
+	.export		_dpram_top;
+_dpram_top:
+	.INCLUDE	"dp_cpud.ext"		; //[2013-11-29 MC]
+	.INCLUDE	"dp_cpud_com.inc"		; //[2013-11-29 MC]
+
+;;;;	.org	h'2000 êÈåæÇÕdp_cpud_b.incÇÃíÜÇ≈org H'2000Ç™çsÇÌÇÍÇÈ
+	.INCLUDE	"dp_cpud_b.inc"		; //[2013-11-29 MC]
+
+	.org	h'3FFC
+	.export		_CPUA_RD_CPUB_WR;
+_CPUA_RD_CPUB_WR	.SRES	2			;
+
+	.org	h'3FFE
+	.export		_CPUA_WR_CPUB_RD;
+_CPUA_WR_CPUB_RD	.SRES	2			;
+
+
+;	***************************************************
+;	***						***
+;	***		à íuåàÇﬂÇkÇrÇh			***
+;	***						***
+;	***************************************************
+	.SECTION	Bposlsi1, DATA			; BA000000H
+	.export		_poslsi1_top;
+_poslsi1_top:
+
+
+;	***************************************************
+;	***						***
+;	***	ÇjÇdÇdÇo ÇqÇxÉoÉbÉNÉAÉbÉvóÃàÊ		***
+;	***						***
+;	***************************************************
+	.SECTION	BframSEQ, DATA			; B4007000H
+	.org	0
+	.export		_FRAM_SEQ_TOP
+
+	.export		_KEEP_RY_TOP_CODE		;  ﬁØ∏±ØÃﬂ¡™Ø∏óp∫∞ƒﬁ 55H
+	.export		_KEEP_RY_AREA_TOP		;  ﬁØ∏±ØÃﬂóÃàÊSEQ544Å`549(6WORD)
+	.export		_KEEP_RY_END_CODE		;  ﬁØ∏±ØÃﬂ¡™Ø∏óp∫∞ƒﬁ AAH
+
+;	---2011-09-14----- ∏◊Ø¡êMçÜãLâØ----
+	.export		_FRAM_CBSTS_SQCOD1	;USEFUL DATA 5AA5Ç‹ÇΩÇÕA55AÇ»ÇÁ ﬁØ∏±ØÃﬂóL
+	.export		_FRAM_CBSTS_SQDAT1	;data1
+	.export		_FRAM_CBSTS_SQDAT1_SUM	;data1ÇÃîΩì]
+	.export		_FRAM_CBSTS_SQDAT2	;data2
+	.export		_FRAM_CBSTS_SQDAT2_SUM	;data2ÇÃîΩì]
+	.export		_FRAM_CBSTS_SQDAT3	;data3
+	.export		_FRAM_CBSTS_SQDAT3_SUM	;data3
+	.export		_FRAM_CBSTS_SQDAT4	;data4
+	.export		_FRAM_CBSTS_SQDAT4_SUM	;data4ÇÃîΩì]
+;	---------------------------------------
+
+_FRAM_SEQ_TOP:
+_KEEP_RY_TOP_CODE	.SRES	2		;  ﬁØ∏±ØÃﬂ¡™Ø∏óp∫∞ƒﬁ 55H
+_KEEP_RY_AREA_TOP	.SRES	2*6		;  ﬁØ∏±ØÃﬂóÃàÊSEQ544Å`549(6WORD)
+_KEEP_RY_END_CODE	.SRES	2		;  ﬁØ∏±ØÃﬂ¡™Ø∏óp∫∞ƒﬁ AAH
+						; MAX256BYTE
+;	---2011-09-14 í«â¡ äÆóπêMçÜ----
+_FRAM_CBSTS_SQCOD1	.SRES	2		;USEFUL DATA 5AA5Ç‹ÇΩÇÕA55AÇ»ÇÁ ﬁØ∏±ØÃﬂóL
+_FRAM_CBSTS_SQDAT1	.SRES	2		;data1
+_FRAM_CBSTS_SQDAT1_SUM	.SRES	2		;data1ÇÃîΩì]
+_FRAM_CBSTS_SQDAT2	.SRES	2		;data2
+_FRAM_CBSTS_SQDAT2_SUM	.SRES	2		;data2ÇÃîΩì]
+_FRAM_CBSTS_SQDAT3	.SRES	2		;data3
+_FRAM_CBSTS_SQDAT3_SUM	.SRES	2		;data3
+_FRAM_CBSTS_SQDAT4	.SRES	2		;data4
+_FRAM_CBSTS_SQDAT4_SUM	.SRES	2		;data4ÇÃîΩì]
+
+
+
+
+
+
+;;[2018-11-11];	===== 2003-07-01 =====
+;;[2018-11-11]	.export		_FRAM_CB_BAKUP_INF_TOP		;5AA51234Ç»ÇÁóLå¯
+;;[2018-11-11]	.export		_FRAM_CB_BAKUP_INF_END		;
+;;[2018-11-11]	.export		_FRAM_CB_USELFUL_COD1	;
+;;[2018-11-11]	.export		_FRAM_CB_STS_POINT	;ç≈êVílŒﬂ≤›¿ÇÃéwé¶à íu
+;;[2018-11-11]	.export		_FRAM_CB_TRD_POINT	;óLå¯Ç»√ﬁ∞¿êî
+;;[2018-11-11]	.export		_FRAM_CB_USELFUL_COD2	;A55A4321Ç»ÇÁóLå¯
+;;[2018-11-11]	.export		_FRAM_CB_STS_DAT_TOP		;
+;;[2018-11-11]	.export		_FRAM_CB_TRD_DAT_TOP		;
+;;[2018-11-11]	.EXPORT		_FRAM_POWER_ON_CNT		;ìdåπìäì¸âÒêî
+;;[2018-11-11]	.EXPORT		_FRAM_ERR_INFO_CPUA_TOP		;(CPUAÇÕDPRAMåoóR)
+;;[2018-11-11]	.EXPORT		_FRAM_ERR_INFO_CPUB_TOP		;(CPUBÇÕíºê⁄)
+;;[2018-11-11]
+;;[2018-11-11]
+;;[2018-11-11]	.org	H'100		;807100H~8071FFH		;STS
+;;[2018-11-11]_FRAM_CB_BAKUP_INF_TOP:						;5AA51234Ç»ÇÁóLå¯
+;;[2018-11-11]_FRAM_CB_USELFUL_COD1		.SRES	4			;
+;;[2018-11-11]_FRAM_CB_STS_POINT		.SRES	2			;ç≈êVílŒﬂ≤›¿ÇÃéwé¶à íu
+;;[2018-11-11]_FRAM_CB_TRD_POINT		.SRES	2			;óLå¯Ç»√ﬁ∞¿êî
+;;[2018-11-11]_FRAM_POWER_ON_CNT		.SRES	2			;ìdåπìäì¸âÒêî
+;;[2018-11-11]				.SRES	2			;
+;;[2018-11-11]				.SRES	2			;
+;;[2018-11-11]				.SRES	2			;16
+;;[2018-11-11];	===2004-01-26 ==
+;;[2018-11-11]	.ALIGN	4
+;;[2018-11-11]_FRAM_ERR_INFO_CPUA_TOP		.SRES	_CB_ERR_INFO_MEM	;80byte
+;;[2018-11-11]_FRAM_ERR_INFO_CPUB_TOP		.SRES	_CB_ERR_INFO_MEM	;80byte
+;;[2018-11-11]
+;;[2018-11-11]
+;;[2018-11-11]	.org	H'1FC						;4byte align
+;;[2018-11-11]_FRAM_CB_USELFUL_COD2	.SRES	4			;A55A4321Ç»ÇÁóLå¯
+;;[2018-11-11]
+;;[2018-11-11]	.org	H'200					;807200H~8072FFH	;DATA 32byte*8BLOCK
+;;[2018-11-11]_FRAM_CB_STS_DAT_TOP:					;
+;;[2018-11-11]	.SRES	_CB_STS_BUF_MAX				;64*8=512
+;;[2018-11-11]
+;;[2018-11-11]	.org	H'400					;807300H~80BFFH		;STS 2Kbyte(800H)
+;;[2018-11-11]_FRAM_CB_TRD_DAT_TOP:					;
+;;[2018-11-11]	.SRES	_CB_TRD_BUF_MAX				;16*128=2048
+;;[2018-11-11]
+;;[2018-11-11]
+;;[2018-11-11];	=======2003-07-01 END====
+;;[2018-11-11]_FRAM_CB_BAKUP_INF_END:			
+;;[2018-11-11]
+;;[2018-11-11]	.org	H'D00		;ñ¢égóp
+
+
+;	***************************************************
+;	***						***
+;	***		ÇcÇhÇn				***
+;	***						***
+;	***************************************************
+	.SECTION	Bdio, DATA			; BB000000H
+	.org	0
+	.export		_dio_top1
+_dio_top1:
+	.org	H'100
+	.export		_dio_top2
+_dio_top2:
+
+	.org	H'200
+	.export		_REAL_INP0;
+_REAL_INP0:	.SRES	2
+	.export		_REAL_INP1;
+_REAL_INP1:	.SRES	2
+	.export		_REAL_OUT0;
+_REAL_OUT0:	.SRES	2
+
+
+;	***************************************************
+;	***						***
+;	***		ROM SUM DATA			***
+;	***						***
+;	***************************************************
+	.SECTION	Psum_code,CODE,ALIGN=4		;
+	.org	h'0
+	.export		_ROM_SUM_CODE;
+_ROM_SUM_CODE:
+	.DATA.L		_DUMMY_SUM_CODE
+;;;;;	.DATA.L		H'F2632425	;V05h,S05h
+;;;;;	.DATA.L		H'4D3EA7AF	;V05g,S05h
+;;;;;	.DATA.L		H'E31F928D	;V05f,S05g
+;;;;;	.DATA.L		H'E324928C	;V05e,S05g
+;;;;;	.DATA.L		H'3ED0B211	;V05d,S05g
+;;;;;	.DATA.L		H'680FCE3C	;V05b,S05e(338=680F,339=CE3C)
+;;;;;	.DATA.L		H'6340B074	;V05a,S05e(338=6340,339=B074)
+;;;;;	.DATA.L		H'AAD0DF6F	;V05a,S05d(338=AAD0,339=DF6F)
+;;;;;	.DATA.L		H'59C69B8A	;V05a,S05c(338=59C6,339=9B8A)
+;;;;;	.DATA.L		H'726AEDDA	;V05,S05c(338=726A,339=EDDA)
+;;;;;	.DATA.L		H'470C00AB	;V05,S05b
+;;;;;	.DATA.L		H'EDD245BE	;V05,S05a(SQ338=EDD2,SQ339=45BE)
+;;;;;	.DATA.L		H'A23309AD	;V05,S05(SQ338=A233,SQ339=09AD)
+
+	.export		_VUPCHECK_DATA;
+_VUPCHECK_DATA:
+	.DATA.L		_VUPCHECK_EQU
+
+
+;	***************************************************
+;	***						***
+;	***		ROM SUM DATA			***
+;	***						***
+;	***************************************************
+	.SECTION	Psum_code2,CODE,ALIGN=4		;
+	.org	h'0
+	.export		_ROM_SUM_CODE2;
+_ROM_SUM_CODE2:
+	.DATA.L		_DUMMY_SUM_CODE
+
+
+	.END

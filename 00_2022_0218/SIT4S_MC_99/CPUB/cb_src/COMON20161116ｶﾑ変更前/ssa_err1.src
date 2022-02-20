@@ -1,0 +1,7625 @@
+;	***************************************************
+;	***						***
+;	***						***
+;	***	異常検出、異常処理			***
+;	***						***
+;	***						***
+;	***************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"		; //共通定義:必ず実行ﾌﾟﾛｸﾞﾗﾑにｲﾝｸﾙｰﾄﾞする事
+	.INCLUDE	"shn_cmd1.mac"		; //
+	.INCLUDE	"ssa_kmc1.mac"		; //
+	.INCLUDE	"ssa_pfom.equ"		; //equ定義
+	.INCLUDE	"ssa_khad.equ"		; //equ定義
+	.INCLUDE	"ssa_wrmk.ext"		; //
+	.INCLUDE	"ssa_ver1.equ"		; //
+	.INCLUDE	"cb_param.ext"		; //
+	
+	.INCLUDE	"ssa_timlt.equ"		; //
+
+;	--------2012-03-06[下から上へ移動]
+	.INCLUDE	"ssa_wram.ext"		; 
+	.INCLUDE	"ssa_wrmy.ext"		; //saitoのみ参照ｿﾌﾄ
+	.INCLUDE	"ssa_erry.mac"		; //saitoのみ参照ｿﾌﾄ
+	.INCLUDE	"ssa_had1.equ"		; //
+	.INCLUDE	"ssa_seq1.equ"		; //saitoのみ参照ｿﾌﾄ
+
+	.LIST	ON
+
+	.SECTION	P,CODE			;
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 PROGRAM	***
+;	//	***********************************
+	.INCLUDE	"ssa_krom.ext"		; //
+	.IMPORT		_EMG_POS_FLG_PROC	;ssa_pos1.src
+	.IMPORT		_EXQ_POS_FLG_PROC	;ssa_pos1.src
+	.IMPORT		_STP_SLF_FLG_PROC	;ssa_self.src
+	.IMPORT		_EMG_CTL_FLG_PROC	;ssa_ctrl.src
+	.IMPORT		_EXQ_CTL_FLG_PROC	;ssa_ctrl.src
+	.IMPORT		_STP_RST_FLG_PROC	;ssa_ctrl.src
+
+;;;pg容量確保[2012-03-06]	.IMPORT		_SMPLE_HIST_DATA_SET1	;SSA_TDBK.SRC
+
+	.IMPORT		_GENSOK_SIG_MAK		;
+
+	.IMPORT		_DATA_GRF_CNT_DATA_MAKE		;2004-03-25
+	.IMPORT		_OVER_RIDE_ERR_TIMCHG
+	.IMPORT		_API_EXQ_STEP_STS_GET	;2016-04-16(QST前にしておく)
+
+	.IMPORT		_EPSEN_CLR			
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 MEMORY,HARD	***
+;	//	***********************************
+
+;;;;;	.IMPORT	_SQ_CBWK_TOP	;
+	.GLOBAL		_EMG_SH4_TO_SH2		;
+	.GLOBAL		_EMG_SH2_TO_SH4		;
+	.GLOBAL		_SH2_STEP_NO		;工程二重回路ﾁｪｯｸ用
+	.GLOBAL		_SH4_STEP_NO		;
+
+	.GLOBAL		_SH4_POS_STS1	;上記信号 SH4==> WRITE SH2 ==>BIT7 CLR
+	.GLOBAL		_SH4_CMP_STS1	;(二重化異常信号 203同様      生)
+	.GLOBAL		_SH4_CMP_STS2	;(二重化異常信号 BIT0位置決中 生)
+
+	.GLOBAL		_SH2_POS_STS1	;上記信号 SH2==> WRITE SH4 ==>BIT7 CLR
+	.GLOBAL		_SH2_CMP_STS1	;(二重化異常信号 273同様      生)
+	.GLOBAL		_SH2_CMP_STS2	;(二重化異常信号 BIT8位置決中 生)
+
+	.GLOBAL		_PVP_BREAK_TIM1	;
+	.GLOBAL		_PVP_BREAK_DIG	;
+
+;;	.IMPORT		_rcv2_err_hard_INTflg1	;// ﾊｰﾄﾞ異常
+;;	.IMPORT		_rcv2_err_hard_INTflg2	;// ﾊｰﾄﾞ異常
+;;	.IMPORT		_rcv2_err_hard_INTflg3	;// ﾊｰﾄﾞ異常
+
+;	//	***********************************
+;	//	***	PUBLIC 宣言 PROGRAM	***
+;	//	***********************************
+	.EXPORT		_ERR_EMG_INPUT		;BIT0 非常停止,VS_ERR,OT
+	.EXPORT		_ERR_EMG_INPUT_SLW1	;2010-12-08
+	.EXPORT		_ERR_EMG_INPUT_SLW2	;2010-12-08
+	.EXPORT		_ERR_SWIN		;BIT1 入力論理,ﾊﾞﾙﾌﾞ
+	.EXPORT		_ERR_SRC		;BIT2 二重回路
+	.EXPORT		_ERR_CHGSW		;BIT3 ﾓｰﾄﾞ変更等
+	.EXPORT		_ERR_EXQ_INPUT		;BIT4 急停止ﾚﾍﾞﾙ
+	.EXPORT		_ERR_SFT_INPUT		;BIT5 安全装置
+	.EXPORT		_ERR_POS_CHEAK		;BIT6 位置決め関連
+
+	.EXPORT		_EMG_PASS_FLG_SET	;
+
+	.EXPORT		_EMG_STOP;
+	.EXPORT		_EXQ_STOP;
+	.EXPORT		_SFTY_STOP;
+	.EXPORT		_POS_OVER_RUN_CHK1	;[S01m 2003-04-03]
+
+	.EXPORT		_STOP_ERR_CHK
+	.EXPORT		_EMG_STOP_SPEC		;2011-09-14
+
+
+_EQ_STOP_ERR_DLY_TIM	.EQU	D'20	;100/2	;遅延時間
+_OBJ_PLS_CTL_TYP	.DEFINE	"_CMPILE_YES"	;//
+
+	.EXPORT	_IRQ_EMG_STOP	;
+	.EXPORT	_IRQ_SFTY_STOP	;
+	.EXPORT	_IRQ_STP_STOP	;
+
+;	***********************************
+;	***				***
+;	***	非常停止割込		***
+;	***				***
+;	***********************************
+;_INT_CALL_Extern_0010=CPUA
+_IRQ_EMG_STOP:
+	SUB_START
+
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_IRQ_EMG_CNT,WKREG1=R1,WKREG2=R2,LATE=1
+	MEM1_BIT0_F_ORSET MEM=_IRQ_EMG_FLG,LG=W,BIT=(BIT1+BIT0),WKRG1=R1,WKRG2=R2
+
+	SUB_END
+	M_RTS
+
+	.EXPORT	_IRQ_EMG_STP_CLR
+_IRQ_EMG_STP_CLR:
+	SUB_START
+	XOR	R0,R0
+	MOV.L	#_IRQ_EMG_FLG,R1
+	MOV.W	R0,@R1			;
+	MOV.L	#_IRQ_SFY_FLG,R1	;
+	MOV.W	R0,@R1			;
+	MOV.L	#_IRQ_STP_FLG,R1	;
+	MOV.W	R0,@R1
+	MOV.L	#_INT_SFY_INP_DAT,R1;//(停止要因 FACT/RACT)
+	MOV.W	R0,@R1
+	MOV.L	#_INT_STP_INP_DAT,R1;//(停止要因 EMG/)
+	MOV.W	R0,@R1
+
+;	------- 2007-01-23-----
+	MOV.L	#_INT_STP_INP_DAT1,R1
+	MOV.W	R0,@R1
+	MOV.L	#_INT_STP_INP_DAT2,R1
+	MOV.W	R0,@R1
+	MOV.L	#_INT_STP_INP_DAT3,R1
+	MOV.W	R0,@R1
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	安全装置割込		***
+;	***				***
+;	***********************************
+;	1msecの割り込みの下位にしているので停止処理OK
+;	ﾊﾟﾙｽ出力OFF,
+;	通常停止状態もあるから注意して！
+	.IMPORT	_INT_SFYSIG_LOAD     	;dioy
+	.IMPORT	_INT_STPSIG_LOAD	;dioy
+
+_IRQ_SFTY_STOP
+	SUB_START
+	MOV.L	#_SELF_FLG,R1		;//BIT0:ｾﾙﾌﾁｪｯｸ中  BIT7ｾﾙﾌﾁｪｯｸ正常完了
+	MOV.W	@R1,R0			;
+	TST	#BIT0,R0		;
+	TST_BIT_ON IRQ_SFY_STP_EXT
+	MOV.L	#_emg_err_flg,R1	;//異常ﾗｯﾁ
+	MOV.W	@R1,R0			;
+	MOV.L	#_exq_err_flg,R1	;//異常ﾗｯﾁ
+	MOV.W	@R1,R2			;
+	OR	R2,R0			;
+	TST	R0,R0			;
+	TST_BIT_ON IRQ_SFY_STP_EXT	;
+
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_IRQ_SFY_CNT,WKREG1=R1,WKREG2=R2,LATE=1
+	MEM1_BIT0_F_ORSET MEM=_IRQ_SFY_FLG,LG=W,BIT=(BIT1+BIT0),WKRG1=R1,WKRG2=R2
+	FAR_JSR	#_INT_SFYSIG_LOAD,R0
+IRQ_SFY_STP_EXT
+
+	SUB_END
+	M_RTS
+
+_IRQ_EXQ_STP_CLR:
+	SUB_START
+	XOR	R0,R0
+	MOV.L	#_IRQ_SFY_FLG,R1	;
+	MOV.W	R0,@R1			;
+	MOV.L	#_IRQ_STP_FLG,R1	;
+	MOV.W	R0,@R1
+	MOV.L	#_INT_SFY_INP_DAT,R1;//(停止要因 FACT/RACT)
+	MOV.W	R0,@R1
+	MOV.L	#_INT_STP_INP_DAT,R1;//(停止要因 EMG/)
+	MOV.W	R0,@R1
+
+;	------- 2007-01-23-----
+	MOV.L	#_INT_STP_INP_DAT1,R1
+	MOV.W	R0,@R1
+	MOV.L	#_INT_STP_INP_DAT2,R1
+	MOV.W	R0,@R1
+	MOV.L	#_INT_STP_INP_DAT3,R1
+	MOV.W	R0,@R1
+
+
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	STPA割込		***
+;	***				***
+;	***********************************
+_IRQ_STP_STOP
+	SUB_START
+	MOV.L	#_SELF_FLG,R1		;//BIT0:ｾﾙﾌﾁｪｯｸ中  BIT7ｾﾙﾌﾁｪｯｸ正常完了
+	MOV.W	@R1,R0			;
+	TST	#BIT0,R0		;
+	TST_BIT_ON IRQ_STP_STP_EXT
+
+	MOV.L	#_emg_err_flg,R1	;//異常ﾗｯﾁ
+	MOV.W	@R1,R0			;
+	MOV.L	#_exq_err_flg,R1	;//異常ﾗｯﾁ
+	MOV.W	@R1,R2			;
+	OR	R2,R0			;
+	TST	R0,R0			;
+	TST_BIT_ON IRQ_STP_STP_EXT	;
+
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_IRQ_STP_CNT,WKREG1=R1,WKREG2=R2,LATE=1		;
+	MEM1_BIT0_F_ORSET MEM=_IRQ_STP_FLG,LG=W,BIT=(BIT1+BIT0),WKRG1=R1,WKRG2=R2	;
+	FAR_JSR	#_INT_STPSIG_LOAD,R0							;
+	FAR_JSR	#_INT_SFYSIG_LOAD,R0							;
+IRQ_STP_STP_EXT
+
+	SUB_END
+	M_RTS
+
+;	***************************
+;	***	非常停止	***
+;	***************************
+;	PASS_FLG1:BIT0
+_ERR_EMG_INPUT:		;BIT0 非常停止,VS_ERR,OT
+	SUB_START
+
+;	--- 2011-05-05 各異常を分解して処理する///要因がわかるように
+	MOV.L	#_ELSE_ERR_FLG1,R1	;BIT0
+	MOV.W	@R1,R0			;
+	AND	#LOW ~BIT0,R0		;
+	MOV.W	R0,@R1			;
+
+;	---------- 2011-05-05 -----------
+	MOV.L	#_CB_SEQ_CB_COM340,R1		;340.0
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;340,0(EMG)
+	TST_BIT_OF ER_EMGINP_020		;
+
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_ELSE_ERR_FLG1,LG=W,BIT=BIT0,WKREG=R1	;ERR!
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB214,LG=W,BIT=(BIT7),WKRG1=R1,WKRG2=R4		;
+	MOV.W	#H'3400,R4									;340.0
+	FAR_JSR	#_EMG_STOP,R0									;
+
+ER_EMGINP_020:
+;	----------------------------------
+
+
+;	---------- EMG SW------------
+	XOR	R3,R3					;BIT変更あり
+	MOV.L	#_di3_cb_inp1_dt,R1	;//制御に使用するのは_dt(相手側の遮光も)
+	MOV.W	@R1,R0			;
+	TST	#(BIT1+BIT0),R0		;EMG?
+	TST_BIT_OF ER_EMGINP_050	;
+
+;;;2011-05-05	MOV	#BIT0,R3		;
+;	---------- 2011-05-05 -----------
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_ELSE_ERR_FLG1,LG=W,BIT=BIT0,WKREG=R1	;ERR!
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB214,LG=W,BIT=(BIT7),WKRG1=R1,WKRG2=R4		;
+	MOV.W	#H'2048,R4									;204.8/204.9
+	FAR_JSR	#_EMG_STOP,R0									;
+;	-------------------------------------
+
+
+ER_EMGINP_050:				;BIT0 非常停止,VS_ERR,OT
+;	=== 2004-04-04 INT EMG ===
+	MOV.L	#_IRQ_EMG_FLG,R1	;
+	MOV.W	@R1,R0			;
+	TST	R0,R0			;
+	TST_BIT_OF ER_EMGINP_060	;
+
+;;;;2011-05-05	MOV	#BIT0,R3		;EMG SET
+;	---------- 2011-05-05 -----------
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_ELSE_ERR_FLG1,LG=W,BIT=BIT0,WKREG=R1	;ERR!
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB214,LG=W,BIT=(BIT7),WKRG1=R1,WKRG2=R4		;
+	MOV.W	#H'2049,R4									;204.8/204.9
+	FAR_JSR	#_EMG_STOP,R0									;
+;	-------------------------------------
+ER_EMGINP_060:				;
+;	==========================
+;;;;;--- 2011-05-05 2147のｴﾗｰｺｰﾄﾞを分解
+;;;;;	MOV.L	#_ELSE_ERR_FLG1,R1	;BIT0
+;;;;;	MOV.W	@R1,R0			;
+;;;;;	AND	#LOW ~BIT0,R0		;
+;;;;;	OR	R3,R0			;
+;;;;;	MOV.W	R0,@R1			;
+;;;;;	TST	R3,R3			;
+;;;;;	TST_BIT_OF ER_EMGINP_100	;
+;;;;;
+;;;;;	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB214,LG=W,BIT=(BIT7),WKRG1=R1,WKRG2=R4
+;;;;;	MOV.W	#H'2147,R4		;2010-12-21
+;;;;;	FAR_JSR	#_EMG_STOP,R0		;
+
+ER_EMGINP_100:
+
+
+	mov.l	#_pass_err_flg1,r1	;//異常ﾙｰﾁﾝ
+	mov.w	@r1,r0			;
+	or	#BIT0,r0		;
+	mov.w	r0,@r1			;
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	設定値レベルの異常	***
+;	***				***
+;	***********************************
+;
+;SV_CHG_FLG1.BT0=ﾀｲﾏのV/V以外切替有り
+;	     BT0~BT7:待機点,段数,角度
+;SV_CHG_FLG2.BT1=荷重/位置　制御SW切替
+;
+;
+;	---------10msec ﾚﾍﾞﾙ[設定異常]-------------
+	.ALIGN	4				;
+_ERR_EMG_INPUT_SLW1:		;BIT0 非常停止,VS_ERR,OT
+	SUB_START
+
+;	==== 設定値異常===
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB212,R1	;
+	MOV.W	@R1,R0				;
+	TST	#BIT3,R0			;
+	TST_BIT_OF ER_EMGINP_200		;
+	MOV.W	#H'2123,R4			;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+ER_EMGINP_200:
+
+
+;	==== 設定変更===
+	MOV.L	#_SV_CHG_FLG1,R1		;
+	MOV.L	@R1,R0				;
+	MOV.L	#_SV_CHG_FLG2,R1		;2003-07-14
+	MOV.L	@R1,R2				;
+	OR	R2,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF ER_EMGINP_300		;
+	XOR	R0,R0				;
+	MOV.L	#_SV_CHG_FLG1,R1		;
+	MOV.L	R0,@R1				;異常ｸﾘｱ
+	MOV.L	#_SV_CHG_FLG2,R1		;//ﾘｾｯﾄ=0 2003-07-14(TIMER 定周期用)
+	MOV.L	R0,@R1				;異常ｸﾘｱ
+
+
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB212,R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT4,R2			;
+	OR	R2,R0				;
+	MOV.W	R0,@R1				;
+	MOV.W	#H'2124,R4			;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+
+
+;	-------- 金型タッチ挿入 2015-05-20-------
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_INSERT_MOT_SV_CHGF,LG=W,BIT=BIT0,WKREG=R1	;
+	.AENDI
+
+
+ER_EMGINP_300:
+
+;	==== ﾃｰﾌﾞﾙﾃﾞｰﾀ異常 ======
+;	==== ﾃｰﾌﾞﾙﾊﾞｰｼﾞｮﾝ異常 ========
+	MOV.L	#_TABLE_ERR_FLG,R1		;
+	MOV.W	@R1,R0				;
+	TST	#(BIT1+BIT0),R0			;
+	TST	#(BIT2+BIT1+BIT0),R0		;2002-12-23 ｾﾝｻﾃｰﾌﾞﾙWR異常,ﾃｰﾌﾞﾙﾍﾞﾘﾌｧﾘ
+	TST_BIT_OF ER_EMGINP_400		;
+
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB220,R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT5,R2			;
+	OR	R2,R0				;
+	MOV.W	R0,@R1				;
+	MOV.W	#H'2205,R4			;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+ER_EMGINP_400:
+
+;	===== ﾊﾟﾗﾒｰﾀwr異常===========
+	MOV.L	#_TABLE_ERR_FLG,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT2,R0			;ﾊﾟﾗﾒｰﾀﾃｰﾌﾞﾙWR異常,ﾃｰﾌﾞﾙﾍﾞﾘﾌｧﾘ
+	TST_BIT_OF ER_EMGINP_450		;
+
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB220,R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT0,R2			;
+	OR	R2,R0				;
+	MOV.W	R0,@R1				;
+	MOV.W	#H'2200,R4			;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+
+ER_EMGINP_450:
+
+
+;	==== 2011-12-06 ｻﾑ異常======
+	MOV.L	#_SEQAB_DP_TOP+79*2,R1	;
+	MOV.W	@R1,R0			;
+	TST	#(BIT1+BIT0),R0		;
+	TST_BIT_OF SM_ER_EMGINP_480	;設定ｻﾑ異常
+	MOV.W	#H'0079,R4		;2011-12-21
+	FAR_JSR	#_EMG_STOP,R0		;
+
+SM_ER_EMGINP_480:
+	MOV.L	#_SEQAB_DP_TOP+78*2,R1	;
+	MOV.W	@R1,R0			;
+	TST	#(BIT0),R0		;
+	TST_BIT_OF SM_ER_EMGINP_500	;型ｻﾑ異常
+	MOV.W	#H'0078,R4		;2011-12-21
+	FAR_JSR	#_EMG_STOP,R0		;
+
+SM_ER_EMGINP_500:
+
+	SUB_END
+	M_RTS
+
+
+
+
+	.ALIGN	4				;
+;	---------5 msec ﾚﾍﾞﾙ-------------
+_ERR_EMG_INPUT_SLW2:		;
+	SUB_START
+
+;	---------[ｺﾝﾊﾟｲﾙしない 2011-02-03]----------
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA		;
+		.AIF	_CPU_A_ERR_STOP EQ _CMPILE_YES	;
+	M_BRA	ER_EMGINP_600
+		.AENDI
+	.AENDI
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUB		;
+		.AIF	_CPU_B_ERR_STOP EQ _CMPILE_YES	;
+	M_BRA	ER_EMGINP_600
+		.AENDI
+	.AENDI
+
+;	============================
+;	============================
+;	============================
+;	==== 2002-12-26 ===
+	MOV.W	#1,R7				;ﾋﾞｯﾄ飛び,ﾋﾞｯﾄ化け回数
+	MOV.L	#_CB_SEQ_CB_SEL341,R1		;341
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT13,R4			;
+	TST	R4,R0				;
+	TST_BIT_ON ER_EMGINP_460		;341.13=1 強制ON
+
+	MOV.L	#_PAR_BIT_DATA_ER1,R1		;ﾋﾞｯﾄ飛/化け(=0ならやらない 旧ﾊﾟﾗﾒｰﾀでは0)
+	MOV.W	@R1,R7				;
+	TST	R7,R7				;
+	TST_BIT_OF ER_EMGINP_600		;
+ER_EMGINP_460:
+;	==== R7=ｴﾝｺｰﾀﾞﾋﾞｯﾄ異常有効回数 ====
+;	==== ｴﾝｺｰﾀﾞﾋﾞｯﾄ化け======
+	MOV.L	#_ENC360_BITFLW_CNT,R5		;//ﾋﾞｯﾄ化けの発生した回数
+	MOV.W	@R5,R0				;
+	CMP/HI	R0,R7				;R0 < R7=1orSV
+	BT	ER_EMGINP_500			;NOMAL
+	XOR	R0,R0				;
+	MOV.W	R0,@R5				;
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB216,R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT1,R2			;
+	OR	R2,R0				;
+	MOV.W	R0,@R1				;
+	PUSH_REG1 R7
+	MOV.W	#H'2161,R4			;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+	POP_REG1 R7
+
+ER_EMGINP_500:
+
+;	==== ｴﾝｺｰﾀﾞﾋﾞｯﾄ飛び ======
+	MOV.L	#_ENC360_BITERR_CNT,R5		;//ﾋﾞｯﾄ化けの発生した回数
+	MOV.W	@R5,R0				;
+	CMP/HI	R0,R7				;R0 < R7=1orSV
+	BT	ER_EMGINP_550			;
+	XOR	R0,R0				;
+	MOV.W	R0,@R5				;
+
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB216,R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT0,R2			;
+	OR	R2,R0				;
+	MOV.W	R0,@R1				;
+	MOV.W	#H'2160,R4			;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+ER_EMGINP_550:
+
+	MOV.L	#_ENC360_BITNML_CNT,R5		;//正常ｶｳﾝﾀ
+	MOV.W	@R5,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF ER_EMGINP_600		;正常角度がある NO JUMP
+
+;	===== 正常に角度が見えた ====
+	XOR	R0,R0				;
+	MOV.W	R0,@R5				;_ENC360_BITNML_CNT
+	MOV.L	#_ENC360_BITFLW_CNT,R5		;//ﾋﾞｯﾄ化けの発生した回数
+	MOV.W	R0,@R5				;
+	MOV.L	#_ENC360_BITERR_CNT,R5		;//ﾋﾞｯﾄ化けの発生した回数
+	MOV.W	R0,@R5				;
+
+ER_EMGINP_600:
+
+
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_RNA_COM_ERR_CNT,R1		;
+	MOV.W	@R1,R0				;
+	MOV.W	#4,R4				;
+	CMP/HS	R0,R4				;0,1,2=<
+	BF	ER_EMGINP_650			;ERR
+	MOV.L	#_rcv2_err_hard_INTflg1,R1	;// ﾊｰﾄﾞ異常
+	MOV.W	@R1,R0				;
+	CMP/HS	R0,R4				;0,1,2=<
+	BF	ER_EMGINP_650			;ERR
+	MOV.L	#_rcv2_err_hard_INTflg2,R1	;// ﾊｰﾄﾞ異常
+	MOV.W	@R1,R0				;
+	CMP/HS	R0,R4				;0,1,2=<
+	BF	ER_EMGINP_650			;ERR
+	MOV.L	#_rcv2_err_hard_INTflg3,R1	;// ﾊｰﾄﾞ異常
+	MOV.W	@R1,R0				;
+	CMP/HS	R0,R4				;0,1,2=<
+	BF	ER_EMGINP_650			;ERR
+	M_BRA	ER_EMGINP_700			;
+
+;	===== 非常停止ではない========		;
+ER_EMGINP_650:					;
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB220,R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT3,R2			;
+	OR	R2,R0				;
+	MOV.W	R0,@R1				;220.3
+ER_EMGINP_700:					;
+	.AENDI					;
+
+	SUB_END
+	M_RTS
+
+;	***************************
+;	***	非常停止	***
+;	***************************
+;	PASS_FLG1:BIT1
+	.ALIGN	4				;
+_ERR_SWIN:		;BIT1 入力論理,ﾊﾞﾙﾌﾞ
+	SUB_START
+
+;	----- 2006-07-16 ----
+	FAR_JSR	#_LSA_ERR_CHK,R0	;
+
+;	-------- 2015-07-14----------
+	FAR_JSR	#_ELSE_CPU_ERR,R0	;2015-07-14 ここが正解か?
+
+;;;	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+;;;	MOV.L	#_EMG_SH2_TO_SH4,R6		;
+;;;	MOV.W	@R6,R0				;
+;;;	.AELSE
+;;;	MOV.L	#_EMG_SH4_TO_SH2,R6		;
+;;;	MOV.W	@R6,R0				;
+;;;	.AENDI
+;;;	TST	R0,R0
+;;;	TST_BIT_OF CPUAB_STOP_CHK		;
+;;;	XOR	R0,R0				;
+;;;	MOV.W	R0,@R6				;
+;;;
+;;;	MOV.W	#H'0001,R4			;2010-12-21
+;;;	FAR_JSR	#_EMG_STOP_SPEC,R0
+;;;
+;;;CPUAB_STOP_CHK:
+
+
+
+
+
+	FAR_JSR	#_SPL_ERR_CHECK,R0		;2014-09-16
+
+
+
+	mov.l	#_pass_err_flg1,r1	;//異常ﾙｰﾁﾝ
+	mov.w	@r1,r0			;
+	or	#BIT1,r0		;
+	mov.w	r0,@r1			;
+
+	SUB_END
+	M_RTS
+
+;	***************************
+;	***	非常停止	***
+;	***************************
+;	PASS_FLG1:BIT2
+	.ALIGN	4				;
+_ERR_SRC:		;BIT2 二重回路
+	SUB_START
+
+;;;;;;;;;	---------[ｺﾝﾊﾟｲﾙしない 2011-02-03]----------
+;;;;;;;;	.AIF	_CB_CPU_SEL EQ	_CB_CPUA		;
+;;;;;;;;		.AIF	_CPU_A_ERR_STOP EQ _CMPILE_YES	;
+;;;;;;;;	M_BRA	ERR_SC_200				;
+;;;;;;;;		.AENDI
+;;;;;;;;	.AENDI
+;;;;;;;;	.AIF	_CB_CPU_SEL EQ	_CB_CPUB		;
+;;;;;;;;		.AIF	_CPU_B_ERR_STOP EQ _CMPILE_YES	;
+;;;;;;;;	M_BRA	ERR_SC_200				;
+;;;;;;;;		.AENDI
+;;;;;;;;	.AENDI
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;	MOV.L	#_CB_SEQ_SW_SEL029,R1		;//SEQ 29.1
+;;;;;;;;	MOV.W	@R1,R0				;
+;;;;;;;;	TST	#BIT1,R0			;(異常解除)
+;;;;;;;;	TST_BIT_ON ERR_SC_200			;BIT1 二重回路
+
+;	------- 2015-07-14---------------
+	MOV.L	#_DPCHK_ERR_SIG,R1		;//BIT0(WDT),BIT1(DI)
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF ERR_SC_100			;
+
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB214,R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#(BIT8),R4			;WDT異常
+	OR	R4,R0				;
+	MOV.W	R0,@R1				;
+	MOV.W	#H'2148,R4			;
+	FAR_JSR	#_EMG_STOP,R0			;
+
+;;;;;;;;	CPUAにﾃﾞﾊﾞｯｶ接続 CPUBで検知の確認のため　電源投入の1回目のﾘｾｯﾄが目的
+;;;;;;;;	MOV.L	#_DPCHK_ERR_SIG,R1		;//BIT0(WDT),BIT1(DI)
+;;;;;;;;	XOR	R0,R0				;[ﾃﾞﾊﾞｯｸ中はCLR有り]
+;;;;;;;;	MOV.W	R0,@R1				;[CLR有り]
+
+ERR_SC_100:					;
+;	---------------------------------
+
+
+	FAR_JSR	#_CMP_OUT_DPRAM_DAT_ERR,R0
+
+;;;_PROC_CMPERR_CHG2016
+
+ .AIF	_DEBUG_CMPERR_DEBUG EQ _CMPILE_YES	;出荷時は必ずNO!
+;	---------2016-10-31(2016-06-21)-------------
+	FAR_JSR	#_DBG_CPUAB_STEP_CMPERR1,R0	;[[[[[[[[[[ﾃﾞﾊﾞｯｸ専用機能出荷時はハズス]]]]]]]]]]]]]]]]]
+ .AENDI
+
+;;;;;;;;ERR_SC_200:			;BIT2 二重回路
+
+;	==== 2004-01-28 ====
+	FAR_JSR	#_ERR_INFO_BAKUP_CHK,R0	;
+
+	mov.l	#_pass_err_flg1,r1	;//異常ﾙｰﾁﾝ
+	mov.w	@r1,r0			;
+	or	#BIT2,r0		;
+	mov.w	r0,@r1			;
+	SUB_END
+	M_RTS
+
+;	***************************
+;	***	非常停止	***
+;	***************************
+;	PASS_FLG1:BIT3
+	.ALIGN	4				;
+_ERR_CHGSW:		;BIT3 ﾓｰﾄﾞ変更等
+	SUB_START
+
+	XOR	R3,R3						;BIT0
+	MOV.L	#_di1_cb_ctl1_dt,R1				;// ﾚﾍﾞﾙﾃﾞ-ﾀ
+	MOV.W	@R1,R0						;
+	AND	#(BIT6+BIT5+BIT4+BIT3+BIT2+BIT1+BIT0),R0	;MODE-SW
+	MOV.L	#_INPUT_MODE_SW,R1				;(ﾓｰﾄﾞSW前回値)
+	MOV.W	@R1,R2						;
+	MOV.W	R0,@R1						;
+	XOR	R0,R2						;
+	TST	R2,R2						;
+	TST_BIT_OF ER_CGSW_030					;
+	MOV	#BIT0,R3					;BIT変更あり
+ER_CGSW_030:
+	TST	R0,R0						;
+	TST_BIT_ON ER_CGSW_050					;
+	MOV	#BIT1,R3					;選択なし
+ER_CGSW_050:
+	XOR	R4,R4						;
+	XOR	R5,R5						;
+	ROTCR	R0						;BIT0
+	ADDC	R4,R5						;
+	ROTCR	R0						;BIT1
+	ADDC	R4,R5						;
+	ROTCR	R0						;BIT2
+	ADDC	R4,R5						;
+	ROTCR	R0						;BIT3
+	ADDC	R4,R5						;
+	ROTCR	R0						;BIT4
+	ADDC	R4,R5						;
+	ROTCR	R0						;BIT5
+	ADDC	R4,R5						;
+	ROTCR	R0						;BIT6
+	ADDC	R4,R5						;
+	MOV.W	#2,R4						;
+	CMP/HS	R4,R5						;
+	BF	ER_CGSW_070					;
+	MOV	#BIT2,R3					;複数ON
+ER_CGSW_070:
+	MOV.L	#_ELSE_ERR_FLG2,R1				;//BIT0~BIT2:ﾓｰﾄﾞSW変更(生)
+	MOV.W	@R1,R0						;
+	AND	#LOW ~(BIT2+BIT1+BIT0),R0			;
+	OR	R3,R0						;
+	MOV.W	R0,@R1						;生情報
+	TST	#(BIT2+BIT1+BIT0),R0				;
+	TST_BIT_OF ER_CGSW_080					;
+	MOV.W	#H'0017,R4		;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0					;
+ER_CGSW_080:
+
+	mov.l	#_pass_err_flg1,r1	;//異常ﾙｰﾁﾝ
+	mov.w	@r1,r0			;
+	or	#BIT3,r0		;
+	mov.w	r0,@r1			;
+	SUB_END
+	M_RTS
+
+;	***************************
+;	***	EXQ停止		***
+;	***************************
+;	PASS_FLG1:BIT4
+	.ALIGN	4				;
+_ERR_EXQ_INPUT:		;BIT4 急停止ﾚﾍﾞﾙ
+	SUB_START
+
+	MOV.L	#_CB_SEQ_CB_COM340,R3			;340.5
+	MOV.W	@R3,R0					;
+	TST	#BIT5,R0				;
+	TST_BIT_OF ERR_EXQ_INP200			;
+
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB204,R5		;
+	MOV.W	@R5,R1					;
+	MOV.W	#BIT1,R0
+	OR	R0,R1
+	MOV.W	R1,@R5
+
+	MOV.W	#H'2041,R4				;2010-12-21
+	FAR_JSR	#_EXQ_STOP,R0				;EXQ_FLG
+
+ERR_EXQ_INP200:
+
+
+
+
+
+
+
+	mov.l	#_pass_err_flg1,r1	;//異常ﾙｰﾁﾝ
+	mov.w	@r1,r0			;
+	or	#BIT4,r0		;
+	mov.w	r0,@r1			;
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+;	***********************************
+;	***	安全装置停止		***
+;	***	EXQ(信号上はEMGと同じ)	***
+;	***********************************
+;	PASS_FLG1:BIT5
+_ERR_SFT_INPUT:		;BIT5 
+	SUB_START
+
+
+;	------- 2007-01-23-----
+	MOV.L	#_INT_STP_INP_DAT,R1		;生
+	MOV.W	@R1,R2				;R2=NEW
+	MOV.L	#_INT_STP_INP_DAT1,R0		;
+	MOV.W	@R0,R3				;R3=OLD1
+	MOV.W	R2,@R0				;REF
+	MOV.L	#_INT_STP_INP_DAT2,R1		;
+	MOV.W	@R1,R2				;
+	MOV.W	R3,@R1				;
+	MOV.L	#_INT_STP_INP_DAT3,R0		;
+	MOV.W	R2,@R0				;
+
+;	-----------------------------------------------------------
+;	----	2015-07-14 emg,exqを共通条件で行う		---
+;	----	遮光中の下降停止[遮光2　ﾘﾆｱ,遮光3　ﾊﾟﾙｽ]	---
+;	-----------------------------------------------------------
+	FAR_JSR	#_ERR_SFT_INPKAKOU_STOPCHK,R0	;
+
+
+;	-------------------------------------------
+;	---	2015-07-14 			---
+;	---	ﾐｭｰﾃﾝｸﾞしていない通常の遮光停止	---
+;	---	[2015-07-14]			---
+;	---	[ｻﾌﾞﾙｰﾁﾝ化]			---
+;	---	[遅延時間追加]			---
+;	---					---
+;	-------------------------------------------
+	FAR_JSR	#_ERR_SFT_INP_STD_STOPCHK,R0		;2015-07-14 運転終了~ﾐｭｰﾃﾝｸﾞ　ﾐｭｰﾃﾝｸﾞ中のある一定時間でもEXQ
+
+
+
+
+;;;[]	MOV.L	#_SELF_FLG,R1		;//BIT0:ｾﾙﾌﾁｪｯｸ中  BIT7ｾﾙﾌﾁｪｯｸ正常完了
+;;;[]	MOV.W	@R1,R0			;
+;;;[]	TST	#BIT0,R0		;
+;;;[]	TST_BIT_ON ERR_SFT_INP200	;
+;;;[]
+;;;[];	===== 2004-04-04 ===
+;;;[]	MOV.L	#_INT_STP_INP_DAT3,R1			;2007-01-23
+;;;[]	MOV.W	@R1,R2					;
+;;;[]	MOV.L	#_INT_SFY_INP_DAT,R1			;
+;;;[]	MOV.W	@R1,R4					;
+;;;[]
+;;;[]	MOV.L	#_SFTY_CTL_IN_DAT,R1			;
+;;;[]	MOV.W	@R1,R0					;
+;;;[]	OR	R2,R0					;
+;;;[]	OR	R4,R0					;
+;;;[];;;2007-01-23	TST	#(BIT1+BIT0),R0				;
+;;;[]	TST	#(BIT3+BIT1+BIT0),R0			;
+;;;[]	TST_BIT_OF ERR_SFT_INP200			;
+;;;[]
+;;;[]	SHLL2	R0					;BIT5+BIT3+BIT2
+;;;[]	MOV.L	#_SQ_CBWK_TOP+_WKSQCB204,R5		;
+;;;[]	MOV.W	@R5,R1					;
+;;;[];;;2007-01-23	MOV.W	#(BIT3+BIT2),R4			;
+;;;[]	MOV.W	#(BIT5+BIT3+BIT2),R4			;
+;;;[]	AND	R4,R0					;
+;;;[];;;;;2007-01-23	NOT	R4,R4			;不要
+;;;[];;;;;2007-01-23 AND	R4,R1			;不要
+;;;[]	OR	R0,R1					;
+;;;[]	MOV.W	R1,@R5					;
+;;;[]
+;;;[]	MOV.W	#H'2045,R4				;2010-12-21
+;;;[]	FAR_JSR	#_SFTY_STOP,R0			;
+;;;[]
+;;;[];	===== 2004-04-04 ===
+;;;[]	XOR	R4,R4				;
+;;;[]	MOV.L	#_INT_SFY_INP_DAT,R1		;
+;;;[]	MOV.W	R4,@R1				;
+;;;[]	MOV.L	#_INT_STP_INP_DAT,R1		;
+;;;[]	MOV.W	R4,@R1				;
+;;;[];	------ 2007-01-23----
+;;;[]	MOV.L	#_INT_STP_INP_DAT1,R1		;
+;;;[]	MOV.W	R4,@R1				;
+;;;[]	MOV.L	#_INT_STP_INP_DAT2,R1		;
+;;;[]	MOV.W	R4,@R1				;
+;;;[]	MOV.L	#_INT_STP_INP_DAT3,R1		;
+;;;[]	MOV.W	R4,@R1				;
+;;;[]
+;;;[]
+;;;[]
+;;;[]ERR_SFT_INP200:
+;	==========反転の場合は見ない============
+	MOV.L	#_SETX_POS_CTL_MATH,R1			;
+	MOV.W	@R1,R0					;
+	TST	#_DMATH_REVRSE,R0			;
+	TST_BIT_ON ERR_SFT_INP300			;
+
+
+
+;	==== 2004-04-04 ========
+;	(DEV_MASK状態でも5~165なら停止する)
+	MOV.L	#_M_LINK_AREASIG,R1		;//BIT0/BIT4:待機点範囲
+	MOV.W	@R1,R0				;
+	TST	#BIT1,R0			;下降領域?
+	TST_BIT_OF ERR_SFT_INP300		;NO
+
+	MOV.L	#_SFTY_IN_DAT,R1		;
+	MOV.W	@R1,R0				;"BIT0+BIT1"
+	TST	#(BIT1+BIT0),R0			;MASK前F/RACT
+	TST_BIT_OF ERR_SFT_INP300		;遮光? NO
+
+	XOR	R0,R0				;
+	MOV.L	#_MNWR_POS_CMD,R1		;ﾊﾟﾙｽ払出即停止
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_DRV_ACT_FLG,R1		;//運転動作ﾌﾗｸﾞ BIT0:運転中
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;運転中?
+	TST_BIT_OF ERR_SFT_INP300		;NO
+
+
+	MOV.L	#_SFTY_IN_DAT,R1			;
+	MOV.W	@R1,R0					;"BIT0+BIT1"
+	SHLL2	R0					;BIT3+BIT2
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB204,R5		;
+	MOV.W	@R5,R1					;
+	MOV.W	#(BIT3+BIT2),R4				;
+	AND	R4,R0					;
+	NOT	R4,R4					;
+	AND	R4,R1					;
+	OR	R0,R1					;
+	MOV.W	R1,@R5					;
+
+	MOV.W	#H'2042,R4				;2010-12-21
+	FAR_JSR	#_SFTY_STOP,R0				;
+
+
+ERR_SFT_INP300:
+
+
+	mov.l	#_pass_err_flg1,r1	;//異常ﾙｰﾁﾝ
+	mov.w	@r1,r0			;
+	or	#BIT5,r0		;
+	mov.w	r0,@r1			;
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	2015-07-14		***
+;	***	遮光停止２：リニア	***
+;	***	遮光停止３：パルス	***
+;	***				***
+;	***********************************
+_ERR_SFT_INP_STD_STOPCHK
+	SUB_START
+
+	MOV.L	#_SELF_FLG,R1		;//BIT0:ｾﾙﾌﾁｪｯｸ中  BIT7ｾﾙﾌﾁｪｯｸ正常完了
+	MOV.W	@R1,R0			;
+	TST	#BIT0,R0		;
+	TST_BIT_ON ERR_SFT_INP200	;
+
+;	===== 2004-04-04 ===
+	MOV.L	#_INT_STP_INP_DAT3,R1			;2007-01-23
+	MOV.W	@R1,R2					;
+	MOV.L	#_INT_SFY_INP_DAT,R1			;
+	MOV.W	@R1,R4					;
+
+	MOV.L	#_SFTY_CTL_IN_DAT,R1			;ﾐｭｰﾃﾝｸﾞ
+	MOV.W	@R1,R0					;
+	OR	R2,R0					;
+	OR	R4,R0					;
+	TST	#(BIT3+BIT1+BIT0),R0			;
+	TST_BIT_ON ERR_SFT_INP100			;ON:停止処理実行
+;;;;2014-07-14	TST_BIT_OF ERR_SFT_INP200		;OFF:EXIT
+
+	MOV.L	#_SFTY_IN_DAT,R1			;[RACT,FACT]
+	MOV.W	@R1,R0					;"BIT0+BIT1"
+	TST	#(BIT1+BIT0),R0				;
+	TST_BIT_OF ERR_SFT_INP200			;[生情報 OFF EXIT]
+
+;ﾐｭｰﾃﾝｸﾞされていて遮光状態
+	MOV.L	#_POS_END_MYUTIG_STOPTIM,R1		;//終了後この時間であれば動力遮断する時間
+	MOV.W	@R1,R2					;
+	TST	R2,R2					;
+	TST_BIT_ON ERR_SFT_INP100			;運転の継続時間
+	M_BRA	ERR_SFT_INP200				;
+
+
+ERR_SFT_INP100			;
+	SHLL2	R0					;BIT5+BIT3+BIT2
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB204,R5		;
+	MOV.W	@R5,R1					;
+	MOV.W	#(BIT5+BIT3+BIT2),R4			;
+	AND	R4,R0					;
+	OR	R0,R1					;
+	MOV.W	R1,@R5					;
+
+;	----------- いつでも言えばいんじゃない[目的は下記ﾀｲﾐﾝｸﾞの二重回路回避]-----------
+	FAR_JSR	#_EXQ_STOP_TO_ELSE_CPU,R0		;2015-07-14
+
+	MOV.W	#H'2045,R4				;2010-12-21
+	FAR_JSR	#_SFTY_STOP,R0			;
+
+;	===== 2004-04-04 ===
+	XOR	R4,R4				;
+	MOV.L	#_INT_SFY_INP_DAT,R1		;
+	MOV.W	R4,@R1				;
+	MOV.L	#_INT_STP_INP_DAT,R1		;
+	MOV.W	R4,@R1				;
+;	------ 2007-01-23----
+	MOV.L	#_INT_STP_INP_DAT1,R1		;
+	MOV.W	R4,@R1				;
+	MOV.L	#_INT_STP_INP_DAT2,R1		;
+	MOV.W	R4,@R1				;
+	MOV.L	#_INT_STP_INP_DAT3,R1		;
+	MOV.W	R4,@R1				;
+
+
+
+ERR_SFT_INP200:
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	2015-07-14		***
+;	***	遮光停止２：リニア	***
+;	***	遮光停止３：パルス	***
+;	***				***
+;	***********************************
+_ERR_SFT_INPKAKOU_STOPCHK
+	SUB_START
+
+	MOV.L	#_emg_err_flg,R1			;//異常ﾗｯﾁ
+	MOV.W	@R1,R2					;
+	MOV.L	#_exq_err_flg,R1			;//異常ﾗｯﾁ
+	MOV.W	@R1,R3					;
+	OR	R3,R2					;
+	TST	R2,R2					;
+	TST_BIT_OF ERR_SFT_INP_KAKOUCHK			;非常停止,急停止ではない.
+
+;	==============
+;	=== ﾘﾌﾚｯｼｭ ===
+;	==============
+
+;	----------ﾘﾆｱ位置ﾘﾌﾚｯｼｭ----------------
+	MOV.L	#_RNA_ABS_POS,R1			;
+	MOV.L	@R1,R2					;
+	MOV.L	#_SFTYCHK_RNA_POS,R3			;
+	MOV.L	R2,@R3					;
+
+;	----------ｸﾗﾝｸ角度ﾘﾌﾚｯｼｭ----------------
+	MOV.L	#_LINK_CLANK_PV,R1			;[まだパルスには変更できない]
+	MOV.W	@R1,R2					;ｸﾗﾝｸ角度(毎ｽｷｬﾝ1msecでINC_ENC360から更新)
+	MOV.L	#_SFTYCHK_CLANK_DEG,R3			;
+	MOV.W	R2,@R3					;
+
+	M_BRA	ERR_SFT_INP_KAKOUEND			;
+
+ERR_SFT_INP_KAKOUCHK:
+
+	FAR_JSR	#_SFTY_MOV_RENA_CHK,R0		;2003-05-24 遮光停止2
+	FAR_JSR	#_SFTY_MOV_PLS_CHK,R0		;2015-02-25 遮光停止3
+
+ERR_SFT_INP_KAKOUEND:
+;	===========================================
+	SUB_END
+	M_RTS
+
+
+;	***************************
+;	***	非常停止	***
+;	***************************
+;	PASS_FLG1:BIT6
+_ERR_POS_CHEAK:		;BIT6 位置決め関連
+	SUB_START
+
+	MOV.L	#_MOV_ERR_FLG1,R1		;218.BIT0~BIT8
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF ERR_POS_CK50			;
+	MOV.W	#H'00FF,R4			;
+	AND	R4,R0				;
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB218,R5	;
+	MOV.W	@R5,R1				;
+	OR	R0,R1				;
+	MOV.W	R1,@R5				;
+
+	MOV.W	#H'2180,R4		;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+	FAR_JSR	#_DATA_GRF_CNT_DATA_MAKE,R0	;2004-03-25
+
+ERR_POS_CK50:
+
+;	==== 2013-02-05 ======================
+	MOV.L	#_ORG_PRESET_TIM,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON RNA_ERR_100			;通信前(1秒)は異常を検出しない
+;	======================================
+
+
+;	====== 上下限範囲内チェック(上限=999.999下限=0の時だけチェックしない)======
+;;;[2015-07]	MOV.L	#_CB_SEQ_SW_SEL029,R1		;//SEQ 29.0
+;;;[2015-07]	MOV.W	@R1,R0				;
+;;;[2015-07]	TST	#BIT2,R0			;(異常解除)
+;;;[2015-07]	TST_BIT_ON RNA_ERR_100			;
+
+	XOR	R0,R0
+	MOV.L	#_RNA_ABS_POS,R1		;//ﾎﾞﾙｽﾀ面高さ
+	MOV.L	@R1,R2				;
+
+	MOV.L	#_SET1_RNAPOS_MINP,R4		;
+	MOV.L	@R4,R3				;
+	CMP/GE	R3,R2				;MIN =< PV
+	BT	RNA_ERR_050			;
+	OR	#BIT6,R0			;(BIT14)
+RNA_ERR_050:					;
+
+	MOV.L	#_SET1_RNAPOS_MAXP,R4		;
+	MOV.L	@R4,R3				;
+	CMP/GE	R2,R3				;PV =< MAX
+	BT	RNA_ERR_080			;
+	OR	#BIT7,R0			;(BIT14)
+RNA_ERR_080:					;
+	SHLL8	R0				;
+	TST	R0,R0				;
+	TST_BIT_OF RNA_ERR_100			;
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB218,R5	;
+	MOV.W	@R5,R1				;
+	OR	R0,R1				;
+	MOV.W	R1,@R5				;
+	MOV.W	#H'218E,R4		;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+RNA_ERR_100:					;
+
+
+
+
+;	------- 2011-07-04-------
+;;;;2014-10-23	FAR_JSR	#_UP_ACCERR_CHECK,R0
+	FAR_JSR	#_UP_ACCERR_CHECK1,R0
+
+;	-----2012-03-06----------
+	FAR_JSR	#_INP_ERR_CHK,R0	;
+	FAR_JSR	#_AREA_ERR_CHK,R0	;
+
+;	---------- 2015-07-14 CPUA,CPUBだけ 角度比較----------------
+	FAR_JSR	#_PG_CMP_CHK,R0		;
+
+
+	mov.l	#_pass_err_flg1,r1	;//異常ﾙｰﾁﾝ
+	mov.w	@r1,r0			;
+	or	#BIT6,r0		;
+	mov.w	r0,@r1			;
+	SUB_END
+	M_RTS
+
+
+
+;	*******************************************
+;	***					***
+;	***	・相手CPUが異常を検知した	***
+;	***	・相手CPUをﾁｪｯｸ			***
+;	***	2015-07-14			***
+;	*******************************************
+	.IMPORT		_API_WDT_DEBUG_USEFUL	
+	.IMPORT		_EXQ_SH4_TO_SH2		;
+	.IMPORT		_EXQ_SH2_TO_SH4		;
+
+_ELSE_CPU_ERR
+	SUB_START
+
+;	==================EMG========================
+ .AIF	_CB_CPU_SEL EQ	_CB_CPUA	;CPUAはCPUBからの二重回路等の異常はCOP2に教える
+	MOV.L	#_EMG_SH2_TO_SH4,R6	;
+ .AELSE
+	MOV.L	#_EMG_SH4_TO_SH2,R6		;
+ .AENDI
+
+	MOV.W	@R6,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF CPU_CPUCABC_EMGCHK_200	;NO ERR
+
+;	--------- 異常CLR--------------------
+	XOR	R0,R0				;
+	MOV.W	R0,@R6				;SIG CLR
+
+;	--------- ﾃﾞﾊﾞｯｸ中は相手CPUの異常を見ない[2015-07-14]-----------------
+;	ﾊﾟﾗﾒｰﾀ異常などCPUAだけまたはCPUCだけのものがあればｼｽﾃﾑは停止しない(二重回路停止)
+	FAR_JSR	#_API_WDT_DEBUG_USEFUL,R0	;
+	TST	R0,R0				;
+	TST_BIT_ON CPU_CPUCABC_EMGCHK_EXT	;DEBUG
+
+;	--------- 異常処理--------------------
+	MOV.L	#_emg_err_flg,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON CPU_CPUCABC_EMGCHK_EXT	;[自分が異常の場合処理しない]
+
+	MOV.W	#H'0001,R4			;2010-12-21
+	FAR_JSR	#_EMG_STOP_SPEC,R0		;
+
+CPU_CPUCABC_EMGCHK_200	;
+CPU_CPUCABC_EMGCHK_EXT
+
+;	------------------ 2015-07-14 -----------------------------------------------------
+;	==================EXQ[当面特殊な遮光停止時のみこの機能を使用する]=================
+;
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;CPUAはCPUBからの二重回路等の異常はCOP2に教える
+	MOV.L	#_EXQ_SH2_TO_SH4,R6		;
+	.AELSE
+	MOV.L	#_EXQ_SH4_TO_SH2,R6		;
+	.AENDI
+	MOV.W	@R6,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF CPU_CPUCABC_EXQCHK_200	;NO ERR
+
+;	--------- 異常--------------------
+	XOR	R0,R0				;
+	MOV.W	R0,@R6				;SIG CLR
+
+
+	MOV.L	#_emg_err_flg,R1		;
+	MOV.W	@R1,R2				;
+	MOV.L	#_exq_err_flg,R1		;
+	MOV.W	@R1,R0				;
+	OR	R2,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON CPU_CPUCABC_EXQCHK_EXT	;[自分が異常の場合処理しない]
+
+
+;	--------- ﾃﾞﾊﾞｯｸ中は相手CPUの異常を見ない[2015-07-14]-----------------
+	FAR_JSR	#_API_WDT_DEBUG_USEFUL,R0	;
+	TST	R0,R0				;
+	TST_BIT_ON CPU_CPUCABC_EXQCHK_EXT	;
+
+
+	MOV.W	#H'0020,R4			;
+	FAR_JSR	#_EXQ_STOP_SPEC,R0		;
+
+
+
+
+CPU_CPUCABC_EXQCHK_200	;
+CPU_CPUCABC_EXQCHK_EXT
+
+
+	SUB_END
+	M_RTS
+
+;	***************************
+;	***	2012-03-06	***
+;	***************************
+;	ｲﾝﾎﾟｼﾞｼｮﾝ異常
+	.ALIGN	4				;
+_INP_ERR_CHK:
+	SUB_START
+
+	MOV.L	#_INP_ERR_FLG,R1			;[ｲﾝﾎﾟｼﾞｼｮﾝ異常]
+	MOV.W	@R1,R0					;
+	XOR	R2,R2					;
+	MOV.W	R2,@R1					;
+
+	TST	R0,R0					;
+	TST_BIT_OF INP_ERR_200				;
+
+	MOV.L	#_CPOS_CTL_MATH,R1			;
+	MOV.W	@R1,R0					;
+	TST	#(_DMATH_CNTROT+_DMATH_DNDRIV),R0	;
+	TST_BIT_OF INP_ERR_200				;
+
+	MOV.L	#_MODE_SEL,R1				;
+	MOV.W	@R1,R0					;
+	TST	#(_W1DUP+_W1DIC),R0			;
+	TST_BIT_ON INP_ERR_200				;
+
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB217,R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT11,R2			;
+	OR	R2,R0				;
+	MOV.W	R0,@R1				;
+	MOV.W	#H'217B,R4			;217.11
+	FAR_JSR	#_EMG_STOP,R0			;
+
+INP_ERR_200
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***	動作条件にあまり関係ないオーバラン	***
+;	***	(制動試験除く)				***
+;	***	2012-03-06
+;	***************************************************
+
+	.ALIGN	4				;
+_AREA_ERR_CHK:
+	SUB_START
+
+	MOV.L	#_CB_SEQ_CB_SEL341,R1		;341.14 360ｴﾝｺｰﾀﾞで異常検知するかincで異常検知するか
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT14,R2			;
+
+	MOV.L	#_CTL_ENC360,R4			;360ｴﾝｺｰﾀﾞ出荷調整
+	TST	R2,R0				;
+	TST_BIT_OF AREA_ERRCHK_100		;
+	MOV.L	#_INC_ENC360,R4			;PG
+AREA_ERRCHK_100:				;
+	MOV.W	@R4,R2				;R1~R3の範囲か？
+
+	MOV.L	#_ERRCHK_ENC360,R1		;
+	MOV.W	R2,@R1				;
+
+
+
+
+	MOV.L	#_BRKTST_SW_IN,R1			;2012-02-13
+	MOV.W	@R1,R0					;
+	TST	#BIT0,R0				;
+	TST_BIT_ON AREA_ERRCHK_500			;
+
+	MOV.L	#_INP_MODE,R1				;
+	MOV.W	@R1,R0					;
+	TST	#(_W1DUP+_W1DIC),R0			;
+	TST_BIT_ON AREA_ERRCHK_500			;段取、上昇復帰除く
+
+	MOV.L	#_CPOS_CTL_MATH,R1			;
+	MOV.W	@R1,R0					;
+	TST	#(_DMATH_DNDRIV),R0			;
+	TST_BIT_OF AREA_ERRCHK_150			;
+;	------ふりこオーバラン---
+	FAR_JSR	#_DNM_AREA_ERR_CHK,R0			;217.12 段取、上昇復帰以外
+	FAR_JSR	#_DNDRIV_OVER_RUN_CHK,R0		;217.2
+	M_BRA	AREA_ERRCHK_500			
+
+AREA_ERRCHK_150:
+	TST	#(_DMATH_REVRSE),R0			;
+	TST_BIT_OF AREA_ERRCHK_200			;
+;	------反転オーバラン---
+	FAR_JSR	#_REV_AREA_ERR_CHK,R0			;段取、上昇復帰以外
+	M_BRA	AREA_ERRCHK_500			
+
+
+AREA_ERRCHK_200:
+;	------回転オーバラン---
+
+
+AREA_ERRCHK_500:
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	ふりこのオーバラン２	***
+;	***	2012-03-06
+;	***				***
+;	***********************************
+;	①往路待機点+α~復路待機点－αの範囲にいたら異常
+;	②０度を横切ったら異常
+;
+	.ALIGN	4				;
+_DNM_AREA_ERR_CHK:
+	SUB_START
+
+	MOV.L	#_ERRCHK_ENC360,R4				;
+	MOV.W	@R4,R2					;R1~R3の範囲か？
+
+	MOV.L	#_DNM_SETX_LINK_UP_POS_UP,R4		;
+	MOV.W	@R4,R1					;復路待機+α260+20=280 ~往路待機-α 100-20=90
+	MOV.L	#_SETX_LINK_UP_POS_DN,R4		;
+	MOV.W	@R4,R3					;
+	FAR_JSR	#_DIG_AREA_CHK1,R0			;
+	CMP/PZ	R5					;
+	BF	DNM_AREA_ERRCHK_EXT			;範囲外OK
+
+DNM_AREA_ERRCHK_ERROUT:
+;
+	MOV.W	#BIT12,R2				;
+	MOV.W	#H'217C,R4				;217.12
+
+	MOV.L	#_DRV_ACT_FLG,R1			;//運転動作ﾌﾗｸﾞ BIT0:運転中
+	MOV.W	@R1,R0					;
+	TST	#BIT0,R0				;
+	TST_BIT_OF DNM_AREA_ERRCHK_ERR100		;運転中?NO
+
+	MOV.W	#BIT14,R2				;
+	MOV.W	#H'217E,R4				;217.
+
+DNM_AREA_ERRCHK_ERR100:
+;	input R2,R4
+
+	FAR_JSR	#_SQ217_SET_EMGSTOP,R0			
+
+;;;;	MOV.L	#_SQ_CBWK_TOP+_WKSQCB217,R1		;
+;;;;	MOV.W	@R1,R0					;
+;;;;	MOV.W	#BIT12,R2				;
+;;;;	OR	R2,R0					;
+;;;	MOV.W	R0,@R1					;
+;;;	MOV.W	#H'217C,R4				;217.12
+;;;	FAR_JSR	#_EMG_STOP,R0				;
+DNM_AREA_ERRCHK_EXT:
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***		217.** SET		***
+;	***					***
+;	*******************************************
+;;;;input	MOV.W	#BIT12,R2				;
+;;;;input	MOV.W	#H'217C,R4				;217.12
+
+_SQ217_SET_EMGSTOP
+	SUB_START
+
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB217,R1		;
+	MOV.W	@R1,R0					;
+;;;;input	MOV.W	#BIT12,R2				;
+	OR	R2,R0					;
+	MOV.W	R0,@R1					;
+;;;;input	MOV.W	#H'217C,R4				;217.12
+	FAR_JSR	#_EMG_STOP,R0				;
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***	ふりこ　オーバラン		***
+;	***					***
+;	*******************************************
+;	0度をまたいだら
+	.ALIGN	4				;
+_DNDRIV_OVER_RUN_CHK:
+	SUB_START
+
+;;;2012-03-06 MODEは上でみる	MOV.L	#_MODE_SEL,R1			;
+;;;2012-03-06 MODEは上でみる	MOV.W	@R1,R0				;
+;;;2012-03-06 MODEは上でみる	MOV.W	#_W1OPT+_W1SGL+_W1CNT+_W1INC,R1	;
+;;;2012-03-06 MODEは上でみる	TST	R1,R0				;
+;;;2012-03-06 MODEは上でみる	TST_BIT_ON DNDRIV_OVERRUN_CK050		;
+;;;2012-03-06 MODEは上でみる	M_BRA	DNDRIV_OVERRUN_CK300		;
+;;;2012-03-06 MODEは上でみる
+;;;2012-03-06 MODEは上でみる
+;;;2012-03-06 MODEは上でみるDNDRIV_OVERRUN_CK050:				;
+
+;;;2012-03-06	MOV.L	#_CB_SEQ_CB_SEL341,R4		;341.14 360ｴﾝｺｰﾀﾞで異常検知するかincで異常検知するか
+;;;2012-03-06	MOV.W	@R4,R0				;
+;;;2012-03-06	MOV.W	#BIT14,R2			;
+;;;2012-03-06	MOV.L	#_CTL_ENC360,R4			;360ｴﾝｺｰﾀﾞ出荷調整
+;;;2012-03-06	TST	R2,R0				;
+;;;2012-03-06	TST_BIT_OF DNDRIV_OVERRUN_CK100		;
+;;;2012-03-06	MOV.L	#_INC_ENC360,R4			;PG
+;;;2012-03-06DNDRIV_OVERRUN_CK100:				;
+
+	MOV.L	#_ERRCHK_ENC360,R4		;2012-03-06
+	MOV.W	@R4,R2				;R1~R3の範囲か？
+	MOV.L	#_DND_OVERCHK_DIG,R1		;
+	MOV.W	@R1,R3				;
+	MOV.W	R2,@R1				;OLD DIG
+
+	MOV.L	#_ENC360_OVER_FLG,R1		;記録ありか
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON DNDRIV_OVERRUN_CK150		;
+	OR	#BIT0,R0			;
+	MOV.W	R0,@R1				;
+	MOV	R2,R3				;
+DNDRIV_OVERRUN_CK150:				;
+
+	CMP/EQ	R2,R3				;
+	BT	DNDRIV_OVERRUN_CK300		;
+
+	MOV	R3,R1				;
+	MOV	R2,R3				;R1[START=OLD] =< R2 =< R3[END:NOW]
+
+;	=== REGB=REGB-REGA==
+	MOV	R1,R5				;
+	MOV	R3,R6				;
+	XOR	R0,R0				;
+
+	SUB	R5,R6				;
+	CMP/PZ	R6				;
+	BT	DNDRIV_OVERRUN_CK170		;
+	NEG	R6,R6				;
+	ADD	#-1,R0				;
+DNDRIV_OVERRUN_CK170:				;
+
+	MOV.W	#D'1800,R4			;
+	CMP/HS	R6,R4				;1800度より短い
+	BT	DNDRIV_OVERRUN_CK180		;
+	ADD	#1,R0				;
+DNDRIV_OVERRUN_CK180:				;
+
+	TST	R0,R0				;
+	TST_BIT_OF DNDRIV_OVERRUN_CK200		;正回転
+
+	MOV	R1,R0				;
+	MOV	R3,R1				;
+	MOV	R0,R3				;
+DNDRIV_OVERRUN_CK200:				;
+
+
+
+	XOR	R2,R2				;0度をはさんだか？
+;	Input 	R2(PV)
+;		R1(SV1)HOLD
+;		R3(SV2)OBJ
+;	SV1=<~~<SV2 	R5=1
+;	SV2==PV2	R5=0
+;	SV2<~~=<SV1	R5=-1
+;	ANS R5
+	FAR_JSR	#_DIG_AREA_CHK1,R0		;
+	CMP/PZ	R5				;
+	BF	DNDRIV_OVERRUN_CK300		;
+
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB217),R1	;[[[[0度をはさんだ動作を行った。]]]]
+	MOV.W	@R1,R0				;
+	MOV.W	#(BIT2),R4			;OVER-RUN2
+	OR	R4,R0				;
+	MOV.W	R0,@R1				;
+
+;;;pg容量確保[2012-03-06]	MOV	#1,R4				;
+;;;pg容量確保[2012-03-06]	MOV.W	#H'2172,R1			;
+;;;pg容量確保[2012-03-06]	FAR_JSR	#_SMPLE_HIST_DATA_SET1,R0	;
+	MOV.W	#H'2172,R4		;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+
+DNDRIV_OVERRUN_CK300:				;
+
+
+
+	SUB_END
+	M_RTS
+
+
+
+
+;	*******************************************
+;	***					***
+;	***		反転モード		***
+;	***	2012-03-06			***
+;	***					***
+;	*******************************************
+;	反転不可範囲＋追い込み量～待機点－α
+;
+	.ALIGN	4				;
+_REV_AREA_ERR_CHK:
+	SUB_START
+
+	MOV.L	#_ERRCHK_ENC360,R4				;
+	MOV.W	@R4,R2					;R1~R3の範囲か？
+
+	MOV.L	#_REVMOD_REVDN_DIG,R4			;//反転設定＋不可範囲[LINK]
+	MOV.W	@R4,R1					;
+	MOV.L	#_SETX_LINK_UP_POS_DN,R4		;待機点-α
+	MOV.W	@R4,R3					;
+	FAR_JSR	#_DIG_AREA_CHK1,R0			;
+	CMP/PZ	R5					;
+	BF	REV_AREA_ERRCHK_EXT			;範囲外OK
+
+	MOV.W	#BIT12,R2				;
+	MOV.W	#H'217C,R4				;217.12
+
+	MOV.L	#_DRV_ACT_FLG,R1			;//運転動作ﾌﾗｸﾞ BIT0:運転中
+	MOV.W	@R1,R0					;
+	TST	#BIT0,R0				;
+	TST_BIT_OF REV_AREA_ERRCHK_ERR100		;運転中?NO
+
+	MOV.W	#BIT14,R2				;
+	MOV.W	#H'217E,R4				;217.14
+
+REV_AREA_ERRCHK_ERR100		;
+
+	FAR_JSR	#_SQ217_SET_EMGSTOP,R0			
+
+;;;	MOV.L	#_SQ_CBWK_TOP+_WKSQCB217,R1		;
+;;;	MOV.W	@R1,R0					;
+;;;	MOV.W	#BIT12,R2				;
+;;;	OR	R2,R0					;
+;;;	MOV.W	R0,@R1					;
+;;;	MOV.W	#H'217C,R4				;217.12
+;;;	FAR_JSR	#_EMG_STOP,R0				;
+
+REV_AREA_ERRCHK_EXT:
+
+	SUB_END
+	M_RTS
+
+
+
+	.ALIGN	4				;
+
+_EMG_PASS_FLG_SET
+	SUB_START
+	mov.l	#_pass_err_flg1,r1	;//異常ﾙｰﾁﾝ
+	mov.w	@r1,r0			;
+	or	#BIT0,r0		;2010-12-08
+	or	#BIT1,r0		;2010-12-08
+	or	#BIT2,r0		;2010-12-08
+	or	#BIT3,r0		;2010-12-08
+	or	#BIT4,r0		;2010-12-08
+	or	#BIT5,r0		;2010-12-08
+	or	#BIT6,r0		;
+	or	#BIT7,r0		;
+	mov.w	r0,@r1			;
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	自分の出力		***
+;	***********************************
+
+;;_PAR_CMP_ERR_TIM1		.EQU	500	;100msec
+;;_PAR_CMP_ERR_TIM2		.EQU	1000	;(工程異常)
+;;_PAR_CMP_ERR_TIM1		.EQU	200	;100msec
+;;_PAR_CMP_ERR_TIM2		.EQU	200	;(工程異常)
+_EQ_PAR_CMP_ERR_TIM1		.EQU	500	;100msec
+_EQ_PAR_CMP_ERR_TIM2		.EQU	500*4	;(工程異常)
+	.IMPORT	_SEQAB_DP_TOP
+
+_CMP_OUT_DPRAM_DAT_ERR:
+	SUB_START
+
+;	=======================
+	MOV.W	#_EQ_PAR_CMP_ERR_TIM2/_CMP_ERR_LATE1,R0	;_EQ_追加 2003-01-28
+	MOV.L	#_CMP_STEP_ERR_TIM1,R1			;//工程二重回路(異常を検知しない)
+	MOV.W	R0,@R1					;
+;	=================================
+
+	MOV.L	#_emg_err_flg,R1			;//異常ﾗｯﾁ
+	MOV.W	@R1,R0					;
+	TST	R0,R0					;
+	TST_BIT_OF CMP_OUT_DTERR_020			;
+
+;	==================================
+	FAR_JSR	#_SET_CMP_ERR_TIM,R0
+
+;	==================================
+	FAR_JSR	#_SET_CMPSTEP_ERR_TIM,R0
+	M_BRA	CMP_OUT_DTERR_400		;
+
+
+
+CMP_OUT_DTERR_020:
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_CMP_STS1,R6	;相手
+	MOV.L	#_SH4_CMP_STS1,R5	;自分 2011-01-11
+	.AELSE
+	MOV.L	#_SH4_CMP_STS1,R6
+	MOV.L	#_SH2_CMP_STS1,R5	;2011-01-11
+	.AENDI
+
+;;;;2011-01-11	MOV.L	#_dq1_cb_out1,R5	;//+0:制御出力(203)[二重WRがあるため]
+	MOV.W	@R6,R1			;
+	MOV.W	@R5,R0			;
+	XOR	R1,R0			;
+	MOV.W	#(_WORCY+_WOFCY+_WOATO+_WORDY+_WOANT+_WOVN3+_WOVN2+_WOVN1+_WOQST),R4
+	AND	R4,R0			;
+	TST	R0,R0			;
+	TST_BIT_ON CMP_OUT_DTERR_050	;
+	FAR_JSR	#_SET_CMP_ERR_TIM,R0	;
+	M_BRA	CMP_OUT_DTERR_150	;
+
+CMP_OUT_DTERR_050:
+	MOV.L	#_CMP_ERR_TIM1,R5		;
+	MOV.W	@R5,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF CMP_OUT_DTERR_100		;ERR
+	ADD	#-1,R0				;
+	MOV.W	R0,@R5				;
+	M_BRA	CMP_OUT_DTERR_150		;
+CMP_OUT_DTERR_100:
+
+	FAR_JSR	#_CMP_ERR_DAT_LATCH,R0		;
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB214),R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT3,R4			;
+	OR	R4,R0				;
+	MOV.W	R0,@R1				;
+	MOV.W	#H'2143,R4		;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+	M_BRA	CMP_OUT_DTERR_400
+;	===== 工程二重回路======
+CMP_OUT_DTERR_150:
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_STEP_NO,R6		;工程二重回路ﾁｪｯｸ用
+	.AELSE
+	MOV.L	#_SH4_STEP_NO,R6		;
+	.AENDI
+	MOV.L	@R6,R0
+	MOV.L	#_INT_POS_CTL_STEP,R5		;
+	MOV.W	@R5,R1				;
+	CMP/EQ	R0,R1				;
+	BF	CMP_OUT_DTERR_250		;
+
+	FAR_JSR	#_SET_CMPSTEP_ERR_TIM,R0	;//工程二重回路
+	M_BRA	CMP_OUT_DTERR_400		;
+
+CMP_OUT_DTERR_250:
+	MOV.L	#_CMP_STEP_ERR_TIM1,R4	;//工程二重回路
+	MOV.W	@R4,R2			;
+	TST	R2,R2			;
+	TST_BIT_OF CMP_OUT_DTERR_300	;
+	ADD	#-1,R2			;
+	MOV.W	R2,@R4			;
+	M_BRA	CMP_OUT_DTERR_400	;
+
+CMP_OUT_DTERR_300:
+	MOV.L	#_CMP_ERR_STEP_A,R3	;自分
+	MOV.W	R1,@R3
+	MOV.L	#_CMP_ERR_STEP_B,R3	;相手
+	MOV.W	R0,@R3
+
+	FAR_JSR	#_CMP_ERR_DAT_LATCH,R0		;
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB214),R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#(BIT6+BIT3),R4			;二重回路異常
+	OR	R4,R0				;
+	MOV.W	R0,@R1				;
+	MOV.W	#H'2146,R4		;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+CMP_OUT_DTERR_400:
+
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	二重回路ﾀｲﾏｾｯﾄ		***
+;	***********************************
+_SET_CMP_ERR_TIM:
+	SUB_START
+	MOV.L	#_WPAR_CMP_ERR_TIM1,R1		;PG,_EQ_追加 2003-01-28
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON SET_CMPERR_TIM_050
+	MOV.W	#_EQ_PAR_CMP_ERR_TIM1/_CMP_ERR_LATE1,R0	;ﾃﾞｰﾀがない場合ﾃﾞﾌｫﾙﾄ 500msec
+SET_CMPERR_TIM_050:				;
+	MOV.L	#_CMP_ERR_TIM1,R1		;ｿﾌﾄ・DPRAM二重回路
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	工程二重回路ﾀｲﾏｾｯﾄ	***
+;	***********************************
+_SET_CMPSTEP_ERR_TIM:
+	SUB_START
+	MOV.L	#_WPAR_CMP_ERR_TIM2,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON SET_CMPSTEPERR_TIM_050
+	MOV.W	#_EQ_PAR_CMP_ERR_TIM2/_CMP_ERR_LATE1,R0	;ﾃﾞｰﾀがない場合ﾃﾞﾌｫﾙﾄ 2000msec
+SET_CMPSTEPERR_TIM_050:				;
+	MOV.L	#_CMP_STEP_ERR_TIM1,R1		;//工程二重回路
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+
+;	***************************
+;	***			***
+;	***			***
+;	***			***
+;	***************************
+_CMP_ERR_DAT_LATCH:
+	SUB_START
+	MOV.L	#_emg_err_flg,R1		;//異常ﾗｯﾁ
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON	CMP_ERR_DAT_LT30
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_STEP_NO,R1		;工程二重回路ﾁｪｯｸ用
+	.AELSE
+	MOV.L	#_SH4_STEP_NO,R1		;
+	.AENDI
+	MOV.W	@R1,R0
+	MOV.L	#_CMP_ERR_CHK_STSB,R4		;
+	MOV.W	R0,@R4				;
+
+	MOV.L	#_dq1_cb_out1,R1		;//+0:制御出力(203)
+	MOV.W	@R1,R0				;自分
+	MOV.L	#_CMP_ERR_CHK_STSA,R4		;
+	MOV.W	R0,@R4				;
+
+	MOV.L	#_INT_POS_CTL_FLAG,R1		;停止関連
+	MOV.W	@R1,R0				;
+	MOV.L	#_CMP_ERR_STSA_INF1,R1		;260
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_INT_POS_STEP_FLG,R1		;イチギメ関連
+	MOV.W	@R1,R0				;
+	MOV.L	#_CMP_ERR_STSA_INF2,R1		;261
+	MOV.W	R0,@R1				;
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_CMP_STS2,R4		;(二重化異常信号 BIT0位置決中 生)
+	MOV.L	#_SH2_CMP_STS2,R5		;(二重化異常信号 BIT0位置決中 生)
+	.AELSE
+	MOV.L	#_SH2_CMP_STS2,R4		;(二重化異常信号 BIT0位置決中 生)
+	MOV.L	#_SH4_CMP_STS2,R5		;(二重化異常信号 BIT0位置決中 生)
+	.AENDI
+
+
+	MOV.W	@R4,R0				;262
+	MOV.L	#_CMP_ERR_STSA_INF3,R1		;
+	MOV.W	R0,@R1				;
+
+
+	MOV.W	@R5,R0				;
+	MOV.L	#_CMP_ERR_STSA_INF4,R1		;263
+	MOV.W	R0,@R1				;
+
+
+CMP_ERR_DAT_LT30:
+
+	SUB_END
+	M_RTS
+
+
+
+;	***************************************************
+;	***	非常停止時の異常関係のフラグの処理	***
+;	***************************************************
+_EMG_ERR_FLG_PROC:
+	SUB_START
+	MOV	#-1,R0		;
+	MOV.L	#_emg_lev_flg,R1;//異常状態(生ﾃﾞｰﾀ)
+	MOV.W	R0,@R1		;
+	MOV.L	#_emg_err_flg,R1;//異常ﾗｯﾁ
+	MOV.W	R0,@R1		;
+	SUB_END
+	M_RTS
+;	***************************************************
+;	***	急停止時の異常関係のフラグの処理	***
+;	***************************************************
+_EXQ_ERR_FLG_PROC:
+	SUB_START
+
+	MOV	#-1,R0		;
+	MOV.L	#_exq_lev_flg,R1;//異常状態(生ﾃﾞｰﾀ)
+	MOV.W	R0,@R1		;
+	MOV.L	#_exq_err_flg,R1;//異常ﾗｯﾁ
+	MOV.W	R0,@R1		;
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	非常停止処理		***
+;	***********************************
+;	/ｾﾙﾌﾁｪｯｸ
+;	/C/B制御
+;	/位置決め
+;	/ﾘｾｯﾄ処理
+;	/実出力
+_EMG_STOP_SPEC:
+	SUB_START
+	FAR_JSR	#_ERR_CODE_SET,R0		;2010-12-21
+	M_BRA	EMG_STP_COM
+
+_EMG_STOP:
+	SUB_START
+
+	FAR_JSR	#_ERR_CODE_SET,R0		;2010-12-21
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV	#-1,R0			;
+	MOV.L	#_EMG_SH4_TO_SH2,R1	;
+	MOV.W	R0,@R1			;
+	.AELSE
+	MOV	#-1,R0			;
+	MOV.L	#_EMG_SH2_TO_SH4,R1	;
+	MOV.W	R0,@R1			;
+	.AENDI
+EMG_STP_COM:
+	.AIF _EMG_MINI EQ _CMPILE_YES	;YES:EMG処理の簡略化 2008-01-26
+
+	FAR_JSR	#_EMG_OUT,R0		;QST
+	MOV.L	#_emg_lev_flg,R1	;//異常状態(生ﾃﾞｰﾀ)
+	MOV.W	@R1,R0			;
+	TST	R0,R0			;
+	TST_BIT_ON EMG_STPCOM100	;
+
+	FAR_JSR	#_EMG_ERR_FLG_PROC,R0	;
+	FAR_JSR	#_EMG_POS_FLG_PROC,R0	;
+	FAR_JSR	#_EMG_CTL_FLG_PROC,R0	;
+	FAR_JSR	#_STP_SLF_FLG_PROC,R0	;
+	FAR_JSR	#_STP_RST_FLG_PROC,R0	;
+
+	FAR_JSR	#_EMG_OUT,R0		;
+	FAR_JSR	#_IRQ_EMG_STP_CLR,R0
+EMG_STPCOM100:
+
+
+	.AELSE
+;	======= 2003-07-09 ===========
+;;;pg容量確保[2012-03-06]	MOV	#0,R4				;
+;;;pg容量確保[2012-03-06]	MOV.W	#H'1234,R1			;1234:不明
+;;;pg容量確保[2012-03-06]	FAR_JSR	#_SMPLE_HIST_DATA_SET1,R0	;
+;	==============================
+
+	FAR_JSR	#_EMG_OUT,R0		;
+	FAR_JSR	#_EMG_ERR_FLG_PROC,R0	;
+	FAR_JSR	#_EMG_POS_FLG_PROC,R0	;
+	FAR_JSR	#_EMG_CTL_FLG_PROC,R0	;
+	FAR_JSR	#_STP_SLF_FLG_PROC,R0	;
+	FAR_JSR	#_STP_RST_FLG_PROC,R0	;
+	FAR_JSR	#_EMG_OUT,R0		;
+
+	FAR_JSR	#_IRQ_EMG_STP_CLR,R0
+
+	.AENDI
+
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***	急停止処理		***
+;	***********************************
+;	/ｾﾙﾌﾁｪｯｸ
+;	/C/B制御
+;	/位置決め
+;	/ﾘｾｯﾄ処理
+;	/実出力
+_EXQ_STOP:
+	SUB_START
+
+	FAR_JSR	#_ERR_CODE_SET,R0		;2010-12-21
+	FAR_JSR	#_API_EXQ_STEP_STS_GET,R0	;2016-04-16(QST前にしておく)
+
+	FAR_JSR	#_EXQ_OUT,R0
+	FAR_JSR	#_EXQ_ERR_FLG_PROC,R0
+	FAR_JSR	#_EXQ_POS_FLG_PROC,R0
+	FAR_JSR	#_EXQ_CTL_FLG_PROC,R0
+	FAR_JSR	#_STP_SLF_FLG_PROC,R0
+	FAR_JSR	#_STP_RST_FLG_PROC,R0
+	FAR_JSR	#_EXQ_OUT,R0
+
+	FAR_JSR	#_IRQ_EXQ_STP_CLR,R0
+
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	安全装置急停止処理	***
+;	***********************************
+;	/ｾﾙﾌﾁｪｯｸ
+;	/C/B制御
+;	/位置決め
+;	/ﾘｾｯﾄ処理
+;	/実出力
+_SFTY_STOP:
+	SUB_START
+
+	FAR_JSR	#_ERR_CODE_SET,R0		;2010-12-21
+	FAR_JSR	#_API_EXQ_STEP_STS_GET,R0	;2016-04-16(QST前にしておく)
+
+	FAR_JSR	#_EXQ_OUT,R0
+
+	FAR_JSR	#_EXQ_ERR_FLG_PROC,R0
+	FAR_JSR	#_EXQ_POS_FLG_PROC,R0
+	FAR_JSR	#_EXQ_CTL_FLG_PROC,R0
+	FAR_JSR	#_STP_SLF_FLG_PROC,R0
+	FAR_JSR	#_STP_RST_FLG_PROC,R0
+
+	FAR_JSR	#_EXQ_OUT,R0
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************************************
+;	***								***
+;	***	ブレーキ開放中の準備未未完／動力停止での二重化対策	***
+;	***	2015-07-14						***
+;	***								***
+;	*******************************************************************
+;	---------- 特定の遮光停止でのみ使用する-----------
+	.EXPORT	_EXQ_STOP_TO_ELSE_CPU
+_EXQ_STOP_TO_ELSE_CPU:
+	SUB_START
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+	MOV	#-1,R0				;
+	MOV.L	#_EXQ_SH4_TO_SH2,R1		;CPUA=>CPUB
+	MOV.W	R0,@R1				;
+	.AELSE
+
+	MOV	#-1,R0				;
+	MOV.L	#_EXQ_SH2_TO_SH4,R1		;CPUB=>CPUA
+	MOV.W	R0,@R1				;
+	.AENDI
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	2015-07-14		***
+;	***				***
+;	***********************************
+
+_EXQ_STOP_SPEC:
+	SUB_START
+
+	FAR_JSR	#_ERR_CODE_SET,R0		;2010-12-21
+	FAR_JSR	#_API_EXQ_STEP_STS_GET,R0	;2016-04-16(QST前にしておく)
+
+	FAR_JSR	#_EXQ_OUT,R0
+	FAR_JSR	#_EXQ_ERR_FLG_PROC,R0
+	FAR_JSR	#_EXQ_POS_FLG_PROC,R0
+	FAR_JSR	#_EXQ_CTL_FLG_PROC,R0
+	FAR_JSR	#_STP_SLF_FLG_PROC,R0
+	FAR_JSR	#_STP_RST_FLG_PROC,R0
+	FAR_JSR	#_EXQ_OUT,R0
+	FAR_JSR	#_IRQ_EXQ_STP_CLR,R0
+
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	ﾘｾｯﾄ　SEQCLR		***
+;	***	2010-12-10		***
+;	***********************************
+	.EXPORT	_RESET_ERR_SEQ_CLR2
+_RESET_ERR_SEQ_CLR2:
+	SUB_START
+
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB204,R5		;
+	MOV.W	#H'FF00,R4				;
+	MOV.W	@R5,R0					;
+	AND	R4,R0					;
+	MOV.W	R0,@R5					;
+
+	FAR_JSR	#_ERR_RST_TIM_PRESET,R0			;2011-01-07
+
+	XOR	R0,R0
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB266,R5		;2010-12-21
+	MOV.W	R0,@R5					;QST
+
+	XOR	R0,R0
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB267,R5		;2010-12-21
+	MOV.W	R0,@R5					;EMG
+
+	XOR	R0,R0
+	MOV.L	#_CMP_ERR_CHK_STSA,R1		;
+	MOV.W	R0,@R1				;
+	MOV.L	#_CMP_ERR_CHK_STSB,R1		;
+	MOV.W	R0,@R1				;
+	MOV.L	#_CMP_ERR_STSA_INF1,R1		;
+	MOV.W	R0,@R1				;
+	MOV.L	#_CMP_ERR_STSA_INF2,R1		;
+	MOV.W	R0,@R1				;
+	MOV.L	#_CMP_ERR_STSA_INF3,R1		;
+	MOV.W	R0,@R1				;
+	MOV.L	#_CMP_ERR_STSA_INF4,R1		;
+	MOV.W	R0,@R1				;
+
+	FAR_JSR	#_EPSEN_CLR,R0			;
+
+	SUB_END
+	M_RTS
+
+	.EXPORT	_RESET_ERR_SEQ_CLR
+_RESET_ERR_SEQ_CLR:
+	SUB_START
+
+;;;;	XOR	R0,R0					;
+;;;;	MOV.L	#_SQ_CBWK_TOP+_WKSQCB204,R5		;
+;;;;	MOV.W	R0,@R5					;
+
+	XOR	R0,R0
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB218,R5		;
+	MOV.W	R0,@R5					;
+
+;	=====- 一旦ｸﾘｱする また要因があれば出力する =======
+;;	MOV.L	#_SQ_CBWK_TOP+_WKSQCB212,R5		;
+;;	MOV.W	R0,@R5					;
+
+	FAR_JSR	#_ERR_RST_CLR,R0
+
+	FAR_JSR	#_RESET_ERR_SEQ_CLR1,R0			;2010-12-10　移動
+
+	FAR_JSR	#_EPSEN_CLR,R0			;
+
+	SUB_END
+	M_RTS
+
+
+	.EXPORT	_RESET_ERR_SEQ_CLR1
+_RESET_ERR_SEQ_CLR1:
+	SUB_START
+
+;;;;	XOR	R0,R0
+;;;;	MOV.L	#_SQ_CBWK_TOP+_WKSQCB266,R5		;2010-12-21
+;;;;	MOV.W	R0,@R5					;
+
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB218,R5		;
+	MOV.W	@R5,R0					;
+	MOV.W	#H'3FFF,R4				;
+	AND	R4,R0
+	MOV.W	R0,@R5					;
+
+	XOR	R0,R0
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB212,R5		;
+	MOV.W	R0,@R5					;
+
+;;	XOR	R0,R0
+;;	MOV.L	#_CMP_ERR_CHK_STSA,R1		;
+;;	MOV.W	R0,@R1				;
+;;	MOV.L	#_CMP_ERR_CHK_STSB,R1		;
+;;	MOV.W	R0,@R1				;
+;;	MOV.L	#_CMP_ERR_STSA_INF1,R1		;
+;;	MOV.W	R0,@R1				;
+;;	MOV.L	#_CMP_ERR_STSA_INF2,R1		;
+;;	MOV.W	R0,@R1				;
+;;	MOV.L	#_CMP_ERR_STSA_INF3,R1		;
+;;	MOV.W	R0,@R1				;
+;;	MOV.L	#_CMP_ERR_STSA_INF4,R1		;
+
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+;	.IMPORT	_LT_RNA_REF_ERR_FLG1
+;	.IMPORT	_LT_RNA_REF_ERR_FLG2
+	XOR	R0,R0
+	MOV.L	#_LT_RNA_REF_ERR_FLG1,R1;//BIT0,BIT1,BIT2(HARD),BIT3CMD,BIT4(RNA-SYS),BIT5(RNA-FORM),,
+	MOV.W	R0,@R1
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB224,R1	;
+	MOV.W	R0,@R1
+
+	MOV.L	#_LT_RNA_REF_ERR_FLG2,R1;//BIT0,BIT1,BIT2(HARD),BIT3CMD,BIT4(RNA-SYS),BIT5(RNA-FORM),,
+	MOV.W	R0,@R1
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB225,R1	;
+	MOV.W	R0,@R1
+	.AENDI
+
+	FAR_JSR	#_LSA_ERRCLR_INI,R0		
+
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	動作異常			***
+;	***					***
+;	*******************************************
+;	MOV.L	#_SET1_INCENC_ELNG,R1		;
+;	MOV.W	@R1,R0				;
+;	CMP/EQ	#0,R0				;ﾃﾞｰﾀ=0やらない
+;	BT	MOTER_MOVERR_ENCERR100		;
+;	CMP/HS	R2,R0				;R2 =< R0
+;	BT	MOTER_MOVERR_ENCERR100		;NOMAL
+;
+;MOTER_MOVERR_ENCERR100:
+;
+	.MACRO	MOVERR_CHK_CASE01 DATA,DISENB_DT,PV_REG,SET_REG,SET_BIT
+	MOV.L	#\DATA,R1	;
+	MOV.W	@R1,R0		;
+	EXTU.W	R0,R0		;
+;;	.AIF	_PRG_CHG20030127 EQ _COMPILE_YES	;ﾌﾟﾛｸﾞﾗﾑ変更箇所(反転仕様以外の標準に入れる変更)
+;;	.AENDI
+	TST	R0,R0		;
+	TST_BIT_OF JMPEXT\@	;"0"は必ずやらないの意味
+
+	CMP/EQ	#\DISENB_DT,R0	;
+	BT	JMPEXT\@	;(0以外でもやらないｹｰｽはある)
+	CMP/HS	\PV_REG,R0	;
+	BT	JMPEXT\@	;
+	MOV.W	#\SET_BIT,R0	;
+	OR	R0,\SET_REG	;
+JMPEXT\@:			;
+	.ENDM
+
+
+;	***********************************
+;	***				***
+;	***	位置決め動作異常	***
+;	***				***
+;	***********************************
+;	***********************************
+;	***	連続演算異常		***
+;	***	連続演算異常		***
+;	***	連続演算異常		***
+;	***********************************
+
+	.EXPORT	_MOTER_MOVING_ERR
+_MOTER_MOVING_ERR:
+	SUB_START
+
+;;;;;;;	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+;;;;;;;		.AIF	_CPU_A_ERR_STOP EQ _CMPILE_YES
+;;;;;;;	M_BRA	MOTER_MOVING_ER_LEV0		;
+;;;;;;;		.AENDI
+;;;;;;;	.AENDI
+;;;;;;;
+;;;;;;;	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+;;;;;;;		.AIF	_CPU_B_ERR_STOP EQ _CMPILE_YES
+;;;;;;;	M_BRA	MOTER_MOVING_ER_LEV0		;
+;;;;;;;		.AENDI
+;;;;;;;	.AENDI
+
+;	=== 2003-05-24 ===
+	MOV.L	#_SELF_FLG,R1			;//BIT0:ｾﾙﾌﾁｪｯｸ中  BIT7ｾﾙﾌﾁｪｯｸ正常完了
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON MOTER_MOVING_ER_LEV0		;SELF_CHEAK
+
+	MOV.L	#_emg_err_flg,R1		;//異常ﾗｯﾁ
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON MOTER_MOVING_ER_LEV0		;emg
+
+	MOV.L	#_exq_err_flg,R1		;//異常ﾗｯﾁ
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON MOTER_MOVING_ER_LEV0		;exq
+	M_BRA	MOTER_MOVING_ER_ST		;
+
+MOTER_MOVING_ER_LEV0:
+;	======= ｻｰﾎﾞ ====
+	MOV.L	#_WPAR_INCSTP_EDYTM2,R1		;
+	MOV.W	@R1,R0				;
+	MOV.L	#_WPAR_INCSTP_EDYTM,R1		;
+	MOV.W	R0,@R1				;
+
+	XOR	R0,R0				;
+	MOV.L	#_RST_ERR_CHK_FLG,R5		;0:異常 1:CHK-START
+	MOV.W	R0,@R5				;
+	XOR	R14,R14				;結果
+	MOV.L	#_MOV_ERR_FLG1,R1		;218.BIT0~BIT8
+	MOV.W	R14,@R1				;
+
+;----2015-07-15
+	FAR_JSR	#_HENOVR_POS_ERR_LATCH,R0	;
+	FAR_JSR	#_STOP_POS_ERR_LATCH,R0		;
+
+	FAR_JSR	#_PLSOUTEND_ERR_FLGCLR,R0	;
+	FAR_JSR	#_SFTY_HOLD_REVERR_CLR,R0	;
+	M_BRA	MOTER_MOVING_ER_EXT		;
+
+
+MOTER_MOVING_ER_ST:
+	XOR	R14,R14			;結果2003-05-24
+	FAR_JSR	#_PLS_HOVR_CHEAK,R0	;(偏差ｵｰﾊﾞ) ANS "R14"
+	FAR_JSR	#_PLS_CHEAK_STOP_OVR,R0	;(偏差ｵｰﾊﾞ) ANS "R14"
+
+
+
+;	=========================================================
+	MOV.L	#_INC_ENC360,R1			;
+	MOV.W	@R1,R7				;
+
+	MOV.L	#_CTL_ENC360,R1			;360.0度//360ｴﾝｺｰﾀﾞ<360ｴﾝｺｰﾀﾞ>
+	MOV.W	@R1,R8				;
+
+	MOV.L	#_INC_ENC_MM_POS,R1		;
+	MOV.L	@R1,R9				;
+
+
+	MOV.W	#D'1800,R10			;
+	MOV.W	#D'3600,R11			;
+;	===============================================
+;	===	距離の短い方(180度)	PG<==>ENC360 ==
+;	===============================================
+	MOV	R8,R2				;PG360.0<=>ENC360
+	SUB	R7,R2				;
+	CMP/PZ	R2				;
+	BT	MOTER_MOVERR_ENCERR030		;
+	NEG	R2,R2				;
+MOTER_MOVERR_ENCERR030:				;
+	CMP/GE	R2,R10				;R2<>1800
+	BT	MOTER_MOVERR_ENCERR060		;R2 =< 180度
+	SUB	R11,R2				;
+	NEG	R2,R2				;
+	M_BRA	MOTER_MOVERR_ENCERR080		;0度をまたいだ
+MOTER_MOVERR_ENCERR060:				;
+	MOVERR_CHK_CASE01 DATA=_SET1_INCENC_ELNG,DISENB_DT=0,PV_REG=R2,SET_REG=R14,SET_BIT=BIT0
+MOTER_MOVERR_ENCERR080:				;
+
+;	===========================================
+;	===	ﾘﾆｱｽｹｰﾙ<=>PG　mm		===
+;	===========================================
+	XOR	R2,R2				;不具合
+	MOV.L	#_MODE_SEL,R1			;
+	MOV.W	@R1,R0				;
+	TST	#(_W1DUP+_W1DIC),R0		;
+	TST_BIT_ON MOTER_MOVERR_RNAERR020	;(待機点復帰時はみない:原点がないと位置が算出できない
+
+;	===2010-08-23<ﾄﾖﾀ使用ではｻｰﾎﾞﾊﾟﾗﾒｰﾀを0にして異常を見なくしている>===
+	MOV.L	#_WPAR_MCNRNA_SEL,R1		;//1:機械でﾘﾆｱｽｹｰﾙを使用しない構造･･原点復帰
+	MOV.W	@R1,R0				;
+	CMP/EQ	#1,R0				;
+	BT	MOTER_MOVERR_RNAERR020		;
+
+
+
+	MOV.L	#_INC_ENC_MM_POS,R1		;
+	MOV.L	@R1,R2				;
+	MOV.L	#_RNA_CTL_POS1,R0		;//制御位置
+	MOV.L	@R0,R3				;
+	SUB	R3,R2				;
+	CMP/PZ	R2				;
+	BT	MOTER_MOVERR_RNAERR020		;
+	NEG	R2,R2				;
+MOTER_MOVERR_RNAERR020:				;(待機点復帰時はみない)
+	MOVERR_CHK_CASE01 DATA=_SET1_INCRNA_ELNG,DISENB_DT=1,PV_REG=R2,SET_REG=R14,SET_BIT=BIT1
+
+
+;	=== 2003-07-01 ===
+	PUSH_REG1 R14
+
+	FAR_JSR	#_BRK12_LENGTH_ERR_CHK,R0
+
+
+	POP_REG1 R14
+	MOV.L	#_MOV_ERR_FLG1,R1	;218.BIT0~BIT8
+	MOV.W	R14,@R1			;
+
+;	------ 2015-07-14-----------
+	FAR_JSR	#_PLSOUTEND_ERR_CHK,R0		;
+
+;	-----  2015-07-14--------
+	FAR_JSR	#_SFTY_HOLD_REV_ERR,R0
+
+
+MOTER_MOVING_ER_EXT:			;
+
+
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***				***
+;	***				***
+;	***********************************
+;	RST_CHK_FLG(非常停止・急停止・原点のﾌﾟﾘｾｯﾄ時="10")
+;	*偏差ｵｰﾊﾞ
+_PLS_HOVR_CHEAK:	;(偏差ｵｰﾊﾞ) ANS "R14"
+	SUB_START
+;	===================================
+;	===				===
+;	===	偏差ｵｰﾊﾞﾁｪｯｸ		===
+;	===				===
+;	===================================
+	MOV.L	#_RST_ERR_CHK_FLG,R5		;
+	MOV.W	@R5,R0				;
+	TST	#BIT2,R0			;BIT2:偏差ｵｰﾊﾞ
+	TST_BIT_OF PLS_CHEAK_OVR_050		;
+	M_BRA	PLS_CHEAK_OVR_100		;
+
+PLS_CHEAK_OVR_050:
+;	==== QST状態===
+	OR	#BIT2,R0			;
+	MOV.W	R0,@R5				;
+
+	FAR_JSR	#_HENOVR_POS_ERR_LATCH,R0	;
+	M_BRA	PLS_CHEAK_OVR_280
+
+
+;	===== 異常ﾁｪｯｸ開始 =======
+PLS_CHEAK_OVR_100:
+	MOV.L	#_DRV_ACT_FLG,R1		;//運転動作ﾌﾗｸﾞ BIT0:運転中
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;運転中?
+	TST_BIT_ON PLS_CHEAK_OVR_CPUB_100	;
+;	==== ﾌﾙｸﾛｰｽﾞ中はどうするか?=====
+;;;;;;;;;;//////2004-04-12()	FAR_JSR	#_CPUB_HENSA_FLG_CLR,R0		;
+PLS_CHEAK_OVR_CPUB_100:
+
+	MOV.L	#_POSLSI_OUTPUT_TOTAL_PLS,R3		;NOW
+	MOV.L	#_HENSA_OVR_OUTPLS,R4			;//偏差ｵｰﾊﾞ用OUTPUT_LATCHdata
+	FAR_JSR	#_SUB1_8BYTE_R3R12_SUB_R4R56_ANSR12,R0	;R1,R2
+
+	MOV.L	#_HENSA_OVER_MOVE_CNT,R0		;2004-03-25
+	MOV.L	R2,@R0					;
+
+	CMP/PZ	R1
+	BT	HOVR_UP_MASK00
+	MOV	#-1,R1
+HOVR_UP_MASK00:
+	PUSH_REG1 R1					;
+	PUSH_REG1 R2					;
+
+	MOV.L	#_POS_LSI_TOTAL_PLS,R3		;
+	MOV.L	#_HENSA_OVR_ENCPOS,R4		;//停止等の異常用
+	FAR_JSR	#_SUB1_8BYTE_R3R12_SUB_R4R56_ANSR12,R0	;
+	MOV.L	#_HENSA_OVER_STOP_CNT,R0		;2004-03-25
+	MOV.L	R2,@R0					;
+	
+	CMP/PZ	R1
+	BT	HOVR_UP_MASK10
+	MOV	#-1,R1
+HOVR_UP_MASK10:
+	POP_REG1 R6
+	POP_REG1 R5
+	SB1_R12_SUB_R56_ANSABS_R12	;R2,R1 - R5,R6 ANS R1,R2 ==>ABS |R1,R2|
+	EXTD_8B_R1_R2_TO_2B_R2_UNS	;R1,R2-->0~FFFF
+
+	ADD	#1,R2			;偏差
+
+	MOV.L	#_POSLSI_HENSA_LATCH,R0
+	MOV.L	R1,@R0
+	MOV.L	R2,@(4,R0)
+
+;	-------------- 偏差ｵｰﾊﾞ-----------
+	MOVERR_CHK_CASE01 DATA=_SET1_INCHEN_ELNG,DISENB_DT=0,PV_REG=R2,SET_REG=R14,SET_BIT=BIT2
+
+
+	TST	R14,R14
+	TST_BIT_OF PLS_CHEAK_OVR_280
+	NOP
+PLS_CHEAK_OVR_280:
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	随所で偏差ｸﾘｱが必要	***
+;	***				***
+;	***********************************
+	.EXPORT	_CPUB_HENSA_FLG_CLR
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+_CPUB_HENSA_FLG_CLR:
+	SUB_START
+	SUB_END
+	M_RTS
+	.AELSE
+_CPUB_HENSA_FLG_CLR:
+	SUB_START
+;	==== CPU-Bのみ偏差異常ﾃﾞｰﾀｸﾘｱ ====	;
+	MOV.L	#_RST_ERR_CHK_FLG,R5		;
+	MOV.W	@R5,R0				;
+	AND	#LOW ~BIT2,R0			;
+	MOV.W	R0,@R5				;
+;	==== CPU-Bのみ偏差異常ﾃﾞｰﾀｸﾘｱ ====	;
+	SUB_END
+	M_RTS
+	.AENDI
+
+
+
+
+;	*停止異常
+_PLS_CHEAK_STOP_OVR:
+	SUB_START
+;	===================================
+;	===				===
+;	===	停止異常ﾁｪｯｸ		===
+;	===				===
+;	===================================
+;	----- 2007-01-22 ----------
+	MOV.L	#_PLS_OUTPUT_FLG,R1		;//0払い出し停止 1払出中
+	MOV.W	@R1,R0				;
+
+	MOV.L	#_INT_CLS_CTL_FLG,R1		;2013-08-20
+	MOV.W	@R1,R2				;2013-08-20
+	OR	R2,R0				;2013-08-20
+
+	TST	R0,R0				;
+	TST_BIT_OF PLS_CHEAK_STOP_020		;
+
+	MOV.L	#_RST_ERR_CHK_FLG,R5			;
+	MOV.W	@R5,R0					;
+	AND	#LOW ~BIT4,R0				;
+	MOV.W	R0,@R5					;
+
+PLS_CHEAK_STOP_020:
+;	---------------------------
+
+
+	MOV.L	#_RST_ERR_CHK_FLG,R5		;
+	MOV.W	@R5,R0				;
+	TST	#BIT4,R0			;BIT4:停止異常
+	TST_BIT_OF PLS_CHEAK_STOP_050		;
+	M_BRA	PLS_CHEAK_STOP_100		;
+
+PLS_CHEAK_STOP_050:
+;;_PRG_CHG20030512 EQ _COMPILE_YES	
+;;;05-12	MOV.L	#_STOP_LATCH_CHK_TIM,R1		;//位置決め完了後の遅延時間
+;;;05-12	MOV.W	#_EQ_STOP_ERR_DLY_TIM,R2	;
+;;;05-12	MOV.W	R2,@R1				;100msec
+;;;;EQUﾃﾞｰﾀをﾊﾟﾗﾒｰﾀに変更
+
+	MOV.L	#_WPAR_INCSTP_EDYTM,R1			;
+	MOV.W	@R1,R2					;
+	MOV.L	#_STOP_LATCH_CHK_TIM,R1			;//位置決め完了後の遅延時間
+	MOV.W	R2,@R1					;1秒
+
+;;_PRG_CHG20030512 EQ _COMPILE_YES
+	MOV.L	#_PLS_OUTPUT_FLG,R1		;//0払い出し停止 1払出中
+	MOV.W	@R1,R0				;
+	MOV.L	#_INT_CLS_CTL_FLG,R1		;2013-08-20
+	MOV.W	@R1,R2				;2013-08-20
+	OR	R2,R0				;2013-08-20
+
+	TST	R0,R0			;
+	TST_BIT_ON PLS_CHEAK_STOP_300	;R0=!0 動作中(REFLASH)
+
+;	== 停止中 ==
+	MOV.L	#_RST_ERR_CHK_FLG,R5			;停止中-ﾁｪｯｸ開始
+	MOV.W	@R5,R0					;
+	OR	#BIT4,R0				;
+	MOV.W	R0,@R5					;
+	M_BRA	PLS_CHEAK_STOP_300			;最低１回はﾘﾌﾚｯｼｭ
+
+PLS_CHEAK_STOP_100:					;
+	MOV.L	#_STOP_LATCH_CHK_TIM,R6			;//位置決め完了後の遅延時間
+	MOV.W	@R6,R2					;
+	TST	R2,R2					;
+	TST_BIT_OF PLS_CHEAK_STOP_200			;
+	ADD	#-1,R2					;
+	MOV.W	R2,@R6					;
+	M_BRA	PLS_CHEAK_STOP_300			;REFLASH
+
+;	===== 停止中 ====
+PLS_CHEAK_STOP_200:
+
+;;;;;2007-01-22		MOV.L	#_PLS_OUTPUT_FLG,R1		;//0払い出し停止 1払出中
+;;;;;2007-01-22		MOV.W	@R1,R0				;
+;;;;;2007-01-22		TST	R0,R0			;
+;;;;;2007-01-22		TST_BIT_OF PLS_CHEAK_STOP_250	;(停止中継続) R0=0
+;;;;;2007-01-22	
+;;;;;2007-01-22	;	=== 動いた====
+;;;;;2007-01-22		MOV.L	#_RST_ERR_CHK_FLG,R5			;
+;;;;;2007-01-22		MOV.W	@R5,R0					;
+;;;;;2007-01-22		AND	#LOW ~BIT4,R0				;
+;;;;;2007-01-22		MOV.W	R0,@R5					;
+;;;;;2007-01-22		M_BRA	PLS_CHEAK_STOP_300			;動作中
+
+;	------ ｴﾝｺｰﾀﾞ停止異常 ---
+PLS_CHEAK_STOP_250:
+	MOV.L	#_POS_LSI_TOTAL_PLS,R3			;
+	MOV.L	#_STOP_LATCH_ENCPOS,R4			;//停止等の異常用
+	FAR_JSR	#_SUB1_8BYTE_R3R12_SUB_R4R56_ANSR12,R0	;
+	CMP/PZ	R1				;
+	BT	PLS_CHEAK_STOP_260
+	NEG1_64	H_REG=R1,L_REG=R2,WKREG=R0	;|R1,R2|
+PLS_CHEAK_STOP_260:
+
+;	======= 上位4BYTEﾏｽｸ ===
+	XOR	R1,R1
+
+
+	EXTD_8B_R1_R2_TO_2B_R2_UNS			;R1,R2-->0~FFFF
+	MOVERR_CHK_CASE01 DATA=_SET1_INCSTP_ELNG,DISENB_DT=0,PV_REG=R2,SET_REG=R14,SET_BIT=BIT4
+	TST	R14,R14
+	TST_BIT_OF PLS_CHEAK_STOP_261
+	NOP
+PLS_CHEAK_STOP_261:
+
+
+;	------ ﾘﾆｱ停止異常 ---
+	MOV.L	#_RNA_ABS_POS,R3			;
+	MOV.L	#_STOP_LATCH_RNAPOS,R4			;
+	MOV.L	@R3,R2					;
+	MOV.L	@R4,R6					;
+	SUB	R6,R2					;
+	CMP/PZ	R2					;
+	BT	PLS_CHEAK_STOP_270			;
+	NEG	R2,R2					;
+PLS_CHEAK_STOP_270:
+	MOV.L	#H'0000FFFF,R1				;
+	CMP/HS	R2,R1
+	BT	PLS_CHEAK_STOP_280			;=<FFFF
+	MOV	R1,R2					;
+PLS_CHEAK_STOP_280:					;
+
+	MOVERR_CHK_CASE01 DATA=_SET1_RNASTP_ELNG,DISENB_DT=1,PV_REG=R2,SET_REG=R14,SET_BIT=BIT5
+;;----2009-03-13	M_BRA	PLS_CHEAK_STOP_400			;2003-05-12
+
+;	-------- ﾄﾖﾀ使用だけど標準組み込み 2009-03-13------------
+	FAR_JSR	#_CTLENC360_STOP_ERR,R0		;これだけ中で異常にする(R14禁止)
+
+
+	M_BRA	PLS_CHEAK_STOP_400			;2009-03-13
+;	===== REFLASH (動作中または異常状態ならﾘﾌﾚｯｼｭ)
+PLS_CHEAK_STOP_300:
+	FAR_JSR	#_STOP_POS_ERR_LATCH,R0		;REFLASH
+PLS_CHEAK_STOP_400:		;
+
+;	===================================
+;	===				===
+;	===	動作方向逆転異常	===
+;	===				===
+;	===================================
+	FAR_JSR	#_PLS_REV_ERR_CHK,R0	;2012-03-06(動作・停止の両方でみる)
+
+;	======= リニアスケールの反転 ===========
+
+
+
+
+
+PLS_CHEAK_REV_600:
+	SUB_END
+	M_RTS
+
+
+
+
+
+;	===================================
+;	===				===
+;	===	動作方向逆転異常	===
+;	===	2012-03-06[停止中]	===
+;	===================================
+;	符号変更があった場合=>ﾌﾗｸﾞOFF,ﾀｲﾏﾌﾟﾘｾｯﾄ
+;	ﾀｲﾏｶｳﾝﾄ
+;	ﾌﾗｸﾞON時に現在位置ラッチ[払い出しは関係ない]
+;	以降進行方向側が正で位置が増加すればその位置記録
+;	その記録位置より逆側にいけば異常
+;
+
+	.ALIGN	4				;
+_PLS_REV_ERR_CHK:
+	SUB_START
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	.AELSE
+	MOV.L	#_TEP_MODE_DRV,R1		;//起動時に判定
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF PLS_REV_ERRCHK_STR		;
+	M_BRA	PLS_CHEAK_REV_CLR		;
+PLS_REV_ERRCHK_STR:
+	.AENDI
+
+
+;	--- 払い出し中の進行方向のみ参照する---
+	MOV.L	#_PLS_OUTPUT_FLG,R1		;//0払い出し停止 1払出中
+	MOV.W	@R1,R0				;
+	MOV.L	#_INT_CLS_CTL_FLG,R1		;2013-08-20
+	MOV.W	@R1,R2				;2013-08-20
+	OR	R2,R0				;2013-08-20
+
+	TST	R0,R0				;
+	TST_BIT_OF PLS_CHEAK_REV_030		;[出力中のみ符号更新]
+
+	MOV.L	#_REVCHK_DRIV_SHIN,R5		;//BIT0
+	MOV.W	@R5,R3				;USED SHIN
+
+	MOV.L	#_POSLSI_DRIV_SHIN,R1		;//BIT0
+	MOV.W	@R1,R0				;BIT0=0:正転
+	AND	#BIT0,R0			;SHIN
+	CMP/EQ	R3,R0				;EQ?
+	BT	PLS_CHEAK_REV_030		;符号変更ない
+	MOV.W	R0,@R5				;[出力符号変更]REVCHK_DRIV_SHIN
+
+
+PLS_CHEAK_REV_CLR:
+	MEM1_BIT0_TO_BIT7_ANDCLR MEM=_RST_ERR_CHK_FLG,LG=W,BIT=~BIT6,WKREG=R1	;[EMGでかってにOFFさせる]
+	
+PLS_CHEAK_REV_030:
+
+	MOV.L	#_RST_ERR_CHK_FLG,R5					;
+	MOV.W	@R5,R0							;
+	TST	#BIT6,R0						;BIT6:反転異常
+	TST_BIT_ON PLS_CHEAK_REV_070					;
+
+	MOV.L	#(_PAR_REVERR_MASKTM-_CB_SYS_PARAM000+_W_PARAM_TOP),R1		;
+	MOV.W	@R1,R2								;
+	MOV.L	#_REVCHK_MASK_PVTIM,R1						;
+	MOV.W	R2,@R1								;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_RST_ERR_CHK_FLG,LG=W,BIT=BIT6,WKREG=R1	;
+	FAR_JSR	#_REV_POS_ERR_LATCH,R0						;現在位置ラッチ
+	M_BRA	PLS_CHEAK_REV_300						;EXIT
+
+PLS_CHEAK_REV_070:
+	MOV.L	#_REVCHK_MASK_PVTIM,R1						;
+	MOV.W	@R1,R0								;
+	TST	R0,R0								;
+	TST_BIT_OF PLS_CHEAK_REV_080						;
+	ADD	#-1,R0								;
+	MOV.W	R0,@R1								;
+	FAR_JSR	#_REV_POS_ERR_LATCH,R0						;
+	M_BRA	PLS_CHEAK_REV_300						;EXIT
+
+PLS_CHEAK_REV_080:
+
+	MOV.L	#_POS_LSI_TOTAL_PLS,R1					;PG
+	MOV.L	@R1+,R5							;
+	MOV.L	@R1,R6							;
+	MOV.L	#_REV_LATCH_ENCPOS,R3					;//
+	MOV.L	@R3,R1							;
+	MOV.L	@(4,R3),R2						;
+	SUB8B DT_REGH=R5,DT_REGL=R6,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;R1,R2=R1,R2(OLD)-R5,R6(NEW)
+
+
+	MOV.L	#_REVCHK_DRIV_SHIN,R4		;//BIT0
+	MOV.W	@R4,R0				;USED SHIN
+	TST	R0,R0				;
+	TST_BIT_ON PLS_CHEAK_REV_100		;
+
+;	--------- 正転動作------
+	CMP/PZ	R1				;R1が"-"なら正
+	BT	PLS_CHEAK_REV_220		;NO "+"逆転したJUMP
+	MOV.L	R5,@R3			;
+	MOV.L	R6,@(4,R3)			;進行方向へ動作した REFLASH
+	M_BRA	PLS_CHEAK_REV_300		;
+
+;	--------- 反転動作------
+PLS_CHEAK_REV_100:
+	CMP/PZ	R1				;R1が"+"なら反転中
+	BF	PLS_CHEAK_REV_200		;NO 正転した（逆転）
+	MOV.L	R5,@R3			;
+	MOV.L	R6,@(4,R3)			;進行方向へ動作した REFLASH
+	M_BRA	PLS_CHEAK_REV_300		;
+
+PLS_CHEAK_REV_200:
+	NEG1_64	H_REG=R1,L_REG=R2,WKREG=R0	;
+PLS_CHEAK_REV_220:
+
+	EXTD_8B_R1_R2_TO_2B_R2_UNS		;R1,R2-->0~FFFF
+	MOVERR_CHK_CASE01 DATA=_SET1_INCREV_ELNG,DISENB_DT=0,PV_REG=R2,SET_REG=R14,SET_BIT=BIT6
+	TST	R14,R14
+	TST_BIT_OF PLS_CHEAK_REV_300		;
+	NOP					;ERRのﾃﾞﾊﾞｯｸ用
+	NOP
+	NOP
+PLS_CHEAK_REV_300:
+
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+;	***************************************************
+;	***		偏差オーバ時の元ﾃﾞｰﾀLATCH	***
+;	***************************************************
+	.ALIGN	4				;
+_HENOVR_POS_ERR_LATCH:
+	SUB_START
+	MOV.L	#_POSLSI_OUTPUT_TOTAL_PLS,R3	;払い出し
+	MOV.L	#_HENSA_OVR_OUTPLS,R4		;//偏差ｵｰﾊﾞ用OUTPUT_LATCHdata
+	FAR_JSR	#_MOVE_8BYTE_R3_TO_R4,R0
+
+	MOV.L	#_POS_LSI_TOTAL_PLS,R3		;PG
+	MOV.L	#_HENSA_OVR_ENCPOS,R4		;//
+	FAR_JSR	#_MOVE_8BYTE_R3_TO_R4,R0	;
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***		停止時の元ﾃﾞｰﾀLATCH	***
+;	*******************************************
+_STOP_POS_ERR_LATCH:
+	SUB_START
+	MOV.L	#_POSLSI_OUTPUT_TOTAL_PLS,R3	;払い出し
+	MOV.L	#_STOP_LATCH_OUTPLS,R4		;
+	FAR_JSR	#_MOVE_8BYTE_R3_TO_R4,R0
+
+	MOV.L	#_POS_LSI_TOTAL_PLS,R3		;PG
+	MOV.L	#_STOP_LATCH_ENCPOS,R4		;//
+	FAR_JSR	#_MOVE_8BYTE_R3_TO_R4,R0	;
+
+	MOV.L	#_RNA_ABS_POS,R3		;//ﾎﾞﾙｽﾀ面高さ
+	MOV.L	#_STOP_LATCH_RNAPOS,R4		;//
+	MOV.L	@R3,R2
+	MOV.L	R2,@R4
+
+;	------------- 2009-03-13 ﾄﾖﾀ仕様だけど標準 360ENC停止異常--
+	MOV.L	#_CTL_ENC360,R1			;360.0度//360ｴﾝｺｰﾀﾞ<360ｴﾝｺｰﾀﾞ>
+	MOV.W	@R1,R0				;
+	MOV.L	#_STOP_360ENC_DIG,R1		;
+	MOV.W	R0,@R1				;
+
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***		反転時の元ﾃﾞｰﾀLATCH	***
+;	*******************************************
+;	*******************************************
+;	***		逆転異常の元ﾃﾞｰﾀLATCH	***
+;	*******************************************
+_REV_POS_ERR_LATCH:
+	SUB_START
+;;;;;;2012-03-06[もともと未使用]	MOV.L	#_POSLSI_OUTPUT_TOTAL_PLS,R3	;払い出し
+;;;;;;2012-03-06[もともと未使用]	MOV.L	#_REV_LATCH_OUTPLS,R4		;
+;;;;;;2012-03-06[もともと未使用]	FAR_JSR	#_MOVE_8BYTE_R3_TO_R4,R0
+
+	MOV.L	#_POS_LSI_TOTAL_PLS,R3		;PG
+	MOV.L	#_REV_LATCH_ENCPOS,R4		;//
+	FAR_JSR	#_MOVE_8BYTE_R3_TO_R4,R0	;
+
+;;;;;;2012-03-06[もともと未使用]	MOV.L	#_RNA_ABS_POS,R3		;//ﾎﾞﾙｽﾀ面高さ
+;;;;;;2012-03-06[もともと未使用]	MOV.L	#_REV_LATCH_RNAPOS,R4		;//
+;;;;;;2012-03-06[もともと未使用]	MOV.L	@R3,R2
+;;;;;;2012-03-06[もともと未使用]	MOV.L	R2,@R4
+
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	トヨタ			***
+;	***	360ｴﾝｺｰﾀﾞ停止異常	***
+;	***	2009-03-12		***
+;	***********************************
+	.ALIGN	4				;
+_CTLENC360_STOP_ERR:				;これだけ中で異常にする(R14禁止)
+	SUB_START				;
+	MOV.L	#_WPAR_360STP_HAB,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF CTLENC360_STOPER_EXT		;
+	MOV.L	#_CTL_ENC360,R1			;360.0度//360ｴﾝｺｰﾀﾞ<360ｴﾝｺｰﾀﾞ>
+	MOV.W	@R1,R2				;
+	MOV.L	#_STOP_360ENC_DIG,R1		;180 :359なら-1
+	MOV.W	@R1,R3				;
+
+;	R3-R2に動作距離演算
+;180より大きければ 360-DEG
+;1   -->2      2-  1= +1              "1"
+;1   -->359  359-  1= +358  ->360-358="2"(本当は-2)
+;1   -->0      0-  1= -1           |-1|="1"
+;359 -->0      0- 359=-359  ->360-|359|="1"
+;359 -->358   358-359=-1           |-1|="1"
+;
+
+
+	SUB	R3,R2				;
+	CMP/PZ	R2				;
+	BT	CTLENC360_STOPER_100		;+
+	NEG	R2,R2				;
+CTLENC360_STOPER_100:				;
+	MOV.W	#D'1800,R4			;
+	CMP/GE	R2,R4				;
+	BT	CTLENC360_STOPER_150		;LNGTH =< 180.0
+	MOV.W	#D'3600,R4			;
+	SUB	R4,R2
+	NEG	R2,R2				;3600-data = (data-3600)*-1
+CTLENC360_STOPER_150:				;R2:移動距離(+)
+
+	CMP/GE	R2,R0				;ﾊﾟﾗﾒｰﾀ
+	BT	CTLENC360_STOPER_EXT		;R2=< param THEN NOMAL
+
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB215,LG=W,BIT=(BIT10),WKRG1=R1,WKRG2=R4
+	MOV.W	#H'215A,R4		;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+
+
+CTLENC360_STOPER_EXT:
+	SUB_END
+	M_RTS
+
+
+;	==== 異常ﾁｪｯｸ用 8byteMOVE =======
+;	***********************************
+;	***	8byte MOVE		***
+;	***	R3()==>R4		***
+;	***********************************
+;	各処理のﾗｯﾁ用
+	.EXPORT	_MOVE_8BYTE_R3_TO_R4	
+_MOVE_8BYTE_R3_TO_R4:
+	SUB_START
+	MOV.L	@R3+,R1				;
+	MOV.L	@R3,R2				;
+	MOV.L	R1,@(0,R4)			;
+	MOV.L	R2,@(1*4,R4)			;
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	8byte MOVE		***
+;	***	R3()==>R4		***
+;	***********************************
+;	R3[R1,R2]-R4[R5,R6]=R1,R2
+;	ｵﾌｾｯﾄ
+	.EXPORT	_SUB1_8BYTE_R3R12_SUB_R4R56_ANSR12
+_SUB1_8BYTE_R3R12_SUB_R4R56_ANSR12:
+	SUB_START
+	MOV.L	@R3+,R1				;
+	MOV.L	@R3,R2				;
+	MOV.L	@R4+,R5				;
+	MOV.L	@R4,R6				;
+	SUB8B DT_REGH=R5,DT_REGL=R6,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;
+	SUB_END
+	M_RTS
+
+
+
+
+;	*******************************************
+;	***					***
+;	***	オーバラン			***
+;	***					***
+;	*******************************************
+;
+;
+_POS_OVER_RUN_CHK1:	;[S01m 2003-04-03]
+	SUB_START
+
+
+	MOV.L	#_SET1_MOTREP_USEFUL,R1		;//ROMﾊﾟﾗ及びSWの入/切(ROMPARAM,繰返回数,入/切)
+	MOV.W	@R1,R0				;無効SET
+	TST	R0,R0
+	TST_BIT_OF POS_OVER_RUNCK1_START	;
+	M_BRA	ERR_POS_CNT_CHKEXT		;
+
+POS_OVER_RUNCK1_START:
+
+
+
+
+
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+		.AIF	_CPU_A_ERR_STOP EQ _CMPILE_YES
+	M_BRA	ERR_POS_CNT_CHKEXT
+		.AENDI
+	.AENDI
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+		.AIF	_CPU_B_ERR_STOP EQ _CMPILE_YES
+	M_BRA	ERR_POS_CNT_CHKEXT
+		.AENDI
+	.AENDI
+
+;;;	.AIF	_CB_CPU_SEL EQ	_CB_CPUB
+;;;	M_BRA	POS_OVRRUN_CPUB_START		;
+;;;	MOV.L	#_MODE_SEL,R1			;2004-04-04
+;;;	MOV.W	@R1,R0				;
+;;;	TST	#_W1CNT,R0			;連続
+;;;	TST_BIT_OF POS_OVRRUN_CPUB_START	;連続はやらない・他は行う
+;;;	M_BRA	POS_OVRRUN_END			;
+;;;POS_OVRRUN_CPUB_START:
+;;;	.AENDI
+
+;;;	MOV.L	#_MODE_SEL,R1			;2004-04-04
+;;;	MOV.W	@R1,R0				;
+;;;	TST	#_W1CNT,R0			;連続
+;;;	TST_BIT_ON POS_OVRRUN_020		;
+;;;	M_BRA	POS_OVRRUN_EMGEND		;
+;;;;	M_BRA	POS_OVRRUN_END			;
+
+POS_OVRRUN_020:
+	MOV.L	#_START_FLG_AFTER_EMG,R1	;(安全・連続・寸動の起動でON)
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF POS_OVRRUN_050		;EXIT
+
+	MOV.L	#_SV_POS_CTL_STEP,R1		;//1msec 制御上の見かけ
+	MOV.W	@R1,R5				;
+	TST	R5,R5				;
+	TST_BIT_OF POS_OVRRUN_050		;
+
+	MOV.L	#_CPOS_CTL_MATH,R1		;
+	MOV.W	@R1,R0				;
+	TST	#_DMATH_CNTROT,R0		;
+	TST_BIT_OF POS_OVRRUN_050		;反転はとりあえずやらない
+	M_BRA	POS_OVRRUN_100			;
+
+POS_OVRRUN_050:
+	M_BRA	POS_OVRRUN_END		;
+
+;	======= チェック本番 =======
+POS_OVRRUN_100:
+	MOV.L	#_INT_POS_STEP_FLG,R1		;//ｽﾃｯﾌﾟ
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF POS_OVRRUN_150		;R5:対象STEP 非運転中(EXQ/RDY)
+
+	MOV.L	#_INT_POS_CTL_STEP,R1		;//内部制御工程1~11
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF POS_OVRRUN_150		;
+	MOV	R0,R5				;
+POS_OVRRUN_150:					;R5:STEP
+
+;	==== R5 対象=======
+;	回転・連続・最終工程の場合のみオーバをゆるさない
+;	その他の場合は回転方向にＸパルス追加する
+;	反転を意識するがとりあえず飛ばす
+
+	MOV	R5,R7				;
+	ADD	#-1,R7				;STEP-1
+	MOV.L	#_CPOS_STEP_MAX,R1		;
+	MOV.W	@R1,R6				;
+	ADD	#1,R6				;
+	CMP/EQ	R5,R6				;最終工程か？
+	BF	POS_OVRRUN_200			;NO
+
+;;;	MOV.L	#_CPOS_CTL_MATH,R1		;
+;;;	MOV.W	@R1,R0				;
+;;;	TST	#_DMATH_CNTROT,R0		;
+;;;	TST_BIT_OF POS_OVRRUN_200		;(不要かも)
+
+;;;	MOV.L	#_MODE_SEL,R1			;
+;;;	MOV.W	@R1,R0				;
+;;;	TST	#_W1CNT,R0			;連続
+;;;	TST_BIT_OF POS_OVRRUN_200		;(不要かも)
+
+	MOV.L	#_CPOS_MOD_FLG1,R1		;//回転で連続
+	MOV.W	@R1,R0				;
+	AND	#(BIT2+BIT0),R0			;
+	CMP/EQ	#(BIT2+BIT0),R0			;連続でNON-STOP運転か(回転で連続でﾀｲﾏ0)
+	BF	POS_OVRRUN_200			;NO
+
+;	----------- 2006-11-21 仮(停止ｺﾏﾝﾄﾞが出たときだけ参照すればよい)-------------
+	M_BRA	POS_OVRRUN_END			;
+
+
+	XOR	R9,R9				;正転
+	XOR	R10,R10				;許容範囲"0"
+	.AIF	_CPUAB_ERR_STOP_CNT EQ _CMPILE_YES
+	M_BRA	POS_OVRRUN_250			;
+	.AENDI
+	M_BRA	POS_OVRRUN_300			;
+
+POS_OVRRUN_200:					;R5:STEP R7 STEP-1
+	MOV	R7,R0				;STEP-1
+	SHLL2	R0				;*4
+	MOV.L	#_CPOS_SDAT1_INF1,R1		;[12];		//SETX-->起動時COPY
+	MOV.L	@(R0,R1),R0			;BIT1=0正転 BIT1=1逆転
+	XOR	R9,R9				;正転
+	TST	#BIT1,R0			;
+	TST_BIT_OF POS_OVRRUN_250		;
+	MOV	#-1,R9				;
+POS_OVRRUN_250:					;
+;;2003-05-12	MOV.L	#_SET1_INCREV_ELNG,R1		;ｵｰﾊﾞﾗﾝ
+;;_PRG_CHG20030512 EQ _COMPILE_YES	;
+	MOV.L	#_WPAR_INCOVER_LNG,R1		;ｵｰﾊﾞﾗﾝ 2003-05-12
+
+
+	MOV.W	@R1,R10				;許容範囲
+	TST	R10,R10
+	TST_BIT_ON POS_OVRRUN_300
+	M_BRA	POS_OVRRUN_END			;
+;	====== その他のステップを見ないならEXIT ====
+
+POS_OVRRUN_300:					;R5:STEP
+;	=== 最終工程で、連続でNON-STOP状態 ===
+	MOV.L	#_CPOS_SDAT1_STPAPOS,R4		;
+	MOV	R7,R0				;
+	SHLL2	R0				;*4
+	SHLL	R0				;*2= *8byte
+	ADD	R0,R4				;TOP
+	MOV.L	@R4+,R1				;
+	MOV.L	@R4,R2				;(目標位置)
+
+	MOV.L	#_LINK_PV_ABSPLS,R4		;
+	MOV.L	@R4+,R5				;
+	MOV.L	@R4,R6				;R5,R6 実測位置
+	TST	R9,R9				;
+	TST_BIT_ON POS_OVRRUN_350		;
+;	===== 正転方向 ======= (R1,R2)-(R5,R6) SV-PV 
+	SUB8B DT_REGH=R5,DT_REGL=R6,DT_ANS_REGH=R1,DT_ANS_REGL=R2
+	CMP/PZ	R1				;
+	BF	POS_OVRRUN_400			;
+	M_BRA	POS_OVRRUN_END			;SV >= PV THEN OK! 正転の途中
+
+POS_OVRRUN_350:					;
+;	===== 逆転方向 =======
+	SUB8B DT_REGH=R1,DT_REGL=R2,DT_ANS_REGH=R5,DT_ANS_REGL=R6
+	CMP/PZ	R5				;
+	BT	POS_OVRRUN_END		;SV =< PV THEN OK反転の途中
+	MOV	R5,R1				;
+	MOV	R6,R2				;
+POS_OVRRUN_400:
+;	=== "-" data ====
+;	実際にはR1,R2のうちR1がたつこともR2の上位までたつことはない7FFF,FFFF
+	CMP/PZ	R2				;
+	BT	POS_OVRRUN_OVRERR		;"+" THEN 異常
+
+	ADD	R10,R2				;FFFF + 2 許容範囲
+	CMP/PZ	R2				;
+	BT	POS_OVRRUN_END			;"+" NOMAL
+
+POS_OVRRUN_OVRERR:
+
+;	======= EMG =======
+POS_OVRRUN_OVRERR1:
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB217),R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT1,R4			;
+	OR	R4,R0				;
+	MOV.W	R0,@R1				;
+;	======= 2003-07-01 ===========
+;;;pg容量確保[2012-03-06]	MOV	#1,R4				;
+;;;pg容量確保[2012-03-06]	MOV.W	#H'2171,R1			;
+;;;pg容量確保[2012-03-06]	FAR_JSR	#_SMPLE_HIST_DATA_SET1,R0	;
+;	==============================
+	MOV.W	#H'2171,R4		;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;217.1
+	FAR_JSR	#_DATA_GRF_CNT_DATA_MAKE,R0	;2004-03-25
+	M_BRA	POS_OVRRUN_END		;
+
+;;;;POS_OVRRUN_OVRERR2:
+;;;;	MOV.L	#(_SQ_CBWK_TOP+_SQCB217),R1	;
+;;;;	MOV.W	@R1,R0				;
+;;;;	MOV.W	#BIT2,R4			;217.2
+;;;;	OR	R4,R0				;
+;;;;	MOV.W	R0,@R1				;
+;;;;;	======= 2003-07-01 ===========
+;;;;	MOV	#1,R4				;
+;;;;	MOV.W	#H'2172,R1			;217.2
+;;;;	FAR_JSR	#_SMPLE_HIST_DATA_SET1,R0	;
+;;;;;	==============================
+;;;;	MOV.W	#H'2172,R4		;2010-12-21
+;;;;	FAR_JSR	#_EMG_STOP,R0			;
+;;;;	FAR_JSR	#_DATA_GRF_CNT_DATA_MAKE,R0	;2004-03-25
+
+;;;;POS_OVRRUN_EMGEND:
+;;;;	XOR	R0,R0				;
+;;;;	MOV.L	#_START_FLG_AFTER_EMG,R1	;
+;;;;	MOV.W	R0,@R1				;
+POS_OVRRUN_END:
+
+;	***********************************
+;	***				***
+;	***	安全一行程		***
+;	***				***
+;	***********************************
+	FAR_JSR	#_ENC360_OVR_RUN_CHK,R0		;(安全一工程ｵｰﾊﾞﾗﾝ)
+
+	MOV.L	#_emg_err_flg,R1		;//異常ﾗｯﾁ
+	MOV.W	@R1,R0				;
+	MOV	R0,R2				;
+	MOV.L	#_exq_err_flg,R1		;//異常ﾗｯﾁ
+	MOV.W	@R1,R0				;
+	OR	R2,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF ERR_POS_LSICHK_050		;
+	M_BRA	ERR_POS_LSICHK_EXT		;
+ERR_POS_LSICHK_050:
+
+	MOV.L	#_POS_LSI_ACS_ERR_FLG1,R1	;
+	MOV.W	@R1,R0				;
+	MOV.L	#_POS_CALC_ERR_FLG1,R1		;//異常ﾌﾗｸﾞ
+	MOV.W	@R1,R2				;
+	EXTU.W	R2,R2				;
+	SHLL8	R2				;
+	OR	R0,R2				;
+	TST	R2,R2				;
+	TST_BIT_OF ERR_POS_LSICHK_EXT		;
+
+;	--------[2009-10-07下振子]------
+	MOV.W	#BIT6,R0			;
+	NOT	R0,R0				;
+	AND	R0,R2				;BIT6=0 222.6は振り子の方向に使用
+
+
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB222,R1	;
+	MOV.W	@R1,R0				;360度
+	OR	R2,R0				;
+	MOV.W	R0,@R1				;
+	MOV.W	#H'2220,R4			;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+
+	XOR	R0,R0
+	MOV.L	#_POS_LSI_ACS_ERR_FLG1,R1	;
+	MOV.W	R0,@R1				;
+	MOV.L	#_POS_CALC_ERR_FLG1,R1		;//異常ﾌﾗｸﾞ
+	MOV.W	R0,@R1				;
+
+ERR_POS_LSICHK_EXT
+;	***********************************
+;	***				***
+;	***	連続			***
+;	***				***
+;	***********************************
+
+	MOV.L	#_CNT_SYNC_ERR_FLG,R1		;
+	MOV.W	@R1,R2				;
+	EXTU.B	R2,R2				;BIT0~BIT7
+	TST	R2,R2				;
+	TST_BIT_OF ERR_POS_CNT_CHKEXT
+
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB223,R1	;
+	MOV.W	@R1,R0				;360度
+	OR	R2,R0				;
+	MOV.W	R0,@R1				;
+	MOV.W	#H'2230,R4			;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+
+	XOR	R0,R0				;
+	MOV.L	#_CNT_SYNC_ERR_FLG,R1		;
+	MOV.W	R0,@R1				;
+
+ERR_POS_CNT_CHKEXT
+
+	SUB_END
+	M_RTS
+	
+
+;	***********************************************************
+;	***							***
+;	***	上昇無効に関わらず遮光が入って下降したら停止	***
+;	***	ソフトの不具合込みの対策			***
+;	***							***
+;	***********************************************************
+_SFTY_MOV_RENA_CHK:	;2003-05-24
+	SUB_START
+
+;	==== 2014-09-02(2014-05-15) ==========
+	MOV.L	#(_PAR_SFTY2_LNGTH-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+	MOV.W	@R1,R3							;
+	TST	R3,R3							;
+	TST_BIT_OF SFTY_MOV_RNACHK_100	;0:ﾌﾙｽｹｰﾙで行う
+
+	EXTU.W	R3,R3			;
+	MOV.W	#D'100,R4		;
+	DMULS.L	R4,R3			;
+	STS	MACL,R3			;0.1mm->0.001mm
+
+	MOV.L	#_RNA_STLORK,R1			;
+	MOV.L	@R1,R2				;
+	SUB	R3,R2				;ｽﾄﾛｰｸ0.001mm(R2)-見る距離(R3)=R3
+	CMP/PL	R2				;
+	BF	SFTY_MOV_RNACHK_100		;ｽﾛﾄｰｸ長より長い(全領域で見る)
+
+;;;;;;;;;	MOV.L	#_RNA_CTL_POS1,R4		;//制御位置 OK
+	MOV.L	#_RNA_CTL_POS0,R4		;//下死点高さ:制御位置(補正前)
+	MOV.L	@R4,R1				;
+	CMP/PL	R1				;
+	BF	SFTY_MOV_RNACHK_080		;0,ﾏｲﾅｽ　ﾁｪｯｸしない
+
+	CMP/GE	R2,R1				;R2(下限高さ設定)=<R1(下限上高さ実測)
+	BT	SFTY_MOV_RNACHK_100		;ﾁｪｯｸする
+SFTY_MOV_RNACHK_080:				;
+	M_BRA	SFTY_MOV_RNACHK_200		;
+
+
+SFTY_MOV_RNACHK_100:				;
+
+;	==== 2003-05-24(上昇無効に関わらず安全装置が遮光で下降中なら停止) =====
+	MOV.L	#_SFTY_IN_DAT,R1		;(安全装置有効/無効後の入力)
+	MOV.W	@R1,R0				;
+	TST	#(BIT1+BIT0),R0			;
+	TST_BIT_OF SFTY_MOV_RNACHK_200		;通光:REFLASH
+
+	MOV.L	#_SELF_FLG,R1			;//BIT0:ｾﾙﾌﾁｪｯｸ中  BIT7ｾﾙﾌﾁｪｯｸ正常完了
+	MOV.W	@R1,R0				;
+	AND	#BIT0,R0			;ｾﾙﾌﾁｪｯｸ中
+	MOV.L	#_emg_err_flg,R1		;//異常ﾗｯﾁ
+	MOV.W	@R1,R2				;
+	MOV.L	#_exq_err_flg,R1		;//異常ﾗｯﾁ
+	MOV.W	@R1,R3				;
+	OR	R2,R0				;
+	OR	R3,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON SFTY_MOV_RNACHK_200		;異常中
+
+	MOV.L	#_RNA_ABS_POS,R1		;//ﾎﾞﾙｽﾀ面高さ
+	MOV.L	@R1,R4				;
+	MOV.L	#_SFTYCHK_RNA_POS,R3		;//_RNA_ABS_POS((通信-原点)×符号)=>0.001mm換算のﾃﾞｰﾀを使用する
+	MOV.L	@R3,R2				;
+	SUB	R4,R2				;(上昇基準位置-実測)
+	CMP/PZ	R2				;R4
+	BF	SFTY_MOV_RNACHK_200		;"-":上昇基準位置<実測:上昇中 REFLASH
+;	"+"
+	MOV.L	#_WPAR_RNA_SFTY_LNG1,R1		;
+	MOV.W	@R1,R4				;0~30.000
+	TST	R4,R4				;R4=0 異常検知しない
+	TST_BIT_OF SFTY_MOV_RNACHK_200		;
+
+	CMP/HI	R4,R2				;R4(SYS異常距離)<R2
+	BF	SFTY_MOV_RNACHK_300		;SYS>=PV 正常<様子見状態>
+;	======= EXQ ERR ======
+
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB204,R5		;
+	MOV.W	@R5,R1					;
+	MOV.W	#BIT4,R0				;
+	OR	R0,R1					;
+	MOV.W	R1,@R5					;通常の遮光でもある
+
+	MOV.W	#H'2044,R4				;2010-12-21
+	FAR_JSR	#_SFTY_STOP,R0			;
+	M_BRA	SFTY_MOV_RNACHK_300		;
+
+;	==============
+;	=== ﾘﾌﾚｯｼｭ ===
+;	==============
+SFTY_MOV_RNACHK_200:				;
+	MOV.L	#_RNA_ABS_POS,R1		;//ﾎﾞﾙｽﾀ面高さ
+	MOV.L	@R1,R2				;
+	MOV.L	#_SFTYCHK_RNA_POS,R3		;//_RNA_ABS_POS((通信-原点)×符号)=>0.001mm換算のﾃﾞｰﾀを使用する
+	MOV.L	R2,@R3				;
+SFTY_MOV_RNACHK_300:				;
+
+	SUB_END
+	M_RTS
+
+
+
+
+;	***********************************
+;	***				***
+;	***	2003-07-01 ﾌﾞﾚｰｷ異常1	***
+;	***				***
+;	***********************************
+;	<1>連続は、止まる工程に動作している場合の減速距離BIT0で判断
+;	   待機点STOP_LATCHがONした時の減速距離
+;	<2>寸動は運転釦を離した時(BIT1+BIT0)
+;	   または停止する工程が存在するとき(BIT0)
+;	<3>安全一工程、
+;	下降時は手を離したとき(BIT1+BIT0)
+;	上昇時は一工程は減速距離BIT0
+;	<4>段取寸動は手を離した時(BIT1+BIT0)
+;	<5>原点復帰はﾌﾞﾚｰｷ異常の対象からはずす
+_BRK12_LENGTH_ERR_CHK:
+	SUB_START
+
+	MOV.L	#_DRV_ACT_FLG,R1		;//運転動作ﾌﾗｸﾞ BIT0:運転中
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_OF BRK12L_ERR_CK_900		;非運転状態
+
+	MOV.L	#_CPOS_CTL_MATH,R1		;
+	MOV.W	@R1,R0				;
+	TST	#_DMATH_CNTROT,R0		;
+	TST_BIT_OF BRK12L_ERR_CK_EXT		;回転ではない
+
+;	====== ﾌﾞﾚｰｷ1 ===
+	MOV.L	#_WPAR_BRK1_ACCTM,R1		;//37 msec
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF BRK12L_ERR_CK_100		;PARAM=0 NO-CHK
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA		;20060919
+	FAR_JSR	#_BRK1_ERR_CHK,R0			;
+	.AELSE						;
+;;;;;;;;;;;;;;;2006-10-23	FAR_JSR	#_BRK1_ERR_CHK,R0			;
+	.AENDI
+
+BRK12L_ERR_CK_100:
+
+;	====== ﾌﾞﾚｰｷ2 ===
+	MOV.L	#_WPAR_BRK2_ACCTM,R1			;//38 msec
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF BRK12L_ERR_CK_200		;
+
+;;	.AIF _OBJ_PLS_CTL_TYP	NE _CMPILE_YES		;2006-09-19
+	FAR_JSR	#_BRK2_ERR_CHK,R0			;
+;;	.AENDI						;
+
+BRK12L_ERR_CK_200:
+
+;	====== ﾌﾞﾚｰｷ3 ===
+	MOV.L	#_WPAR_ILNGERR_LNG,R1		;//40 移動量異常ｵｰﾊﾞ許容値
+	MOV.W	@R1,R0				;
+	TST_BIT_OF BRK12L_ERR_CK_300		;
+
+BRK12L_ERR_CK_300:
+
+
+
+
+
+;	=====- 非運転状態で一定時間後ﾊﾟﾙｽがでていたら異常 ====
+BRK12L_ERR_CK_900:
+
+BRK12L_ERR_CK_EXT:
+
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	ブレーキ異常1		***
+;	***				***
+;	***********************************
+;BIT0 SMPLING INITAL START
+;BIT1 減速ﾗｯﾁ
+;BIT2 T2時点の速度ﾗｯﾁ
+;BIT3 T1+T2完了
+	.GLOBAL	_SVP_TEPDAT_SPD1	;
+
+_BRK1_ERR_CHK:
+	SUB_START
+
+	MOV.L	#_BRK_CHK_FLG,R8		;
+	MOV.L	#_BRK_CHK_COM,R9		;
+	MOV.W	@R8,R0				;
+	TST	#BIT0,R0			;DURING?
+	TST_BIT_ON BRK1_ERR_CK_050		;
+
+	MOV.W	@R9,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON BRK1_ERR_CK_020		;
+	M_BRA	BRK1_ERR_CK_300			;
+BRK1_ERR_CK_020:
+
+	MOV.W	@R8,R0				;
+	OR	#BIT0,R0			;START
+	MOV.W	R0,@R8				;
+
+	MOV.L	#_BRK1_CHKDLY_TM,R1		;//開始から10msec
+;;;2003-	MOV.W	#D'10,R2		;
+	MOV.W	#D'0,R2				;
+	MOV.W	R2,@R1				;
+	M_BRA	BRK1_ERR_CK_300			;
+
+BRK1_ERR_CK_050:
+	MOV.L	#_BRK1_CHKDLY_TM,R1		;//開始から10msec
+	MOV.W	@R1,R2				;
+	TST	R2,R2				;
+	TST_BIT_OF BRK1_ERR_CK_100
+	ADD	#-1,R2				;
+	MOV.W	R2,@R1				;
+	M_BRA	BRK1_ERR_CK_300			;
+BRK1_ERR_CK_100:
+	MOV.W	@R8,R0				;
+	TST	#BIT3,R0			;減速処理終了?
+	TST_BIT_OF BRK1_ERR_CK_120		;
+	M_BRA	BRK1_ERR_CK_300			;
+BRK1_ERR_CK_120:
+	
+	TST	#BIT2,R0			;
+	TST_BIT_ON BRK1_ERR_CK_250		;
+	TST	#BIT1,R0			;
+	TST_BIT_ON BRK1_ERR_CK_200		;YES ON
+
+	FAR_JSR	#_GENSOK_SIG_MAK,R0		;R0,R1,R4,R6
+	TST	#BIT0,R0			;
+	TST_BIT_ON BRK1_ERR_CK_140		;
+	M_BRA	BRK1_ERR_CK_300			;減速開始していない
+BRK1_ERR_CK_140:
+
+	MOV.L	#_PVC_BRK_OUT_SPD,R0		;
+	MOV.W	@R0,R2				;
+	MOV.L	#_BRK1_GEN_SV_FRQ1,R0		;//WORK 減速開始時の速度
+	MOV.W	R2,@R0				;
+	MOV	R2,R5				;data push
+	MOV.L	#_WPAR_BRK1_ACCTM,R0		;//PAR.NO.28 msec
+	MOV.W	@R0,R1				;(ｵｰﾊﾞﾗｲﾄﾞ分測定時間も変えるだけ)
+
+;	==== 2005-01-17 ===
+	PUSH_REG1 R5
+	FAR_JSR	#_OVER_RIDE_ERR_TIMCHG,R0
+	POP_REG1 R5
+;	===================
+
+	MOV.W	#_SPD_PER_MAX,R4		;100.00per
+	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0	;//
+	MOV.L	#_BRK1_GEN_SV_ACCTM,R1		;//WORK 時間T2<CHEAK用>
+	MOV.W	R2,@R1				;
+	MOV.L	#_BRK1_GEN_PV_ACCTM,R1		;//WORK 時間T2
+	MOV.W	R2,@R1				;
+
+	MOV	R5,R2				;
+	MOV.L	#_WPAR_BRK1_DLYTM,R0		;//PAR.NO.27 msec
+	MOV.W	@R0,R1				;
+
+;	==== 2005-01-17 ===
+	FAR_JSR	#_OVER_RIDE_ERR_TIMCHG,R0
+;	===================
+
+	MOV.W	#_SPD_PER_MAX,R4		;100.00per
+	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0	;
+;	====================================
+	MOV.L	#_SVP_TEPDAT_SPD1,R1		;
+	MOV.W	@R1,R0				;(PAR NO.26=固定時間)
+	ADD	R0,R2				;
+;	===================================
+	MOV.L	#_BRK1_GEN_SV_DLYTM,R1		;//WORK 時間T1<CHEAK用>
+	MOV.W	R2,@R1				;
+	MOV.L	#_BRK1_GEN_PV_DLYTM,R1		;//WORK 時間T1
+	MOV.W	R2,@R1				;
+
+	MOV.W	@R8,R0				;
+	OR	#BIT1,R0			;
+	MOV.W	R0,@R8				;減速開始LATCH
+	M_BRA	BRK1_ERR_CK_300
+BRK1_ERR_CK_200:
+	MOV.L	#_BRK1_GEN_PV_ACCTM,R1		;//WORK 時間T2
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF BRK1_ERR_CK_220		;
+	ADD	#-1,R0				;
+	MOV.W	R0,@R1				;
+	M_BRA	BRK1_ERR_CK_300			;
+BRK1_ERR_CK_220:
+	MOV.L	#_PVC_BRK_OUT_SPD,R0		;
+	MOV.W	@R0,R2				;
+	MOV.L	#_BRK1_GEN_SV_FRQ2,R0		;//WORK 減速開始時の速度
+	MOV.W	R2,@R0				;
+
+	MOV.W	@R8,R0				;
+	OR	#BIT2,R0			;
+	MOV.W	R0,@R8				;
+	M_BRA	BRK1_ERR_CK_300
+
+BRK1_ERR_CK_250:
+	MOV.L	#_BRK1_GEN_PV_DLYTM,R1		;//WORK 時間T1
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF BRK1_ERR_CK_270		;
+	ADD	#-1,R0				;
+	MOV.W	R0,@R1				;
+	M_BRA	BRK1_ERR_CK_300			;
+BRK1_ERR_CK_270:
+	MOV.L	#_WPAR_BRK_SEL_SPD,R1		;//35 ﾌﾞﾚｰｷ異常見ない速度 10.00%
+	MOV.W	@R1,R3				;
+
+	MOV.L	#_PVC_BRK_ENC_SPD,R1		;%data
+	MOV.W	@R1,R2				;
+	CMP/HI	R2,R3				;
+	BT	BRK1_ERR_CK_290			;シキイチより小さい
+
+	MOV.L	#_BRK1_GEN_SV_FRQ2,R1		;//WORK 減速開始時の速度
+	MOV.W	@R1,R3				;
+	CMP/HI	R2,R3				;
+	BT	BRK1_ERR_CK_290			;異常シキイチより小さい
+
+
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB217),R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT8,R4			;
+	OR	R4,R0				;
+	MOV.W	R0,@R1				;
+;	======= 2003-07-01 ===========
+;;;pg容量確保[2012-03-06]	MOV	#1,R4				;
+;;;pg容量確保[2012-03-06]	MOV.W	#H'2178,R1			;217.8
+;;;pg容量確保[2012-03-06]	FAR_JSR	#_SMPLE_HIST_DATA_SET1,R0	;
+;	==============================
+	MOV.W	#H'2178,R4		;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;217.8
+	M_BRA	BRK1_ERR_CK_300			;ﾌﾗｸﾞにさわる必要はない
+
+BRK1_ERR_CK_290:
+;;;;	MOV.W	@R8,R0				;(終わりたくなければこのまま)
+;;;;	OR	#BIT3,R0			;
+;;;;	MOV.W	R0,@R8				;
+BRK1_ERR_CK_300:
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	ブレーキ異常2		***
+;	***				***
+;	***********************************
+;BIT4 SMPLING INITAL START
+;BIT5 減速ﾗｯﾁ
+	.IMPORT	_INCENC_SV_HENSA_MAKE
+	.IMPORT	_CMP_BRK2_CTLGENSOK	;
+	
+_BRK2_ERR_CHK:
+	SUB_START
+
+	MOV.L	#_BRK_CHK_FLG,R8		;
+	MOV.L	#_BRK_CHK_COM,R9		;
+	MOV.W	@R8,R0				;
+	TST	#BIT4,R0			;DURING?
+	TST_BIT_ON BRK2_ERR_CK_050		;
+
+	MOV.W	@R9,R0				;
+	TST	#BIT4,R0			;
+	TST_BIT_ON BRK2_ERR_CK_020		;
+	M_BRA	BRK2_ERR_CK_300			;
+BRK2_ERR_CK_020:
+
+	MOV.W	@R8,R0				;
+	OR	#BIT4,R0			;START
+	MOV.W	R0,@R8				;
+
+	MOV.L	#_BRK2_CHKDLY_TM,R1		;//開始から10msec
+	MOV.W	#D'10,R2			;
+	MOV.W	R2,@R1				;
+	M_BRA	BRK2_ERR_CK_300			;
+
+BRK2_ERR_CK_050:
+	MOV.L	#_BRK2_CHKDLY_TM,R1		;//開始から10msec
+	MOV.W	@R1,R2				;
+	TST	R2,R2				;
+	TST_BIT_OF BRK2_ERR_CK_100
+	ADD	#-1,R2				;
+	MOV.W	R2,@R1				;
+	M_BRA	BRK2_ERR_CK_300			;
+BRK2_ERR_CK_100:
+	MOV.W	@R8,R0				;
+	TST	#BIT5,R0			;減速処理終了?
+	TST_BIT_OF BRK2_ERR_CK_120		;
+	M_BRA	BRK2_ERR_CK_300			;
+
+BRK2_ERR_CK_120:
+	MOV.L	#_WPAR_BRK_SEL_SPD,R1		;//35 ﾌﾞﾚｰｷ異常見ない速度 10.00%
+	MOV.W	@R1,R3				;
+
+	MOV.L	#_PVC_BRK_ENC_SPD,R1		;%data
+	MOV.W	@R1,R2				;
+	CMP/HI	R2,R3				;
+	BT	BRK2_ERR_CK_300			;シキイチより小さい　ERRなし
+
+	
+	FAR_JSR	#_CMP_BRK2_CTLGENSOK,R0		;
+	TST	R0,R0				;
+	TST_BIT_OF BRK2_ERR_CK_300		;減速すべき速度ではない
+
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB217),R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT9,R4			;
+	OR	R4,R0				;
+	MOV.W	R0,@R1				;
+
+;	======= 2003-07-01 ===========
+;;;pg容量確保[2012-03-06]	MOV	#1,R4				;
+;;;pg容量確保[2012-03-06]	MOV.W	#H'2179,R1			;217.9
+;;;pg容量確保[2012-03-06]	FAR_JSR	#_SMPLE_HIST_DATA_SET1,R0	;
+;	=====================
+	MOV.W	#H'2179,R4			;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;217.9
+
+BRK2_ERR_CK_300:
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***	EXQ,EMG異常時、起動時CALL 	***
+;	***					***
+;	*******************************************
+	.EXPORT	_BRK_ERR_WORK_CLR1		;R0,R1 USED
+;;;;;2013-02-05 未使用	.EXPORT	_BRK_ERR_CHK_START1		;
+;;;;;2013-02-05 未使用	.EXPORT	_BRK_ERR_CHK_START2		;
+;;;;;2013-02-05 未使用	.EXPORT	_BRK_ERR_CHK_START3		;
+	.EXPORT	_BRK_ERR_CHK_START4
+
+_BRK_ERR_WORK_CLR1:
+	SUB_START
+	XOR	R0,R0				;
+	MOV.L	#_BRK_CHK_COM,R1		;//ﾌﾞﾚｰｷﾁｪｯｸ開始ｺﾏﾝﾄﾞ BIT0(BRK1) BIT4(BRK2)
+	MOV.W	R0,@R1				;
+	MOV.L	#_BRK_CHK_FLG,R1		;//BIT0:BRK1during BIT4 BRK2during
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+
+
+;;	MEM1_BIT0_TO_BIT7_ORSET MEM=_BRK_CHK_COM,LG=W,BIT=BIT0,WKREG=R1	;
+;	使用箇所
+;		/連続ﾀｲﾏ・回転仕様のBTTN
+;		/安全一工程の手放し
+;		/寸動・段取・原点の手放し
+;		/
+;	======== 運転釦のOFF/停止ｺﾏﾝﾄﾞ/安全位置工程の上昇ﾎｰﾙﾄﾞ/ 2003-07-01
+;	====(途中に中断はこれになる)
+;;;2013-02-05未使用	_BRK_ERR_CHK_START1:
+;;;2013-02-05未使用	SUB_START
+;;;2013-02-05未使用	MOV.W	#(BIT0),R0			;
+;;;2013-02-05未使用	MOV.L	#_BRK_CHK_COM,R1		;//ﾌﾞﾚｰｷﾁｪｯｸ開始ｺﾏﾝﾄﾞ BIT0(BRK1) BIT4(BRK2)
+;;;2013-02-05未使用	MOV.W	R0,@R1				;
+;;;2013-02-05未使用
+;;;2013-02-05未使用	XOR	R0,R0				;
+;;;2013-02-05未使用	MOV.L	#_BRK_CHK_FLG,R1		;//BIT0:BRK1during BIT4 BRK2during
+;;;2013-02-05未使用	MOV.W	R0,@R1				;
+;;;2013-02-05未使用	SUB_END
+;;;2013-02-05未使用	M_RTS
+
+;	======== 目標位置決め(起動時は全てこれ)=====
+;;;2013-02-05未使用	_BRK_ERR_CHK_START2:
+;;;2013-02-05未使用		SUB_START
+;;;2013-02-05未使用		MOV.W	#(BIT4+BIT0),R0			;
+;;;2013-02-05未使用		MOV.L	#_BRK_CHK_COM,R1		;//ﾌﾞﾚｰｷﾁｪｯｸ開始ｺﾏﾝﾄﾞ BIT0(BRK1) BIT4(BRK2)
+;;;2013-02-05未使用		MOV.W	R0,@R1				;
+;;;2013-02-05未使用	
+;;;2013-02-05未使用		XOR	R0,R0				;
+;;;2013-02-05未使用		MOV.L	#_BRK_CHK_FLG,R1		;//BIT0:BRK1during BIT4 BRK2during
+;;;2013-02-05未使用		MOV.W	R0,@R1				;
+;;;2013-02-05未使用		SUB_END
+;;;2013-02-05未使用		M_RTS
+
+;	==== 安全一工程の最終工程+AUTO+角度で追加===
+;	==== 一工程の最終工程+角度で追加===
+;;;2013-02-05未使用	_BRK_ERR_CHK_START3:
+;;;2013-02-05未使用		SUB_START
+;;;2013-02-05未使用		MEM1_BIT0_TO_BIT7_ORSET MEM=_BRK_CHK_COM,LG=W,BIT=BIT6,WKREG=R1	;
+;;;2013-02-05未使用		SUB_END
+;;;2013-02-05未使用		M_RTS
+
+
+_BRK_ERR_CHK_START4:
+	SUB_START
+	MOV.L	#_INT_POS_CTL_STEP,R1		;//内部制御工程1~11
+	MOV.W	@R1,R0				;
+	ADD	#-1,R0				;
+	SHLL2	R0
+	MOV.L	#_CPOS_SDAT1_CNTSTEP,R1		;
+	MOV.L	@(R0,R1),R2			;現状の工程の目標工程
+	MOV.L	#_CPOS_STEP_MAX,R1		;
+	MOV.W	@R1,R3				;
+	ADD	#1,R3				;設定+1(帰りも1ｽﾃｯﾌﾟ)
+	CMP/EQ	R2,R3				;
+	BT	BRK_ERR_CHKST4_050		;
+	M_BRA	BRK_ERR_CHKST4_200		;
+
+BRK_ERR_CHKST4_050:
+	MOV.L	#_MODE_SEL,R1			;寸動・安全一工程・連続・OPT
+	MOV.W	@R1,R0				;
+	TST	#_W1INC,R0			;
+	TST_BIT_OF BRK_ERR_CHKST4_080		;
+	MOV.L	#_CB_SEQ_SW_SEL028,R1		;//SEQ 28
+	MOV.W	@R1,R0				;.3
+	TST	#BIT3,R0			;
+	TST_BIT_OF BRK_ERR_CHKST4_200		;寸動
+
+
+BRK_ERR_CHKST4_080:
+	TST	#_W1CNT,R0			;
+	TST_BIT_OF BRK_ERR_CHKST4_100		;
+	MOV.L	#_STOP_LATCH,R1			;//BIT0:ｽﾄｯﾌﾟ釦
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_OF BRK_ERR_CHKST4_200		;EXIT
+
+;	------------------2013-02-05--------
+	FAR_JSR	#_CNT_ENC360_CONF_CHK2,R0		;2012-05-07[改良 最終行程が10度などの時の対策]==
+	TST	R0,R0				;
+	TST_BIT_OF BRK_ERR_CHKST4_200		;EXIT
+
+
+BRK_ERR_CHKST4_100:
+
+	MOV.L	#_BRK_CHK_COM,R1		;//BIT0:BRK1during BIT4 BRK2during
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON BRK_ERR_CHKST4_200		;
+
+	MOV.W	#(BIT6+BIT4+BIT0),R0		;
+	MOV.L	#_BRK_CHK_COM,R1		;//ﾌﾞﾚｰｷﾁｪｯｸ開始ｺﾏﾝﾄﾞ BIT0(BRK1) BIT4(BRK2) BIT6
+	MOV.W	R0,@R1				;
+
+	XOR	R0,R0				;
+	MOV.L	#_BRK_CHK_FLG,R1		;//BIT0:BRK1during BIT4 BRK2during
+	MOV.W	R0,@R1				;
+
+BRK_ERR_CHKST4_200:
+	SUB_END
+	M_RTS
+
+;
+;
+;;	MEM1_BIT0_TO_BIT7_ORSET MEM=_BRK_CHK_COM,LG=W,BIT=BIT1+BIT0,WKREG=R1	;
+;	使用箇所
+;	_STOP_LTH_OUT:連続の停止ｺﾏﾝﾄﾞﾗｯﾁ
+
+;;	>>これが無効中でﾊﾟﾙｽを払い出さないはずの箇所<<
+;	=== ﾌﾟﾛｸﾞﾗﾑの大きな分岐点を生むﾒﾓﾘ=====
+;	_DRV_ACT_FLG,R1		;//運転動作ﾌﾗｸﾞ BIT0:運転中
+;	_CMPSTEP_POS_START
+;;	_INT_POS_STEP_FLG,R1		;//ｽﾃｯﾌﾟ
+;
+;
+
+;	_CMPSTEP_POS_STARTをいつ落としている?
+;	DRV_ACT_FLG=1で_CMPSTEP_POS_STARTがOFFだと終了待ち
+;
+
+;	*******************************************
+;	***					***
+;	***	ｽﾄｯﾋﾟﾝｯｸﾞﾀｲﾏ/すべり量		***
+;	***					***
+;	*******************************************
+;	_STOP_ERR_LATCH,R1	;// BIT0:TIM BIT1:POS
+;	BIT0:STOP_TIM ERR
+;	BIT1:STOP_POS ERR
+;	BIT4:起動有り
+;	BIT5:停止有り
+;	(起動がなければ測定はしない)
+;
+;
+_STOP_ERR_CHK:
+	SUB_START
+
+;;;;;2013-03-10	不要 MOV.L	#_STOP_ERR_LATCH,R1	;// BIT0:TIM BIT1:POS
+;;;;;2013-03-10		MOV.W	@R1,R0			;
+;;;;;2013-03-10		MOV	R0,R5			;SEQ PUSH
+;;;;;2013-03-10		TST	#(BIT1+BIT0),R0		;
+;;;;;2013-03-10		TST_BIT_OF STOP_ERRCK_050	;
+
+;	=== RESET ===
+	MOV.L	#_di1_cb_ctl1_dt,R1	;ﾚﾍﾞﾙに変更
+	MOV.W	@R1,R0			;
+	MOV.W	#_W1RST,R4		;ﾘｾｯﾄ釦
+	TST	R4,R0			;ONｴｯｼﾞ
+;;;	TST_BIT_OF STOP_ERRCK_200	;
+	TST_BIT_OF STOP_ERRCK_050	;
+	XOR	R0,R0			;
+	MOV.L	#_STOP_ERR_LATCH,R1	;// BIT0:TIM BIT1:POS
+	MOV.W	R0,@R1			;
+
+;;;2010-08-23	MEM1_BIT0_F_ADCLR MEM=_SQ_CBWK_TOP+_WKSQCB212,LG=W,BIT=~(BIT9+BIT8),WKRG1=R1,WKRG2=R4
+	MEM1_BIT0_F_ADCLR MEM=_SQ_CBWK_TOP+_WKSQCB212,LG=W,BIT=~(BIT11+BIT10+BIT9+BIT8),WKRG1=R1,WKRG2=R4
+
+;	---- 2013-03-10 STOPﾀｲﾏｼｽﾃﾑ最大追加
+	MEM1_BIT0_F_ADCLR MEM=_SQ_CBWK_TOP+_WKSQCB206,LG=W,BIT=~(BIT15),WKRG1=R1,WKRG2=R4
+	M_BRA	STOP_ERRCK_200		;
+
+STOP_ERRCK_050:
+
+	MOV.L	#_STOP_ERR_LATCH,R1	;// BIT0:TIM BIT1:POS
+	MOV.W	@R1,R0			;
+;;;2013-03-10	MOV	R5,R0		;
+
+	TST	#BIT4,R0		;起動有り?
+	TST_BIT_OF STOP_ERRCK_200	;NO! 測定不要
+	TST	#BIT6,R0		;
+	TST_BIT_ON STOP_ERRCK_200	;演算終了
+	TST	#BIT5,R0		;停止?
+	TST_BIT_OF STOP_ERRCK_100	;
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_STOP_ERR_LATCH,LG=W,BIT=BIT6,WKREG=R1	;(停止完了演算)
+
+
+;;;;;;;;;;;;;;2012-03-19	FAR_JSR	#_BRKTMCAL_API2_END,R0				;2012-03-06
+
+
+STOP_ERRCK_100:
+;	== 測定対象(異常時のみ測定) ==
+	MOV.L	#_emg_err_flg,R1			;//異常ﾗｯﾁ
+	MOV.W	@R1,R0					;
+	MOV.L	#_exq_err_flg,R1			;
+	MOV.W	@R1,R2					;
+	OR	R2,R0					;
+	TST	R0,R0					;
+	TST_BIT_OF STOP_ERRCK_200			;この条件をはずせば、異常時、寸動停止
+
+	FAR_JSR	#_STOP_ERR_TIM_CMP,R0
+	FAR_JSR	#_STOP_ERR_POS_CMP,R0
+
+STOP_ERRCK_200:
+
+
+	SUB_END
+	M_RTS
+
+;_SVP_BREAK_DIG			.SRES	2	;ﾌﾞﾚｰｷ角度   0.1度
+;_SVP_BREAK_TIM1			.SRES	2	;ブレーキタイマ設定
+
+;	***************************
+;	***	時間比較	***
+;	***************************
+_STOP_ERR_TIM_CMP:
+	SUB_START
+;	===== STOPPING TIMER 異常 =====
+;;;2006-10-04	MOV.L	#_STOPPING_TIM_PV1,R1	;//ｽﾄｯﾋﾟﾝｸﾞﾀｲﾏ測定(10msec)
+;;;2006-10-04	MOV.W	@R1,R2			;
+;;;2006-10-04	MOV.W	#_SYS_STOPPING_TIM,R4	;50msec
+;;;2006-10-04	SUB	R4,R2			;
+;;;2006-10-04	CMP/PZ	R2			;
+;;;2006-10-04	BT	STOP_ERR_TIMCMP_050	;
+;;;2006-10-04	XOR	R2,R2			;
+;;;2006-10-04STOP_ERR_TIMCMP_050:		
+;	2006-10-04ﾌﾞﾚｰｷﾀｲﾑとｽﾄｯﾋﾟﾝｸﾞ時間が合わないこれを修正
+
+
+	MOV.L	#_STOPPING_TIM_PV2,R1		;
+	MOV.W	@R1,R2				;
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+	MOV.L	#_PVP_BREAK_TIM1,R1	;
+	MOV.W	R2,@R1			;
+	.AENDI
+
+	MOV.L	#_SET1_BREAK_TIM1,R1		;//ブレーキタイマ設定10msec
+	MOV.W	@R1,R0				;
+;;2014-10-22[設定はだめ]	TST	R0,R0				;
+;;2014-10-22[設定はだめ]	TST_BIT_OF STOP_ERR_TIMCMP_100		;
+	CMP/HS	R2,R0				;R2(PV) =< SV
+	BT	STOP_ERR_TIMCMP_100		;
+
+	PUSH_REG1 R2
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_STOP_ERR_LATCH,LG=W,BIT=BIT0,WKREG=R1	;ERR!
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB212,LG=W,BIT=(BIT8),WKRG1=R1,WKRG2=R4
+	POP_REG1 R2
+
+STOP_ERR_TIMCMP_100:			;
+
+;	------------ 2010-08-23 ブレーキタイマ２追加---
+	MOV.L	#_SETX_BREAK_TIM2,R1		;//ブレーキタイマ設定1msec
+	MOV.W	@R1,R0				;
+;;2014-10-22[設定はだめ]	TST	R0,R0				;
+;;2014-10-22[設定はだめ]	TST_BIT_OF STOP_ERR_TIMCMP_200	
+	CMP/HS	R2,R0				;R2(PV) =< SV
+	BT	STOP_ERR_TIMCMP_200		;
+
+	PUSH_REG1 R2				;2011-09-14 下で使用するからPUSH,POPを追加
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB212,LG=W,BIT=(BIT10),WKRG1=R1,WKRG2=R4
+	POP_REG1 R2				;
+
+STOP_ERR_TIMCMP_200:			;
+
+
+
+;	-------------- 2013-03-10 ブレーキタイマシステム最大追加----------
+	MOV.L	#(_PAR_STOPTIM_MAX-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF STOP_ERR_TIMCMP_300	
+	CMP/HS	R2,R0				;R2(PV) =< SV
+	BT	STOP_ERR_TIMCMP_300		;
+
+	PUSH_REG1 R2				;
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB206,LG=W,BIT=(BIT15),WKRG1=R1,WKRG2=R4
+	POP_REG1 R2				;
+
+STOP_ERR_TIMCMP_300:			;
+
+	
+
+
+
+;	------------ 2011-09-14 -------------------------
+;;;;;;;2012-03-06	FAR_JSR	#_BRKTST_STOP_TIMCHK,R0		;
+
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	角度引き算		***
+;	***	LATE/2での方向判別付き	***
+;	***********************************
+;	=== REGB=REGB-REGA
+;	REGB-REGA=REGB 
+;	REGBが-なら REGB=REGB+3600
+;	REGBが1800より大きければ
+;	REGB
+;
+	.MACRO	DIG_REGA_SUB_REGB_ANS_REGB_DIR REGA,REGB,WKREG,LATE
+	SUB	\REGA,\REGB
+	CMP/PZ	\REGB
+	BT	JMP01\@			;
+	MOV.W	#\LATE,\WKREG		;-1.0なら360.0-->359.9
+	ADD	\WKREG,\REGB		;-1+3600=3599
+JMP01\@					;
+	MOV.W	#\LATE/2,\WKREG		;
+	CMP/HI	\REGB,\WKREG		;
+	BT	JMP02\@			;REGB < 180.0
+	MOV	\REGB,\WKREG		;
+	MOV.W	#\LATE,\REGB		;
+	SUB	\WKREG,\REGB		;3600-3599=+0.1
+JMP02\@					;
+	.ENDM
+
+;	***************************
+;	***	位置比較	***
+;	***************************
+
+_STOP_ERR_POS_CMP:
+	SUB_START
+;	===== STOPPING POS 異常 =====
+
+;	-------- 2007-03-02------
+	MOV.L	#_STOPPING_VLVOFF_POS,R4	;//停止処理開始時点の位置
+	MOV.L	@R4,R1				;
+	MOV.L	@(4,R4),R2			;
+
+	MOV.L	#_STOPPING_STOP_POS,R4		;//停止処理測定位置
+	MOV.L	@R4,R3				;
+	MOV.L	@(4,R4),R4			;
+	SUB8B DT_REGH=R1,DT_REGL=R2,DT_ANS_REGH=R3,DT_ANS_REGL=R4	;STOP-OFF
+
+
+;	--2009-07-17 add[不具合対策 ﾌﾞﾚｰｷ角度ｵｰﾊﾞ1]---
+;	-- ﾊﾟﾙｽ差=0 すべりは0の状態
+	MOV	R4,R0				;
+	OR	R3,R0				;
+	TST	R0,R0				;0pls
+	TST_BIT_ON STOP_ERR_POSCMP_020		;
+	XOR	 R2,R2				;
+	M_BRA	STOP_ERR_POSCMP_080		;
+STOP_ERR_POSCMP_020:
+;	--- 2009-07-17---
+
+	CMP/PZ	R3				;
+	BT	STOP_ERR_POSCMP_050		;
+;	---- 逆転----
+	MOV.L	#_LINK_CLANK_PV,R0		;//0.1度
+	MOV.W	@R0,R1				;
+	MOV.L	#_VALV_OFF_DIG_CLANK,R0		;
+	MOV.W	@R0,R2				;
+	M_BRA	STOP_ERR_POSCMP_070		;
+
+STOP_ERR_POSCMP_050:
+	MOV.L	#_LINK_CLANK_PV,R0		;//0.1度
+	MOV.W	@R0,R2				;
+	MOV.L	#_VALV_OFF_DIG_CLANK,R0		;
+	MOV.W	@R0,R1				;
+STOP_ERR_POSCMP_070:
+
+
+;;;;2009-07-17	DIG_REGA_SUB_REGB_ANS_REGB REGA=R1,REGB=R2,WKREG=R4,LATE=D'3600	;ANS R2
+
+;	--2009-07-17 add[不具合対策 ﾌﾞﾚｰｷ角度ｵｰﾊﾞ2]---
+;	------------ 方向判別付き演算------------
+	DIG_REGA_SUB_REGB_ANS_REGB_DIR REGA=R1,REGB=R2,WKREG=R4,LATE=D'3600	;ANS R2
+
+STOP_ERR_POSCMP_080:
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+	MOV.L	#_PVP_BREAK_DIG,R1		;
+	MOV.W	R2,@R1				;
+	.AENDI
+
+
+	MOV.L	#_SET1_BREAK_DIG,R1		;//0.1
+	MOV.W	@R1,R0				;
+;;2014-10-22[設定はだめ]	TST	R0,R0				;
+;;2014-10-22[設定はだめ]	TST_BIT_OF STOP_ERR_POSCMP_100		;SV=0 異常検知しない
+
+	CMP/HS	R2,R0				;R2(PV) =< SV
+	BT	STOP_ERR_POSCMP_100						;
+
+	PUSH_REG1 R2
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_STOP_ERR_LATCH,LG=W,BIT=BIT1,WKREG=R1	;ERR!
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB212,LG=W,BIT=(BIT9),WKRG1=R1,WKRG2=R4
+	POP_REG1 R2
+
+STOP_ERR_POSCMP_100:								;
+
+
+;	------------ 2010-08-23 すべり量２追加---
+	MOV.L	#_SETX_BREAK_DIG2,R1		;//0.1
+	MOV.W	@R1,R0				;
+;;2014-10-22[設定はだめ]	TST	R0,R0				;
+;;2014-10-22[設定はだめ]	TST_BIT_OF STOP_ERR_POSCMP_200		;SV=0 異常検知しない
+
+	CMP/HS	R2,R0				;R2(PV) =< SV
+	BT	STOP_ERR_POSCMP_200						;
+
+
+	PUSH_REG1 R2				;2011-09-14 下で使用するからPUSH,POPを追加
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB212,LG=W,BIT=(BIT11),WKRG1=R1,WKRG2=R4
+	POP_REG1 R2
+
+STOP_ERR_POSCMP_200:								;
+
+;	------------ 2011-09-14 -------------------------
+;;;;;;;2012-03-06	FAR_JSR	#_BRKTST_STOP_POSCHK,R0		;
+
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	2004-01-28 異常		***
+;	***				***
+;	***********************************
+;	==== 最終工程で5度を横切った===
+_ENC360_OVR_RUN_CHK:
+	SUB_START
+
+
+;;	MOV.L	#_CB_SEQ_SW_SEL028,R1	;//SEQ 28
+;;	MOV.W	@R1,R0			;
+;;	TST	#BIT6,R0		;PSDI-SETUP(出荷試験用)
+;;	TST_BIT_ON ENC360_OVR_RUNCK010	;
+
+	MOV.L	#_emg_err_flg,R1		;//異常ﾗｯﾁ
+	MOV.W	@R1,R0				;
+	MOV.L	#_exq_err_flg,R1		;
+	MOV.W	@R1,R2				;
+	OR	R2,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF ENC360_OVR_RUNCK020		;
+ENC360_OVR_RUNCK010:
+	M_BRA	ENC360_OVR_RUNCK_EXT		;
+
+ENC360_OVR_RUNCK020:
+
+;	------ 2007-01-12----------------
+	MOV.L	#_CPOS_CTL_MATH,R1		;
+	MOV.W	@R1,R0				;
+	TST	#_DMATH_CNTROT,R0		;
+	TST_BIT_ON ENC360_OVR_RUNCK_ROT_START	;回転の場合
+
+;;;2012-03-06場所移動	TST	#_DMATH_DNDRIV,R0		; 往復?
+;;;2012-03-06場所移動	TST_BIT_ON ENC360_OVR_RUNCK_DND_START	;
+;;;2012-03-06場所移動	M_BRA	ENC360_OVR_RUNCK_EXT		;
+;;;2012-03-06場所移動
+;;;2012-03-06場所移動ENC360_OVR_RUNCK_DND_START:
+;;;2012-03-06場所移動	FAR_JSR	#_DNDRIV_OVER_RUN_CHK,R0
+	M_BRA	ENC360_OVR_RUNCK_EXT		;
+
+;	=======回転のオーバラン検出 起動後[CLR]:上昇→待機→下降でｵｰﾊﾞﾗﾝ===
+ENC360_OVR_RUNCK_ROT_START:
+	MOV.L	#_INP_MODE,R1		;
+	MOV.W	@R1,R0			;
+	MOV.W	#_W1SGL,R1		;
+	TST	R1,R0			;
+	TST_BIT_ON ENC360_OVR_RUNCK050	;
+
+	MOV.W	#_W1CNT,R1
+	TST	R1,R0			;
+	TST_BIT_OF ENC360_OVR_RUNCK030	;
+
+;	==2012-05-07[改良 最終行程が10度などの時の対策]==
+;;2012-05-07
+;;2012-05-07	MOV.L	#_INT_POS_CTL_STEP,R1		;//内部制御工程1~11
+;;2012-05-07	MOV.W	@R1,R0				;
+;;2012-05-07	MOV.L	#_CPOS_STEP_MAX,R1		;
+;;2012-05-07	MOV.W	@R1,R1				;
+;;2012-05-07	ADD	#1,R1				;設定+1(帰りも1ｽﾃｯﾌﾟ)
+;;2012-05-07	CMP/EQ	R1,R0				;
+;;2012-05-07	BF	ENC360_OVR_RUNCK030		;
+;;2012-05-07
+;;2012-05-07;	==連続/連続寸動一==
+;;2012-05-07	MOV.L	#_STOP_LATCH,R1			;//BIT0:ｽﾄｯﾌﾟ釦
+;;2012-05-07	MOV.W	@R1,R0				;
+;;2012-05-07	TST	#BIT0,R0			;
+;;2012-05-07	TST_BIT_ON ENC360_OVR_RUNCK050		;
+
+	FAR_JSR	#_CNT_ENC360_CONF_CHK1,R0		;2012-05-07[改良 最終行程が10度などの時の対策]==
+	TST	R0,R0					;
+	TST_BIT_ON ENC360_OVR_RUNCK050			;
+
+ENC360_OVR_RUNCK030:
+	M_BRA	ENC360_OVR_RUNCK_EXT	;
+
+ENC360_OVR_RUNCK050:
+;;	MOV.L	#_M_LINK_AREASIG,R4		;//BIT0/BIT4:待機点範囲
+	MOV.L	#_ENC360_LINK_AREASIG,R4		;//BIT0/BIT4:待機点範囲
+	MOV.W	@R4,R5				;
+	MOV.L	#_ENC360_OVER_FLG,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT1,R0			;
+	TST_BIT_ON ENC360_OVR_RUNCK120		;下降待ち
+	TST	#BIT0,R0			;
+	TST_BIT_ON ENC360_OVR_RUNCK080		;待機待ち
+;	===上昇領域待ち ===
+	MOV	R5,R0				;
+	TST	#(BIT1+BIT0),R0			;
+	TST_BIT_ON ENC360_OVR_RUNCK070		;
+	MOV.L	#_ENC360_OVER_FLG,R1		;(上昇工程に入った)
+	MOV.W	@R1,R0				;
+	OR	#BIT0,R0			;
+	MOV.W	R0,@R1				;
+ENC360_OVR_RUNCK070:
+	M_BRA	ENC360_OVR_RUNCK_EXT	;
+
+;	===待機待ち ===
+ENC360_OVR_RUNCK080:
+	MOV	R5,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_OF ENC360_OVR_RUNCK100		;
+	MOV.L	#_ENC360_OVER_FLG,R1		;待機点に入った
+	MOV.W	@R1,R0				;
+	OR	#BIT1,R0			;
+	MOV.W	R0,@R1				;
+ENC360_OVR_RUNCK100:
+	M_BRA	ENC360_OVR_RUNCK_EXT	;
+
+;	===下降待ち ===
+ENC360_OVR_RUNCK120:
+	MOV	R5,R0				;
+	TST	#BIT1,R0			;
+	TST_BIT_OF ENC360_OVR_RUNCK150		;
+	MOV.L	#_ENC360_OVER_FLG,R1		;
+	MOV.W	@R1,R0				;
+	OR	#BIT2,R0			;
+	MOV.W	R0,@R1				;ERR
+	M_BRA	ENC360_OVR_RUNCK200		;
+
+ENC360_OVR_RUNCK150:
+	M_BRA	ENC360_OVR_RUNCK_EXT	;
+
+
+ENC360_OVR_RUNCK200:
+;	=== 2004-01-28 == OVER-RUN2
+	MOV.L	#_ENC360_OVER_FLG,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT2,R0			;ERR?
+	TST_BIT_OF ENC360_OVR_RUNCK_EXT
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;
+
+;;;;	------ 2007-01-12----------------
+;;;;	MOV.L	#_CPOS_CTL_MATH,R1		;
+;;;;	MOV.W	@R1,R0				;
+;;;;	TST	#_DMATH_CNTROT,R0		;
+;;;;	TST_BIT_OF ENC360_OVR_RUNCK_EXT		;
+
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB217),R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#(BIT2),R4			;OVER-RUN2
+	OR	R4,R0				;
+	MOV.W	R0,@R1				;
+
+;	======= 2004-01-28 ===========
+;;;pg容量確保[2012-03-06]	MOV	#1,R4				;
+;;;pg容量確保[2012-03-06]	MOV.W	#H'2172,R1			;
+;;;pg容量確保[2012-03-06]	FAR_JSR	#_SMPLE_HIST_DATA_SET1,R0	;
+
+	MOV.W	#H'2172,R4		;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+
+
+ENC360_OVR_RUNCK_EXT:
+
+	SUB_END
+	M_RTS
+
+;	***************************************************
+;	***						***
+;	***	連続のブレーキチェック開始条件作成	***
+;	***						***
+;	***************************************************
+_CNT_ENC360_CONF_CHK2:					;
+	SUB_START
+
+	MOV.L	#_DEBUG_ENC360_STS,R7			;DEBUG
+	FAR_JSR	#_CNT_ENC360_CONF_CHK,R0		;
+
+	SUB_END
+	M_RTS
+
+
+
+;	***************************************************
+;	***						***
+;	***	連続のオーバランチェック開始条件作成	***
+;	***						***
+;	***************************************************
+_CNT_ENC360_CONF_CHK1:		;2012-05-07[改良 最終行程が10度などの時の対策]==
+	SUB_START
+
+	MOV.L	#_DEBUG_ENC360_STS2,R7			;DEBUG
+	FAR_JSR	#_CNT_ENC360_CONF_CHK,R0		;
+
+	SUB_END
+	M_RTS
+
+
+
+_CNT_ENC360_CONF_CHK:		;2012-05-07[改良 最終行程が10度などの時の対策]==
+	SUB_START
+
+	XOR	R0,R0				;DEBUG
+;;;;	MOV.L	#_DEBUG_ENC360_STS,R7		;DEBUG
+	MOV.W	R0,@R7				;DEBUG
+
+	MOV.L	#_INT_POS_CTL_STEP,R1		;//内部制御工程1~11
+	MOV.W	@R1,R0				;
+	MOV.L	#_CPOS_STEP_MAX,R1		;
+	MOV.W	@R1,R1				;
+	ADD	#1,R1				;設定+1(帰りも1ｽﾃｯﾌﾟ)
+	CMP/EQ	R1,R0				;
+	BF	CNT_ENC360_CONFCK300		;最終行程でない
+
+	MOV.W	#D'100,R0			;DEBUG
+;;;	MOV.L	#_DEBUG_ENC360_STS,R7		;DEBUG
+	MOV.W	R0,@R7				;DEBUG
+
+;	==連続/連続寸動一==
+	MOV.L	#_STOP_LATCH,R1			;//BIT0:ｽﾄｯﾌﾟ釦
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_OF CNT_ENC360_CONFCK300		;ｽﾄｯﾌﾟ条件成立していない
+
+;;;めんどうくさ	SHLL2	R0				;*4
+;;;めんどうくさ	MOV.L	#_CPOS_SDAT1_OFSPOS,R1		;//SETX-->起動時COPY
+;;;めんどうくさ	ADD	R0,R1				;
+;;;めんどうくさ	MOV.L	@R1,R2				;SV:OFFSET-PLS
+
+	MOV.W	#D'200,R0			;DEBUG
+;;;;;	MOV.L	#_DEBUG_ENC360_STS,R7		;DEBUG
+	MOV.W	R0,@R7				;DEBUG
+
+	MOV.L	#_CPOS_STEP_MAX,R1		;
+	MOV.W	@R1,R0				;
+	ADD	#-1,R0				;
+	SHLL	R0				;
+	MOV.L	#_SET1_OBJECT_DIG_TOP,R1	;
+	ADD	R0,R1				;
+	MOV.W	@R1,R2				;見たい角度
+
+	MOV.L	#_UP_HOLD_DIG,R4		;//0.1度(165.0):ﾓｰﾀ軸ｴﾝｺｰﾀﾞ角度で比較
+	MOV.W	@R4,R1				;
+
+	MOV.L	#_SETX_UPAREA_DIG,R4		;LINK 待機点
+	MOV.W	@R4,R3				;
+
+;	Input 	R2(PV)
+;		R1(SV1)HOLD
+;		R3(SV2)OBJ
+;	SV1[R1]=<~~<SV2[R3] 	R5=1
+;	SV2==PV2	R5=0
+;	SV2<~~=<SV1	R5=-1
+;	ANS R5
+	FAR_JSR	#_DIG_AREA_CHK1,R0		;
+	CMP/PZ	R5				;
+	BT	CNT_ENC360_CONFCK400		;最終段の設定が上昇ホールド以上　待機点以下
+
+;;;;	CMP/HS	R0,R2				;
+;;;;	BT	CNT_ENC360_CONFCK400		;最終段の設定が上昇ホールド以上
+
+	MOV.W	#D'300,R4			;DEBUG
+;;;;;	MOV.L	#_DEBUG_ENC360_STS,R7		;DEBUG
+	MOV.W	R4,@R7				;DEBUG
+
+;	-------------------
+	MOV.L	#_OBJ_ENC360,R1			;
+	MOV.W	@R1,R2				;
+
+	MOV.L	#_UP_HOLD_DIG,R4		;//0.1度(165.0):ﾓｰﾀ軸ｴﾝｺｰﾀﾞ角度で比較
+	MOV.W	@R4,R1				;
+
+	MOV.L	#_SETX_UPAREA_DIG,R4		;LINK 待機点
+	MOV.W	@R4,R3				;
+
+	FAR_JSR	#_DIG_AREA_CHK1,R0		;
+	CMP/PZ	R5				;
+	BT	CNT_ENC360_CONFCK390		;目標位置が待機点を越える場合はないのか?
+						;指令位置停止も条件に入れたい 2013-02-05
+
+;;;	MOV.L	#_OBJ_ENC360,R1			;
+;;;	MOV.W	@R1,R4				;
+;;;	CMP/HS	R0,R4				;目標角度が上昇ホールド以上
+;;;	BT	CNT_ENC360_CONFCK390		;
+
+	MOV.W	#D'400,R0			;DEBUG
+;;;;;	MOV.L	#_DEBUG_ENC360_STS,R7		;DEBUG
+	MOV.W	R0,@R7				;DEBUG
+
+
+CNT_ENC360_CONFCK300
+	XOR	R0,R0
+	M_BRA	CNT_ENC360_CONFCKEND
+
+CNT_ENC360_CONFCK390				;
+	MOV.W	#D'500,R0			;DEBUG
+;;;;;	MOV.L	#_DEBUG_ENC360_STS,R7		;DEBUG
+	MOV.W	R0,@R7				;DEBUG
+CNT_ENC360_CONFCK400				;
+	MOV.B	#-1,R0				;
+CNT_ENC360_CONFCKEND
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	2004-01-28 異常		***
+;	***				***
+;	***********************************
+	.IMPORT	_ERR_INFO_BAKUP_START	;
+	.ALIGN	4				;
+_ERR_INFO_BAKUP_CHK:
+	SUB_START
+	PUSH_REG1 R0
+	PUSH_REG1 R1
+	MOV.L	#_ERR_INFO_SAVE_LATCH,R1			;
+	MOV.W	@R1,R0						;
+	TST	R0,R0						;
+	TST_BIT_ON ERR_INFO_BAKUPCK_100				;ERR中
+
+	MOV.L	#_WK_ERR_INFO_CPU_TOP+_ERR_INFO_A01,R1
+	MOV.W	@R1+,R0						;A01
+	MOV.W	@R1+,R2						;A02
+	OR	R2,R0						;
+	MOV.W	@R1+,R2						;A03
+	OR	R2,R0						;
+	MOV.W	@R1+,R2						;A04
+	OR	R2,R0						;
+	TST	R0,R0						;
+	TST_BIT_OF ERR_INFO_BAKUPCK_100				;
+
+	FAR_JSR	#_ERR_INFO_BAKUP_START,R0			;
+
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB217),R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#(BIT7),R4			;
+	OR	R4,R0				;
+	MOV.W	R0,@R1				;
+;	======= 2003-07-01 ===========
+;;;pg容量確保[2012-03-06]	MOV	#1,R4				;
+;;;pg容量確保[2012-03-06]	MOV.W	#H'2177,R1			;
+;;;pg容量確保[2012-03-06]	FAR_JSR	#_SMPLE_HIST_DATA_SET1,R0	;
+;	==============================
+	MOV.W	#H'2177,R4		;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;217.6と217.7
+
+
+ERR_INFO_BAKUPCK_100:
+	POP_REG1 R1
+	POP_REG1 R0
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	LSA入力FILTER		***
+;	***	信号作成()		***
+;	***				***
+;	***********************************
+	.EXPORT	_LSA_SIG_REF	
+_LSA1_BIT	.EQU	BIT2
+_LSA2_BIT	.EQU	BIT3
+
+_LSA_SIG_REF:
+	SUB_START
+
+;	----------- 2009-03-11-----------
+	MOV.L	#_WPAR_CUPCHK_SEL,R1			;
+	MOV.W	@R1,R0					;
+	CMP/EQ	#1,R0					;
+	BF	LSA_SIGREF_020				;0,2
+	M_BRA	LSA_SIGREF_EXT				;
+
+LSA_SIGREF_020:
+
+
+	MOV.L	#_LSA_SIG_DT,R7		;
+	MOV.W	@R7,R5			;data keep
+
+	MOV.L	#_di2_cb_ctl2_dt,R1	;
+	MOV.W	@R1,R0			;NEW DATA LOAD
+	AND	#(_LSA2_BIT+_LSA1_BIT),R0		;
+	MOV	R0,R3			;R3 LOAD DATA
+
+	MOV.L	#_LSA_SIG_OLD_WRK,R1	;
+	MOV.W	@R1,R2			;
+	MOV.W	R0,@R1			;
+	XOR	R2,R0			;R0 EDGE DATA
+
+;	-----------------------------------------
+	MOV.W	#_LSA1_BIT,R4
+	TST	R4,R0			;KEEPLSA1
+	TST_BIT_OF LSA_SIGREF_050	;EDGE なし JUMP
+
+	MOV.L	#_WPAR_LSA_FILTIM,R1	;変化あり
+	MOV.W	@R1,R2			;
+	MOV.L	#_LSA1_FILETR_TIM,R1	;
+	MOV.W	R2,@R1			;R5:KEEP
+	M_BRA	LSA_SIGREF_100		;
+
+LSA_SIGREF_050:
+	MOV.L	#_LSA1_FILETR_TIM,R1	;
+	MOV.W	@R1,R2			;
+	TST	R2,R2			;
+	TST_BIT_OF LSA_SIGREF_080	;
+	ADD	#-1,R2			;
+	MOV.W	R2,@R1			;R5:KEEP
+	M_BRA	LSA_SIGREF_100		;
+LSA_SIGREF_080:
+	MOV	R3,R1			;
+	AND	R4,R1			;NEW DATA
+	NOT	R4,R4			;
+	AND	R4,R5			;
+	OR	R1,R5			;
+LSA_SIGREF_100
+
+;	-----------------------------------------
+	MOV.W	#_LSA2_BIT,R4
+	TST	R4,R0			;KEEPLSA1
+	TST_BIT_OF LSA_SIGREF_150	;EDGE なし JUMP
+
+	MOV.L	#_WPAR_LSA_FILTIM,R1	;変化あり
+	MOV.W	@R1,R2			;
+	MOV.L	#_LSA2_FILETR_TIM,R1	;
+	MOV.W	R2,@R1			;R5:KEEP
+	M_BRA	LSA_SIGREF_200		;
+
+LSA_SIGREF_150:
+	MOV.L	#_LSA2_FILETR_TIM,R1	;
+	MOV.W	@R1,R2			;
+	TST	R2,R2			;
+	TST_BIT_OF LSA_SIGREF_180	;
+	ADD	#-1,R2			;
+	MOV.W	R2,@R1			;R5:KEEP
+	M_BRA	LSA_SIGREF_200		;
+LSA_SIGREF_180:
+	MOV	R3,R1			;
+	AND	R4,R1			;NEW DATA
+	NOT	R4,R4			;
+	AND	R4,R5			;
+	OR	R1,R5			;
+LSA_SIGREF_200
+	MOV.W	R5,@R7			;NEW DATA SAVE
+
+;	-------- ｴﾝｺｰﾀﾞ距離作成(360度ｴﾝｺｰﾀﾞ)-------
+	MOV.L	#_CTL_ENC360,R1			;//360.0度[360ｴﾝｺｰﾀﾞ]
+	MOV.W	@R1,R2				;
+	MOV.L	#_LSA_ENC_DIG,R1		;
+	MOV.W	@R1,R3				;
+	MOV.W	R2,@R1				;REFLASH
+
+	DIG_REGA_SUB_REGB_ANS_REGB REGA=R3,REGB=R2,WKREG=R0,LATE=3600	;REGB=REGB-REGA
+;	R2(今回)-R3(前回)=R2						;
+	MOV.W	#3600/2,R0						;
+	MOV.W	#3600,R4						;
+	NEG	R4,R3							;
+	
+	CMP/GE	R2,R0							;
+	BT	LSA_DIG_LENG_MAK100					;R2 =< 3600/2 正転
+;	---- 逆転---
+	SUB	R4,R2							;
+
+;	---- 正転---
+LSA_DIG_LENG_MAK100
+
+;	--------- LNG1A MAKE-----
+	MOV.L	#_LSA_ENC_MOV_LNG1A,R1			;//角度の加算
+	MOV.W	@R1,R0					;
+	ADD	R2,R0					;
+	CMP/GE	R0,R4					;R0=<3600 OK JUMP
+	BT	LSA_DIG_LENG_MAK200			;
+	MOV	R4,R0					;
+LSA_DIG_LENG_MAK200					;
+	CMP/GE	R3,R0
+	BT	LSA_DIG_LENG_MAK250			;-3600 =<R0 OK JUMP
+	MOV	R3,R0					;
+LSA_DIG_LENG_MAK250					;
+	MOV.W	R0,@R1					;ADD
+
+
+;	--------- LNG1B MAKE-----
+	MOV.L	#_LSA_ENC_MOV_LNG1B,R1			;//角度の加算
+	MOV.W	@R1,R0					;
+	ADD	R2,R0					;
+	CMP/GE	R0,R4					;R0=<3600 OK JUMP
+	BT	LSA_DIG_LENG_MAK270			;
+	MOV	R4,R0					;
+LSA_DIG_LENG_MAK270					;
+	CMP/GE	R3,R0
+	BT	LSA_DIG_LENG_MAK290			;-3600 =<R0 OK JUMP
+	MOV	R3,R0					;
+LSA_DIG_LENG_MAK290					;
+	MOV.W	R0,@R1					;ADD
+
+
+;	--------- LNG2 MAKE-----
+	MOV.L	#_LSA_ENC_MOV_LNG2,R1			;//角度の加算
+	MOV.W	@R1,R0					;
+	ADD	R2,R0					;
+	CMP/GE	R0,R4					;R0=<3600 OK JUMP
+	BT	LSA_DIG_LENG_MAK300			;
+	MOV	R4,R0					;
+LSA_DIG_LENG_MAK300					;
+	CMP/GE	R3,R0
+	BT	LSA_DIG_LENG_MAK350			;-3600 =<R0 OK JUMP
+	MOV	R3,R0					;
+LSA_DIG_LENG_MAK350					;
+	MOV.W	R0,@R1					;ADD
+
+LSA_SIGREF_EXT:
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	LSA異常検出		***
+;	***				***
+;	***				***
+;	***********************************
+;	LSA1 OFF-OFF
+;	LSA2 60度でOFFがない
+;	LSA3 15度で変化しない。または変化しても正常でない
+;
+_LSA_ERR_CHK
+	SUB_START
+	MOV.L	#_LSA_CHK_DELAY_TM,R1
+	MOV.W	@R1,R0				;I/O READ WAIT
+	TST	R0,R0				;
+	TST_BIT_OF LSA_ERRCHK_START		;
+	ADD	#-1,R0				;ﾀｲﾏｶｳﾝﾄﾀﾞｳﾝ
+	MOV.W	R0,@R1				;
+	FAR_JSR	#_LSA_POWER_ON_INI,R0		;STANDARD/TOYOTA SIG INIAL
+	FAR_JSR	#_LSA_ERRCLR_INI,R0		;
+	M_BRA	LSA_ERRCHK_EXT			;
+
+LSA_ERRCHK_START
+
+	MOV.L	#_CB_SEQ_SW_SEL028,R1					;//SEQ 28
+	MOV.W	@R1,R0							;
+	TST	#BIT5,R0						;
+	TST_BIT_ON LSA_ERRCHK_ST000					;
+	FAR_JSR	#_LSA_ERRCLR_INI,R0					;
+	M_BRA	LSA_ERRCHK_EXT						;
+
+LSA_ERRCHK_ST000
+;;;	MOV.L	#_WPAR_CUPCHK_SEL,R1	;2009-03-11
+;;;	MOV.W	@R1,R0			;2009-03-11
+;;;	CMP/EQ	#1,R0			;2009-03-11
+;;;	BF	LSA_ERRCHK_ST020	;2009-03-11　STANDARD
+;;;	FAR_JSR	#_LSA_CUPRING_CHK,R0	;(ﾒｶﾌﾟﾚｽﾀｲﾌﾟ)
+;;;	M_BRA	LSA_ERRCHK_EXT		;2009-03-11
+
+
+;	-----2010-08-23---
+	MOV.L	#_WPAR_CUPCHK_SEL,R1	;
+	MOV.W	@R1,R0			;
+	TST	R0,R0			;
+	TST_BIT_OF LSA_ERRCHK_ST020	;"0":ﾍﾞﾙﾄﾁｪｯｸ
+	
+;	------------- ｶｯﾌﾟﾘﾝｸﾞﾁｪｯｸ--------------
+	PUSH_REG1 R0
+	FAR_JSR	#_LSA_CUPRING_CHK,R0	;(ﾒｶﾌﾟﾚｽﾀｲﾌﾟ)
+	POP_REG1 R0			;
+	CMP/EQ	#2,R0
+	BT	LSA_ERRCHK_ST020	;2:ﾍﾞﾙﾄﾁｪｯｸも
+	M_BRA	LSA_ERRCHK_EXT		;1:ﾒｶﾀｲﾌﾟのみ行う
+
+;	------------- ﾍﾞﾙﾄﾁｪｯｸ--------------
+LSA_ERRCHK_ST020
+	MOV.L	#_LSA_SIG_DT,R1						;
+	MOV.W	@R1,R5							;
+	MOV.L	#_LSA_SIG_OLD_DT,R1					;
+	MOV.W	@R1,R6							;
+	MOV.W	R5,@R1							
+
+	NOT	R5,R0
+	TST	#(_LSA1_BIT),R0					;
+	TST_BIT_OF LSA_ERRCHK_050					;
+
+;	--- LSA1 OFFした:正常----------
+	XOR	R0,R0							;
+	MOV.L	#_LSA_ENC_MOV_LNG1A,R1					;//角度の加算
+	MOV.W	R0,@R1							;
+LSA_ERRCHK_050								;
+
+	NOT	R5,R0					
+	TST	#(_LSA2_BIT),R0				;
+	TST_BIT_OF LSA_ERRCHK_060					;
+
+;	--- LSA2 OFFした:正常----------
+	XOR	R0,R0							;
+	MOV.L	#_LSA_ENC_MOV_LNG1B,R1					;//角度の加算
+	MOV.W	R0,@R1							;
+LSA_ERRCHK_060								;
+
+
+;	-------- EDGE CHECK -------
+	MOV	R5,R0
+	XOR	R6,R0							;
+	TST	#(_LSA2_BIT+_LSA1_BIT),R0				;
+	TST_BIT_OF LSA_ERRCHK_100					;ｴｯｼﾞがない
+;	片側がON-ONならOK
+	MOV	#(_LSA2_BIT+_LSA1_BIT),R0				;
+	AND	R0,R5							;
+	AND	R0,R6							;
+	CMP/EQ	R0,R5							;
+	BT	LSA_ERRCHK_080						;ON-ON OK
+	CMP/EQ	R0,R6							;
+	BF	LSA_ERRCHK_100						;ON-ON 以外 だめ
+LSA_ERRCHK_080								;
+	XOR	R0,R0							;
+	MOV.L	#_LSA_ENC_MOV_LNG2,R1					;//角度の加算
+	MOV.W	R0,@R1							;
+LSA_ERRCHK_100								;
+
+	MOV	R5,R0
+	TST	#(_LSA2_BIT+_LSA1_BIT),R0						;
+	TST_BIT_ON LSA_ERRCHK_150					;両方OFFは異常
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_LSA_ERR_SIG,LG=W,BIT=BIT0,WKREG=R1	;
+LSA_ERRCHK_150								;
+
+
+;	-----------OFFなしERR　LSA1---------------
+	MOV.L	#_LSA_ENC_MOV_LNG1A,R1					;//角度の加算
+	MOV.W	@R1,R2							;
+	CMP/PZ	R2							;
+	BT	LSA_ERRCHK_200						;
+	NEG	R2,R2							;
+LSA_ERRCHK_200								;
+	MOV.L	#_SET1_LSAABN_AGL1,R1					;60.0度
+	MOV.W	@R1,R3							;
+	CMP/GE	R2,R3							;
+	BT	LSA_ERRCHK_250						;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_LSA_ERR_SIG,LG=W,BIT=BIT1,WKREG=R1	;
+	FAR_JSR	#_LSA_ERR_EMG_CLR,R0					;
+LSA_ERRCHK_250								;
+
+;	-----------OFFなしERR　LSA2---------------
+	MOV.L	#_LSA_ENC_MOV_LNG1B,R1					;//角度の加算
+	MOV.W	@R1,R2							;
+	CMP/PZ	R2							;
+	BT	LSA_ERRCHK_270						;
+	NEG	R2,R2							;
+LSA_ERRCHK_270								;
+	MOV.L	#_SET1_LSAABN_AGL1,R1					;60.0度
+	MOV.W	@R1,R3							;
+	CMP/GE	R2,R3							;
+	BT	LSA_ERRCHK_280						;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_LSA_ERR_SIG,LG=W,BIT=BIT1,WKREG=R1	;
+	FAR_JSR	#_LSA_ERR_EMG_CLR,R0					;
+LSA_ERRCHK_280								;
+
+;	--------------EDGE ERR ------------
+	MOV.L	#_LSA_ENC_MOV_LNG2,R1					;//角度の加算
+	MOV.W	@R1,R2							;
+	CMP/PZ	R2							;
+	BT	LSA_ERRCHK_300						;
+	NEG	R2,R2							;
+LSA_ERRCHK_300								;
+	MOV.L	#_SET1_LSAABN_AGL2,R1					;15.0度
+	MOV.W	@R1,R3							;
+	CMP/GE	R2,R3							;
+	BT	LSA_ERRCHK_350						;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_LSA_ERR_SIG,LG=W,BIT=BIT2,WKREG=R1	;
+	FAR_JSR	#_LSA_ERR_EMG_CLR,R0					;
+LSA_ERRCHK_350							;
+
+
+;	=========== 異常処理=============
+	MOV.L	#_LSA_ERR_SIG,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF LSA_ERRCHK_EXT		;
+	SHLL2	R0				;
+	SHLL2	R0				;
+	SHLL2	R0				;BIT0-->BIT6 215.6~8
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB215,R1	;
+	MOV.W	@R1,R2				;
+	OR	R0,R2				;
+	MOV.W	R2,@R1				;
+	MOV.W	#H'2156,R4			;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+
+	FAR_JSR	#_LSA_ERRCLR_INI,R0		;
+
+
+LSA_ERRCHK_EXT
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***				***
+;	***				***
+;	***********************************
+	.EXPORT	_LSA_ERRCLR_INI
+	.ALIGN	4						;
+_LSA_ERRCLR_INI:
+	SUB_START
+
+	XOR	R0,R0			;
+	MOV.L	#_LSA_ERR_SIG,R1	;(どっちみち)
+	MOV.W	R0,@R1			;
+
+	FAR_JSR	#_LSA_ERR_EMG_CLR,R0		;
+
+	SUB_END
+	M_RTS
+
+	.ALIGN	4						;
+_LSA_ERR_EMG_CLR:
+	SUB_START
+
+
+	XOR	R0,R0			;
+	MOV.L	#_LSA_ENC_MOV_LNG1A,R1	;//角度の加算
+	MOV.W	R0,@R1			;
+	MOV.L	#_LSA_ENC_MOV_LNG1B,R1	;//角度の加算
+	MOV.W	R0,@R1			;
+	MOV.L	#_LSA_ENC_MOV_LNG2,R1	;//角度の加算
+	MOV.W	R0,@R1			;
+
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***	ベルト切れ仕様とカップリングのリフレッシュ	***
+;	***							***
+;	***********************************************************
+	.ALIGN	4						;
+_LSA_POWER_ON_INI
+	SUB_START
+	MOV.L	#_di2_cb_ctl2_dt,R1		;
+	MOV.W	@R1,R0				;NEW DATA LOAD
+	AND	#(_LSA2_BIT+_LSA1_BIT),R0	;
+	MOV.L	#_LSA_SIG_DT,R1			;
+	MOV.W	R0,@R1				;
+	MOV.L	#_LSA_SIG_OLD_DT,R1		;
+	MOV.W	R0,@R1							
+
+	MOV.L	#_CTL_ENC360,R1			;//360.0度[360ｴﾝｺｰﾀﾞ]
+	MOV.W	@R1,R2				;
+	MOV.L	#_LSA_ENC_DIG,R1		;
+	MOV.W	R2,@R1				;REFLASH
+
+;	----------- 2009-03-11-----------
+	FAR_JSR	#_LSA_CUPSIG_REF,R0		;(ﾄﾖﾀ仕様REF) ;	_LSA_SIG_DT2:ref /ans=R0:bit0
+
+
+	SUB_END
+	M_RTS
+
+
+
+
+
+;	***************************************************
+;	***						***
+;	***		メカタイプ			***
+;	***		LSA　ｶｯﾌﾟﾘﾝｸﾞ/ｴﾝｺｰﾀﾞﾁｪｯｸ	***
+;	***		2009-03-11			***
+;	***						***
+;	***************************************************
+	.ALIGN	4				;
+_ROM1_PAR_LSA_LCP1	.DATA.W		D'358*10	;SIT LSAﾚﾍﾞﾙ角度1 ON1-S
+_ROM1_PAR_LSA_LCP2	.DATA.W		D'2*10		;SIT LSAﾚﾍﾞﾙ角度2 ON1-E
+_ROM1_PAR_LSA_LCP3	.DATA.W		D'60*10		;SIT LSAﾚﾍﾞﾙ角度3 OFF1-S
+_ROM1_PAR_LSA_LCP4	.DATA.W		D'180*10	;SIT LSAﾚﾍﾞﾙ角度4 OFF1-E
+_ROM1_PAR_LSA_LCP5	.DATA.W		D'238*10	;SIT LSAﾚﾍﾞﾙ角度5 ON2-S
+_ROM1_PAR_LSA_LCP6	.DATA.W		D'242*10	;SIT LSAﾚﾍﾞﾙ角度6 ON2-E
+_ROM1_PAR_LSA_LCP7	.DATA.W		D'298*10	;SIT LSAﾚﾍﾞﾙ角度7 OFF2-S
+_ROM1_PAR_LSA_LCP8	.DATA.W		D'302*10	;SIT LSAﾚﾍﾞﾙ角度8 OFF2-E
+
+_ROM1_PAR_LSA_ECP1	.DATA.W		D'1*10		;SIT LSAｴｯｼﾞ角度1   ↓
+_ROM1_PAR_LSA_ECP2	.DATA.W		D'59*10		;SIT LSAｴｯｼﾞ角度2
+_ROM1_PAR_LSA_ECP3	.DATA.W		D'181*10	;SIT LSAｴｯｼﾞ角度3   ↑
+_ROM1_PAR_LSA_ECP4	.DATA.W		D'239*10	;SIT LSAｴｯｼﾞ角度4
+_ROM1_PAR_LSA_ECP5	.DATA.W		D'241*10	;SIT LSAｴｯｼﾞ角度5   ↓
+_ROM1_PAR_LSA_ECP6	.DATA.W		D'299*10	;SIT LSAｴｯｼﾞ角度6
+_ROM1_PAR_LSA_ECP7	.DATA.W		D'301*10	;SIT LSAｴｯｼﾞ角度7   ↑
+_ROM1_PAR_LSA_ECP8	.DATA.W		D'359*10	;SIT LSAｴｯｼﾞ角度8
+
+_LSA_BIT		.EQU	BIT3		;LSA2 ｶﾌﾟﾘﾝｸﾞ異常用
+_LSA_BIT_WT3		.EQU	BIT6		;WT3を 2010-08-20(ｶｯﾌﾟﾘﾝｸﾞ異常にも使用)
+
+	.ALIGN	4				;
+_LSA_CUPRING_CHK:
+	SUB_START
+
+	MOV.L	#_CTL_ENC360,R1			;//360.0度[360ｴﾝｺｰﾀﾞ]
+	MOV.W	@R1,R2				;R2:現在位置
+	XOR	R8,R8				;
+
+	FAR_JSR	#_LSA_CUPSIG_REF,R0		;2009-03-11　ANS　R0=LSA
+
+	MOV	R0,R8				;NOW LEVEL
+	MOV	R0,R9				;R8:LEVEL
+	XOR	R3,R9				;R9:EDGE
+
+;;;;2009-03-11(このソフトの上でSWを見ている)
+;;;;	MOV.L	#_CB_SEQ_SW_SEL028,R1		;//SEQ 28
+;;;;	MOV.W	@R1,R0				;
+;;;;	MOV.W	#BIT5,R4			;
+;;;;	TST	R4,R0				;
+;;;;;	TST_BIT_OF LSA_CUPRINGCHK_EXT		;
+;	------ OBS typeのｶｯﾌﾟﾘﾝｸﾞ仕様のみ　SIT2では使わない-------
+
+	PUSH_REG1 R2
+	PUSH_REG1 R8
+	PUSH_REG1 R9
+	FAR_JSR	#_LSA_LEVEL_CHK,R0		;R8
+	POP_REG1 R9
+	POP_REG1 R8
+	POP_REG1 R2
+
+	FAR_JSR	#_LSA_EDGE_CHK,R0		;R8(ﾚﾍﾞﾙ),R9(ｴｯｼﾞ)
+
+LSA_CUPRINGCHK_EXT:
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	****	LSA SIGNAL REFLASH	***
+;	***********************************
+;	_LSA_SIG_DT2:ref /ans=R0:bit0
+	.ALIGN	4						;
+_LSA_CUPSIG_REF:
+	SUB_START
+	MOV.W	#_LSA_BIT,R4			;
+	MOV.L	#_WPAR_CUPCHK_SEL,R1		;
+	MOV.W	@R1,R0				;
+	CMP/EQ	#2,R0				;
+	BF	LSA_CUPRINGCHK050		;
+	MOV.L	#_LSA_BIT_WT3,R4		;WT3を 2010-08-20(ｶｯﾌﾟﾘﾝｸﾞ異常にも使用)
+LSA_CUPRINGCHK050:				;
+
+	MOV.L	#_di2_cb_ctl2_dt,R1		;
+	MOV.W	@R1,R0				;NEW DATA LOAD
+;;;2010-08-20 ｶｯﾌﾟﾘﾝｸﾞ+ﾍﾞﾙﾄを	MOV.W	#_LSA_BIT,R4			;
+	AND	R4,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF LSA_CUPRINGCHK100		;
+	MOV.W	#BIT0,R0			;
+LSA_CUPRINGCHK100:				;
+	MOV.L	#_LSA_SIG_DT2,R1		;
+	MOV.W	@R1,R3				;data keep
+	MOV.W	R0,@R1				;
+
+	SUB_END
+	M_RTS
+
+;	***************************************************
+;	***						***
+;	***		LSA　ｶｯﾌﾟﾘﾝｸﾞ/ｴﾝｺｰﾀﾞﾁｪｯｸ	***
+;	***						***
+;	***************************************************
+;	ある角度の範囲ではLSAは"L"または"H"である
+;	Input R2
+	.ALIGN	4						;
+_LSA_LEVEL_CHK
+	SUB_START
+	XOR	R7,R7		;ERR BIT
+
+	MOV.L	#_ROM1_PAR_LSA_LCP1,R4	;
+	MOV.W	@R4,R1			;
+	MOV.L	#_ROM1_PAR_LSA_LCP2,R4	;
+	MOV.W	@R4,R3			;
+	FAR_JSR	#_DIG_AREA_CHK0,R0	;
+	TST	R0,R0			;
+	TST_BIT_ON LSA_LEVELCK_ON_CHK	;範囲内ONﾁｪｯｸ
+
+	MOV.L	#_ROM1_PAR_LSA_LCP3,R4	;
+	MOV.W	@R4,R1			;
+	MOV.L	#_ROM1_PAR_LSA_LCP4,R4	;
+	MOV.W	@R4,R3			;
+	FAR_JSR	#_DIG_AREA_CHK0,R0	;
+	TST	R0,R0			;
+	TST_BIT_ON LSA_LEVELCK_OF_CHK	;範囲内OFﾁｪｯｸ
+
+	MOV.L	#_ROM1_PAR_LSA_LCP5,R4	;
+	MOV.W	@R4,R1			;
+	MOV.L	#_ROM1_PAR_LSA_LCP6,R4	;
+	MOV.W	@R4,R3			;
+	FAR_JSR	#_DIG_AREA_CHK0,R0	;
+	TST	R0,R0			;
+	TST_BIT_ON LSA_LEVELCK_ON_CHK	;範囲内ONﾁｪｯｸ
+
+	MOV.L	#_ROM1_PAR_LSA_LCP7,R4	;
+	MOV.W	@R4,R1			;
+	MOV.L	#_ROM1_PAR_LSA_LCP8,R4	;
+	MOV.W	@R4,R3			;
+	FAR_JSR	#_DIG_AREA_CHK0,R0	;
+	TST	R0,R0			;
+	TST_BIT_ON LSA_LEVELCK_OF_CHK	;範囲内OFﾁｪｯｸ
+	M_BRA	LSA_LEVELCK_EXT		;
+
+LSA_LEVELCK_ON_CHK
+	TST	R8,R8			;
+	TST_BIT_ON LSA_LEVELCK_EXT	;
+	M_BRA	LSA_LEVELCK_ERR		;
+LSA_LEVELCK_OF_CHK
+	TST	R8,R8			;
+	TST_BIT_OF LSA_LEVELCK_EXT	;
+LSA_LEVELCK_ERR
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB216,LG=W,BIT=(BIT2),WKRG1=R1,WKRG2=R4
+	MOV.W	#H'2162,R4			;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+
+LSA_LEVELCK_EXT
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***		ｴｯｼﾞがあった場合の範囲は固定される	***
+;	***		(ｶｯﾌﾟﾘﾝｸﾞﾁｪｯｸ)				***
+;	***		ﾊﾞﾙﾌﾞON中は方向を見る			***
+;	***		ﾊﾞﾙﾌﾞOFF中は方向を見ない		***
+;	***********************************************************
+;
+;
+;
+	.ALIGN	4						;
+_LSA_EDGE_CHK
+	SUB_START
+
+	TST	R9,R9				;EDGE ON?
+	TST_BIT_OF LSA_EDGECHK_EXT		;NO JUMP
+
+;;	MOV.L	#_DIR_FLG,R1			;(OFF固定)
+;;	MOV.W	@R1,R0				;
+;;	TST	R0,R0				;
+;;	TST_BIT_OF LSA_EDGECHK_100		;
+;;	MOV.W	#BIT0,R4			;
+;;	XOR	R4,R8				;LEVEL CHANGE
+;;LSA_EDGECHK_100					;
+
+
+	XOR	R6,R6				;onｴｯｼﾞかoffｴｯｼﾞの設定(0:on/offのどっちでもｴｯｼﾞ区間なら良い)
+
+;;	MOV.L	#_VALV_ON_FLG,R1		;
+;;	MOV.W	@R1,R6				;
+;;	TST	R6,R6				;
+;;	TST_BIT_OF LSA_EDGECHK_200		;ﾊﾞﾙﾌﾞ(OFF固定)
+;;
+;;	TST	R8,R8				;
+;;	TST_BIT_ON LSA_EDGECHK_200		;
+;;	M_BRA	LSA_EDGECHK_400			;OFFｴｯｼﾞ区間
+
+
+LSA_EDGECHK_200
+;	----- ON EDGE---
+	MOV.L	#_ROM1_PAR_LSA_ECP3,R4	;.DATA.W		D'181	;SIT LSAｴｯｼﾞ角度3   ↑
+	MOV.W	@R4,R1			;
+	MOV.L	#_ROM1_PAR_LSA_ECP4,R4	;.DATA.W		D'239	;SIT LSAｴｯｼﾞ角度4
+	MOV.W	@R4,R3			;
+	FAR_JSR	#_DIG_AREA_CHK0,R0	;
+	TST	R0,R0			;
+	TST_BIT_ON LSA_EDGECHK_EXT	;
+
+	MOV.L	#_ROM1_PAR_LSA_ECP7,R4	;.DATA.W		D'301	;SIT LSAｴｯｼﾞ角度7   ↑
+	MOV.W	@R4,R1			;
+	MOV.L	#_ROM1_PAR_LSA_ECP8,R4	;.DATA.W		D'359	;SIT LSAｴｯｼﾞ角度8
+	MOV.W	@R4,R3			;
+	FAR_JSR	#_DIG_AREA_CHK0,R0	;
+	TST	R0,R0			;
+	TST_BIT_ON LSA_EDGECHK_EXT	;
+
+	TST	R6,R6			;
+	TST_BIT_OF LSA_EDGECHK_400	;ﾊﾞﾙﾌﾞOFFの場合　全区間対象
+	M_BRA	LSA_EDGECHK_ERR		;
+
+LSA_EDGECHK_400
+;	----- OF EDGE---
+	MOV.L	#_ROM1_PAR_LSA_ECP1,R4	;.DATA.W		D'1	;SIT LSAｴｯｼﾞ角度1   ↓
+	MOV.W	@R4,R1			;
+	MOV.L	#_ROM1_PAR_LSA_ECP2,R4	;.DATA.W		D'59	;SIT LSAｴｯｼﾞ角度2
+	MOV.W	@R4,R3			;
+	FAR_JSR	#_DIG_AREA_CHK0,R0	;
+	TST	R0,R0			;
+	TST_BIT_ON LSA_EDGECHK_EXT	;
+
+	MOV.L	#_ROM1_PAR_LSA_ECP5,R4	;.DATA.W		D'241	;SIT LSAｴｯｼﾞ角度5   ↓
+	MOV.W	@R4,R1			;
+	MOV.L	#_ROM1_PAR_LSA_ECP6,R4	;.DATA.W		D'299	;SIT LSAｴｯｼﾞ角度6
+	MOV.W	@R4,R3			;
+	FAR_JSR	#_DIG_AREA_CHK0,R0	;
+	TST	R0,R0			;
+	TST_BIT_ON LSA_EDGECHK_EXT	;
+
+LSA_EDGECHK_ERR
+
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB216,LG=W,BIT=(BIT3),WKRG1=R1,WKRG2=R4
+	MOV.W	#H'2163,R4			;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+
+
+LSA_EDGECHK_EXT
+
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+
+
+	.EXPORT	_ERR_LEV_CLR
+	.EXPORT	_ERR_LEV_SET
+	.ALIGN	4						;
+_ERR_LEV_CLR:
+	SUB_START
+	XOR	R0,R0
+	MOV.W	R0,@R5
+	SUB_END
+	M_RTS
+
+	.ALIGN	4						;
+_ERR_LEV_SET:
+	SUB_START
+	MOV.L	#_emg_lev_flg,R1	;//異常状態(生ﾃﾞｰﾀ)
+	MOV.W	@R1,R0			;
+	MOV.W	@R5,R2			;
+	OR	R0,R2			;
+	MOV.W	R2,@R5			;
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***	最初にQSTにした条件を出力する	***
+;	***					***
+;	***	2010-12-21 			***
+;	***					***
+;	*******************************************
+;	input R4:CODE(ｼｰｹﾝｽにあるものはｼｰｹﾝｽｺｰﾄﾞ)
+	.EXPORT		_ERR_CODE_SET
+	.ALIGN	4						;
+_ERR_CODE_SET:
+	SUB_START
+
+	MOV.L	#_dq1_cb_out1,R1		;//+0:制御出力(203)
+	MOV.W	@R1,R0				;
+	TST	#_WOQST,R0			;
+	TST_BIT_ON ERR_CODESET_100		;
+
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB266,R1	;
+	MOV.W	R4,@R1				;
+
+ERR_CODESET_100:
+						;2011-01-11
+	MOV.L	#_emg_err_flg,R1		;//異常ﾗｯﾁ
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON ERR_CODESET_200		;
+
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB267,R1	;emg
+	MOV.W	R4,@R1				;
+
+ERR_CODESET_200:
+
+	SUB_END
+	M_RTS
+
+
+;	***************************
+;	***			***
+;	***	ｽﾌﾟｰﾙ異常	***
+;	***			***
+;	***************************
+;	「異常としてはvonの参照はcpua,cpubの両方がonでvonはonとする」
+;
+	.IMPORT	_API_OTHET_CPU_LOAD_cb_out1	;2015-03-15
+
+;
+;	2014-09-16 
+;	BIT0
+;	BIT1
+_SPL_ERR_CHECK
+	SUB_START
+
+	MOV.L	#_SPL_ERR_INIT_WAIT_TIM,R5	;
+	MOV.W	@R5,R4				;
+	TST	R4,R4				;
+	TST_BIT_OF SPL_ERR_CHK005		;
+	ADD	#-1,R4				;
+
+	MOV.L	#_di1_cb_ctl1_dt,R1		;ﾚﾍﾞﾙに変更
+	MOV.W	@R1,R0				;
+	MOV.W	#_W1RST,R2			;ﾘｾｯﾄ釦
+	TST	R2,R0				;ONﾚﾍﾞﾙ
+	TST_BIT_OF SPL_ERR_CHK002		;
+	XOR	R4,R4				;
+SPL_ERR_CHK002:
+	MOV.W	R4,@R5				;
+	M_BRA	SPL_ERR_CHKEXT			;
+
+
+SPL_ERR_CHK005:
+
+	MOV.L	#_SELF_FLG,R1			;//BIT0:ｾﾙﾌﾁｪｯｸ中  BIT7ｾﾙﾌﾁｪｯｸ正常完了
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0
+	TST_BIT_ON SPL_ERR_CHK320		;BREAK-OFF
+
+	MOV.L	#(_PAR_SPL_MONUSE-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;ｽﾌﾟｰﾙﾓﾆﾀ機能有効
+	MOV.W	@R1,R0							;
+	CMP/EQ	#1,R0
+	BT	SPL_ERR_CHK010
+	M_BRA	SPL_ERR_CHKEXT						;
+
+SPL_ERR_CHK010:
+
+	MOV.L	#_SPLCHK_FLG,R5		;//BIT0:ONﾗｯﾁ BIT1:OFFﾗｯﾁ
+
+	MOV.L	#_CB_IN_HANYO,R1	;//BIT8,9,10,11,12,13 6点(SQ004相当)
+	MOV.W	@R1,R6			;
+
+;;;2015-03-15	MOV.W	#BIT12,R4		;
+	MOV.W	#(BIT13+BIT12),R4	;2015-03-15 4.12と4.13 [5.12と5.13]
+
+	FAR_JSR	#_API_OTHET_CPU_LOAD_cb_out1,R0		;2015-03-15 ANS R0=相手側dq1_cb_out1(CPUB/CPUA)
+
+	MOV.L	#_dq1_cb_out1,R1	;//+0:制御出力(203)
+	MOV.W	@R1,R3			;(R3:CPUA/CPUB)
+	AND	R0,R3			;ﾊﾞﾙﾌﾞONはCPUA,CPUBの両方ONでON
+
+	MOV.W	#_WOVN1,R2		;
+	TST	R2,R3			;VON1=ON?
+	TST_BIT_OF SPL_ERR_CHK100	;
+
+;	------------- ﾌﾞﾚｰｷON状態--------------
+	MOV.W	@R5,R0			;
+	TST	#BIT0,R0		;
+	TST_BIT_ON SPL_ERR_CHK050	;
+	MOV.B	#BIT0,R0		;
+	MOV.W	R0,@R5			;FLAG SET
+	M_BRA	SPL_ERR_CHK300		;ﾀｲﾏﾌﾟﾘｾｯﾄ
+
+SPL_ERR_CHK050:
+
+	MOV.L	#_SPLCHK_TIM,R1		;
+	MOV.W	@R1,R2			;
+	TST	R2,R2			;
+	TST_BIT_ON SPL_ERR_CHK400	;遅延ﾀｲﾏ計測中
+
+;	--- 正常な状態は VON=ON,SPL=OFF---
+	TST	R4,R6			;
+	TST_BIT_OF SPL_ERR_CHKEXT	;VON=ON,SPL=OFF TEHN NOMAL状態
+
+;	 --- (一瞬でもONが見えたら異常)---
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB215,LG=W,BIT=(BIT11),WKRG1=R1,WKRG2=R4	;
+	MOV.W	#H'215B,R4									;
+	FAR_JSR	#_EMG_STOP,R0									;
+	M_BRA	SPL_ERR_CHKEXT									;
+
+;	----------------------------------------
+SPL_ERR_CHK100:
+;	------------- ﾌﾞﾚｰｷOFF状態--------------
+	MOV.W	@R5,R0			;
+	TST	#BIT1,R0		;
+	TST_BIT_ON SPL_ERR_CHK150	;flg
+	MOV.B	#BIT1,R0		;
+	MOV.W	R0,@R5			;FLAG SET
+	M_BRA	SPL_ERR_CHK320		;ﾀｲﾏﾌﾟﾘｾｯﾄ
+
+SPL_ERR_CHK150:
+	MOV.L	#_SPLCHK_TIM,R1		;
+	MOV.W	@R1,R2			;
+	TST	R2,R2			;
+	TST_BIT_ON SPL_ERR_CHK400	;遅延ﾀｲﾏ計測中
+
+;	正常な状態は VON=OFF,SPL=ON
+;;;;	TST	R4,R6			;
+;;;;	TST_BIT_ON SPL_ERR_CHKEXT	;VON=OFF,SPL=ON TEHN NOMAL状態
+	AND	R4,R6			;
+	CMP/EQ	R4,R6			;
+	BT	SPL_ERR_CHKEXT		;VON=OFF,SPL=ON,ON TEHN NOMAL状態
+
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB215,LG=W,BIT=(BIT12),WKRG1=R1,WKRG2=R4	;
+	MOV.W	#H'215C,R4									;
+	FAR_JSR	#_EMG_STOP,R0									;
+	M_BRA	SPL_ERR_CHKEXT									;
+
+
+
+;	---------- ﾀｲﾏﾌﾟﾘｾｯﾄ------------
+SPL_ERR_CHK300:
+	MOV.L	#(_PAR_BRKON_SPLDLY-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+	MOV.W	@R1,R2								;
+	M_BRA	SPL_ERR_CHK350							;
+
+SPL_ERR_CHK320:									;
+	MOV.L	#(_PAR_BRKOF_SPLDLY-_CB_SYS_PARAM000+_W_PARAM_TOP),R1		;
+	MOV.W	@R1,R2								;
+
+SPL_ERR_CHK350:				;
+	MOV.L	#_SPLCHK_TIM,R1
+	MOV.W	R2,@R1			;
+
+;	--------------------------------
+SPL_ERR_CHK400:
+
+	DN_TIME LG=W,MEM_ADR=_SPLCHK_TIM,WKREG1=R1,WKREG2=R2	;1
+
+SPL_ERR_CHKEXT:
+
+
+
+
+	SUB_END
+	M_RTS
+
+
+;
+;	***************************
+;	***			***
+;	***			***
+;	***			***
+;	***************************
+;1msec,2msec,4msec,5msec,8msec,10msec,20msec[MAX]
+;位置ﾊﾞﾌｧ32個のﾊﾞﾌｧ　-30msecまで
+;速度ﾊﾞﾌｧ32個	     -30msec
+;加速度a
+;
+;PV_POS
+;SV_POS
+_EQ_ACE_START_DLY	.EQU	4	;2011-09-01
+;
+;	指令位置→指令速度[今-フィルタ時間過去]
+;	実測位置→実速度　[今-フィルタ時間過去]
+;	BBN_SET_TIME:フィルタ時間:移動平均バファ数：PAR_ACC_ERR_FLT
+
+
+
+	.EXPORT	_BIBUN_DATA_MAKE	;
+
+	.ALIGN	4				;
+_BIBUN_DATA_MAKE				;
+	SUB_START
+
+	MOV.L	#_BBN_MESURE_POINT,R1		;
+	MOV.W	@R1,R0				;
+	SHLL2	R0				;*4
+	SHLL	R0				;*2
+
+;	--------------------------------------
+	MOV.L	#_BBN_MESURE_SPOS_BUF,R10		;//8byte SV-POS[]
+	MOV.L	#_BBN_MESURE_SSPD_BUF,R11		;//4byte SV-POS[2個だけ]
+	MOV.L	#_BBN_MEUSRE_SV_ACC_SRC,R12		;ANS
+;;;;2011-09-01	MOV.L	#_LINK_RL_OBJ_ABSPLS,R13		;[ﾌﾟﾘｾｯﾄされる位置]
+	MOV.L	#_POSLSI_OUTPUT_TOTAL_PLS,R13		;[ﾌﾟﾘｾｯﾄされない位置]
+
+	MOV.L	#_BBN_MESURE_SSPD,R14			;//4byte SV-POS[2個だけ]
+
+	ADD.L	R0,R10							;POS
+	MOV.L	@R10,R3							;OLD-LOAD(SV=30msec前)
+	MOV.L	@(4,R10),R4						;
+	MOV.L	@R13+,R1						;[R13]->R1,R2 NEW
+	MOV.L	@R13,R2							;
+	MOV.L	R1,@R10							;NEW data R1,R2 SAVE
+	MOV.L	R2,@(4,R10)						;
+	SUB8B DT_REGH=R3,DT_REGL=R4,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;R1,R2-R3,R4=R1,R2[R2だけで良い]
+	MOV.L	R2,@R14							;指令速度SPD(今の位置－過去30msec位置)
+
+;;;;;;;;;;	MOV	R0,R4							;
+;;;;;;;;;;	SHLR	R4							;
+;;;;;;;;;;	ADD	R4,R11							;
+;;;;;;;;;;	MOV.L	@R11,R5							;OLD SPEED
+;;;;;;;;;;	MOV.L	R2,@R11							;NEW SPEED
+;;;;;;;;;;	SUB	R5,R2							;ACC 但し時間換算しいない状態
+;;;;;;;;;;	MOV.L	R2,@R12							;[加速度]
+
+
+
+;	--------------------------------------
+	MOV.L	#_BBN_MESURE_PPOS_BUF,R10				;//8byte SV-POS[]
+	MOV.L	#_BBN_MESURE_PSPD_BUF,R11					;//4byte SV-POS[2個だけ]
+	MOV.L	#_BBN_MEUSRE_PV_ACC_SRC,R12				;ANS
+	MOV.L	#_LINK_PV_ABSPLS,R13					;PV-POS
+	MOV.L	#_BBN_MESURE_PSPD,R14					;//4byte SV-POS[2個だけ]
+
+
+	ADD.L	R0,R10							;
+	MOV.L	@R10,R3							;OLD-LOAD(SV=30msec前)
+	MOV.L	@(4,R10),R4						;
+	MOV.L	@R13+,R1						;
+	MOV.L	@R13,R2							;
+	MOV.L	R1,@R10							;NEW data R1,R2 SAVE
+	MOV.L	R2,@(4,R10)						;
+	SUB8B DT_REGH=R3,DT_REGL=R4,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;R1,R2-R3,R4=R1,R2[R2だけで良い]
+	MOV.L	R2,@R14							;
+
+;;;;;;;;;;	MOV	R0,R4							;
+;;;;;;;;;;	SHLR	R4							;
+;;;;;;;;;;	ADD	R4,R11							;
+;;;;;;;;;;	MOV.L	@R11,R5							;OLD SPEED
+;;;;;;;;;;	MOV.L	R2,@R11							;NEW SPEED
+;;;;;;;;;;	SUB	R5,R2							;ACC 但し時間換算しいない状態
+;;;;;;;;;;	MOV.L	R2,@R12							;
+
+;	------NEXT SET----
+	MOV.L	#_BBN_SET_TIME,R1		;
+	MOV.W	@R1,R7				;
+	MOV.L	#_BBN_MESURE_POINT,R1		;
+	MOV.W	@R1,R0				;
+	ADD	#1,R0				;
+	CMP/HS	R7,R0				;
+	BF	BIBUN_DATMAK500			;
+	XOR	R0,R0
+BIBUN_DATMAK500					;
+	MOV.W	R0,@R1				;
+BIBUN_DATMAK600					;
+
+
+
+;	-------------- 2011-08-29----------
+;	------------ 速度-------------------
+	MOV.L	#_BBN_MESURE_SSPD,R14		;[目標]
+	MOV.L	@R14,R2				;
+
+	MOV.L	#_BBN_MESURE_DLY_POINT,R1	;
+	MOV.W	@R1,R0				;
+	MOV	R0,R4				;
+	SHLL2	R4				;*4
+	MOV.L	#_BBN_MESURE_SSPD_DLYBUF,R11	;指令速度のバファ:KAKO 
+	ADD	R4,R11				;
+	MOV.L	@R11,R3				;OLD
+	MOV.L	R2,@R11				;NEW
+
+	MOV.L	#_BBN_MESURE_DLY_SSPD,R1	;
+	MOV.L	R3,@R1				;DLY SAVE 速度
+
+;;;	MOV.L	#_BBN_SET_TIME,R1		;
+	MOV.L	#_SETX_ACCERR_SEL,R1		;
+	MOV.W	@R1,R7				;100msec
+	MOV.W	#D'100,R1			;
+	CMP/HS	R7,R1				;
+	BT	BIBUN_DATMAK630			;
+	MOV	R1,R7				;LIMIT
+BIBUN_DATMAK630					;
+
+
+	MOV.L	#_BBN_MESURE_DLY_POINT,R1	;
+	MOV.W	@R1,R0				;
+	ADD	#1,R0				;
+	CMP/HS	R7,R0				;
+	BF	BIBUN_DATMAK650			;
+	XOR	R0,R0
+BIBUN_DATMAK650					;
+	MOV.W	R0,@R1				;
+
+
+;	-------- 2015-07-14-----------
+	FAR_JSR	#_ACCERR_SPD_HAB_MAKE,R0
+;	-------------------------------
+
+
+	MOV.L	#_BBN_MESURE_DLY_SSPD,R1		;
+	MOV.L	@R1,R2					;過去の目標速度
+	MOV.L	#_BBN_MESURE_PSPD,R1			;現在の実速度
+	MOV.L	@R1,R3					;
+	SUB	R3,R2					;+/-SPD/(R7msec)
+
+	MOV.L	#D'1000,R1				;
+	MOV.L	#_BBN_SET_TIME,R0			;
+	MOV.W	@R0,R4					;偏差
+
+	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0		;R2
+
+	MOV.L	#_ACCERR_ACC_HENSA,R1			;
+	MOV.L	R2,@R1					;”目標－実測= 速度差[pls]/sec”
+
+;	-------- 2015-07-14-----------
+	MOV.L	#_dq1_cb_out1,R1			;//+0:制御出力(203)
+	MOV.W	@R1,R0					;
+	MOV.W	#_WOVN1,R2				;
+	TST	R2,R0					;
+	TST_BIT_ON BIBUN_ERRDATMAK_0900			;ﾌﾞﾚｰｷ解除時にﾁｪｯｸ
+
+	FAR_JSR	#_UP_ACCERR_START_INI,R0		;
+	M_BRA	BIBUN_ERRDATMAK_4000			;
+
+
+BIBUN_ERRDATMAK_0900:
+	M_BRA	BIBUN_ERRDATMAK_1000			;
+
+
+;	===========================================
+;	===					===
+;	===					===
+;	===					===
+;	===========================================
+;	INPUT R2:偏差
+BIBUN_ERRDATMAK_1000:
+
+;	-------------- 2015-07-14 再度LOAD R2------------
+	MOV.L	#_ACCERR_ACC_HENSA,R1			;速度差 PLS/S
+	MOV.L	@R1,R2
+
+	MOV.L	#_BBN_MESURE_DLY_SSPD,R1		;指令
+	MOV.L	@R1,R4					;DLY SAVE 速度
+	CMP/PZ	R4					;
+	BT	BIBUN_ERRDATMAK_1100			;目標速度が+(正) YES
+
+;	指令速度が-(逆転)
+
+	CMP/PZ	R2					;
+	BT	BIBUN_ERRDATMAK_2200			;実測が速い
+	M_BRA	BIBUN_ERRDATMAK_1200			;実測が遅い
+
+
+
+BIBUN_ERRDATMAK_1100:
+;;2015-07-14	CMP/PZ	R2					;偏差が+(OBJ-PV)>=0
+	CMP/PL	R2					;偏差が+(OBJ-PV)>=0
+	BT	BIBUN_ERRDATMAK_1200			;実測が遅い
+	M_BRA	BIBUN_ERRDATMAK_2200			;実測が速い
+
+
+;	------------------- 実測が遅い--------------
+BIBUN_ERRDATMAK_1200:
+BIBUN_ERRDATMAK_2000:
+	MOV.L	#_SETX_POS_CTL_MATH,R1			;
+	MOV.W	@R1,R0					;
+	TST	#_DMATH_CNTROT,R0			;回転
+	TST_BIT_ON BIBUN_ERRDATMAK_1500			;
+
+	TST	#_DMATH_DNDRIV,R0			;ふりこ
+	TST_BIT_ON BIBUN_ERRDATMAK_1400			;YES
+
+;	------------------ 反転:_DMATH_REVRSE-------------
+	MOV.L	#_BBN_MESURE_DLY_SSPD,R1		;
+	MOV.L	@R1,R4					;DLY SAVE 速度
+	CMP/PZ	R4					;
+	BT	BIBUN_ERRDATMAK_1390			;正転中(逆転のみ)
+
+	MOV.L	#_SETX_UPAREA_DIG,R4			;
+	MOV.W	@R4,R1					;
+	MOV.L	#_INC_ENC360,R4				;
+	MOV.W	@R4,R2					;R1(開始～終了)~R3の範囲か？
+	MOV.L	#_UP_HOLD_DIG,R4			;195(180-165+180)
+	MOV.W	@R4,R3					;
+	FAR_JSR	#_DIG_AREA_CHK1,R0			;
+	CMP/PZ	R5					;
+	BF	BIBUN_ERRDATMAK_1390			;範囲外
+	MOV.L	#_SETX_ACCERR_ERR3DAT,R5		;BK.実測の速度が遅くなる方向
+	M_BRA	BIBUN_ERRDATMAK_3000		;
+
+
+
+BIBUN_ERRDATMAK_1390:
+	M_BRA	BIBUN_ERRDATMAK_2100			;
+
+;	------------------ ふりこ  -------------------
+BIBUN_ERRDATMAK_1400:
+	MOV.L	#_DNM_DIR_NOW_FLG,R1			;//
+	MOV.W	@R1,R0					;
+	TST	R0,R0					;
+	TST_BIT_ON BIBUN_ERRDATMAK_1450			;復路(逆転)
+	M_BRA	BIBUN_ERRDATMAK_1500			;往路(回転と同じ)
+
+;復路(反転と同じ)
+BIBUN_ERRDATMAK_1450:
+	MOV.L	#_DNM_SETX_UPAREA_DIG,R4		;
+	MOV.W	@R4,R1					;
+	MOV.L	#_INC_ENC360,R4				;
+	MOV.W	@R4,R2					;R1(開始～終了)~R3の範囲か？
+	MOV.L	#_DNM_SETX_HOLD_CMP1_DEG,R4		;195(180-165+180)
+	MOV.W	@R4,R3					;
+	FAR_JSR	#_DIG_AREA_CHK1,R0			;
+	CMP/PZ	R5					;
+	BF	BIBUN_ERRDATMAK_1490			;
+	MOV.L	#_SETX_ACCERR_ERR3DAT,R5		;BK.実測の速度が遅くなる方向
+	M_BRA	BIBUN_ERRDATMAK_3000		;
+
+
+BIBUN_ERRDATMAK_1490:
+	M_BRA	BIBUN_ERRDATMAK_2100			;
+
+
+
+;	------------------回転-------------------
+BIBUN_ERRDATMAK_1500:
+	MOV.L	#_SETX_HOLD_CMP1_DEG,R4			;195(180-165+180)
+	MOV.W	@R4,R1					;
+	MOV.L	#_INC_ENC360,R4				;
+	MOV.W	@R4,R2					;R1(開始～終了)~R3の範囲か？
+	MOV.L	#_SETX_UPAREA_DIG,R4			;
+	MOV.W	@R4,R3					;
+	FAR_JSR	#_DIG_AREA_CHK1,R0			;
+	CMP/PZ	R5					;
+	BF	BIBUN_ERRDATMAK_2100			;
+
+	MOV.L	#_SETX_ACCERR_ERR3DAT,R5		;BK.実測の速度が遅くなる方向
+	M_BRA	BIBUN_ERRDATMAK_3000			;
+	
+;;2014-10-23	MOV.L	#_SETX_ACCERR_ERR1DAT,R5		;実測の速度が遅くなる方向
+;;2014-10-23	M_BRA	BIBUN_ERRDATMAK_3000			;
+
+;;2014-10-23	.AIF	_CB_CPU_SEL EQ	_CB_CPUA		;
+;;2014-10-23	MOV.L	#_SETX_ACCERR_ERR1DAT,R5		;実測の速度が遅くなる方向
+;;2014-10-23	.AELSE
+;;2014-10-23	MOV.L	#_SETX_ACCERR_ZEROHAB,R5		;
+;;2014-10-23	.AENDI
+;;2014-10-23	M_BRA	BIBUN_ERRDATMAK_3000			;
+;;2014-10-23
+;;2014-10-23	--------- 加工区間はチェックしない-----------
+;;2014-10-23;	----------- 実測が遅い 加工範囲-----
+;;2014-10-23BIBUN_ERRDATMAK_2100:
+;;2014-10-23
+;;2014-10-23	.AIF	_CB_CPU_SEL EQ	_CB_CPUA		;
+;;2014-10-23	MOV.L	#_SETX_ACCERR_ERR3DAT,R5		;BK実測の速度が遅くなる方向
+;;2014-10-23	.AELSE
+;;2014-10-23	MOV.L	#_SETX_ACCERR_ZEROHAB,R5		;BH
+;;2014-10-23	.AENDI
+;;2014-10-23	M_BRA	BIBUN_ERRDATMAK_3000			;
+
+
+;	-------------- 測定範囲外[2014-10-20]----------------
+BIBUN_ERRDATMAK_2100					;
+	FAR_JSR	#_UP_ACCERR_START_INI,R0		;2014-10-23
+	M_BRA	BIBUN_ERRDATMAK_4000			;2014-10-23
+
+;	----------- 実速度が早い-----
+;	------------ [2014-10-23異常監視しない]
+BIBUN_ERRDATMAK_2200:
+	FAR_JSR	#_UP_ACCERR_START_INI2,R0		;2014-10-23
+	M_BRA	BIBUN_ERRDATMAK_4000			;2014-10-23
+
+;;;;;; ----------   2014-10-23 --------------
+;;;;;;	.AIF	_CB_CPU_SEL EQ	_CB_CPUA		;
+;;;;;;	MOV.L	#_SETX_ACCERR_ERR2DAT,R5		;BJ(cpua)
+;;;;;;	.AELSE						;
+;;;;;;	MOV.L	#_SETX_ACCERR_ZEROHAB,R5		;BH
+;;;;;;	.AENDI						;
+;;;;;;	M_BRA	BIBUN_ERRDATMAK_3000			;
+
+;	---------- 回転,ふりこ往路---------------
+BIBUN_ERRDATMAK_3000:
+
+	MOV.L	@R5,R3
+	MOV.L	#_SETX_UPERR_ERRCMPDAT,R1	;R3:+Data
+	MOV.L	R3,@R1
+
+	FAR_JSR	#_UPHOLD_ACC_ERRCHK,R0		;+/-
+
+;	------------------------------------
+	FAR_JSR	#_DEBUG_BIT1_SET,R0
+	M_BRA	BIBUN_ERRDATMAK_4010	
+
+BIBUN_ERRDATMAK_4000:
+	FAR_JSR	#_DEBUG_BIT1_CLR,R0
+
+BIBUN_ERRDATMAK_4010:
+
+;	-----2015-07-14[ﾃﾞﾊﾞｯｸ]-------------
+	MOV.L	#_UPHOLD_SPDERR_OK_FLG,R1	;
+	MOV.W	@R1,R0				;
+	SHLL8	R0				;
+	MOV.L	#_REV_ERR_FLG,R1		;		//BIT0=1:上昇ﾎｰﾙﾄﾞにて起動
+	MOV.W	@R1,R2				;
+	OR	R2,R0				;
+
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB246,R1	;ﾃﾞﾊﾞｯｸ
+	MOV.W	R0,@R1				;
+
+	SUB_END
+	M_RTS
+
+
+
+;	-----2015-07-14[ﾃﾞﾊﾞｯｸ]-------------
+_DEBUG_BIT1_SET
+	SUB_START
+	MEM1_BIT0_F_ORSET MEM=(_SQ_CBWK_TOP+_WKSQCB241),LG=W,BIT=(BIT1),WKRG1=R1,WKRG2=R4
+	SUB_END
+	M_RTS
+
+_DEBUG_BIT1_CLR
+	SUB_START
+	MEM1_BIT0_F_ADCLR MEM=(_SQ_CBWK_TOP+_WKSQCB241),LG=W,BIT=(~BIT1),WKRG1=R1,WKRG2=R4
+	SUB_END
+	M_RTS
+
+
+
+;	*******************************************
+;	***					***
+;	***	2015-07-14			***
+;	***					***
+;	*******************************************
+	.IMPORT	_SVP_RISE_CMP3		;
+
+_ACCERR_SPD_HAB_MAKE
+	SUB_START
+
+	MOV.L	#_BBN_MESURE_DLY_SSPD,R1		;
+	MOV.L	@R1,R2					;DLY SAVE 速度
+	CMP/PZ	R2
+	BT	ACCERR_SPD_HABMK100			;
+;;;;2015-08-19	XOR	R2,R2				;回転だけだから
+	NEG	R2,R2					;2015-08-19　回転・反転・ふりこに対応しておく
+ACCERR_SPD_HABMK100					;
+
+	MOV.L	#D'1000,R1				;
+	MOV.L	#_BBN_SET_TIME,R0			;
+	MOV.W	@R0,R4					;偏差
+	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0		;R2:PLS/S
+
+	MOV.L	#_SVP_RISE_CMP3,R0			;◎サーボパラメータBK　　上昇監視比較10.01
+	MOV.W	@R0,R1					;100.00%
+
+	MOV.W	#D'10000,R4				;
+	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0		;
+
+	MOV.L	#_SETX_ACCERR_ERR3DAT,R1		;◎
+	MOV.L	R2,@R1					;[正固定ﾃﾞｰﾀ]
+	
+	SUB_END
+	M_RTS
+
+;	***************************
+;	***			***
+;	***			***
+;	***			***
+;	***************************
+
+	.ALIGN	4				;
+_UPHOLD_ACC_ERRCHK:
+	SUB_START
+
+	MOV.L	#_UP_HOLD_FLG,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT1,R0			;上昇無効[ふりこ・反転は上昇無効にもできるが]
+	TST_BIT_ON UPHOLD_ACCERRCHK_100		;(上昇ﾎｰﾙﾄﾞ+上昇無効)
+
+;	---------上昇ホールドではない---
+;;;;2014-10-23[不要]	XOR	R0,R0				;"_UP_ACCERR_START_INI"
+;;;;2014-10-23[不要]	MOV.L	#_ACCERR_ERR_CNT,R1		;
+;;;;2014-10-23[不要]	MOV.W	R0,@R1				;
+
+	FAR_JSR	#_UP_ACCERR_START_INI,R0	;2011-09-01
+
+	M_BRA	UPHOLD_ACCERRCHK_800	;
+
+;	-------- 上昇ホールド中---------
+UPHOLD_ACCERRCHK_100:
+
+;	----------2015-07-14-------------------------
+	MOV.L	#_UPHOLD_SPDERR_OK_FLG,R1				;
+	MOV.W	@R1,R0							;
+	TST	#BIT0,R0						;
+	TST_BIT_ON UPHOLD_ACCERRCHK_110					;
+
+;	-----------------------------------------------------------
+;	-------反転・ふりこの方向判別				----
+;	--------(PV_ENC_SPD_PER:絶対値,符号無しで判断しているので全モードで使用可能)-----
+;	-------(逆方向で、この速度以上なら既に別の異常)-----------
+;	----------------------------------------------------------
+
+	MOV.L	#(_PAR_UPMASK_ERSPD-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;PNO.364
+	MOV.W	@R1,R3							;
+	MOV.L	#_PV_ENC_SPD_PER,R1					;
+	MOV.W	@R1,R2							;
+	CMP/HS	R3,R2							;R3=<R2(PV)
+	BF	UPHOLD_ACCERRCHK_150					;NO!
+
+
+	MOV.B	#BIT0,R0						;
+	MOV.L	#_UPHOLD_SPDERR_OK_FLG,R1				;
+	MOV.W	R0,@R1							;
+
+UPHOLD_ACCERRCHK_110:
+
+	MOV.L	#_ACCERR_DLY_PV_TIM,R1		;2011-09-01
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF UPHOLD_ACCERRCHK_120	;
+	ADD	#-1,R0				;
+	MOV.W	R0,@R1				;
+	M_BRA	UPHOLD_ACCERRCHK_151		;
+;;;	M_BRA	UPHOLD_ACCERRCHK_150		;
+
+UPHOLD_ACCERRCHK_120:
+;;;;;;;;;;;;2015-08-19	MOV.L	#_ACCERR_ACC_HENSA,R1			;
+;;;;;;;;;;;;2015-08-19	MOV.L	@R1,R2					;
+;;;;;;;;;;;;2015-08-19	CMP/PL	R2
+;;;;;;;;;;;;2015-08-19;;;;2015-07-14	CMP/PZ	R2					;
+;;;;;;;;;;;;2015-08-19	BT	UPHOLD_ACCERRCHK_130			;
+;;;;;;;;;;;;2015-08-19;;;;2015-07-14	NEG	R2,R2					;
+;;;;;;;;;;;;2015-08-19	M_BRA	UPHOLD_ACCERRCHK_200			;2015-07-14:逆転した 回転だけだからERRにしてしまう
+
+;;	------------逆転も考慮する[2015-08-19]----------
+	FAR_JSR	#_UPHOLD_DIR_CHECK,R0			;
+	TST	R0,R0					;
+	TST_BIT_ON UPHOLD_ACCERRCHK_125			;逆転
+
+	MOV.L	#_ACCERR_ACC_HENSA,R1			;
+	MOV.L	@R1,R2					;
+	CMP/PZ	R2					;[PZが正解]
+	BT	UPHOLD_ACCERRCHK_130			;OBJ-PV>0 OBJ-PV<0[既にはじいている]
+	M_BRA	UPHOLD_ACCERRCHK_200			;ここにはこないはず
+
+;	------------- 逆転での評価2015-08-19--------
+UPHOLD_ACCERRCHK_125:
+	MOV.L	#_ACCERR_ACC_HENSA,R1			;2015-08-19 -50 - -40 = -10
+	MOV.L	@R1,R2					;2015-08-19
+	CMP/PL	R2					;2015-08-19
+	BT	UPHOLD_ACCERRCHK_200			;2015-08-19(このﾀｲﾐﾝｸﾞでｼﾞｬﾝﾌﾟはないはず)
+	NEG	R2,R2					;2015-08-19
+
+UPHOLD_ACCERRCHK_130:
+
+	MOV.L	#_SETX_UPERR_ERRCMPDAT,R1		;
+	MOV.L	@R1,R3					;
+
+;	--------- 2015-07-14(設定0では異常見ない)--------
+	TST	R3,R3
+	TST_BIT_OF UPHOLD_ACCERRCHK_150			;
+
+	CMP/HS	R2,R3					;符号無しでよい
+	BF	UPHOLD_ACCERRCHK_200			;NOMAL JUMP
+
+UPHOLD_ACCERRCHK_150:
+	NOP
+UPHOLD_ACCERRCHK_151:
+	XOR	R0,R0
+	MOV.L	#_ACCERR_ERR_CNT,R1			;
+	MOV.W	R0,@R1					;
+	M_BRA	UPHOLD_ACCERRCHK_250			;
+
+UPHOLD_ACCERRCHK_200:
+	MOV.W	#D'10000,R4				;
+	MOV.L	#_ACCERR_ERR_CNT,R1			;
+	MOV.W	@R1,R0					;
+	ADD	#1,R0					;
+	CMP/HS	R4,R0					;
+	BT	UPHOLD_ACCERRCHK_250			;10000回を超えた
+	MOV.W	R0,@R1					;
+
+UPHOLD_ACCERRCHK_250:
+
+UPHOLD_ACCERRCHK_800:
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***		起動時クリア		***
+;	***					***
+;	*******************************************
+;
+	.ALIGN	4				;
+	.EXPORT	_UP_ACCERR_START_INI		;2011-09-01
+_UP_ACCERR_START_INI
+	SUB_START
+
+	XOR	R0,R0				;2015-07-14
+	MOV.L	#_UPHOLD_SPDERR_OK_FLG,R1	;
+	MOV.W	R0,@R1				;
+
+	FAR_JSR	#_UP_ACCERR_START_INI2,R0	;
+
+	SUB_END
+	M_RTS
+
+;------2015-07-14
+_UP_ACCERR_START_INI2
+	SUB_START
+
+	XOR	R0,R0				;
+	MOV.L	#_ACCERR_ERR_CNT,R1		;
+	MOV.W	R0,@R1				;
+
+	MOV.W	#_EQ_ACE_START_DLY,R0		;2011-09-01
+	MOV.L	#_ACCERR_DLY_PV_TIM,R1		;
+	MOV.W	R0,@R1				;
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***	ふりこ・反転の逆転を含める	***
+;	***					***
+;	*******************************************
+;	[2015-08-19]:ふりこ・反転方向付き：初機能組み込み機種CE3(R01R02)
+;	ANS=R0 =0:正
+;	ANS=R0=-1:逆
+;	DESTORY R1,R0
+;
+_UPHOLD_DIR_CHECK
+	SUB_START
+	MOV.L	#_SETX_POS_CTL_MATH,R1		;
+	MOV.W	@R1,R0				;
+	TST	#_DMATH_CNTROT,R0		;
+	TST_BIT_ON UPHOLD_DIR_CHK_FWD		;回転
+
+	TST	#_DMATH_DNDRIV,R0		;ふりこ
+	TST_BIT_ON UPHOLD_DIR_CHK_100		;
+	M_BRA	UPHOLD_DIR_CHK_REV		;
+
+UPHOLD_DIR_CHK_100
+	MOV.L	#_DNM_DIR_NOW_FLG,R1			;//
+	MOV.W	@R1,R0					;
+	TST	R0,R0					;
+	TST_BIT_ON UPHOLD_DIR_CHK_REV			;復路(逆転)
+	
+;	---------- 回転・ふりこ往路-----------
+UPHOLD_DIR_CHK_FWD
+	XOR	R0,R0				;
+	M_BRA	UPHOLD_DIR_CHK_END		;
+
+;	---------- 反転・ふりこ復路-----------
+UPHOLD_DIR_CHK_REV
+	MOV.B	#-1,R0
+UPHOLD_DIR_CHK_END
+
+
+	SUB_END
+	M_RTS
+
+
+
+;	*******************************************
+;	***					***
+;	***		ERROR処理		***
+;	***					***
+;	***					***
+;	*******************************************
+
+	.ALIGN	4				;
+;;;;;2014-10-23 _UP_ACCERR_CHECK
+;;;;;2014-10-23	SUB_START
+;;;;;2014-10-23
+;;;;;2014-10-23	FAR_JSR	#_UP_ACCERR_CHECK1,R0	;
+;;;;;2014-10-23
+;;;;;2014-10-23
+;;;;;2014-10-23
+;;;;;2014-10-23	SUB_END
+;;;;;2014-10-23	M_RTS
+
+;	----------閾値タイプ-----
+	.ALIGN	4				;
+_UP_ACCERR_CHECK1
+	SUB_START
+
+	MOV.L	#_emg_err_flg,R1		;//異常ﾗｯﾁ
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON UP_ACCERR_CHK1_500
+
+;	---------- 20140807[2014-05-15]---------
+	MOV.L	#_exq_err_flg,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON UP_ACCERR_CHK1_500
+;	----------------------------------------
+
+
+	MOV.L	#_SETX_ACCERR_DLY1,R5			;//異常状態継続時間=1msecなのでｶｳﾝﾀと同じ[BL]
+	MOV.W	@R5,R0					;
+	TST	R0,R0			
+	TST_BIT_OF UP_ACCERR_CHK1_900			;0:ﾁｪｯｸしない
+
+	MOV.L	#_ACCERR_ERR_CNT,R1			;
+	MOV.W	@R1,R3					;
+	CMP/HS	R0,R3					;
+	BF	UP_ACCERR_CHK1_900			;
+
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB217),R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#(BIT10),R4			;
+	OR	R4,R0				;
+	MOV.W	R0,@R1				;
+
+	MOV.W	#H'217A,R4			;
+	FAR_JSR	#_EMG_STOP,R0			;
+
+UP_ACCERR_CHK1_500
+	XOR	R4,R4
+	MOV.L	#_ACCERR_ERR_CNT,R1			;
+	MOV.W	R4,@R1					;
+
+UP_ACCERR_CHK1_900
+	SUB_END
+	M_RTS
+
+
+
+;	***************************************************
+;	***						***
+;	***						***
+;	***		ﾌﾞﾚｰｷﾃｽﾄ時のｽﾄｯﾋﾟﾝｸﾞﾀｲﾏ比較	***
+;	***						***
+;	***************************************************
+;;;2012-03-06不要	.ALIGN	4				;
+;;;2012-03-06不要_BRKTST_STOP_TIMCHK:
+;;;2012-03-06不要	SUB_START
+;;;2012-03-06不要	MOV.L	#_BRKTST_INPUT_CMD,R1		;//安全一行程の試験モード指定時ON
+;;;2012-03-06不要	MOV.W	@R1,R0				;
+;;;2012-03-06不要	TST	#BIT0,R0			;
+;;;2012-03-06不要	TST_BIT_ON BRKTST_STOP_TMCK050		;
+;;;2012-03-06不要
+;;;2012-03-06不要	MEM1_BIT0_F_ADCLR MEM=_SQ_CBWK_TOP+_WKSQCB229,LG=W,BIT=~(BIT14+BIT12),WKRG1=R1,WKRG2=R4	;
+;;;2012-03-06不要	M_BRA	BRKTST_STOP_TMCK200										;
+;;;2012-03-06不要
+;;;2012-03-06不要BRKTST_STOP_TMCK050:
+;;;2012-03-06不要	MOV.L	#(_PAR_BRKTST_CMPTM1-_CB_SYS_PARAM000+_W_PARAM_TOP),R1				;
+;;;2012-03-06不要	MOV.W	@R1,R0										;
+;;;2012-03-06不要	CMP/HS	R2,R0										;R2(PV) =< SV
+;;;2012-03-06不要	BT	BRKTST_STOP_TMCK100								;
+;;;2012-03-06不要	PUSH_REG1 R2										;
+;;;2012-03-06不要	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB229,LG=W,BIT=(BIT12),WKRG1=R1,WKRG2=R4	;
+;;;2012-03-06不要	POP_REG1 R2										;
+;;;2012-03-06不要BRKTST_STOP_TMCK100:										;
+;;;2012-03-06不要
+;;;2012-03-06不要	MOV.L	#(_PAR_BRKTST_CMPTM2-_CB_SYS_PARAM000+_W_PARAM_TOP),R1				;
+;;;2012-03-06不要	MOV.W	@R1,R0										;
+;;;2012-03-06不要	CMP/HS	R2,R0										;R2(PV) =< SV
+;;;2012-03-06不要	BT	BRKTST_STOP_TMCK200								;
+;;;2012-03-06不要	PUSH_REG1 R2										;
+;;;2012-03-06不要	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB229,LG=W,BIT=(BIT14),WKRG1=R1,WKRG2=R4	;
+;;;2012-03-06不要	POP_REG1 R2										;
+;;;2012-03-06不要BRKTST_STOP_TMCK200:										;
+;;;2012-03-06不要
+;;;2012-03-06不要	SUB_END
+;;;2012-03-06不要	M_RTS
+
+
+
+;	***************************************************
+;	***						***
+;	***						***
+;	***		ﾌﾞﾚｰｷﾃｽﾄ時のｽﾄｯﾋﾟﾝｸﾞﾀｲﾏ比較	***
+;	***						***
+;	***************************************************
+;;;2012-03-06不要	.ALIGN	4				;
+;;;2012-03-06不要_BRKTST_STOP_POSCHK:
+;;;2012-03-06不要	SUB_START
+;;;2012-03-06不要	MOV.L	#_BRKTST_INPUT_CMD,R1		;//安全一行程の試験モード指定時ON
+;;;2012-03-06不要	MOV.W	@R1,R0				;
+;;;2012-03-06不要	TST	#BIT0,R0			;
+;;;2012-03-06不要	TST_BIT_ON BRKTST_STOP_PSCK050		;
+;;;2012-03-06不要
+;;;2012-03-06不要	MEM1_BIT0_F_ADCLR MEM=_SQ_CBWK_TOP+_WKSQCB229,LG=W,BIT=~(BIT15+BIT13),WKRG1=R1,WKRG2=R4	;
+;;;2012-03-06不要	M_BRA	BRKTST_STOP_PSCK200										;
+;;;2012-03-06不要
+;;;2012-03-06不要BRKTST_STOP_PSCK050:
+;;;2012-03-06不要	MOV.L	#(_PAR_BRKTST_CMPDG1-_CB_SYS_PARAM000+_W_PARAM_TOP),R1				;
+;;;2012-03-06不要	MOV.W	@R1,R0										;
+;;;2012-03-06不要	CMP/HS	R2,R0										;R2(PV) =< SV
+;;;2012-03-06不要	BT	BRKTST_STOP_PSCK100								;
+;;;2012-03-06不要	PUSH_REG1 R2										;
+;;;2012-03-06不要	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB229,LG=W,BIT=(BIT13),WKRG1=R1,WKRG2=R4	;
+;;;2012-03-06不要	POP_REG1 R2										;
+;;;2012-03-06不要BRKTST_STOP_PSCK100:										;
+;;;2012-03-06不要
+;;;2012-03-06不要	MOV.L	#(_PAR_BRKTST_CMPDG2-_CB_SYS_PARAM000+_W_PARAM_TOP),R1				;
+;;;2012-03-06不要	MOV.W	@R1,R0										;
+;;;2012-03-06不要	CMP/HS	R2,R0										;R2(PV) =< SV
+;;;2012-03-06不要	BT	BRKTST_STOP_PSCK200								;
+;;;2012-03-06不要	PUSH_REG1 R2										;
+;;;2012-03-06不要	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB229,LG=W,BIT=(BIT15),WKRG1=R1,WKRG2=R4	;
+;;;2012-03-06不要	POP_REG1 R2										;
+;;;2012-03-06不要BRKTST_STOP_PSCK200:										;
+;;;2012-03-06不要
+;;;2012-03-06不要	SUB_END
+;;;2012-03-06不要	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	***	制動時のブレーキ評価演算	***
+;	***	2012-03-06			***
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+	.EXPORT	_BRKTMCAL_API1_STR		;起動ソフト
+	.EXPORT	_BRKTMCAL_STG1_STOPINI		;停止開始
+	.EXPORT	_BRKTMCAL_API2_END		;停止終了
+	.EXPORT	_BRKTMCAL_API3_ENDCNF1		;
+	.EXPORT	_BRKTMCAL_API4_ENDCNF2		;
+	
+	.EXPORT	_BRKTMCAL_MAIN			;MAIN
+	.EXPORT	_BRKTMCAL_DT_MOV		;
+
+	.ALIGN	4				;
+_BRKTMCAL_MAIN:
+	SUB_START
+	MOV.L	#_BKTMCL_TMSTEP_FLG,R1			;//ｽﾃｯﾌﾟ管理
+	MOV.W	@R1,R0					;
+	TST	#BIT6,R0				;
+	TST_BIT_ON BRKTMCAL_MN_200			;完了? YES EXIT
+
+	TST	#BIT0,R0				;
+	TST_BIT_OF BRKTMCAL_MN_END			;START NO EXIT
+
+	TST	#BIT1,R0				;
+	TST_BIT_ON BRKTMCAL_MN_100			;空走データ完了
+
+	FAR_JSR	#_BRKTMCAL_STG2_KUUSOUCHK,R0		;
+	M_BRA	BRKTMCAL_MN_150				;
+
+BRKTMCAL_MN_100:
+
+	TST	#BIT2,R0				;2012-03-19
+	TST_BIT_ON BRKTMCAL_MN_120			;
+
+	FAR_JSR	#_BRKTMCAL_STG2A_HIGHSPDCHK,R0		;BIT2:SET
+	M_BRA	BRKTMCAL_MN_150				;
+
+BRKTMCAL_MN_120:					;
+
+	TST	#BIT3,R0				;2012-03-19 BIT2->BIT3
+	TST_BIT_ON BRKTMCAL_MN_150			;
+
+	FAR_JSR	#_BRKTMCAL_STG3_LOWSPDCHK,R0		;この中でBIT2,BIT3,BIT6をONする
+
+BRKTMCAL_MN_150:
+
+
+	UP_TIME LG=W,MEM_ADR=_BKTMCL_TOTAL_TIMPV,WKREG1=R1,WKREG2=R2	;//ﾄｰﾀﾙ時間
+
+;	================ 2013-11-05 ==================
+	FAR_JSR	#_BRKTMCAL_AREA_EXT_JG,R0	;
+	TST	R0,R0				;
+	TST_BIT_OF BRKTMCAL_MN_200		;
+;	符号が変わった->上昇に移行した		;
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_BKTMCL_TMSTEP_FLG,LG=W,BIT=(BIT6+BIT5),WKREG=R1	;方向で中断した
+
+
+
+BRKTMCAL_MN_200:
+	MOV.L	#_di1_cb_ctl1_dt,R1			;ﾚﾍﾞﾙに変更
+	MOV.W	@R1,R0					;
+	MOV.W	#_W1RST,R4				;ﾘｾｯﾄ釦
+	TST	R4,R0					;ON
+	TST_BIT_OF BRKTMCAL_MN_END			;
+
+	FAR_JSR	#_BRKTMCAL_STPSQ_CLR,R0			;
+
+
+BRKTMCAL_MN_END:
+
+	FAR_JSR	#_BRKTMCAL_TSK1_CALC,R0			;
+
+;	-------ﾃﾞﾊﾞｯｸ
+	MOV.L	#_BKTMCL_TMSTEP_FLG,R1			;//ｽﾃｯﾌﾟ管理
+	MOV.W	@R1,R2					;
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB248,R1		;
+	MOV.W	R2,@R1					;
+
+
+	MOV.L	#_BKTMCL_ENC_DIR,R1			;//
+	MOV.W	@R1,R2					;
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB249,R1		;
+	MOV.W	R2,@R1					;
+
+
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	ｽﾃｰｼﾞ1:停止時点			***
+;	***	2012-03-06			***
+;	***	[TT(T0),TU(TA)]計測開始		***
+;	*******************************************
+;	起動時にフラグはクリア
+	.ALIGN	4				;
+_BRKTMCAL_STG1_STOPINI:
+	SUB_START
+
+	MOV.L	#_BKTMCL_TMSTEP_FLG,R1			;//ｽﾃｯﾌﾟ管理
+	MOV.W	@R1,R0					;
+	TST	#BIT0,R0				;
+	TST_BIT_ON BRKTMCAL_STOPINI_200			;
+	MOV.B	#BIT0,R0				;
+	MOV.W	R0,@R1					;
+
+;;;;	XOR	R0,R0					;2012-03-19
+;;;;	MOV.L	#_BKTMCL_TMSTEP_STS,R1			;
+;;;;	MOV.W	R0,@R1					;
+
+
+
+;	------------最小速度判定-------------
+	MOV.L	#_PV_ENC_SPD_PER,R1					;
+	MOV.W	@R1,R2							;
+	MOV.L	#(_PAR_BKTMCL_SPMIN-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+	MOV.W	@R1,R0							;
+	CMP/HS	R0,R2							;最小速度=<実測
+	BF	BRKTMCAL_STOPINI_100					;測定しない
+
+;	-----------上昇・下降判定----------
+	MOV.L	#_BKTMCL_ENC_DIR,R3					;//BIT0=0,BIT1=0:停止 BIT0=1,BIT1=0:下降 BIT0=1,BIT1=1:上昇
+	MOV.W	@R3,R0							;
+	TST	#BIT1,R0						;
+	TST_BIT_ON BRKTMCAL_STOPINI_120					;(上昇だ)
+
+	FAR_JSR	#_BRKTMCAL_STOPINIT,R0					;下降
+	M_BRA	BRKTMCAL_STOPINI_200					;
+
+;	---------------検知をしない------------
+BRKTMCAL_STOPINI_100:								;
+BRKTMCAL_STOPINI_120:								;
+;;;;;;2012-03-26	MEM1_BIT0_TO_BIT7_ORSET MEM=_BKTMCL_TMSTEP_FLG,LG=W,BIT=BIT4,WKREG=R1	;BIT4=BIT5=1:最小速度ではじいた
+;;;;;;2012-03-26 BRKTMCAL_STOPINI_120:								;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_BKTMCL_TMSTEP_FLG,LG=W,BIT=(BIT6+BIT5),WKREG=R1	;BIT5=1最小速度または方向で中断した
+BRKTMCAL_STOPINI_200:									;
+	SUB_END
+	M_RTS
+
+	.ALIGN	4				;
+_BRKTMCAL_STOPINIT:
+	SUB_START
+;	---- フィルタ時間イニシャル-------
+	MOV.L	#(_PAR_BKTMCL_TIMCK-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+	MOV.W	@R1,R0								;
+	MOV.L	#_BKTMCL_BBNFLT_TIMPV,R1					;
+	MOV.W	R0,@R1								;
+
+;	---- 空走時間[固定タイプで使用] -----
+	MOV.L	#(_PAR_BKTMCL_TMDEF-_CB_SYS_PARAM000+_W_PARAM_TOP),R1		;
+	MOV.W	@R1,R0								;
+	MOV.L	#_BKTMCL_TMDEF_PV,R1						;
+	MOV.W	R0,@R1								;//固定時
+
+;	---- アップタイマクリア------
+	XOR	R0,R0
+	MOV.L	#_BKTMCL_TOTAL_TIMPV,R1			;//ﾄｰﾀﾙ時間
+	MOV.W	R0,@R1
+	MOV.L	#_BKTMCL_STOP_TIMPV,R1			;ﾃﾞﾊﾞｯｸのため
+	MOV.W	R0,@R1					;
+
+
+
+;	--------なんとなく--------
+;;;;	MOV.L	#_ENC_PLS_SPD,R1						;符号付 PLS/Sﾃﾞｰﾀ
+;;;;	MOV.L	@R1,R2								;
+;;;;	CMP/PZ	R2
+;;;;	BT	BRKTMCAL_STPINI_100
+;;;;	NEG	R2,R2								;
+;;;;BRKTMCAL_STPINI_100:
+
+	MOV.L	#_ABS_ENC_PLS_SPD,R1						;2012-03-26
+	MOV.L	@R1,R2								;
+	MOV.L	#_BKTMCL_STOP_SPD,R1						;//PLS/S
+	MOV.L	R2,@R1								;
+
+;	--------- 2013-11-05[下降時の領域] -------------
+	MOV.L	#_BKTMCL_BRX_AREA_IN,R1		;//生
+	MOV.W	@R1,R0				;
+	MOV.L	#_BKTMCL_BRX_AREA_INLT,R1	;//停止時のｴﾘｱ信号 INのﾗｯﾁ
+	MOV.W	R0,@R1				;
+;	-------------------------------------
+
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***	ｽﾃｰｼﾞ2:空走完了測定		***
+;	***	加速度閾値TD測定		***
+;	***	2012-03-06			***
+;	***					***
+;	*******************************************
+	.ALIGN	4				;
+_BRKTMCAL_STG2_KUUSOUCHK:
+	SUB_START
+
+	MOV.L	#(_PAR_BKTMCL_TMSEL-_CB_SYS_PARAM000+_W_PARAM_TOP),R1		;
+	MOV.W	@R1,R0								;0:固定値　1:演算
+	TST	R0,R0
+	TST_BIT_ON BRKTMCAL_KUUCHK_200					;
+
+;	---------------------------
+;	---	固定タイプ	---
+;	---------------------------
+	MOV.L	#_BKTMCL_TMDEF_PV,R1						;
+	MOV.W	@R1,R2								;//固定時
+	TST	R2,R2								;
+	TST_BIT_OF BRKTMCAL_KUUCHK_050						;
+	ADD	#-1,R2								;
+	MOV.W	R2,@R1								;
+	M_BRA	BRKTMCAL_KUUCHK_500						;
+BRKTMCAL_KUUCHK_050:
+	MOV.L	#(_PAR_BKTMCL_TMDEF-_CB_SYS_PARAM000+_W_PARAM_TOP),R1		;
+	MOV.W	@R1,R2								;
+	MOV.L	#_BKTMCL_SETX_TMDEF,R1						;//T0演算に使用(計算結果または固定)
+	MOV.W	R2,@R1								;
+	M_BRA	BRKTMCAL_KUUCHK_400						;
+
+
+
+;	---------------------------
+;	---	演算タイプ	---
+;	---------------------------
+BRKTMCAL_KUUCHK_200:
+
+	FAR_JSR	#_BRKTMCAL_LATE_CHG_CMP,R0
+
+	MOV.L	#_BKTMCL_BBNFLT_TIMPV,R1		;
+	MOV.W	@R1,R0					;
+	TST	R0,R0					;
+	TST_BIT_ON BRKTMCAL_KUUCHK_500			;加速度測定中
+
+;	---タイムアップ--------
+	MOV.L	#_BKTMCL_TOTAL_TIMPV,R1			;
+	MOV.W	@R1,R2					;
+	MOV.L	#_BKTMCL_SETX_TMDEF,R1			;//T0演算に使用(計算結果または固定)
+	MOV.W	R2,@R1					;
+
+;	-----------------
+	MOV.L	#(_PAR_BKTMCL_TMDFCK-_CB_SYS_PARAM000+_W_PARAM_TOP),R1		;
+	MOV.W	@R1,R3								;
+	CMP/HS	R2,R3								;R2[DATA]=<R3[MAX]
+	BT	BRKTMCAL_KUUCHK_400						;
+
+;	----------(空走時間が長い)-----
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB217),R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#(BIT13),R4			;
+	OR	R4,R0				;
+	MOV.W	R0,@R1				;
+	MOV.W	#H'217D,R4			;
+	FAR_JSR	#_EMG_STOP,R0			;
+
+
+;	-----------完了時の共通演算-------
+BRKTMCAL_KUUCHK_400:
+
+
+	MOV.L	#_ABS_ENC_PLS_SPD,R1						;符号付 PLS/Sﾃﾞｰﾀ
+	MOV.L	@R1,R2								;
+	MOV.L	#_BKTMCL_BRKSTR_SPD,R1						;//PLS/S
+	MOV.L	R2,@R1								;
+
+
+
+;---2012-03-26[NEXT-SET]
+	MOV.L	#(_PAR_BKTMCL_TMXCK-_CB_SYS_PARAM000+_W_PARAM_TOP),R1		;
+	MOV.W	@R1,R0								;
+
+	MOV.L	#_BKTMCL_BRKSTX_TIMSV,R1					;//2段目時間2012-03-26
+	MOV.W	R0,@R1								;
+	MOV.L	#_BKTMCL_BRKSTX_TIMPV,R1					;//2段目時間2012-03-26
+	MOV.W	R0,@R1								;
+
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_BKTMCL_TMSTEP_FLG,LG=W,BIT=BIT1,WKREG=R1	;空走時間完了
+
+
+BRKTMCAL_KUUCHK_500:
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***	ｽﾃｰｼﾞ2A:
+;	***	H速度				***
+;	***	2012-03-26			***
+;	***					***
+;	*******************************************
+	.ALIGN	4				;
+_BRKTMCAL_STG2A_HIGHSPDCHK:
+	SUB_START
+
+	MOV.L	#_BKTMCL_BRKSTX_TIMPV,R1		;
+	MOV.W	@R1,R4					;
+	TST	R4,R4	
+	TST_BIT_OF BRKTMCAL_HIGHSPCHK100
+	ADD	#-1,R4					;
+	MOV.W	R4,@R1					;
+	M_BRA	BRKTMCAL_HIGHSPCHK_EXT			;
+
+BRKTMCAL_HIGHSPCHK100
+
+	MOV.L	#_ABS_ENC_PLS_SPD,R1
+	MOV.L	@R1,R4
+
+	MOV.L	#(_PAR_BKTMCL_CAL1-_CB_SYS_PARAM000+_W_PARAM_TOP),R1		;
+	MOV.W	@R1,R0								;
+	TST	R0,R0								;
+	TST_BIT_OF BRKTMCAL_HIGHSPCHK105					;
+	MOV.L	#_BKTMCL_STOP_SPD,R1						;
+	MOV.L	@R1,R4								;
+BRKTMCAL_HIGHSPCHK105
+
+
+	MOV.L	#_BKTMCL_BRKSTX_SPD,R1			;//PLS/Sブレーキ制動停止速度2012-03-19
+	MOV.L	R4,@R1					;
+
+
+
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_BKTMCL_TMSTEP_FLG,LG=W,BIT=BIT2,WKREG=R1	;速度HIGH検知
+
+BRKTMCAL_HIGHSPCHK_EXT
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***	ｽﾃｰｼﾞ3:停止と想定できる速度	***
+;	***	L速度				***
+;	***	2012-03-19			***
+;	***					***
+;	*******************************************
+	.ALIGN	4				;
+_BRKTMCAL_STG3_LOWSPDCHK:
+	SUB_START
+
+
+
+	MOV.L	#(_PAR_BKTMCL_LSPD-_CB_SYS_PARAM000+_W_PARAM_TOP),R1		;
+	MOV.W	@R1,R3								;100.00%
+	MOV.L	#_PV_ENC_SPD_PER,R1						;
+	MOV.W	@R1,R2								;絶対値、速度ニアゼロ付
+	CMP/HI	R3,R2								;
+	BT	BRKTMCAL_LOWSPCHK_EXT						;
+
+	MOV.L	#_ABS_ENC_PLS_SPD,R1
+	MOV.L	@R1,R4
+	MOV.L	#_BKTMCL_BRKSTP_SPD,R1						;//PLS/Sブレーキ制動停止速度2012-03-19
+	MOV.L	R4,@R1								;
+
+;;;	MEM1_BIT0_TO_BIT7_ORSET MEM=_BKTMCL_TMSTEP_FLG,LG=W,BIT=BIT2,WKREG=R1	;速度LOW検知
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_BKTMCL_TMSTEP_FLG,LG=W,BIT=BIT3,WKREG=R1	;速度LOW検知 BIT2->BIT3
+
+	FAR_JSR	#_BRKTMCAL_API2_END,R0
+
+BRKTMCAL_LOWSPCHK_EXT
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	加速度・動作方向測定		***
+;	***	2012-03-06			***
+;	***					***
+;	*******************************************
+;	①0度[上限角度 320度]~180度で角度増加
+;	180~度~359[上限角度 320度]度で角度減少
+;	②
+;
+;
+	.ALIGN	4				;
+_BRKTMCAL_TSK1_CALC:
+	SUB_START
+
+;	-----------------------------------
+;	---				---
+;	---	方向作成[ﾘﾝｸ角度]	---
+;	---				---
+;	-----------------------------------
+	MOV.L	#_LINK_PV_ABSPLS,R4				;
+	MOV.L	@R4+,R5							;
+	MOV.L	@R4,R6							;
+
+	MOV.L	#_BKTMCL_OLD_PLSPOS,R4					;//PLS
+	MOV.L	@R4,R1							;
+	MOV.L	R5,@R4							;
+	ADD	#4,R4							;
+	MOV.L	@R4,R2							;
+	MOV.L	R6,@R4							;
+	SUB8B DT_REGH=R1,DT_REGL=R2,DT_ANS_REGH=R5,DT_ANS_REGL=R6	;R5,R6-R1,R2=R5,R6
+
+	MOV	R5,R0				;
+	OR	R6,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF BRKTMCAL_TSK1CAL400		;停止中/
+
+
+	MOV.L	#_INC_ENC360,R4			;
+	MOV.W	@R4,R2				;R1~R3の範囲か？
+
+	MOV.L	#_SET1_UPAREA_DIG1,R4		;
+	MOV.W	@R4,R1				;317.2~0.1
+	MOV.W	#_UPDN_DIRJG_DIG,R3		;180.0
+
+	FAR_JSR	#_DIG_AREA_CHK0,R0		;(ON範囲)
+
+;	---------- 2013-11-05 --------------
+	PUSH_REG1 R0				;
+	MOV.L	#_BKTMCL_BRX_AREA_IN,R1		;生
+	MOV.W	R0,@R1				;ｴﾘｱ信号SAVE
+	POP_REG1 R0				;
+;	------------------------------------
+
+
+	TST	R0,R0				;
+	TST_BIT_ON BRKTMCAL_TSK1CAL100		;右半球
+;	---左半球------
+	XOR	R2,R2				;
+	CMP/PZ	R5				;BIT1=0:下降
+	BF	BRKTMCAL_TSK1CAL200		;
+	MOV.B	#BIT1,R2			;BIT1=1:上昇
+	M_BRA	BRKTMCAL_TSK1CAL200		;
+
+BRKTMCAL_TSK1CAL100:
+;	---右半球------
+	XOR	R2,R2				;
+	CMP/PZ	R5				;BIT1=0:下降
+	BT	BRKTMCAL_TSK1CAL200		;
+	MOV.B	#BIT1,R2			;BIT1=1:上昇
+BRKTMCAL_TSK1CAL200:
+
+	MOV.L	#_BKTMCL_ENC_DIR,R3		;//BIT0=0,BIT1=0:停止 BIT0=1,BIT1=0:下降 BIT0=1,BIT1=1:上昇
+	MOV.W	@R3,R0				;
+	XOR	R2,R0				;
+	TST	#BIT1,R0			;
+	TST_BIT_OF BRKTMCAL_TSK1CAL300		;変化なし
+
+	MOV.W	R2,@R3				;DIRECT SAVE
+	M_BRA	BRKTMCAL_TSK1CAL400		;停止
+
+BRKTMCAL_TSK1CAL300:
+	MOV	R2,R0
+	OR	#BIT0,R0
+	MOV.W	R0,@R3				;DIRECT SAVE
+BRKTMCAL_TSK1CAL400:
+
+
+;	-----------------------------------
+;	---				---
+;	---	加速度作成		---
+;	---				---
+;	-----------------------------------
+	MOV.L	#_BKTMCL_ACCPOINT,R1		;
+	MOV.W	@R1,R0				;
+	SHLL2	R0				;*4
+	MOV.L	#_BKTMCL_SPDBUF,R10		;[R10]
+	MOV.L	#_ENC_PLS_SPD,R13		;符号付 PLS/Sﾃﾞｰﾀ
+	MOV.L	#_BKTMCL_ACCDAT,R14		;
+
+	ADD.L	R0,R10				;POS
+	MOV.L	@R10,R4				;OLD-LOAD(SV=30msec前)
+	MOV.L	@R13,R2				;
+	MOV.L	R2,@R10				;NEW data R2 SAVE
+	SUB	R4,R2				;
+	MOV.L	R2,@R14				;ACC
+
+;	------NEXT SET----
+	MOV.L	#_BKTMCL_POINTMAX,R1		;
+	MOV.W	@R1,R7				;
+	MOV.L	#_BKTMCL_ACCPOINT,R1		;
+	MOV.W	@R1,R0				;
+	ADD	#1,R0				;
+	CMP/HS	R7,R0				;
+	BF	BRKTMCAL_TSK1CAL500		;
+	XOR	R0,R0				;
+BRKTMCAL_TSK1CAL500				;
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	微分データを単位にし、比較する	***
+;	***					***
+;	*******************************************
+	.ALIGN	4				;
+_BRKTMCAL_LATE_CHG_CMP
+	SUB_START
+	MOV.L	#_BKTMCL_POINTMAX,R1		;
+	MOV.W	@R1,R4				;
+	MOV.L	#_BKTMCL_ACCDAT,R14		;
+	MOV.L	@R14,R2				;
+	MOV.W	#D'1000,R1			;
+	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0	;
+
+	CMP/PZ	R2				;+の場合加速度0
+	BT	BRKTMCAL_LATECG100		;
+	NEG	R2,R2				;減速の場合のみ
+BRKTMCAL_LATECG100				;
+	MOV.L	#_BKTMCL_ACCDAT_UNIT,R1		;// PLS/S/S
+	MOV.L	R2,@R1				;(符号付)
+
+
+	MOV.L	#_WPAR_BKTMCL_ACCCK,R1		;pls/s/s
+	MOV.L	@R1,R3				;
+	CMP/HS	R3,R2				;
+	BT	BRKTMCAL_LATECG200		;OVER
+
+;---ｵｰﾊﾞしていない--
+	MOV.L	#(_PAR_BKTMCL_TIMCK-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+	MOV.W	@R1,R0								;
+	MOV.L	#_BKTMCL_BBNFLT_TIMPV,R1					;
+	MOV.W	R0,@R1								;
+	M_BRA	BRKTMCAL_LATECG300						;
+
+BRKTMCAL_LATECG200						;
+;---ｵｰﾊﾞしている--
+	MOV.L	#_BKTMCL_BBNFLT_TIMPV,R5			;
+	MOV.W	@R5,R0						;
+	TST	R0,R0						;
+	TST_BIT_OF BRKTMCAL_LATECG300				;
+	ADD	#-1,R0						;
+	MOV.W	R0,@R5						;
+BRKTMCAL_LATECG300						;
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	起動時のフラグクリア		***
+;	***	2012-03-06			***
+;	***					***
+;	*******************************************
+	.ALIGN	4				;
+_BRKTMCAL_API1_STR:
+	SUB_START
+	XOR	R0,R0
+	MOV.L	#_BKTMCL_TMSTEP_FLG,R1			;//ｽﾃｯﾌﾟ管理
+	MOV.W	R0,@R1					;
+;;;;	MOV.L	#_BKTMCL_TMSTEP_STS,R1			;//2012-03-19
+;;;;	MOV.W	R0,@R1					;
+
+	FAR_JSR	#_BRKTMCAL_STPSQ_CLR,R0			;
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	停止				***
+;	***	2012-03-06			***
+;	***					***
+;	*******************************************
+	.ALIGN	4				;
+_BRKTMCAL_API2_END:
+	SUB_START
+
+	MOV.L	#_BKTMCL_TMSTEP_FLG,R1					;//ｽﾃｯﾌﾟ管理
+	MOV.W	@R1,R0							;
+	TST	#BIT6,R0						;
+	TST_BIT_ON BRKTMCAL_ENDCL_EXT					;既に完了///測定しなかったでしょう
+
+
+	AND	#(BIT2+BIT1),R0		;2012-03-26
+	CMP/EQ	#(BIT2+BIT1),R0		;2012-03-26
+	BT	BRKTMCAL_ENDCL_100	;空走完了で、Ｘ速度完了
+
+;;;;;;;;		TST	#BIT1,R0						;空走完了?
+;;;;;;;;2012-03-26	TST_BIT_ON BRKTMCAL_ENDCL_100					;
+;;;;;;;;2012-03-26	MEM1_BIT0_TO_BIT7_ORSET MEM=_BKTMCL_TMSTEP_FLG,LG=W,BIT=BIT6+BIT3,WKREG=R1	;測定前に停止した
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_BKTMCL_TMSTEP_FLG,LG=W,BIT=BIT6+BIT4,WKREG=R1	;測定前に停止したBIT4
+	M_BRA	BRKTMCAL_ENDCL_EXT							;[Tdがだめ　またはﾌﾞﾚｰｷ絶好調]
+
+BRKTMCAL_ENDCL_100:
+
+	FAR_JSR	#_BRKTMCAL_TBCALC,R0	;
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_BKTMCL_TMSTEP_FLG,LG=W,BIT=BIT6,WKREG=R1	;[正常完了]
+
+
+BRKTMCAL_ENDCL_EXT:
+
+	SUB_END
+	M_RTS
+
+;ﾀｲﾑｱｯﾌﾟ停止
+_BRKTMCAL_API3_ENDCNF1:
+	SUB_START
+	PUSH_REG1 R0
+	PUSH_REG1 R1
+
+;;;2012-03-19
+;;;	MOV.L	#_BKTMCL_TMSTEP_STS,R1	;ﾀｲﾑｱｯﾌﾟ停止
+;;;	MOV.W	@R1,R0			;
+;;;	OR	#BIT2,R0		;
+;;;	MOV.W	R0,@R1			;
+
+	POP_REG1 R1
+	POP_REG1 R0
+	SUB_END
+	M_RTS
+
+_BRKTMCAL_API4_ENDCNF2:
+	SUB_START
+	PUSH_REG1 R0
+	PUSH_REG1 R1
+
+	POP_REG1 R1
+	POP_REG1 R0
+	SUB_END
+	M_RTS
+	
+;	*******************************************
+;	***					***
+;	***	T0,TA,VA,VB-->TB計算		***
+;	***	2012-03-06			***
+;	***					***
+;	*******************************************
+;	TB=最大速度*(TA-T0)/VA + T0
+	.ALIGN	4				;
+_BRKTMCAL_TBCALC:
+	SUB_START
+;
+	MOV.L	#_BKTMCL_TOTAL_TIMPV,R1			;
+	MOV.W	@R1,R2					;
+	MOV.L	#_BKTMCL_STOP_TIMPV,R1			;
+	MOV.W	R2,@R1					;
+
+;;;;2012-03-19
+;;;;2012-03-19		MOV.L	#_BKTMCL_TOTAL_TIMPV,R1			;
+;;;;2012-03-19		MOV.W	@R1,R2					;
+;;;;2012-03-19		MOV.L	#_BKTMCL_TMSTEP_STS,R1			;_BKTMCL_TMSTEP_FLG
+;;;;2012-03-19		MOV.W	@R1,R0					;
+;;;;2012-03-19		TST	#BIT2,R0				;
+;;;;2012-03-19		TST_BIT_OF BRKTMCAL_TBCL050			;
+;;;;2012-03-19
+;;;;2012-03-19		MOV.L	#_WPAR_STOPING_TIM,R1			;ﾀｲﾑｱｯﾌﾟ停止
+;;;;2012-03-19		MOV.W	@R1,R0					;
+;;;;2012-03-19		SUB	R0,R2					;
+;;;;2012-03-19		CMP/PZ	R2					;
+;;;;2012-03-19		BT	BRKTMCAL_TBCL050			;
+;;;;2012-03-19		XOR	R2,R2					;
+;;;;2012-03-19	BRKTMCAL_TBCL050:					;
+;;;;2012-03-19		MOV.L	#_BKTMCL_STOP_TIMPV,R1			;
+;;;;2012-03-19		MOV.W	R2,@R1					;
+;;;;2012-03-19
+
+	MOV.L	#_BKTMCL_BRKSTX_TIMSV,R1
+	MOV.W	@R1,R3					;
+	SUB	R3,R2					;
+	CMP/PZ	R2
+	BT	BRKTMCAL_TBCL050			;
+	XOR	R2,R2					;
+BRKTMCAL_TBCL050:					;
+	
+
+
+	MOV.L	#_BKTMCL_SETX_TMDEF,R1			;//T0演算に使用(計算結果または固定)
+	MOV.W	@R1,R3					;
+	SUB	R3,R2					;
+	CMP/PZ	R2
+	BT	BRKTMCAL_TBCL100			;
+	XOR	R2,R2					;
+BRKTMCAL_TBCL100:					;
+
+
+
+
+;;;2012-03-26	MOV.L	#_BKTMCL_BRKSTR_SPD,R0			;//PLS/S
+;;;	MOV.L	@R0,R4					;Vt
+
+	MOV.L	#_BKTMCL_BRKSTX_SPD,R0			;//PLS/S 2012-03-26
+	MOV.L	@R0,R4					;VX
+
+	MOV.L	#_BKTMCL_BRKSTP_SPD,R0			;//PLS/S
+	MOV.L	@R0,R1					;Vw
+	SUB	R1,R4					;
+	TST	R4,R4					;
+	TST_BIT_ON BRKTMCAL_TBCL150			;
+	MOV.L	#1,R4					;
+BRKTMCAL_TBCL150:					;
+
+;;2014-09-22	
+;;	MOV.L	#_SETD_LINK_MAX_SPD_PLS,R0		;//
+	MOV.L	#_LINK_MAX_SPD_PLS,R0			;//2014-09-22制御のmax:ふりこ/回転・反転で変化する
+	MOV.L	@R0,R1					;
+	PUSH_REG1 R3					;"T0"TMDEF
+	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0		;
+	POP_REG1 R1					;
+	ADD	R1,R2					;
+	MOV.L	#_BKTMCL_BRK_TIMPV,R0			;//最大速度時のﾌﾞﾚｰｷ時間
+	MOV.W	R2,@R0					;
+
+
+;;;	MOV.L	#_BKTMCL_BRKSTR_SPD,R0			;//PLS/S
+;;;	MOV.L	@R0,R4					;VA
+;;;	MOV.L	#_SETD_LINK_MAX_SPD_PLS,R0		;//ｲﾝｸﾘﾒﾝﾀﾙｴﾝｺｰﾀﾞ換算値　pls/s
+;;;	MOV.L	@R0,R1					;
+;;;	PUSH_REG1 R3					;"T0"TMDEF
+;;;	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0		;
+;;;	POP_REG1 R1					;
+;;;	ADD	R1,R2					;
+;;;	MOV.L	#_BKTMCL_BRK_TIMPV,R0			;//最大速度時のﾌﾞﾚｰｷ時間
+;;;	MOV.W	R2,@R0					;
+
+	FAR_JSR	#_BRKTMCAL_STPTMCMP,R0			;input R2
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	TB<>設定			***
+;	***	2012-03-06			***
+;	***					***
+;	*******************************************
+;	Input R2
+;;	MOV.L	#_BKTMCL_BRK_TIMPV,R1				;//最大速度時のﾌﾞﾚｰｷ時間
+;;	MOV.W	@R1,R2						;
+
+	.ALIGN	4				;
+_BRKTMCAL_STPTMCMP:
+	SUB_START
+
+	MOV.L	#(_PAR_BRKTST_CMPTM1-_CB_SYS_PARAM000+_W_PARAM_TOP),R1				;
+	MOV.W	@R1,R0										;
+	CMP/HS	R2,R0										;R2(PV) =< SV
+	BT	BRKTST_STOP_TMCK100								;
+	PUSH_REG1 R2										;
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB229,LG=W,BIT=(BIT12),WKRG1=R1,WKRG2=R4	;
+	POP_REG1 R2										;
+BRKTST_STOP_TMCK100:										;
+
+	MOV.L	#(_PAR_BRKTST_CMPTM2-_CB_SYS_PARAM000+_W_PARAM_TOP),R1				;
+	MOV.W	@R1,R0										;
+	CMP/HS	R2,R0										;R2(PV) =< SV
+	BT	BRKTST_STOP_TMCK200								;
+	PUSH_REG1 R2										;
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB229,LG=W,BIT=(BIT14),WKRG1=R1,WKRG2=R4	;
+	POP_REG1 R2										;
+BRKTST_STOP_TMCK200:										;
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	SEQ_CLR				***
+;	***	2012-03-06			***
+;	***					***
+;	*******************************************
+	.ALIGN	4				;
+_BRKTMCAL_STPSQ_CLR:
+	SUB_START
+
+	MEM1_BIT0_F_ADCLR MEM=_SQ_CBWK_TOP+_WKSQCB229,LG=W,BIT=~(BIT14+BIT12),WKRG1=R1,WKRG2=R4	;
+	MEM1_BIT0_F_ADCLR MEM=_SQ_CBWK_TOP+_WKSQCB229,LG=W,BIT=~(BIT15+BIT13),WKRG1=R1,WKRG2=R4	;
+	SUB_END
+	M_RTS
+
+
+
+;	*******************************************
+;	***					***
+;	***	設定転送			***
+;	***	2012-03-06			***
+;	***					***
+;	*******************************************
+	.ALIGN	4				;
+_BRKTMCAL_DT_MOV:
+	SUB_START
+
+;	----------------------------------------------------------
+	MOV.W	#1,R2							;
+	MOV.L	#(_PAR_BKTMCL_ACCTM-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+	MOV.W	@R1,R0							;
+	TST	R0,R0
+	TST_BIT_OF BRKTMCAL_DTMV_100					;
+	MOV.W	#D'50,R2						;
+	CMP/HS	R0,R2							;
+	BF	BRKTMCAL_DTMV_100					;R0(SV)=< R2:MAX(50) NO-JUMP LIMIT
+	MOV	R0,R2							;
+BRKTMCAL_DTMV_100:
+	MOV.L	#_BKTMCL_POINTMAX,R1					;//0,1~50 0=1
+	MOV.W	R2,@R1							;SAVE 1~50
+
+;	---------------------------------------------------------------
+	MOV.L	#(_PAR_BKTMCL_ACCCK-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+	MOV.W	@R1,R2							;
+	MOV.W	#D'1000,R1						;
+	DMULS.L	R1,R2							;
+	STS	MACL,R3							;
+	MOV.L	#_WPAR_BKTMCL_ACCCK,R1					;pls/s/s
+	MOV.L	R3,@R1							;
+
+;	---------------------------------------------------------------
+
+
+	SUB_END
+	M_RTS
+
+;	***************************************************
+;	***						***
+;	***	2013-11-05				***
+;	***	上昇領域に移動した			***
+;	***	下降している状態で半球を跨いだ		***
+;	***						***
+;	***************************************************
+_BRKTMCAL_AREA_EXT_JG
+	SUB_START
+	MOV.L	#_BKTMCL_BRX_AREA_IN,R1		;生
+	MOV.W	@R1,R0				;ｴﾘｱ信号SAVE
+	MOV.L	#_BKTMCL_BRX_AREA_INLT,R1	;
+	MOV.W	@R1,R2				;
+	XOR	R2,R0				;
+	AND	#BIT0,R0			;"0":同じ半球 ""
+
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+
+
+
+
+
+;==========================================================================
+
+;	***************************************************
+;	***						***
+;	***	2015-07-14				***
+;	***	[1:PG不一致　CPUA,CPUB]			***
+;	***						***
+;	***************************************************
+	.IMPORT	_HD_CMP_PLS_A1
+	.IMPORT	_HD_CMP_PLS_B1
+
+_PG_CMP_CHK:
+	SUB_START
+
+
+ .AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+	MOV.L	#_HD_CMP_PLS_B1,R1	;CPUB=>CPUA
+ .AELSE
+	MOV.L	#_HD_CMP_PLS_A1,R1	;CPUA=>CPUB
+ .AENDI
+	MOV.L	@R1,R2			;DPRAM LOAD
+	MOV.L	#_LSI_LOAD_PLS,R1	;
+	MOV.L	@R1,R3			;
+
+	SUB	R3,R2				;
+	CMP/PZ	R2				;
+	BT	PG_CMPCHK_100			;
+	NEG	R2,R2				;
+PG_CMPCHK_100:
+	MOV.L	#(_PAR_CPUAC_PLSCMP-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+	MOV.W	@R1,R0							;
+	TST	R0,R0							;
+	TST_BIT_OF PG_CMPCHK_END					;
+	
+	CMP/HS	R2,R0
+	BT	PG_CMPCHK_END	;PV(R2)=< SV(R0) 範囲内 EXIT
+
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB218,LG=W,BIT=(BIT13),WKRG1=R1,WKRG2=R4	;
+	MOV.W	#H'218D,R4		;218.13
+	FAR_JSR	#_EMG_STOP,R0		;
+
+
+
+PG_CMPCHK_END:
+	SUB_END
+	M_RTS
+
+
+
+;	***************************************************
+;	***						***
+;	***	2015-07-14				***
+;	***	[2:遮光停止3]				***
+;	***						***
+;	***************************************************
+;	[2]遮光停止3
+;	
+_SFTY_MOV_PLS_CHK:
+	SUB_START
+
+	MOV.L	#_LINK_CLANK_PV,R4					;
+	MOV.W	@R4,R2							;ｸﾗﾝｸ角度(毎ｽｷｬﾝ1msecでINC_ENC360から更新)
+
+	MOV.L	#(_PAR_PLSSFTY_NOARA-_CB_SYS_PARAM000+_W_PARAM_TOP),R4	;未検出AREA
+	MOV.W	@R4,R3							;0.1度
+	MOV.W	#D'3600,R1						;
+	SUB	R3,R1							;
+
+;ﾚｼﾞｽﾀR1,R2,R3は保持される
+	FAR_JSR	#_DIG_AREA_CHK0,R0					;(ON範囲) R1(開始350度)~R3(終了10度)
+	TST	R0,R0							;
+	TST_BIT_ON SFTY_MOV_PLSCHK_200					;検知しない上死点近傍の角度(350~10)
+
+	MOV.W	#D'1800,R0		;
+	MOV	R0,R1			;
+	SUB	R3,R1			;180.0-10.0=170.0度(R1)
+	ADD	R0,R3			;180.0+10.0=190.0度(R3)
+
+	FAR_JSR	#_DIG_AREA_CHK0,R0					;(ON範囲) R1(開始170度)~R3(終了190度)
+	TST	R0,R0							;
+	TST_BIT_ON SFTY_MOV_PLSCHK_200					;検知しない下死点近傍の角度(170~190)
+
+;	==== (上昇無効に関わらず安全装置が遮光で下降中なら停止) =====
+	MOV.L	#_SFTY_IN_DAT,R1		;(安全装置有効/無効後の入力)
+	MOV.W	@R1,R0				;
+	TST	#(BIT1+BIT0),R0			;
+	TST_BIT_OF SFTY_MOV_PLSCHK_200		;通光:REFLASH
+
+
+	MOV.L	#_SFTYCHK_CLANK_DEG,R3		;前回までの最上昇値
+	MOV.W	@R3,R4				;
+
+;	-----遮光中---------
+	MOV.W	#D'1800,R0			;
+	CMP/HS	R2,R0				;PV(R2)=<1800(R0)
+	BT	SFTY_MOV_PLSCHK_050		;右半球：増加で下降	
+
+;180~360:左半球：減少＝下降
+	SUB	R4,R2				;(今回－前回までの最上昇値)
+	CMP/PZ	R2				;
+	BT	SFTY_MOV_PLSCHK_200		;増加:上昇中:更新
+	NEG	R2,R2
+	M_BRA	SFTY_MOV_PLSCHK_100		;
+
+
+SFTY_MOV_PLSCHK_050
+
+;180~360:右半球：増加＝下降
+	SUB	R4,R2				;(今回－前回までの最上昇値)
+	CMP/PZ	R2				;
+	BF	SFTY_MOV_PLSCHK_200		;減少:上昇中:更新
+SFTY_MOV_PLSCHK_100:
+
+	MOV.L	#(_PAR_PLSSFTY_LNG1-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+	MOV.W	@R1,R4							;
+	TST	R4,R4							;R4=0 異常検知しない
+	TST_BIT_OF SFTY_MOV_PLSCHK_200					;
+
+	CMP/HI	R4,R2							;R4(SYS異常距離)<R2
+	BF	SFTY_MOV_PLSCHK_300					;SYS>=PV 正常<様子見状態>
+
+;	======= EXQ ERR ======
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB204,R5				;
+	MOV.W	@R5,R1							;
+	MOV.W	#BIT6,R0						;
+	OR	R0,R1							;
+	MOV.W	R1,@R5							;通常の遮光でもある
+
+	MOV.W	#H'2046,R4						;
+	FAR_JSR	#_SFTY_STOP,R0						;
+	M_BRA	SFTY_MOV_PLSCHK_300					;
+
+;	==============
+;	=== ﾘﾌﾚｯｼｭ ===
+;	==============
+SFTY_MOV_PLSCHK_200:					;
+
+	MOV.L	#_LINK_CLANK_PV,R1			;[まだパルスには変更できない]
+	MOV.W	@R1,R2					;ｸﾗﾝｸ角度(毎ｽｷｬﾝ1msecでINC_ENC360から更新)
+	MOV.L	#_SFTYCHK_CLANK_DEG,R3			;
+	MOV.W	R2,@R3					;
+
+SFTY_MOV_PLSCHK_300:					;
+
+	SUB_END
+	M_RTS
+
+
+
+;;;;;	---[K20150714]--- 0.1度→ﾊﾟﾙｽ
+;;;;;	MOV.L	#_INC_LINK_NOWROT_OFSPLS_P,R1		;[[[実測 1REV PLS]]]
+;;;;;	MOV.L	@R1,R2					;ｸﾗﾝｸ角度(毎ｽｷｬﾝ1msecでINC_ENC360から更新)
+;;;;;	MOV.L	#_SFTYCHK_LINK_PLS,R3			;
+;;;;;	MOV.L	R2,@R3					;
+;;;;;	---[K20150714]--- 0.1度→ﾊﾟﾙｽ
+;;;;;	MOV.L	#_INC_LINK_NOWROT_OFSPLS_P,R1		;[[[実測 1REV PLS]]]
+;;;;;	MOV.L	@R1,R2					;ｸﾗﾝｸ角度(毎ｽｷｬﾝ1msecでINC_ENC360から更新)
+;;;;;	MOV.L	#_SFTYCHK_LINK_PLS,R3			;
+;;;;;	MOV.L	R2,@R3					;
+;;;;;	MOV.L	#_LINK_1ROT_PLS,R1				;
+;;;;;	MOV.L	@R1,R4						;
+
+
+;	***************************************************
+;	***						***
+;	***	2015-07-14				***
+;	***	[4:停止異常]				***
+;	***						***
+;	***************************************************
+;	モーション運転の[待機点停止]
+;	・パルス出力停止時のエンコーダ値と指令方向を記録
+;	  CPUC:自分の出力停止
+;	  CPUA:自分＋CPUCの出力停止
+;	  CPUB:自分＋CPUCの出力停止
+;	S4b	PLSOUTEND_PVPLS[2];	//
+;	S2b	PLSOUTEND_SHIN;		//
+;	S2b	PLSOUTEND_FLG;		//BIT6=1:停止監視状態 (BIT0=1:払出有)
+;	[同期合わせ中の回避]
+_PLSOUTEND_ERR_CHK:
+	SUB_START
+
+
+	FAR_JSR	#_PLS_OUT_STOP_CHK,R0
+	TST	R0,R0				;
+	TST_BIT_ON PLSOUTEND_ERRCHK_POUT	;ﾊﾟﾙｽ出力中
+
+	MOV.L	#_PLSOUTEND_FLG,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT1,R0			;
+	TST_BIT_ON PLSOUTEND_ERRCHK_100		;監視中：時間払出待ち
+
+	TST	#BIT0,R0			;
+	TST_BIT_OF PLSOUTEND_ERRCHK_END		;払出記録無し
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_PLSOUTEND_FLG,LG=W,BIT=BIT1,WKREG=R1	;
+	M_BRA	PLSOUTEND_ERRCHK_END			;
+
+;	-----------払出停止--------------------
+PLSOUTEND_ERRCHK_100:
+
+	MOV.L	#_LINK_PV_ABSPLS,R3			;
+	MOV.L	#_PLSOUTEND_PVPLS,R4			;
+	MOV.L	#_PLSOUTEND_SHIN,R1			;_POSLSI_DRIV_SHIN
+	MOV.W	@R1,R0					;
+	TST	#BIT0,R0				;
+	TST_BIT_OF PLSOUTEND_ERRCHK_150			;正転
+	MOV	R3,R0					;
+	MOV	R4,R3					;
+	MOV	R0,R4					;
+PLSOUTEND_ERRCHK_150:
+	MOV.L	@R3+,R1					;
+	MOV.L	@R3,R2					;
+	MOV.L	@R4+,R5					;
+	MOV.L	@R4,R6					;R5,R6[記憶値]-R1,R2[現在位置]=R5,R6
+
+	SUB8B DT_REGH=R1,DT_REGL=R2,DT_ANS_REGH=R5,DT_ANS_REGL=R6	;R5,R6-R1,R2=R5,R6
+	CMP/PZ	R5							;
+	BF	PLSOUTEND_ERRCHK_END					;R5<0 現在値の方が大きいから問題ない
+
+;記憶値-現在値 >0 戻った：戻った量が
+
+	MOV.L	#(_PAR_STOPERR2_PLS-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;
+	MOV.W	@R1,R2							;
+	TST	R2,R2							;
+	TST_BIT_OF PLSOUTEND_ERRCHK_OK					;
+
+	TST	R5,R5							;
+	TST_BIT_ON PLSOUTEND_ERRCHK_ERR					;4BYTEを超えた
+
+	CMP/HI	R6,R2							;R6<R2[閾値]
+	BT	PLSOUTEND_ERRCHK_OK		;
+PLSOUTEND_ERRCHK_ERR:
+
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB218,LG=W,BIT=(BIT8),WKRG1=R1,WKRG2=R4	;
+	MOV.W	#H'2188,R4			;
+	FAR_JSR	#_EMG_STOP,R0			;
+	M_BRA	PLSOUTEND_ERRCHK_END
+
+PLSOUTEND_ERRCHK_OK:
+	M_BRA	PLSOUTEND_ERRCHK_END
+
+
+;	---------- ﾊﾟﾙｽ出力中-----------------
+PLSOUTEND_ERRCHK_POUT:
+
+	MOV.L	#_MODE_SEL,R1			;寸動・安全一工程・連続・OPT
+	MOV.W	@R1,R0				;
+	TST	#(_W1DUP+_W1DIC),R0		;
+	TST_BIT_ON PLSOUTEND_ERRCHK_STOP	;原点復帰,段取寸動
+
+	MOV.L	#_INT_POS_CTL_STEP,R1		;//内部制御工程1~11
+	MOV.W	@R1,R0				;
+	MOV.L	#_CPOS_STEP_MAX,R1		;
+	MOV.W	@R1,R1				;
+	ADD	#1,R1				;設定+1(帰りも1ｽﾃｯﾌﾟ)
+	CMP/EQ	R1,R0				;
+	BF	PLSOUTEND_ERRCHK_STOP		;最終行程ではない
+
+	MOV.B	#BIT0,R0			;
+	MOV.L	#_PLSOUTEND_FLG,R1		;//BIT6=1:停止監視状態 (BIT0=1:払出有)
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_POSLSI_DRIV_SHIN,R1		;//BIT0
+	MOV.W	@R1,R0				;
+	MOV.L	#_PLSOUTEND_SHIN,R1		;
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_LINK_PV_ABSPLS,R3			;
+	MOV.L	@R3+,R1					;
+	MOV.L	@R3,R2					;
+	MOV.L	#_PLSOUTEND_PVPLS,R4			;
+	MOV.L	R1,@R4					;
+	MOV.L	R2,@(4,R4)				;
+
+	M_BRA	PLSOUTEND_ERRCHK_END	;
+
+
+
+;	---------- 非常停止中,急停止,払出中-----------------
+PLSOUTEND_ERRCHK_STOP:
+	FAR_JSR	#_PLSOUTEND_ERR_FLGCLR,R0
+
+PLSOUTEND_ERRCHK_END:
+	SUB_END
+	M_RTS
+
+_PLSOUTEND_ERR_FLGCLR:
+	SUB_START
+	XOR	R0,R0
+	MOV.L	#_PLSOUTEND_FLG,R1	;//BIT6=1:停止監視状態 (BIT0=1:払出有)
+	MOV.W	R0,@R1			;
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***	確実なﾊﾟﾙｽ停止中		***
+;	***	2015-07-14			***
+;	***					***
+;	*******************************************
+;	R0=0:ﾊﾟﾙｽ停止中(これは確実) R0=1:ﾊﾟﾙｽ払出中(だれかが)
+
+	.IMPORT	_CPUA_PLS_OUTF	
+
+_PLS_OUT_STOP_CHK:
+	SUB_START
+
+	MOV.L	#_PLS_OUTPUT_FLG,R1		;//0払い出し停止 1払出中
+	MOV.W	@R1,R0				;自分払出中
+	TST	R0,R0
+	TST_BIT_ON PLS_OUT_STOPCHK_PLSON	;
+
+;相手CPU
+ .AIF	_CB_CPU_SEL EQ	_CB_CPUA	;
+	XOR	R0,R0			;CPUAはCPUBの情報は不要
+ .AELSE
+	MOV.L	#_CPUA_PLS_OUTF,R1	;
+	MOV.W	@R1,R0			;
+ .AENDI
+ 	TST	R0,R0				;
+ 	TST_BIT_ON PLS_OUT_STOPCHK_PLSON	;
+	M_BRA	PLS_OUT_STOPCHK_PLSOF		;
+
+PLS_OUT_STOPCHK_PLSON
+	MOV.B	#1,R0
+	M_BRA	PLS_OUT_STOPCHK_PLSEND
+PLS_OUT_STOPCHK_PLSOF				;
+	XOR	R0,R0				;
+PLS_OUT_STOPCHK_PLSEND
+
+
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***	2015-07-14				***
+;	***	安一	上昇ホールド後逆転異常		***
+;	***						***
+;	***************************************************
+;	U2b	REV_ERR_FLG;		//BIT0=1:上昇ﾎｰﾙﾄﾞにて起動
+;					//BIT1=1:ｲﾝﾎﾟｼﾞｼｮﾝに入った
+;					//BIT4=0(正)/1(逆) 方向
+;	U4b	REV_ERR_LT_PGPOS[2];	//
+;	EMG,EXQ,SELFは上で見ている
+;
+_SFTY_HOLD_REV_ERR
+	SUB_START
+
+	MOV.L	#(_PAR_HLDRVER_SEL-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;PNO.365
+	MOV.W	@R1,R0							;
+	TST	R0,R0
+	TST_BIT_OF SFTY_HOLD_REVERR_099	;
+
+
+	MOV.L	#_UP_HOLD_DIG,R4			;//0.1度(165.0):ﾓｰﾀ軸ｴﾝｺｰﾀﾞ角度で比較
+	MOV.W	@R4,R1					;
+	MOV.L	#_INC_ENC360,R4				;
+	MOV.W	@R4,R2					;R1(開始～終了)~R3の範囲か？
+	MOV.L	#_SETX_HOLD_CMP1_DEG,R4			;195(180-165+180)
+	MOV.W	@R4,R3					;
+	FAR_JSR	#_DIG_AREA_CHK0,R0			;(ON範囲) R1(開始170度)~R3(終了190度)
+	TST	R0,R0					;
+	TST_BIT_ON SFTY_HOLD_REVERR_099			;この角度内は許容する角度
+
+	MOV.L	#_dq1_cb_out1,R1		;//+0:制御出力(203)
+	MOV.W	@R1,R0				;
+	MOV.W	#_WOVN1,R2			;
+	TST	R2,R0				;
+	TST_BIT_OF SFTY_HOLD_REVERR_099		;ﾌﾞﾚｰｷ開放作動状態? NO![EXQ,EMGも含むでいいでしょう!]
+
+	MOV.W	#_WOATO,R2
+	TST	R2,R0				;
+	TST_BIT_OF SFTY_HOLD_REVERR_099		;
+
+
+	MOV.L	#_MODE_SEL,R1			;
+	MOV.W	@R1,R0				;
+	TST	#_W1SGL,R0			;
+	TST_BIT_OF SFTY_HOLD_REVERR_099
+
+	MOV.L	#_UP_HOLD_FLG,R1		;上昇ﾎｰﾙﾄﾞ状態(自動可能状態):ﾓｰｼｮﾝﾓｰﾄﾞでこの信号はON/OFFする
+	MOV.W	@R1,R0				;
+	TST	#(BIT1+BIT0),R0			;BIT0:上昇ﾎｰﾙﾄﾞ BIT1:ﾐｭｰﾃﾝｸﾞ
+	TST_BIT_OF SFTY_HOLD_REVERR_099		;EXIT
+
+
+	MOV.L	#_REV_ERR_FLG,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON SFTY_HOLD_REVERR_200		;異常検知開始
+
+
+
+
+
+;	--------- 実測位置記憶-------------
+	MOV.L	#_LINK_PV_ABSPLS,R4		;
+	MOV.L	@R4+,R5				;
+	MOV.L	@R4,R6				;
+	MOV.L	#_REV_ERR_LT_PGPOS,R0		;
+	MOV.L	R5,@R0				;
+	MOV.L	R6,@(4,R0)			;
+
+	MOV.L	#_SETX_POS_CTL_MATH,R1		;
+	MOV.W	@R1,R0				;
+	TST	#_DMATH_CNTROT,R0		;回転
+	TST_BIT_ON SFTY_HOLD_REVERR_070		;増加方向
+
+	TST	#_DMATH_DNDRIV,R0		;ふりこ
+	TST_BIT_OF SFTY_HOLD_REVERR_050		;NO! 反転
+;	ふりこ
+	MOV.L	#_DNM_DIR_NOW_FLG,R1		;//
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_OF SFTY_HOLD_REVERR_070		;
+
+;	--------- 反転またはふりこの復路[逆]---------
+SFTY_HOLD_REVERR_050
+	FAR_JSR	#_SFTY_NEARZER_M_MAK,R0		;SV+ｲﾝﾎﾟｼﾞ
+	MOV.B	#(BIT4+BIT0),R0			;[反転]逆転方向
+	M_BRA	SFTY_HOLD_REVERR_080		;
+
+;	--------- 回転またはふりこの往路[正]---------
+SFTY_HOLD_REVERR_070
+	FAR_JSR	#_SFTY_NEARZER_P_MAK,R0		;SV-ｲﾝﾎﾟｼﾞ
+	MOV.B	#BIT0,R0			;
+SFTY_HOLD_REVERR_080
+	MOV.L	#_REV_ERR_FLG,R1		;
+	MOV.W	R0,@R1				;
+	M_BRA	SFTY_HOLD_REVERR_EXT		;
+
+
+;	------------- EXIT
+SFTY_HOLD_REVERR_090
+	M_BRA	SFTY_HOLD_REVERR_EXT	
+;	------------- 未実施条件--------
+SFTY_HOLD_REVERR_099
+	M_BRA	SFTY_HOLD_REVERR_EXTCLR	
+
+
+SFTY_HOLD_REVERR_200
+	MOV.L	#_REV_ERR_FLG,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT1,R0			;
+	TST_BIT_ON SFTY_HOLD_REVERR_300		;
+
+	TST	#BIT4,R0			;FWD?
+	TST_BIT_ON SFTY_HOLD_REVERR_220		;REV
+;	-------[+ｲﾝﾎﾟｼﾞｼｮﾝﾁｪｯｸ]-----------
+	FAR_JSR	#_SFTY_NEARZER_P_CHK,R0		;ANS R0=0 R0=1(INP)
+	M_BRA	SFTY_HOLD_REVERR_230
+
+SFTY_HOLD_REVERR_220
+;	-------[-ｲﾝﾎﾟｼﾞｼｮﾝﾁｪｯｸ]-----------
+	FAR_JSR	#_SFTY_NEARZER_M_CHK,R0		;ANS R0=0 R0=1(INP)
+SFTY_HOLD_REVERR_230
+
+	TST	R0,R0							;
+	TST_BIT_OF SFTY_HOLD_REVERR_300					;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_REV_ERR_FLG,LG=W,BIT=BIT1,WKREG=R1	;
+
+	MOV.L	#_REV_ERR_LT_SVPOS,R4		;
+	MOV.L	@R4+,R1				;
+	MOV.L	@R4,R2				;
+	MOV.L	#_REV_ERR_LT_PGPOS,R4		;もう位置更新しない
+	MOV.L	R1,@R4				;
+	MOV.L	R2,@(4,R4)			;
+
+SFTY_HOLD_REVERR_300
+;	-------[比較]---------------------
+	MOV.L	#_REV_ERR_FLG,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT4,R0			;
+	TST_BIT_ON SFTY_HOLD_REVERR_350		;
+
+	FAR_JSR	#_SFTY_ERRCHK_P_CHK,R0
+
+	TST	R0,R0				;
+	TST_BIT_ON SFTY_HOLD_REVERR_ERRON	;
+	M_BRA	SFTY_HOLD_REVERR_EXT		;
+
+SFTY_HOLD_REVERR_350:
+
+	FAR_JSR	#_SFTY_ERRCHK_M_CHK,R0
+	TST	R0,R0				;
+	TST_BIT_ON SFTY_HOLD_REVERR_ERRON	;
+	M_BRA	SFTY_HOLD_REVERR_EXT		;
+
+SFTY_HOLD_REVERR_ERRON:
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB218,LG=W,BIT=(BIT9),WKRG1=R1,WKRG2=R4	;
+	MOV.W	#H'2189,R4			;414.9
+	FAR_JSR	#_EMG_STOP,R0			;
+
+SFTY_HOLD_REVERR_EXTCLR:
+	FAR_JSR	#_SFTY_HOLD_REVERR_CLR,R0	;
+
+SFTY_HOLD_REVERR_EXT
+	SUB_END
+	M_RTS
+
+_SFTY_HOLD_REVERR_CLR			;
+	SUB_START			;
+	XOR	R0,R0			;
+	MOV.L	#_REV_ERR_FLG,R1	;		//BIT0=1:上昇ﾎｰﾙﾄﾞにて起動
+	MOV.W	R0,@R1			;
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+_SFTY_NEARZER_P_MAK
+	SUB_START
+
+	MOV.L	#_LINK_SV_OBJ_ABSPLS,R4				;LINKX_SV_OBJ_ABSPLSの場合があるかも
+	MOV.L	@R4+,R1						;
+	MOV.L	@R4,R2						;停止目標位置
+
+	XOR	R5,R5
+	MOV.L	#_SET1_OBJARA_INPXPLS,R4				;
+	MOV.W	@R4,R6							;
+	EXTU.W	R6,R6							;
+	ADD	#1,R6							;
+	SUB8B DT_REGH=R5,DT_REGL=R6,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;R1,R2-R5,R6=R1,R2
+
+	MOV.L	#_REV_ERR_LT_SVPOS,R4		;
+	MOV.L	R1,@R4				;
+	MOV.L	R2,@(4,R4)			;
+
+	SUB_END
+	M_RTS
+
+_SFTY_NEARZER_M_MAK
+	SUB_START
+
+	MOV.L	#_LINK_SV_OBJ_ABSPLS,R4				;LINKX_SV_OBJ_ABSPLSの場合があるかも
+	MOV.L	@R4+,R1						;
+	MOV.L	@R4,R2						;停止目標位置
+
+	XOR	R5,R5
+	MOV.L	#_SET1_OBJARA_INPXPLS,R4				;
+	MOV.W	@R4,R6							;
+	EXTU.W	R6,R6							;
+	ADD	#1,R6							;
+	ADD8B DT_REGH=R5,DT_REGL=R6,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;R1,R2+R5,R6=R1,R2
+
+	MOV.L	#_REV_ERR_LT_SVPOS,R4		;
+	MOV.L	R1,@R4				;
+	MOV.L	R2,@(4,R4)			;
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+_SFTY_NEARZER_M_CHK
+	SUB_START
+
+	MOV.L	#_REV_ERR_LT_SVPOS,R4		;
+	MOV.L	@R4,R5				;
+	MOV.L	@(4,R4),R6			;
+
+	MOV.L	#_LINK_PV_ABSPLS,R4					;
+	MOV.L	@R4+,R1							;
+	MOV.L	@R4,R2							;
+	M_BRA	SFTY_NEARZER_PMCHK_COM	;
+
+_SFTY_NEARZER_P_CHK
+	SUB_START
+
+	MOV.L	#_REV_ERR_LT_SVPOS,R4		;
+	MOV.L	@R4,R1				;
+	MOV.L	@(4,R4),R2			;
+
+	MOV.L	#_LINK_PV_ABSPLS,R4					;
+	MOV.L	@R4+,R5							;
+	MOV.L	@R4,R6							;
+
+SFTY_NEARZER_PMCHK_COM
+
+	SUB8B DT_REGH=R5,DT_REGL=R6,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;R1,R2-R5,R6=R1,R2
+
+	XOR	R0,R0							;
+	CMP/PZ	R1							;
+	BT	SFTY_NEARZER_PMCHK_EXT					;
+
+	MOV.B	#BIT0,R0						;ｲﾝﾎﾟｼﾞｼｮﾝを進行方向で超えた
+
+SFTY_NEARZER_PMCHK_EXT
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+_SFTY_ERRCHK_M_CHK
+	SUB_START
+	MOV.L	#_REV_ERR_LT_PGPOS,R7					;
+	MOV.L	@R7,R5							;
+	MOV.L	@(4,R7),R6						;
+
+	MOV.L	#_LINK_PV_ABSPLS,R4					;
+	MOV.L	@R4+,R1							;
+	MOV.L	@R4,R2							;
+	M_BRA	SFTY_ERRCHK_PM_COM
+
+
+_SFTY_ERRCHK_P_CHK
+	SUB_START
+	MOV.L	#_REV_ERR_LT_PGPOS,R7					;
+	MOV.L	@R7,R1							;
+	MOV.L	@(4,R7),R2						;
+
+	MOV.L	#_LINK_PV_ABSPLS,R4					;
+	MOV.L	@R4+,R5							;
+	MOV.L	@R4,R6							;
+
+SFTY_ERRCHK_PM_COM:
+
+	SUB8B DT_REGH=R5,DT_REGL=R6,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;R1,R2-R5,R6=R1,R2
+
+	XOR	R0,R0							;
+	CMP/PZ	R1							;
+	BF	SFTY_ERRCHK_PMCHK100					;"-"THEN 増加した OK! 更新
+	OR	R1,R2							;
+	TST	R2,R2							;R1=R2=0以外は異常
+	TST_BIT_OF SFTY_ERRCHK_PMCHKEXT					;動かなかった
+	MOV.B	#BIT0,R0						;異常
+	M_BRA	SFTY_ERRCHK_PMCHKEXT					;
+
+;	------- 正常--------
+SFTY_ERRCHK_PMCHK100
+	MOV.L	#_REV_ERR_FLG,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT1,R0			;
+	TST_BIT_ON SFTY_ERRCHK_PMCHK150		;更新しない
+
+
+	MOV.L	#_LINK_PV_ABSPLS,R4		;
+	MOV.L	@R4+,R5				;
+	MOV.L	@R4,R6				;
+
+	MOV.L	R5,@R7				;
+	MOV.L	R6,@(4,R7)			;
+
+SFTY_ERRCHK_PMCHK150
+	XOR	R0,R0				;
+SFTY_ERRCHK_PMCHKEXT
+	SUB_END
+	M_RTS
+
+;==========================================================================
+
+
+
+;	*******************************************
+;	***					***
+;	***	2016-10-31(2016-06-21)		***
+;	***	デバック　行程異常		***
+;	***					***
+;	*******************************************
+;	214.11
+;	CPUA検知	CPUAが起動中でCPUA=1,CPUB=4
+;	CPUB検知	CPUBが起動中でCPUA=4,CPUB=1
+;
+
+	.IMPORT	_CPUA_SV_STEP
+	.IMPORT	_CPUB_SV_STEP
+
+;;;_PROC_CMPERR_CHG2016
+
+_DBG_CPUAB_STEP_CMPERR1
+	SUB_START
+
+
+	FAR_JSR	#_API_WDT_DEBUG_USEFUL,R0	;
+	TST	R0,R0				;
+	TST_BIT_OF CPUAB_STEP_CPER1_EXT		;ﾃﾞﾊﾞｯｸ以外ではこの異常は検知しない
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_CPUB_SV_STEP,R6		;CPUB->CPUA
+	.AELSE
+	MOV.L	#_CPUA_SV_STEP,R6		;
+	.AENDI
+
+	MOV.L	#_SV_POS_CTL_STEP,R5		;
+	MOV.W	@R5,R0				;自分
+	CMP/EQ	#1,R0				;
+	BT	CPUAB_STEP_CPER1_050		;YES
+	CMP/EQ	#2,R0				;
+	BT	CPUAB_STEP_CPER1_050		;YES
+	M_BRA	CPUAB_STEP_CPER1_200		;
+
+CPUAB_STEP_CPER1_050				;
+	MOV.L	#_CPOS_STEP_MAX,R4		;
+	MOV.W	@R4,R0				;
+	ADD	#1,R0				;
+	MOV.W	@R6,R2				;相手CPUB 最終行程
+	CMP/EQ	R0,R2				;
+	BF	CPUAB_STEP_CPER1_200		;
+
+	MOV.L	#_DRV_ACT_FLG,R1		;//運転動作ﾌﾗｸﾞ BIT0:運転中
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_OF CPUAB_STEP_CPER1_200		;
+
+	MOV.L	#_STEP_CMPERR_TIMX1,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF CPUAB_STEP_CPER1_100		;ERR
+	ADD	#-1,R0				;
+	MOV.W	R0,@R1				;
+	M_BRA	CPUAB_STEP_CPER1_EXT		;
+
+CPUAB_STEP_CPER1_100:
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB214),R1	;
+	MOV.W	@R1,R0				;
+	MOV.W	#(BIT11),R4			;二重回路異常
+	OR	R4,R0				;
+	MOV.W	R0,@R1				;
+	MOV.W	#H'214B,R4			;2016-06-21
+	FAR_JSR	#_EMG_STOP,R0			;
+
+
+CPUAB_STEP_CPER1_200:
+
+;;;;	MOV.W	#D'100,R0			;_PAR_MYUBRK_TIM2時間分は必要
+	MOV.W	#D'240,R0			;_PAR_MYUBRK_TIM2時間分は必要
+	MOV.L	#_STEP_CMPERR_TIMX1,R1		;
+	MOV.W	R0,@R1				;
+
+CPUAB_STEP_CPER1_EXT
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	saito				***
+;	***					***
+;	*******************************************
+;;;;場所が変でしょう		.INCLUDE	"ssa_wram.ext"		; 
+;;;;場所が変でしょう		.INCLUDE	"ssa_wrmy.ext"		; //
+;;;;場所が変でしょう		.INCLUDE	"ssa_erry.mac"		; //
+;;;;場所が変でしょう		.INCLUDE	"ssa_had1.equ"		; 
+;;;;場所が変でしょう		.INCLUDE	"ssa_seq1.equ"		;
+
+	.INCLUDE	"ssa_erry.inc"			; Y_SRC
+
+
+	.END

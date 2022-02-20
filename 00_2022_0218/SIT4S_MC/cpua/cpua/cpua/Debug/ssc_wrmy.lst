@@ -1,0 +1,906 @@
+SH SERIES C/C++ Compiler (V.9.04.01.002)                                                         12-Dec-2017 19:19:35  PAGE    1
+
+************ OBJECT LISTING ************
+
+FILE NAME: D:\SIT4S_MC\cpua\cpua\cb_src\Y_src\ssc_wrmy.c
+
+SCT OFFSET   CODE       C LABEL     INSTRUCTION OPERAND    COMMENT
+
+           ssc_wrmy.c          1    //    *******************************************
+           ssc_wrmy.c          2    //    ***                 ***
+           ssc_wrmy.c          3    //    *** ワークｒａｍ定義        ***
+           ssc_wrmy.c          4    //    ***                 ***
+           ssc_wrmy.c          5    //    *******************************************
+           ssc_wrmy.c          6    #include  "cm_equ1.h"
+            cm_equ1.h          1    /*    *********************************** */
+            cm_equ1.h          2    /*    ***     基本        *** */
+            cm_equ1.h          3    /*    *********************************** */
+            cm_equ1.h          4    #define   cBIT0   0x1 /* */
+            cm_equ1.h          5    #define   cBIT1   0x2 /* */
+            cm_equ1.h          6    #define   cBIT2   0x4 /* */
+            cm_equ1.h          7    #define   cBIT3   0x8 /* */
+            cm_equ1.h          8    #define   cBIT4   0x10    /* */
+            cm_equ1.h          9    #define   cBIT5   0x20    /* */
+            cm_equ1.h         10    #define   cBIT6   0x40    /* */
+            cm_equ1.h         11    #define   cBIT7   0x80    /* */
+            cm_equ1.h         12    #define   cBIT8   0x100   /* */
+            cm_equ1.h         13    #define   cBIT9   0x200   /* */
+            cm_equ1.h         14    #define   cBIT10  0x400   /* */
+            cm_equ1.h         15    #define   cBIT11  0x800   /* */
+            cm_equ1.h         16    #define   cBIT12  0x1000  /* */
+            cm_equ1.h         17    #define   cBIT13  0x2000  /* */
+            cm_equ1.h         18    #define   cBIT14  0x4000  /* */
+            cm_equ1.h         19    #define   cBIT15  0x8000  /* */
+            cm_equ1.h         20    
+            cm_equ1.h         21    //    *******************************************
+            cm_equ1.h         22    //    ***                 ***
+            cm_equ1.h         23    //    ***                 ***
+            cm_equ1.h         24    //    ***                 ***
+            cm_equ1.h         25    //    *******************************************
+            cm_equ1.h         26    //
+            cm_equ1.h         27    //    共通定義 型に意味のある場合下記を仕様する
+            cm_equ1.h         28    typedef unsigned char     Uchar;      //
+            cm_equ1.h         29    typedef unsigned short    Ushort;     //
+            cm_equ1.h         30    typedef unsigned int  Uint;       //
+            cm_equ1.h         31    typedef unsigned long Ulong;      //
+            cm_equ1.h         32    typedef signed char   Char;       //
+            cm_equ1.h         33    typedef signed short  Short;      //
+            cm_equ1.h         34    typedef signed int    Int;        //
+            cm_equ1.h         35    typedef signed long   Long;       //
+            cm_equ1.h         36    
+            cm_equ1.h         37    /*    共通定義 ﾊﾞｲﾄ長に意味のある場合下記を仕様する   */
+            cm_equ1.h         38    typedef unsigned char     U1b;        /*  u1b */
+            cm_equ1.h         39    typedef unsigned short    U2b;        /*  u2b */
+            cm_equ1.h         40    typedef unsigned long U4b;        /*  u4b */
+            cm_equ1.h         41    typedef signed char   S1b;        /*  s1b */
+            cm_equ1.h         42    typedef signed short  S2b;        /*  s2b */
+            cm_equ1.h         43    typedef signed long   S4b;        /*  s4b */
+            cm_equ1.h         44    
+            cm_equ1.h         45    /*    ============ 通常この記述を使用 =============   */
+            cm_equ1.h         46    //typedef signed char     BYTE;       /*  s1b */
+            cm_equ1.h         47    //typedef signed short    WORD;       /*  s2b */
+            cm_equ1.h         48    //typedef signed long DWORD;      /*  s4b */
+            cm_equ1.h         49    
+            cm_equ1.h         50    /*    *********************************** */
+            cm_equ1.h         51    /*    ***     sh3     *** */
+            cm_equ1.h         52    /*    *********************************** */
+            cm_equ1.h         53    /*    =================================   */
+            cm_equ1.h         54    #define       Debug_YES   1
+            cm_equ1.h         55    #define       Debug_NO    0
+            cm_equ1.h         56    #define       CMPILE_YES  1
+            cm_equ1.h         57    #define       CMPILE_NO   0
+            cm_equ1.h         58    
+            cm_equ1.h         59    #define       CB_STS_BUF_MAX      512     //128
+            cm_equ1.h         60    #define       CB_TRD_BUF_MAX      2048    //2048 total 2048確保
+            cm_equ1.h         61    #define       CB_TRD_SMP_CNT      128     //128個
+           ssc_wrmy.c          7    #include  "ssc_ver1.h"
+           ssc_ver1.h          1    //;   ***********************************
+           ssc_ver1.h          2    //;   ***                             ***
+           ssc_ver1.h          3    //;   *** SIT3/4のﾊｰﾄﾞ関係ｿｰｽ切分     ***
+           ssc_ver1.h          4    //;   ***                             ***
+           ssc_ver1.h          5    //;   ***********************************
+           ssc_ver1.h          6    #define       TYPE_SIT3       0
+           ssc_ver1.h          7    #define       TYPE_SIT4       1
+           ssc_ver1.h          8    #define       SIT_TYPE_SEL        TYPE_SIT4
+           ssc_ver1.h          9    //;;#define       SIT_TYPE_SEL        TYPE_SIT3
+           ssc_ver1.h         10    
+           ssc_ver1.h         11    //;   ***********************************
+           ssc_ver1.h         12    //;   ***                             ***
+           ssc_ver1.h         13    //;   *** C/Bのﾊｰﾄﾞ関係ｿｰｽ切分        ***
+           ssc_ver1.h         14    //;   ***                             ***
+           ssc_ver1.h         15    //;   ***********************************
+           ssc_ver1.h         16    #define       CB_CPUA     0
+           ssc_ver1.h         17    #define       CB_CPUB     1
+           ssc_ver1.h         18    #define       CB_CPU_SEL      CB_CPUA
+           ssc_ver1.h         19    //;;#define       CB_CPU_SEL      CB_CPUB
+           ssc_ver1.h         20    
+           ssc_ver1.h         21    #if 1
+           ssc_ver1.h         22  E   #if (1 == 0)
+           ssc_ver1.h         23 X  
+           ssc_ver1.h         24 X        #if (CB_CPU_SEL == CB_CPUA)
+           ssc_ver1.h         25 X  
+           ssc_ver1.h         26 X            #define SIT_CPU_SEL SIT3_CPUA
+           ssc_ver1.h         27 X  
+           ssc_ver1.h         28 X        #else
+           ssc_ver1.h         29 X  
+           ssc_ver1.h         30 X            #define SIT_CPU_SEL SIT3_CPUB
+           ssc_ver1.h         31 X  
+           ssc_ver1.h         32 X        #endif
+           ssc_ver1.h         33      #else
+           ssc_ver1.h         34  E       #if (0 == 0)
+           ssc_ver1.h         35    
+           ssc_ver1.h         36              #define SIT_CPU_SEL SIT4_CPUA
+           ssc_ver1.h         37    
+           ssc_ver1.h         38          #else
+           ssc_ver1.h         39 X  
+           ssc_ver1.h         40 X            #define SIT_CPU_SEL SIT4_CPUB
+           ssc_ver1.h         41 X  
+           ssc_ver1.h         42          #endif
+           ssc_ver1.h         43      #endif
+           ssc_ver1.h         44    #endif
+           ssc_ver1.h         45    
+           ssc_ver1.h         46    
+           ssc_ver1.h         47    
+           ssc_wrmy.c          8    
+           ssc_wrmy.c          9    #pragma section   wkram1  /* ｾｸｼｮﾝ=時はBwkram1 */
+           ssc_wrmy.c         10    S4b   saito_c_ram_top;
+           ssc_wrmy.c         11    
+           ssc_wrmy.c         12    
+           ssc_wrmy.c         13    U2b   TINT3_10MS_CNT;     //
+           ssc_wrmy.c         14    
+           ssc_wrmy.c         15    //    ***********************************
+           ssc_wrmy.c         16    //    *** 受信異常        ***
+           ssc_wrmy.c         17    //    ***********************************
+           ssc_wrmy.c         18    S2b   rcv2_err_hard_INTflg1;  // ﾊｰﾄﾞ異常
+           ssc_wrmy.c         19    S2b   rcv2_err_hard_INTflg2;  // ﾊｰﾄﾞ異常
+           ssc_wrmy.c         20    S2b   rcv2_err_hard_INTflg3;  // ﾊｰﾄﾞ異常
+           ssc_wrmy.c         21    S2b   rcv2_err_data_flg1; // ﾃﾞｰﾀ異常(未使用)
+           ssc_wrmy.c         22    S2b   rcv2_err_hard_sts1; // 詳細 異常内容
+           ssc_wrmy.c         23    S2b   rcv2_err_hard_sts2; // 詳細 異常内容
+           ssc_wrmy.c         24    S2b   rcv2_err_hard_sts3; // 
+           ssc_wrmy.c         25    S2b   rcv2_err_data_sts1; //(未使用)
+           ssc_wrmy.c         26    S2b   rcv2_err_OverRunCnt;    //
+           ssc_wrmy.c         27    S2b   rcv2_err_FRPRErrCnt;    //ﾌﾚｰﾑ・ﾊﾟﾘﾃｨ
+           ssc_wrmy.c         28    S2b   rcv2_err_elseErrCnt;    //ﾌﾚｰﾑ・ﾊﾟﾘﾃｨ
+           ssc_wrmy.c         29    
+           ssc_wrmy.c         30    //    ***********************************
+           ssc_wrmy.c         31    //    *** 正常受信        ***
+           ssc_wrmy.c         32    //    ***********************************
+           ssc_wrmy.c         33    S2b   rcv2_data_INcnt;//受信ﾃﾞｰﾀ数 受信ﾊﾞﾌｧ→個数
+           ssc_wrmy.c         34    S2b   rcv2_data_cnt;//処理すべきｶｳﾝﾀ数ﾘﾐｯﾄをかけたもんＰ
+           ssc_wrmy.c         35    //S1b rcv2_data_buf[32];
+           ssc_wrmy.c         36    S2b   rcv2_data_buf[32];//境界線を偶数にしておく
+           ssc_wrmy.c         37    
+           ssc_wrmy.c         38    //    ***********************************
+           ssc_wrmy.c         39    //    *** 送信            ***
+           ssc_wrmy.c         40    //    ***********************************
+           ssc_wrmy.c         41    //S1b send2_data_buf[32];
+           ssc_wrmy.c         42    S2b   send2_data_buf[32];//境界線は偶数にしておく
+           ssc_wrmy.c         43    //    ***********************************
+           ssc_wrmy.c         44    //    *** 送受信管理      ***
+           ssc_wrmy.c         45    //    ***********************************
+           ssc_wrmy.c         46    S2b   rcv2_event_flg; //main-->bit0=1  2ms:bit1(処理開始),bit7(完了)
+           ssc_wrmy.c         47    S2b   send2_event_flg;//main-->bit0=1  2ms:bit1(処理開始),bit7(完了)
+           ssc_wrmy.c         48    
+           ssc_wrmy.c         49    
+           ssc_wrmy.c         50    
+           ssc_wrmy.c         51    
+           ssc_wrmy.c         52    //    *** V_CTRLではDPRAMに定義していた ***
+           ssc_wrmy.c         53    S4b   PV1_SCRW_POS[4];            //;@使用sh->H8 ->表示   [回送有り1CH のみ]
+           ssc_wrmy.c         54    
+           ssc_wrmy.c         55    //    *** V_CTRLではWORKRAMに定義していた ***
+           ssc_wrmy.c         56    S4b   PV0_SCRW_POS[4];            //;
+           ssc_wrmy.c         57    
+           ssc_wrmy.c         58    
+           ssc_wrmy.c         59    //    ***********************************
+           ssc_wrmy.c         60    //    ***                             ***
+           ssc_wrmy.c         61    //    ***         2015-10-14          ***
+           ssc_wrmy.c         62    //    ***         X社用切替機能       ***
+           ssc_wrmy.c         63    //    ***                             ***
+           ssc_wrmy.c         64    //    ***********************************
+           ssc_wrmy.c         65    S2b   SND_RCV_CMD0;
+           ssc_wrmy.c         66    S2b   SND_RCV_CMD1;
+           ssc_wrmy.c         67    S2b   SND_RCV_CMDR;
+           ssc_wrmy.c         68    S2b   SND_RCV_INBUFCNT;
+           ssc_wrmy.c         69    
+           ssc_wrmy.c         70    S2b   CRC_ERR_CNT;
+           ssc_wrmy.c         71    
+           ssc_wrmy.c         72    
+           ssc_wrmy.c         73    //    *******************************************
+           ssc_wrmy.c         74    //    *** 異常関係のワークＲＡＭ      ***
+           ssc_wrmy.c         75    //    *******************************************
+           ssc_wrmy.c         76    
+           ssc_wrmy.c         77    U2b   ERR_CHK_OK_FLG;         //;異常処理開始ﾌﾗｸﾞ
+           ssc_wrmy.c         78    
+           ssc_wrmy.c         79    U2b   ER_SQRAM_WK1[12+8+10];  //
+           ssc_wrmy.c         80    U2b   ER_SQRAM_WK2[12+8+10];  //
+           ssc_wrmy.c         81    U2b   SH4_SQERRAM[12+8+10];   //
+           ssc_wrmy.c         82    U2b   DBG_ERRCHK_NASI[12+8+10];   // ﾁｪｯｸなし
+           ssc_wrmy.c         83    
+           ssc_wrmy.c         84    U2b   ER_SFTSW_CHG_OLD;   //
+           ssc_wrmy.c         85    
+           ssc_wrmy.c         86    U4b   FROM_SUMCHK_CODE;       // FROM SUM CODE
+           ssc_wrmy.c         87    
+           ssc_wrmy.c         88    
+           ssc_wrmy.c         89    U2b   SFTSW_ERR_TM;       //
+           ssc_wrmy.c         90    U2b   BTNER_ERR_TM;       //
+           ssc_wrmy.c         91    U2b   NCHSW_ERR_TM1;      //
+           ssc_wrmy.c         92    U2b   NCHSW_ERR_TM2;      //
+           ssc_wrmy.c         93    U2b   VLVER11_ERR_TM;     //
+           ssc_wrmy.c         94    U2b   VLVER12_ERR_TM;     //
+           ssc_wrmy.c         95    U2b   VLVER21_ERR_TM;     //
+           ssc_wrmy.c         96    U2b   VLVER22_ERR_TM;     //
+           ssc_wrmy.c         97    U2b   VLVER31_ERR_TM;     //
+           ssc_wrmy.c         98    U2b   VLVER32_ERR_TM;     //
+           ssc_wrmy.c         99    U2b   CMP2_ERR_TM2;       //
+           ssc_wrmy.c        100    U2b   FSFT_TRERR_TM;      //
+           ssc_wrmy.c        101    U2b   RSFT_TRERR_TM;      //
+           ssc_wrmy.c        102    
+           ssc_wrmy.c        103    
+           ssc_wrmy.c        104    
+           ssc_wrmy.c        105    U2b   WPAR1_SFTSWER_TM;   //
+           ssc_wrmy.c        106    U2b   WPAR1_BTNER_TM;     //
+           ssc_wrmy.c        107    U2b   WPAR1_MODSER_TM1;   //
+           ssc_wrmy.c        108    U2b   WPAR1_MODSER_TM2;   //
+           ssc_wrmy.c        109    U2b   WPAR1_VLVER11_TM1;  //
+           ssc_wrmy.c        110    U2b   WPAR1_VLVER12_TM1;  //
+           ssc_wrmy.c        111    U2b   WPAR1_VLVER21_TM1;  //
+           ssc_wrmy.c        112    U2b   WPAR1_VLVER22_TM1;  //
+           ssc_wrmy.c        113    U2b   WPAR1_VLVER31_TM1;  //
+           ssc_wrmy.c        114    U2b   WPAR1_VLVER32_TM1;  //
+           ssc_wrmy.c        115    U2b   WPAR1_CMPER2_TM;    //
+           ssc_wrmy.c        116    U2b   WPAR1_FSFTTRER_TM;  //
+           ssc_wrmy.c        117    U2b   WPAR1_RSFTTRER_TM;  //
+           ssc_wrmy.c        118    
+           ssc_wrmy.c        119    
+           ssc_wrmy.c        120    
+           ssc_wrmy.c        121    U2b   REMOTE_ERR_CHKTM;   //
+           ssc_wrmy.c        122    
+           ssc_wrmy.c        123    
+           ssc_wrmy.c        124    U2b ROM_SYSPAR_ERRADR;    //
+           ssc_wrmy.c        125    
+           ssc_wrmy.c        126    
+           ssc_wrmy.c        127    //    ***************************************************
+           ssc_wrmy.c        128    //    *** セルフチェック関係のワークＲＡＭ    ***
+           ssc_wrmy.c        129    //    ***************************************************
+           ssc_wrmy.c        130    U2b   SELF_CHK_FLG;       //;ｾﾙﾌﾁｪｯｸ中 CHECK
+           ssc_wrmy.c        131    U2b   SELF_ACT_FLG;       //;ｾﾙﾌﾁｪｯｸ中 CHECK
+           ssc_wrmy.c        132    
+           ssc_wrmy.c        133    U2b   SELF_HAND_FLG1;     //; 自分の状態ﾌﾗｸﾞ SRAM
+           ssc_wrmy.c        134    U2b   SELF_HAND_FLG2;     //; 相手の状態ﾌﾗｸﾞ SRAM
+           ssc_wrmy.c        135    
+           ssc_wrmy.c        136    U2b   SELF_FSTY_USE;      //;前安全装置チェックする・しない
+           ssc_wrmy.c        137    U2b   SELF_RSTY_USE;      //;後安全装置チェックする・しない
+           ssc_wrmy.c        138    
+           ssc_wrmy.c        139    U2b   SELF_CHK_TIMER;     //;セルフチェックタイマ
+           ssc_wrmy.c        140    
+           ssc_wrmy.c        141    
+           ssc_wrmy.c        142    //;   *** AD CONVERTER WORK RAM ***
+           ssc_wrmy.c        143    U2b   AD_CNV_DT0;         //; 8BIT A/D
+           ssc_wrmy.c        144    
+           ssc_wrmy.c        145    U2b   AD_BUFCNT;          // 移動平均ﾊﾞｯﾌｧｶｳﾝﾀ
+           ssc_wrmy.c        146    U2b   AD_AVG_BUF[8];      // 平均BAFTOP
+           ssc_wrmy.c        147    U4b   AD_AVG_TOTAL;       // ８回分のﾃﾞｰﾀ
+           ssc_wrmy.c        148    U2b   PV_AD_DATA;         // 移動平均とった後のAD DATA
+           ssc_wrmy.c        149    
+           ssc_wrmy.c        150    
+           ssc_wrmy.c        151    
+           ssc_wrmy.c        152    
+           ssc_wrmy.c        153    //    ***************************************
+           ssc_wrmy.c        154    //    *** 二重回路異常関係のワークＲＡＭ  ***
+           ssc_wrmy.c        155    //    ***************************************
+           ssc_wrmy.c        156    U2b   CPUN_2CMP_DATA;     // 相手ＣＰＵの比較データ
+           ssc_wrmy.c        157    U2b   CMP2_ERR_FIRST;     // 初めて二重回路異常発生
+           ssc_wrmy.c        158    
+           ssc_wrmy.c        159    U2b   CPUN_2CMP_LATCH2;   // 相手二重回路異常ﾃﾞｰﾀﾗｯﾁ
+           ssc_wrmy.c        160    U2b   CPUN_2CMP_LATCH1;   // 自分二重回路異常ﾃﾞｰﾀﾗｯﾁ
+           ssc_wrmy.c        161    
+           ssc_wrmy.c        162    
+           ssc_wrmy.c        163    
+           ssc_wrmy.c        164    
+           ssc_wrmy.c        165    
+           ssc_wrmy.c        166    
+           ssc_wrmy.c        167    //    *** 安全装置関係 ***
+           ssc_wrmy.c        168    
+           ssc_wrmy.c        169    U2b   FACT_IN_DATA;       //
+           ssc_wrmy.c        170    U2b   RACT_IN_DATA;       //
+           ssc_wrmy.c        171    U2b   FDEV_IN_DATA;       //
+           ssc_wrmy.c        172    U2b   RDEV_IN_DATA;       //
+           ssc_wrmy.c        173    
+           ssc_wrmy.c        174    
+           ssc_wrmy.c        175    //    小松追加 2002-12-17
+           ssc_wrmy.c        176    U2b   CPUBA_HD_INDT1;
+           ssc_wrmy.c        177    
+           ssc_wrmy.c        178    //    通信関連 2004-04-14
+           ssc_wrmy.c        179    S2b   WK_RCV_SCLSR2;//2004-04-12
+           ssc_wrmy.c        180    S2b   WK_RCV_SCFSR2;//2004-04-12
+           ssc_wrmy.c        181    S2b   WK_RCV_SCFDR2   ;//2004-04-12
+           ssc_wrmy.c        182    
+           ssc_wrmy.c        183    //    ===================
+           ssc_wrmy.c        184    //    ===             ===
+           ssc_wrmy.c        185    //    ===================
+           ssc_wrmy.c        186    //    === 2004-04-14 ====
+           ssc_wrmy.c        187    S2b   IN_RNA_REF_ERR_FLG1;//BIT0,BIT1,BIT2(HARD),BIT3CMD,BIT4(RNA-SYS),BIT5(RNA-FORM),,
+           ssc_wrmy.c        188    S2b   IN_RNA_REF_ERR_FLG2;//BIT0~BIT7 ALM.BIT8
+           ssc_wrmy.c        189    S2b   RNA_REF_ERR_FLG1;//BIT0,BIT1,BIT2(HARD),BIT3CMD,BIT4(RNA-SYS),BIT5(RNA-FORM),,
+           ssc_wrmy.c        190    S2b   RNA_REF_ERR_FLG2;//BIT0~BIT7 ALM.BIT8
+           ssc_wrmy.c        191    S2b   LT_RNA_REF_ERR_FLG1;//BIT0,BIT1,BIT2(HARD),BIT3CMD,BIT4(RNA-SYS),BIT5(RNA-FORM),,
+           ssc_wrmy.c        192    S2b   LT_RNA_REF_ERR_FLG2;//BIT0~BIT7 ALM.BIT8
+           ssc_wrmy.c        193    
+           ssc_wrmy.c        194    S2b   RNA_CMD_VERIFY_CNT;//00,01以外が発生
+           ssc_wrmy.c        195    S2b   RNA_CMD_VERIFY_DAT;//異常時の最新ﾃﾞｰﾀ
+           ssc_wrmy.c        196    S2b   RNA_STS_SYSERR_CNT;//BIT0=1
+           ssc_wrmy.c        197    S2b   RNA_STS_REQERR_CNT;//BIT2=1
+           ssc_wrmy.c        198    S2b   RNA_STS_ERR_DAT;//異常時の最新ﾃﾞｰﾀ
+           ssc_wrmy.c        199    S2b   RNA_ALM_BIT0_CNT;//
+           ssc_wrmy.c        200    S2b   RNA_ALM_BIT1_CNT;//
+           ssc_wrmy.c        201    S2b   RNA_ALM_BIT2_CNT;//
+           ssc_wrmy.c        202    S2b   RNA_ALM_BIT3_CNT;//
+           ssc_wrmy.c        203    S2b   RNA_ALM_BIT4_CNT;//
+           ssc_wrmy.c        204    S2b   RNA_ALM_BIT5_CNT;//
+           ssc_wrmy.c        205    S2b   RNA_ALM_BIT6_CNT;//
+           ssc_wrmy.c        206    S2b   RNA_ALM_BIT7_CNT;//
+           ssc_wrmy.c        207    S2b   RNA_ALM_CNT;//
+           ssc_wrmy.c        208    S2b   RNA_ALM_DAT;//
+           ssc_wrmy.c        209    S2b   RNA_REF1_CNT;//処理が正常に動作しているか
+           ssc_wrmy.c        210    S2b   RNA_REF2_CNT;//処理が正常に動作しているか
+           ssc_wrmy.c        211    
+           ssc_wrmy.c        212    S2b   RNA_CRC_ERR_CNT;
+           ssc_wrmy.c        213    S2b   RNA_CRC_ERR_DAT;//CNCの演算値
+           ssc_wrmy.c        214    S2b   RNA_CRC_CAL_DAT;//自分の演算値
+           ssc_wrmy.c        215    S2b   RNA_ERR_FLAME_BUF1[16];//CRC異常時のﾌﾚｰﾑ
+           ssc_wrmy.c        216    S2b   RNA_ERR_FLAME_BUF2[16];//
+           ssc_wrmy.c        217    S2b   RNA_ERR_FLAME_BUF3[16];//
+           ssc_wrmy.c        218    
+           ssc_wrmy.c        219    
+           ssc_wrmy.c        220    U2b   DSET_SW_FLG;
+           ssc_wrmy.c        221    
+           ssc_wrmy.c        222    
+           ssc_wrmy.c        223    
+           ssc_wrmy.c        224    //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+           ssc_wrmy.c        225    //    *******************************************
+           ssc_wrmy.c        226    //    ***                                     ***
+           ssc_wrmy.c        227    //    ***     ＣＰＵＢ側ワークｒａｍ定義      ***
+           ssc_wrmy.c        228    //    ***                                     ***
+           ssc_wrmy.c        229    //    *******************************************
+           ssc_wrmy.c        230    
+           ssc_wrmy.c        231    // 2013-08-20 U2b SQ_CBWK_TOP[70];        //
+           ssc_wrmy.c        232    U2b   CPUA_EMG_IN_FLG;        //
+           ssc_wrmy.c        233    
+           ssc_wrmy.c        234    
+           ssc_wrmy.c        235    
+           ssc_wrmy.c        236    //    *******************************************
+           ssc_wrmy.c        237    //    *** 入力関係のワークＲＡＭ      ***
+           ssc_wrmy.c        238    //    *******************************************
+           ssc_wrmy.c        239    
+           ssc_wrmy.c        240    //;   *** INP1 PORT ***
+           ssc_wrmy.c        241    U2b   REAL_INP1_DATA;         //; 今回値  
+           ssc_wrmy.c        242    U2b   REAL_INP1_DT_OLD1;      //; 1回前       
+           ssc_wrmy.c        243    U2b   REAL_INP1_DT_OLD2;      //; 2回前       
+           ssc_wrmy.c        244    
+           ssc_wrmy.c        245    //;   *** PB PORT ***
+           ssc_wrmy.c        246    U2b   PB_PORT_CTL_DATA;       //; 今回値  
+           ssc_wrmy.c        247    U2b   PB_INDT_OLD1;           //; 1回前       
+           ssc_wrmy.c        248    U2b   PB_INDT_OLD2;           //; 2回前       
+           ssc_wrmy.c        249    
+           ssc_wrmy.c        250    //;   *** PJ PORT ***
+           ssc_wrmy.c        251    U2b   PJ_PORT_CTL_DATA;       //; 今回値  
+           ssc_wrmy.c        252    U2b   PJ_INDT_OLD1;           //; 1回前       
+           ssc_wrmy.c        253    U2b   PJ_INDT_OLD2;           //; 2回前       
+           ssc_wrmy.c        254    
+           ssc_wrmy.c        255    //;   *** PK PORT ***
+           ssc_wrmy.c        256    U2b   PK_PORT_CTL_DATA;       //; 今回値  
+           ssc_wrmy.c        257    U2b   PK_INDT_OLD1;           //; 1回前       
+           ssc_wrmy.c        258    U2b   PK_INDT_OLD2;           //; 2回前       
+           ssc_wrmy.c        259    
+           ssc_wrmy.c        260    //;   *** PL PORT ***
+           ssc_wrmy.c        261    U2b   PL_PORT_CTL_DATA;       //; 今回値  
+           ssc_wrmy.c        262    U2b   PL_INDT_OLD1;           //; 1回前       
+           ssc_wrmy.c        263    U2b   PL_INDT_OLD2;           //; 2回前       
+           ssc_wrmy.c        264    
+           ssc_wrmy.c        265    
+           ssc_wrmy.c        266    
+           ssc_wrmy.c        267    
+           ssc_wrmy.c        268    //    *******************************************
+           ssc_wrmy.c        269    //    *** 異常関係のワークＲＡＭ      ***
+           ssc_wrmy.c        270    //    *******************************************
+           ssc_wrmy.c        271    
+           ssc_wrmy.c        272    //20060725 SAITO  U2b ERR_CHK_OK_FLG;         //;異常処理開始ﾌﾗｸﾞ
+           ssc_wrmy.c        273    
+           ssc_wrmy.c        274    //20060725 SAITO  U2b ER_SQRAM_WK1[12+8+10];  //
+           ssc_wrmy.c        275    //20060725 SAITO  U2b ER_SQRAM_WK2[12+8+10];  //
+           ssc_wrmy.c        276    //20060725 SAITO  U2b SH4_SQERRAM[12+8+10];   //
+           ssc_wrmy.c        277    //20060725 SAITO  U2b DBG_ERRCHK_NASI[12+8+10];   // ﾁｪｯｸなし
+           ssc_wrmy.c        278    
+           ssc_wrmy.c        279    //20060725 SAITO  U2b ER_SFTSW_CHG_OLD;   //
+           ssc_wrmy.c        280    
+           ssc_wrmy.c        281    //20060725 SAITO  U2b SFTSW_ERR_TM;       //
+           ssc_wrmy.c        282    //20060725 SAITO  U2b BTNER_ERR_TM;       //
+           ssc_wrmy.c        283    //20060725 SAITO  U2b NCHSW_ERR_TM1;      //
+           ssc_wrmy.c        284    //20060725 SAITO  U2b NCHSW_ERR_TM2;      //
+           ssc_wrmy.c        285    //20060725 SAITO  U2b VLVER11_ERR_TM;     //
+           ssc_wrmy.c        286    //20060725 SAITO  U2b VLVER12_ERR_TM;     //
+           ssc_wrmy.c        287    //20060725 SAITO  U2b VLVER21_ERR_TM;     //
+           ssc_wrmy.c        288    //20060725 SAITO  U2b VLVER22_ERR_TM;     //
+           ssc_wrmy.c        289    //20060725 SAITO  U2b VLVER31_ERR_TM;     //
+           ssc_wrmy.c        290    //20060725 SAITO  U2b VLVER32_ERR_TM;     //
+           ssc_wrmy.c        291    //20060725 SAITO  U2b CMP2_ERR_TM2;       //
+           ssc_wrmy.c        292    //20060725 SAITO  U2b FSFT_TRERR_TM;      //
+           ssc_wrmy.c        293    //20060725 SAITO  U2b RSFT_TRERR_TM;      //
+           ssc_wrmy.c        294    
+           ssc_wrmy.c        295    
+           ssc_wrmy.c        296    //20060725 SAITO  U2b WPAR1_SFTSWER_TM;   //
+           ssc_wrmy.c        297    //20060725 SAITO  U2b WPAR1_BTNER_TM;     //
+           ssc_wrmy.c        298    //20060725 SAITO  U2b WPAR1_MODSER_TM1;   //
+           ssc_wrmy.c        299    //20060725 SAITO  U2b WPAR1_MODSER_TM2;   //
+           ssc_wrmy.c        300    //20060725 SAITO  U2b WPAR1_VLVER11_TM1;  //
+           ssc_wrmy.c        301    //20060725 SAITO  U2b WPAR1_VLVER12_TM1;  //
+           ssc_wrmy.c        302    //20060725 SAITO  U2b WPAR1_VLVER21_TM1;  //
+           ssc_wrmy.c        303    //20060725 SAITO  U2b WPAR1_VLVER22_TM1;  //
+           ssc_wrmy.c        304    //20060725 SAITO  U2b WPAR1_VLVER31_TM1;  //
+           ssc_wrmy.c        305    //20060725 SAITO  U2b WPAR1_VLVER32_TM1;  //
+           ssc_wrmy.c        306    //20060725 SAITO  U2b WPAR1_CMPER2_TM;    //
+           ssc_wrmy.c        307    //20060725 SAITO  U2b WPAR1_FSFTTRER_TM;  //
+           ssc_wrmy.c        308    //20060725 SAITO  U2b WPAR1_RSFTTRER_TM;  //
+           ssc_wrmy.c        309    
+           ssc_wrmy.c        310    
+           ssc_wrmy.c        311    
+           ssc_wrmy.c        312    
+           ssc_wrmy.c        313    U2b   KEEPRY_BKUP_ERR;    //
+           ssc_wrmy.c        314    
+           ssc_wrmy.c        315    
+           ssc_wrmy.c        316    
+           ssc_wrmy.c        317    //    ***************************************************
+           ssc_wrmy.c        318    //    *** セルフチェック関係のワークＲＡＭ    ***
+           ssc_wrmy.c        319    //    ***************************************************
+           ssc_wrmy.c        320    //20060725 SAITO  U2b SELF_CHK_FLG;       //;ｾﾙﾌﾁｪｯｸ中 CHECK
+           ssc_wrmy.c        321    //20060725 SAITO  U2b SELF_ACT_FLG;       //;ｾﾙﾌﾁｪｯｸ中 CHECK
+           ssc_wrmy.c        322    
+           ssc_wrmy.c        323    //20060725 SAITO  U2b SELF_HAND_FLG1;     //; 自分の状態ﾌﾗｸﾞ SRAM
+           ssc_wrmy.c        324    //20060725 SAITO  U2b SELF_HAND_FLG2;     //; 相手の状態ﾌﾗｸﾞ SRAM
+           ssc_wrmy.c        325    
+           ssc_wrmy.c        326    //20060725 SAITO  U2b SELF_FSTY_USE;      //;前安全装置チェックする・しない
+           ssc_wrmy.c        327    //20060725 SAITO  U2b SELF_RSTY_USE;      //;後安全装置チェックする・しない
+           ssc_wrmy.c        328    
+           ssc_wrmy.c        329    //20060725 SAITO  U2b SELF_CHK_TIMER;     //;セルフチェックタイマ
+           ssc_wrmy.c        330    
+           ssc_wrmy.c        331    
+           ssc_wrmy.c        332    //;   *** AD CONVERTER WORK RAM ***
+           ssc_wrmy.c        333    //20060725 SAITO  U2b AD_CNV_DT0;             //; 8BIT A/D
+           ssc_wrmy.c        334    
+           ssc_wrmy.c        335    //20060725 SAITO  U2b AD_BUFCNT;          // 移動平均ﾊﾞｯﾌｧｶｳﾝﾀ
+           ssc_wrmy.c        336    //20060725 SAITO  U2b AD_AVG_BUF[8];          // 平均BAFTOP
+           ssc_wrmy.c        337    //20060725 SAITO  U4b AD_AVG_TOTAL;           // ８回分のﾃﾞｰﾀ
+           ssc_wrmy.c        338    //20060725 SAITO  U2b PV_AD_DATA;         // 移動平均とった後のAD DATA
+           ssc_wrmy.c        339    
+           ssc_wrmy.c        340    
+           ssc_wrmy.c        341    
+           ssc_wrmy.c        342    
+           ssc_wrmy.c        343    //    ***************************************
+           ssc_wrmy.c        344    //    *** 二重回路異常関係のワークＲＡＭ  ***
+           ssc_wrmy.c        345    //    ***************************************
+           ssc_wrmy.c        346    //20060725 SAITO  U2b CPUN_2CMP_DATA;     // 相手ＣＰＵの比較データ
+           ssc_wrmy.c        347    
+           ssc_wrmy.c        348    //20060725 SAITO  U2b CMP2_ERR_FIRST;     // 初めて二重回路異常発生
+           ssc_wrmy.c        349    
+           ssc_wrmy.c        350    //20060725 SAITO  U2b CPUN_2CMP_LATCH2;   // 相手二重回路異常ﾃﾞｰﾀﾗｯﾁ
+           ssc_wrmy.c        351    //20060725 SAITO  U2b CPUN_2CMP_LATCH1;   // 自分二重回路異常ﾃﾞｰﾀﾗｯﾁ
+           ssc_wrmy.c        352    
+           ssc_wrmy.c        353    
+           ssc_wrmy.c        354    
+           ssc_wrmy.c        355    //    *** 安全装置関係 ***
+           ssc_wrmy.c        356    
+           ssc_wrmy.c        357    //20060725 SAITO  U2b FACT_IN_DATA;       //
+           ssc_wrmy.c        358    //20060725 SAITO  U2b RACT_IN_DATA;       //
+           ssc_wrmy.c        359    //20060725 SAITO  U2b FDEV_IN_DATA;       //
+           ssc_wrmy.c        360    //20060725 SAITO  U2b RDEV_IN_DATA;       //
+           ssc_wrmy.c        361    
+           ssc_wrmy.c        362    
+           ssc_wrmy.c        363    //    IOGA    関係　ＳＩＴ－４用 2006-07-16
+           ssc_wrmy.c        364    
+           ssc_wrmy.c        365    //;   *** IO-GA WORK ***
+           ssc_wrmy.c        366    U2b   IOGA1_CTRL_DAT1[8]; //.SRES 2*8     ; GA-PA,PB,PC,PD,PE 入力PORT
+           ssc_wrmy.c        367                          //;    PF,PG,PH 出力PORT
+           ssc_wrmy.c        368    U2b   IOGA2_CTRL_DAT1[8]; //.SRES 2*8     ; GA-PA,PB,PC,PD,PE 入力PORT
+           ssc_wrmy.c        369                          //;    PF,PG,PH 出力PORT
+           ssc_wrmy.c        370    //;   *** IOGA INPUT WORK RAM ***
+           ssc_wrmy.c        371    U2b   IOGA1_PA_DT_OLD1;   // 1回前
+           ssc_wrmy.c        372    U2b   IOGA1_PB_DT_OLD1;   // 1回前
+           ssc_wrmy.c        373    U2b   IOGA1_PC_DT_OLD1;   // 1回前
+           ssc_wrmy.c        374    U2b   IOGA1_PD_DT_OLD1;   // 1回前
+           ssc_wrmy.c        375    U2b   IOGA1_PE_DT_OLD1;   // 1回前
+           ssc_wrmy.c        376    
+           ssc_wrmy.c        377    U2b   IOGA1_PA_DT_OLD2;   // 2回前
+           ssc_wrmy.c        378    U2b   IOGA1_PB_DT_OLD2;   // 2回前
+           ssc_wrmy.c        379    U2b   IOGA1_PC_DT_OLD2;   // 2回前
+           ssc_wrmy.c        380    U2b   IOGA1_PD_DT_OLD2;   // 2回前
+           ssc_wrmy.c        381    U2b   IOGA1_PE_DT_OLD2;   // 2回前
+           ssc_wrmy.c        382    
+           ssc_wrmy.c        383    U2b   IOGA2_PA_DT_OLD1;   // 1回前
+           ssc_wrmy.c        384    U2b   IOGA2_PB_DT_OLD1;   // 1回前
+           ssc_wrmy.c        385    U2b   IOGA2_PC_DT_OLD1;   // 1回前
+           ssc_wrmy.c        386    U2b   IOGA2_PD_DT_OLD1;   // 1回前
+           ssc_wrmy.c        387    U2b   IOGA2_PE_DT_OLD1;   // 1回前
+           ssc_wrmy.c        388    
+           ssc_wrmy.c        389    U2b   IOGA2_PA_DT_OLD2;   // 2回前
+           ssc_wrmy.c        390    U2b   IOGA2_PB_DT_OLD2;   // 2回前
+           ssc_wrmy.c        391    U2b   IOGA2_PC_DT_OLD2;   // 2回前
+           ssc_wrmy.c        392    U2b   IOGA2_PD_DT_OLD2;   // 2回前
+           ssc_wrmy.c        393    U2b   IOGA2_PE_DT_OLD2;   // 2回前
+           ssc_wrmy.c        394    
+           ssc_wrmy.c        395    
+           ssc_wrmy.c        396    //20060725 SAITO  U2b DSET_SW_FLG;
+           ssc_wrmy.c        397    
+           ssc_wrmy.c        398    
+           ssc_wrmy.c        399    
+           ssc_wrmy.c        400    //    ***********************************
+           ssc_wrmy.c        401    //    ***                             ***
+           ssc_wrmy.c        402    //    ***     2013-12-13              ***
+           ssc_wrmy.c        403    //    ***                             ***
+           ssc_wrmy.c        404    //    ***********************************
+           ssc_wrmy.c        405    U2b   HANYO2_DI_DAT;//3度読み結果
+           ssc_wrmy.c        406    U2b   HANYO2_DI_OLD[3];//3度読みWORK
+           ssc_wrmy.c        407    
+           ssc_wrmy.c        408    
+           ssc_wrmy.c        409    
+Bwk 00000000              _saito_c_ram_top:                ; static: saito_c_ram_top
+    00000000 00000004               .RES.L      1
+    00000004              _TINT3_10MS_CNT:                 ; static: TINT3_10MS_CNT
+    00000004 00000002               .RES.W      1
+    00000006              _rcv2_err_hard_INTflg1:          ; static: rcv2_err_hard_INTflg1
+    00000006 00000002               .RES.W      1
+    00000008              _rcv2_err_hard_INTflg2:          ; static: rcv2_err_hard_INTflg2
+    00000008 00000002               .RES.W      1
+    0000000A              _rcv2_err_hard_INTflg3:          ; static: rcv2_err_hard_INTflg3
+    0000000A 00000002               .RES.W      1
+    0000000C              _rcv2_err_data_flg1:             ; static: rcv2_err_data_flg1
+    0000000C 00000002               .RES.W      1
+    0000000E              _rcv2_err_hard_sts1:             ; static: rcv2_err_hard_sts1
+    0000000E 00000002               .RES.W      1
+    00000010              _rcv2_err_hard_sts2:             ; static: rcv2_err_hard_sts2
+    00000010 00000002               .RES.W      1
+    00000012              _rcv2_err_hard_sts3:             ; static: rcv2_err_hard_sts3
+    00000012 00000002               .RES.W      1
+    00000014              _rcv2_err_data_sts1:             ; static: rcv2_err_data_sts1
+    00000014 00000002               .RES.W      1
+    00000016              _rcv2_err_OverRunCnt:            ; static: rcv2_err_OverRunCnt
+    00000016 00000002               .RES.W      1
+    00000018              _rcv2_err_FRPRErrCnt:            ; static: rcv2_err_FRPRErrCnt
+    00000018 00000002               .RES.W      1
+    0000001A              _rcv2_err_elseErrCnt:            ; static: rcv2_err_elseErrCnt
+    0000001A 00000002               .RES.W      1
+    0000001C              _rcv2_data_INcnt:                ; static: rcv2_data_INcnt
+    0000001C 00000002               .RES.W      1
+    0000001E              _rcv2_data_cnt:                  ; static: rcv2_data_cnt
+    0000001E 00000002               .RES.W      1
+    00000020              _rcv2_data_buf:                  ; static: rcv2_data_buf
+    00000020 00000002               .RES.W      32
+    00000060              _send2_data_buf:                 ; static: send2_data_buf
+    00000060 00000002               .RES.W      32
+    000000A0              _rcv2_event_flg:                 ; static: rcv2_event_flg
+    000000A0 00000002               .RES.W      1
+    000000A2              _send2_event_flg:                ; static: send2_event_flg
+    000000A2 00000002               .RES.W      1
+    000000A4              _PV1_SCRW_POS:                   ; static: PV1_SCRW_POS
+    000000A4 00000004               .RES.L      4
+    000000B4              _PV0_SCRW_POS:                   ; static: PV0_SCRW_POS
+    000000B4 00000004               .RES.L      4
+    000000C4              _SND_RCV_CMD0:                   ; static: SND_RCV_CMD0
+    000000C4 00000002               .RES.W      1
+    000000C6              _SND_RCV_CMD1:                   ; static: SND_RCV_CMD1
+    000000C6 00000002               .RES.W      1
+    000000C8              _SND_RCV_CMDR:                   ; static: SND_RCV_CMDR
+    000000C8 00000002               .RES.W      1
+    000000CA              _SND_RCV_INBUFCNT:               ; static: SND_RCV_INBUFCNT
+    000000CA 00000002               .RES.W      1
+    000000CC              _CRC_ERR_CNT:                    ; static: CRC_ERR_CNT
+    000000CC 00000002               .RES.W      1
+    000000CE              _ERR_CHK_OK_FLG:                 ; static: ERR_CHK_OK_FLG
+    000000CE 00000002               .RES.W      1
+    000000D0              _ER_SQRAM_WK1:                   ; static: ER_SQRAM_WK1
+    000000D0 00000002               .RES.W      30
+    0000010C              _ER_SQRAM_WK2:                   ; static: ER_SQRAM_WK2
+    0000010C 00000002               .RES.W      30
+    00000148              _SH4_SQERRAM:                    ; static: SH4_SQERRAM
+    00000148 00000002               .RES.W      30
+    00000184              _DBG_ERRCHK_NASI:                ; static: DBG_ERRCHK_NASI
+    00000184 00000002               .RES.W      30
+    000001C0              _ER_SFTSW_CHG_OLD:               ; static: ER_SFTSW_CHG_OLD
+    000001C0 00000002               .RES.W      1
+    000001C2 00000002               .RES.W      1
+    000001C4              _FROM_SUMCHK_CODE:               ; static: FROM_SUMCHK_CODE
+    000001C4 00000004               .RES.L      1
+    000001C8              _SFTSW_ERR_TM:                   ; static: SFTSW_ERR_TM
+    000001C8 00000002               .RES.W      1
+    000001CA              _BTNER_ERR_TM:                   ; static: BTNER_ERR_TM
+    000001CA 00000002               .RES.W      1
+    000001CC              _NCHSW_ERR_TM1:                  ; static: NCHSW_ERR_TM1
+    000001CC 00000002               .RES.W      1
+    000001CE              _NCHSW_ERR_TM2:                  ; static: NCHSW_ERR_TM2
+    000001CE 00000002               .RES.W      1
+    000001D0              _VLVER11_ERR_TM:                 ; static: VLVER11_ERR_TM
+    000001D0 00000002               .RES.W      1
+    000001D2              _VLVER12_ERR_TM:                 ; static: VLVER12_ERR_TM
+    000001D2 00000002               .RES.W      1
+    000001D4              _VLVER21_ERR_TM:                 ; static: VLVER21_ERR_TM
+    000001D4 00000002               .RES.W      1
+    000001D6              _VLVER22_ERR_TM:                 ; static: VLVER22_ERR_TM
+    000001D6 00000002               .RES.W      1
+    000001D8              _VLVER31_ERR_TM:                 ; static: VLVER31_ERR_TM
+    000001D8 00000002               .RES.W      1
+    000001DA              _VLVER32_ERR_TM:                 ; static: VLVER32_ERR_TM
+    000001DA 00000002               .RES.W      1
+    000001DC              _CMP2_ERR_TM2:                   ; static: CMP2_ERR_TM2
+    000001DC 00000002               .RES.W      1
+    000001DE              _FSFT_TRERR_TM:                  ; static: FSFT_TRERR_TM
+    000001DE 00000002               .RES.W      1
+    000001E0              _RSFT_TRERR_TM:                  ; static: RSFT_TRERR_TM
+    000001E0 00000002               .RES.W      1
+    000001E2              _WPAR1_SFTSWER_TM:               ; static: WPAR1_SFTSWER_TM
+    000001E2 00000002               .RES.W      1
+    000001E4              _WPAR1_BTNER_TM:                 ; static: WPAR1_BTNER_TM
+    000001E4 00000002               .RES.W      1
+    000001E6              _WPAR1_MODSER_TM1:               ; static: WPAR1_MODSER_TM1
+    000001E6 00000002               .RES.W      1
+    000001E8              _WPAR1_MODSER_TM2:               ; static: WPAR1_MODSER_TM2
+    000001E8 00000002               .RES.W      1
+    000001EA              _WPAR1_VLVER11_TM1:              ; static: WPAR1_VLVER11_TM1
+    000001EA 00000002               .RES.W      1
+    000001EC              _WPAR1_VLVER12_TM1:              ; static: WPAR1_VLVER12_TM1
+    000001EC 00000002               .RES.W      1
+    000001EE              _WPAR1_VLVER21_TM1:              ; static: WPAR1_VLVER21_TM1
+    000001EE 00000002               .RES.W      1
+    000001F0              _WPAR1_VLVER22_TM1:              ; static: WPAR1_VLVER22_TM1
+    000001F0 00000002               .RES.W      1
+    000001F2              _WPAR1_VLVER31_TM1:              ; static: WPAR1_VLVER31_TM1
+    000001F2 00000002               .RES.W      1
+    000001F4              _WPAR1_VLVER32_TM1:              ; static: WPAR1_VLVER32_TM1
+    000001F4 00000002               .RES.W      1
+    000001F6              _WPAR1_CMPER2_TM:                ; static: WPAR1_CMPER2_TM
+    000001F6 00000002               .RES.W      1
+    000001F8              _WPAR1_FSFTTRER_TM:              ; static: WPAR1_FSFTTRER_TM
+    000001F8 00000002               .RES.W      1
+    000001FA              _WPAR1_RSFTTRER_TM:              ; static: WPAR1_RSFTTRER_TM
+    000001FA 00000002               .RES.W      1
+    000001FC              _REMOTE_ERR_CHKTM:               ; static: REMOTE_ERR_CHKTM
+    000001FC 00000002               .RES.W      1
+    000001FE              _ROM_SYSPAR_ERRADR:              ; static: ROM_SYSPAR_ERRADR
+    000001FE 00000002               .RES.W      1
+    00000200              _SELF_CHK_FLG:                   ; static: SELF_CHK_FLG
+    00000200 00000002               .RES.W      1
+    00000202              _SELF_ACT_FLG:                   ; static: SELF_ACT_FLG
+    00000202 00000002               .RES.W      1
+    00000204              _SELF_HAND_FLG1:                 ; static: SELF_HAND_FLG1
+    00000204 00000002               .RES.W      1
+    00000206              _SELF_HAND_FLG2:                 ; static: SELF_HAND_FLG2
+    00000206 00000002               .RES.W      1
+    00000208              _SELF_FSTY_USE:                  ; static: SELF_FSTY_USE
+    00000208 00000002               .RES.W      1
+    0000020A              _SELF_RSTY_USE:                  ; static: SELF_RSTY_USE
+    0000020A 00000002               .RES.W      1
+    0000020C              _SELF_CHK_TIMER:                 ; static: SELF_CHK_TIMER
+    0000020C 00000002               .RES.W      1
+    0000020E              _AD_CNV_DT0:                     ; static: AD_CNV_DT0
+    0000020E 00000002               .RES.W      1
+    00000210              _AD_BUFCNT:                      ; static: AD_BUFCNT
+    00000210 00000002               .RES.W      1
+    00000212              _AD_AVG_BUF:                     ; static: AD_AVG_BUF
+    00000212 00000002               .RES.W      8
+    00000222 00000002               .RES.W      1
+    00000224              _AD_AVG_TOTAL:                   ; static: AD_AVG_TOTAL
+    00000224 00000004               .RES.L      1
+    00000228              _PV_AD_DATA:                     ; static: PV_AD_DATA
+    00000228 00000002               .RES.W      1
+    0000022A              _CPUN_2CMP_DATA:                 ; static: CPUN_2CMP_DATA
+    0000022A 00000002               .RES.W      1
+    0000022C              _CMP2_ERR_FIRST:                 ; static: CMP2_ERR_FIRST
+    0000022C 00000002               .RES.W      1
+    0000022E              _CPUN_2CMP_LATCH2:               ; static: CPUN_2CMP_LATCH2
+    0000022E 00000002               .RES.W      1
+    00000230              _CPUN_2CMP_LATCH1:               ; static: CPUN_2CMP_LATCH1
+    00000230 00000002               .RES.W      1
+    00000232              _FACT_IN_DATA:                   ; static: FACT_IN_DATA
+    00000232 00000002               .RES.W      1
+    00000234              _RACT_IN_DATA:                   ; static: RACT_IN_DATA
+    00000234 00000002               .RES.W      1
+    00000236              _FDEV_IN_DATA:                   ; static: FDEV_IN_DATA
+    00000236 00000002               .RES.W      1
+    00000238              _RDEV_IN_DATA:                   ; static: RDEV_IN_DATA
+    00000238 00000002               .RES.W      1
+    0000023A              _CPUBA_HD_INDT1:                 ; static: CPUBA_HD_INDT1
+    0000023A 00000002               .RES.W      1
+    0000023C              _WK_RCV_SCLSR2:                  ; static: WK_RCV_SCLSR2
+    0000023C 00000002               .RES.W      1
+    0000023E              _WK_RCV_SCFSR2:                  ; static: WK_RCV_SCFSR2
+    0000023E 00000002               .RES.W      1
+    00000240              _WK_RCV_SCFDR2:                  ; static: WK_RCV_SCFDR2
+    00000240 00000002               .RES.W      1
+    00000242              _IN_RNA_REF_ERR_FLG1:            ; static: IN_RNA_REF_ERR_FLG1
+    00000242 00000002               .RES.W      1
+    00000244              _IN_RNA_REF_ERR_FLG2:            ; static: IN_RNA_REF_ERR_FLG2
+    00000244 00000002               .RES.W      1
+    00000246              _RNA_REF_ERR_FLG1:               ; static: RNA_REF_ERR_FLG1
+    00000246 00000002               .RES.W      1
+    00000248              _RNA_REF_ERR_FLG2:               ; static: RNA_REF_ERR_FLG2
+    00000248 00000002               .RES.W      1
+    0000024A              _LT_RNA_REF_ERR_FLG1:            ; static: LT_RNA_REF_ERR_FLG1
+    0000024A 00000002               .RES.W      1
+    0000024C              _LT_RNA_REF_ERR_FLG2:            ; static: LT_RNA_REF_ERR_FLG2
+    0000024C 00000002               .RES.W      1
+    0000024E              _RNA_CMD_VERIFY_CNT:             ; static: RNA_CMD_VERIFY_CNT
+    0000024E 00000002               .RES.W      1
+    00000250              _RNA_CMD_VERIFY_DAT:             ; static: RNA_CMD_VERIFY_DAT
+    00000250 00000002               .RES.W      1
+    00000252              _RNA_STS_SYSERR_CNT:             ; static: RNA_STS_SYSERR_CNT
+    00000252 00000002               .RES.W      1
+    00000254              _RNA_STS_REQERR_CNT:             ; static: RNA_STS_REQERR_CNT
+    00000254 00000002               .RES.W      1
+    00000256              _RNA_STS_ERR_DAT:                ; static: RNA_STS_ERR_DAT
+    00000256 00000002               .RES.W      1
+    00000258              _RNA_ALM_BIT0_CNT:               ; static: RNA_ALM_BIT0_CNT
+    00000258 00000002               .RES.W      1
+    0000025A              _RNA_ALM_BIT1_CNT:               ; static: RNA_ALM_BIT1_CNT
+    0000025A 00000002               .RES.W      1
+    0000025C              _RNA_ALM_BIT2_CNT:               ; static: RNA_ALM_BIT2_CNT
+    0000025C 00000002               .RES.W      1
+    0000025E              _RNA_ALM_BIT3_CNT:               ; static: RNA_ALM_BIT3_CNT
+    0000025E 00000002               .RES.W      1
+    00000260              _RNA_ALM_BIT4_CNT:               ; static: RNA_ALM_BIT4_CNT
+    00000260 00000002               .RES.W      1
+    00000262              _RNA_ALM_BIT5_CNT:               ; static: RNA_ALM_BIT5_CNT
+    00000262 00000002               .RES.W      1
+    00000264              _RNA_ALM_BIT6_CNT:               ; static: RNA_ALM_BIT6_CNT
+    00000264 00000002               .RES.W      1
+    00000266              _RNA_ALM_BIT7_CNT:               ; static: RNA_ALM_BIT7_CNT
+    00000266 00000002               .RES.W      1
+    00000268              _RNA_ALM_CNT:                    ; static: RNA_ALM_CNT
+    00000268 00000002               .RES.W      1
+    0000026A              _RNA_ALM_DAT:                    ; static: RNA_ALM_DAT
+    0000026A 00000002               .RES.W      1
+    0000026C              _RNA_REF1_CNT:                   ; static: RNA_REF1_CNT
+    0000026C 00000002               .RES.W      1
+    0000026E              _RNA_REF2_CNT:                   ; static: RNA_REF2_CNT
+    0000026E 00000002               .RES.W      1
+    00000270              _RNA_CRC_ERR_CNT:                ; static: RNA_CRC_ERR_CNT
+    00000270 00000002               .RES.W      1
+    00000272              _RNA_CRC_ERR_DAT:                ; static: RNA_CRC_ERR_DAT
+    00000272 00000002               .RES.W      1
+    00000274              _RNA_CRC_CAL_DAT:                ; static: RNA_CRC_CAL_DAT
+    00000274 00000002               .RES.W      1
+    00000276              _RNA_ERR_FLAME_BUF1:             ; static: RNA_ERR_FLAME_BUF1
+    00000276 00000002               .RES.W      16
+    00000296              _RNA_ERR_FLAME_BUF2:             ; static: RNA_ERR_FLAME_BUF2
+    00000296 00000002               .RES.W      16
+    000002B6              _RNA_ERR_FLAME_BUF3:             ; static: RNA_ERR_FLAME_BUF3
+    000002B6 00000002               .RES.W      16
+    000002D6              _DSET_SW_FLG:                    ; static: DSET_SW_FLG
+    000002D6 00000002               .RES.W      1
+    000002D8              _CPUA_EMG_IN_FLG:                ; static: CPUA_EMG_IN_FLG
+    000002D8 00000002               .RES.W      1
+    000002DA              _REAL_INP1_DATA:                 ; static: REAL_INP1_DATA
+    000002DA 00000002               .RES.W      1
+    000002DC              _REAL_INP1_DT_OLD1:              ; static: REAL_INP1_DT_OLD1
+    000002DC 00000002               .RES.W      1
+    000002DE              _REAL_INP1_DT_OLD2:              ; static: REAL_INP1_DT_OLD2
+    000002DE 00000002               .RES.W      1
+    000002E0              _PB_PORT_CTL_DATA:               ; static: PB_PORT_CTL_DATA
+    000002E0 00000002               .RES.W      1
+    000002E2              _PB_INDT_OLD1:                   ; static: PB_INDT_OLD1
+    000002E2 00000002               .RES.W      1
+    000002E4              _PB_INDT_OLD2:                   ; static: PB_INDT_OLD2
+    000002E4 00000002               .RES.W      1
+    000002E6              _PJ_PORT_CTL_DATA:               ; static: PJ_PORT_CTL_DATA
+    000002E6 00000002               .RES.W      1
+    000002E8              _PJ_INDT_OLD1:                   ; static: PJ_INDT_OLD1
+    000002E8 00000002               .RES.W      1
+    000002EA              _PJ_INDT_OLD2:                   ; static: PJ_INDT_OLD2
+    000002EA 00000002               .RES.W      1
+    000002EC              _PK_PORT_CTL_DATA:               ; static: PK_PORT_CTL_DATA
+    000002EC 00000002               .RES.W      1
+    000002EE              _PK_INDT_OLD1:                   ; static: PK_INDT_OLD1
+    000002EE 00000002               .RES.W      1
+    000002F0              _PK_INDT_OLD2:                   ; static: PK_INDT_OLD2
+    000002F0 00000002               .RES.W      1
+    000002F2              _PL_PORT_CTL_DATA:               ; static: PL_PORT_CTL_DATA
+    000002F2 00000002               .RES.W      1
+    000002F4              _PL_INDT_OLD1:                   ; static: PL_INDT_OLD1
+    000002F4 00000002               .RES.W      1
+    000002F6              _PL_INDT_OLD2:                   ; static: PL_INDT_OLD2
+    000002F6 00000002               .RES.W      1
+    000002F8              _KEEPRY_BKUP_ERR:                ; static: KEEPRY_BKUP_ERR
+    000002F8 00000002               .RES.W      1
+    000002FA              _IOGA1_CTRL_DAT1:                ; static: IOGA1_CTRL_DAT1
+    000002FA 00000002               .RES.W      8
+    0000030A              _IOGA2_CTRL_DAT1:                ; static: IOGA2_CTRL_DAT1
+    0000030A 00000002               .RES.W      8
+    0000031A              _IOGA1_PA_DT_OLD1:               ; static: IOGA1_PA_DT_OLD1
+    0000031A 00000002               .RES.W      1
+    0000031C              _IOGA1_PB_DT_OLD1:               ; static: IOGA1_PB_DT_OLD1
+    0000031C 00000002               .RES.W      1
+    0000031E              _IOGA1_PC_DT_OLD1:               ; static: IOGA1_PC_DT_OLD1
+    0000031E 00000002               .RES.W      1
+    00000320              _IOGA1_PD_DT_OLD1:               ; static: IOGA1_PD_DT_OLD1
+    00000320 00000002               .RES.W      1
+    00000322              _IOGA1_PE_DT_OLD1:               ; static: IOGA1_PE_DT_OLD1
+    00000322 00000002               .RES.W      1
+    00000324              _IOGA1_PA_DT_OLD2:               ; static: IOGA1_PA_DT_OLD2
+    00000324 00000002               .RES.W      1
+    00000326              _IOGA1_PB_DT_OLD2:               ; static: IOGA1_PB_DT_OLD2
+    00000326 00000002               .RES.W      1
+    00000328              _IOGA1_PC_DT_OLD2:               ; static: IOGA1_PC_DT_OLD2
+    00000328 00000002               .RES.W      1
+    0000032A              _IOGA1_PD_DT_OLD2:               ; static: IOGA1_PD_DT_OLD2
+    0000032A 00000002               .RES.W      1
+    0000032C              _IOGA1_PE_DT_OLD2:               ; static: IOGA1_PE_DT_OLD2
+    0000032C 00000002               .RES.W      1
+    0000032E              _IOGA2_PA_DT_OLD1:               ; static: IOGA2_PA_DT_OLD1
+    0000032E 00000002               .RES.W      1
+    00000330              _IOGA2_PB_DT_OLD1:               ; static: IOGA2_PB_DT_OLD1
+    00000330 00000002               .RES.W      1
+    00000332              _IOGA2_PC_DT_OLD1:               ; static: IOGA2_PC_DT_OLD1
+    00000332 00000002               .RES.W      1
+    00000334              _IOGA2_PD_DT_OLD1:               ; static: IOGA2_PD_DT_OLD1
+    00000334 00000002               .RES.W      1
+    00000336              _IOGA2_PE_DT_OLD1:               ; static: IOGA2_PE_DT_OLD1
+    00000336 00000002               .RES.W      1
+    00000338              _IOGA2_PA_DT_OLD2:               ; static: IOGA2_PA_DT_OLD2
+    00000338 00000002               .RES.W      1
+    0000033A              _IOGA2_PB_DT_OLD2:               ; static: IOGA2_PB_DT_OLD2
+    0000033A 00000002               .RES.W      1
+    0000033C              _IOGA2_PC_DT_OLD2:               ; static: IOGA2_PC_DT_OLD2
+    0000033C 00000002               .RES.W      1
+    0000033E              _IOGA2_PD_DT_OLD2:               ; static: IOGA2_PD_DT_OLD2
+    0000033E 00000002               .RES.W      1
+    00000340              _IOGA2_PE_DT_OLD2:               ; static: IOGA2_PE_DT_OLD2
+    00000340 00000002               .RES.W      1
+    00000342              _HANYO2_DI_DAT:                  ; static: HANYO2_DI_DAT
+    00000342 00000002               .RES.W      1
+    00000344              _HANYO2_DI_OLD:                  ; static: HANYO2_DI_OLD
+    00000344 00000002               .RES.W      3
+SH SERIES C/C++ Compiler (V.9.04.01.002)                                                         12-Dec-2017 19:19:35  PAGE    1
+
+
+******** STATISTICS INFORMATION ********
+
+
+********** ERROR INFORMATION ***********
+
+NUMBER OF ERRORS:           0
+NUMBER OF WARNINGS:         0
+
+
+
+
+******* SOURCE LINE INFORMATION ********
+
+COMPILED SOURCE LINE:      409
+
+
+
+******* SECTION SIZE INFORMATION *******
+
+PROGRAM  SECTION (P):                                 00000000 Byte(s)
+CONSTANT SECTION (C):                                 00000000 Byte(s)
+DATA     SECTION (D):                                 00000000 Byte(s)
+BSS      SECTION (B):                                 00000000 Byte(s)
+BSS      SECTION (Bwkram1):                           0000034A Byte(s)
+
+TOTAL PROGRAM  SECTION: 00000000 Byte(s)
+TOTAL CONSTANT SECTION: 00000000 Byte(s)
+TOTAL DATA     SECTION: 00000000 Byte(s)
+TOTAL BSS      SECTION: 0000034A Byte(s)
+
+    TOTAL PROGRAM SIZE: 0000034A Byte(s)
+
+
+
+********** LABEL INFORMATION ***********
+
+NUMBER OF EXTERNAL REFERENCE SYMBOLS:            0
+NUMBER OF EXTERNAL DEFINITION SYMBOLS:         156
+NUMBER OF INTERNAL/EXTERNAL SYMBOLS:           156
+
+
+
+*** COMMAND PARAMETER ***
+
+-subcommand=D:\SIT4S_MC\cpua\cpua\cpua\Debug\ssc_wrmy.shc
+-cpu=sh4
+-include="D:\SIT4S_MC\cpua\cpua\HW_SRC","D:\SIT4S_MC\comon","D:\SIT4S_MC\cpua\cpua","D:\SIT4S_MC\cpua\cpua\SEQ_SRC","D:\SIT4S_MC\cpua\cpua\cb_src\COMON","D:\SIT4S_MC\cpua\cpua\cb_src\K_SRC","D:\SIT4S_MC\comon\cpua_inc"
+-object="D:\SIT4S_MC\cpua\cpua\cpua\Debug\ssc_wrmy.obj"
+-debug
+-listfile="D:\SIT4S_MC\cpua\cpua\cpua\Debug\ssc_wrmy.lst"
+-show=source,include,expansion,tab=4
+-optimize=0
+-noinline
+-gbr=auto
+-chgincpath
+-errorpath
+"D:\SIT4S_MC\cpua\cpua\cb_src\Y_src\ssc_wrmy.c"
+-global_volatile=0
+-opt_range=all
+-infinite_loop=0
+-del_vacant_loop=0
+-struct_alloc=1
+-lang=c
+-nologo

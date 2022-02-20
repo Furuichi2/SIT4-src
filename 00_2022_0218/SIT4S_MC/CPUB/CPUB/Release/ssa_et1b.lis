@@ -1,0 +1,1375 @@
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE     1
+PROGRAM NAME =
+
+    1                               1     ;       ***************************************************
+    2                               2     ;       ***                                             ***
+    3                               3     ;       ***                                             ***
+    4                               4     ;       ***     ET1-SOFT(設定転送,ﾄﾚﾝﾄﾞ転送,mem,dp)     ***
+    5                               5     ;       ***                                             ***
+    6                               6     ;       ***                                             ***
+    7                               7     ;       ***************************************************
+ 2081                              16     
+ 2082                              17     ;
+ 2083                              18             .INCLUDE        "dp_et1.ext"            ; //
+ 2084                               1 I1  ;       *******************************************************************
+ 2085                               2 I1  ;       ***                                                             ***
+ 2086                               3 I1  ;       ***                                                             ***
+ 2087                               4 I1  ;       ***                                                             ***
+ 2088                               5 I1  ;       ***                                                             ***
+ 2089                               6 I1  ;       ***                                                             ***
+ 2090                               7 I1  ;       ***                                                             ***
+ 2091                               8 I1  ;       *******************************************************************
+ 2092                               9 I1  ;       このファイルはsh2またはsh4のアセンブラソースにインクルードされ
+ 2093                              10 I1  ;       その中で、実アドレスを割り付ける
+ 2094                              11 I1  ;       このではdpramのオフセットアドレスを定義する
+ 2095                              12 I1  ;       このファイルのextern宣言として
+ 2096                              13 I1  
+ 2097                              14 I1  
+ 2098                              15 I1  ;       ===========================================
+ 2099                              16 I1  ;       ===             ET1 SV DATA             ===
+ 2100                              17 I1  ;       ===========================================
+ 2101                              18 I1  ;       --------------------------------------------------
+ 2102                              19 I1          .GLOBAL         _ET_CPUB_SND_INI_ET1    ;INITAL CODE REQ
+ 2103                              20 I1          .GLOBAL         _ET_CPUB_RCV_INI_ET1    ;INITAL CODE ACK
+ 2104                              21 I1  ;;;;    .GLOBAL         _ET_CPUB_SND_REQ_ET1    ;H'12345678(req)
+ 2105                              22 I1  ;;;;    .GLOBAL         _ET_CPUB_RCV_ACK_ET1    ;H'87654321(ack)
+ 2106                              23 I1  ;       ---------------------------------------------------
+ 2107                              24 I1  ;;;;    .GLOBAL         _ET_CPUB_SND_REQ_ADR    ;TOPADRESS (192K+32K 256Kbyte)
+ 2108                              25 I1  ;;;;    .GLOBAL         _ET_CPUB_SND_REQ_CNT    ;1~128個
+ 2109                              26 I1  ;;;;    .GLOBAL         _ET_CPUB_SND_DAT        ;(256byte MAX)
+ 2110                              27 I1  ;;;;    .GLOBAL         _ET_CPUB_SND_END        ;
+ 2111                              28 I1  
+ 2112                              29 I1  ;       ===========================================
+ 2113                              30 I1  ;       ===             ET1 TOREND DATA         ===
+ 2114                              31 I1  ;       ===========================================
+ 2115                              32 I1  ;       --------------------------------------------------
+ 2116                              33 I1          .GLOBAL         _ET_CPUA_SND_INI_ET1    ;INITAL CODE REQ
+ 2117                              34 I1          .GLOBAL         _ET_CPUA_RCV_INI_ET1    ;INITAL CODE ACK
+ 2118                              35 I1          .GLOBAL         _ET_CPUA_SND_REQ_ET1    ;H'12345678(req)
+ 2119                              36 I1          .GLOBAL         _ET_CPUA_RCV_ACK_ET1    ;H'87654321(ack)
+ 2120                              37 I1  ;       ---------------------------------------------------
+ 2121                              38 I1          .GLOBAL         _ET_CPUA_SND_REQ_ADR    ;TOPADRESS (192K+32K 256Kbyte)
+ 2122                              39 I1          .GLOBAL         _ET_CPUA_SND_REQ_CNT    ;1~128個
+ 2123                              40 I1          .GLOBAL         _ET_CPUA_SND_DAT        ;(256byte MAX)
+ 2124                              41 I1          .GLOBAL         _ET_CPUA_SND_END        ;
+ 2125                              42 I1  
+ 2126                              43 I1  ;       ===========================================
+ 2127                              44 I1  ;       ===             ET1 loder DATA          ===
+ 2128                              45 I1  ;       ===========================================
+ 2129                              46 I1  ;       2006-12-01
+ 2130                              47 I1  
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE     2
+PROGRAM NAME =
+
+ 2131                              48 I1          .GLOBAL         _ET_LDCMND_AREA         ;LdCmnd set area
+ 2132                              49 I1          .GLOBAL         _ET_LDCMND_REQ          ;LdCmnd Request Flag
+ 2133                              50 I1          .GLOBAL         _ET_LDCMND_RES          ;LdCmnd Response Flag
+ 2134                              51 I1          .GLOBAL         _ET1_VER                ;ET1 VERSION            V05
+ 2135                              52 I1  
+ 2136                              53 I1  ;       ===== HMI V05j 2007/12/07 =====
+ 2137                              54 I1          .GLOBAL         _ET1_IPS_ENT            ;IPｱﾄﾞﾚｽ確定
+ 2138                              55 I1          .GLOBAL         _ET1_IPS_ADR0           ;IPｱﾄﾞﾚｽ
+ 2139                              56 I1          .GLOBAL         _ET1_IPS_ADR1           ;IPｱﾄﾞﾚｽ
+ 2140                              57 I1          .GLOBAL         _ET1_IPS_ADR2           ;IPｱﾄﾞﾚｽ
+ 2141                              58 I1          .GLOBAL         _ET1_IPS_ADR3           ;IPｱﾄﾞﾚｽ
+ 2142                              59 I1          .GLOBAL         _ET1_SUB_NET0           ;ｻﾌﾞﾈｯﾄﾏｽｸ
+ 2143                              60 I1          .GLOBAL         _ET1_SUB_NET1           ;ｻﾌﾞﾈｯﾄﾏｽｸ
+ 2144                              61 I1          .GLOBAL         _ET1_SUB_NET2           ;ｻﾌﾞﾈｯﾄﾏｽｸ
+ 2145                              62 I1          .GLOBAL         _ET1_SUB_NET3           ;ｻﾌﾞﾈｯﾄﾏｽｸ
+ 2146                              63 I1          .GLOBAL         _ET1_DEF_GAT0           ;ﾃﾞﾌｫﾙﾄｹﾞｰﾄｳｪｲ
+ 2147                              64 I1          .GLOBAL         _ET1_DEF_GAT1           ;ﾃﾞﾌｫﾙﾄｹﾞｰﾄｳｪｲ
+ 2148                              65 I1          .GLOBAL         _ET1_DEF_GAT2           ;ﾃﾞﾌｫﾙﾄｹﾞｰﾄｳｪｲ
+ 2149                              66 I1          .GLOBAL         _ET1_DEF_GAT3           ;ﾃﾞﾌｫﾙﾄｹﾞｰﾄｳｪｲ
+ 2150                              67 I1          .GLOBAL         _ET1_IPM_ADR0           ;IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+ 2151                              68 I1          .GLOBAL         _ET1_IPM_ADR1           ;IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+ 2152                              69 I1          .GLOBAL         _ET1_IPM_ADR2           ;IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+ 2153                              70 I1          .GLOBAL         _ET1_IPM_ADR3           ;IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+ 2154                              71 I1  
+ 2155                              72 I1  ;       ===========================================
+ 2156                              73 I1  ;       ===     ET1==>CPUA(読出 32BYTE) ｽﾃｰﾀｽRD ===
+ 2157                              74 I1  ;       ===     2008-10-20                      ===
+ 2158                              75 I1  ;       ===========================================
+ 2159                              76 I1          .GLOBAL         _ET_CPUA_RD_REQ         ;CPUA-->ET1 READ REQ
+ 2160                              77 I1          .GLOBAL         _ET_CPUA_RD_ACK         ;ET1-->CPUA data SET ACK
+ 2161                              78 I1          .GLOBAL         _ET_CPUA_RD_CNT         ;読出個数
+ 2162                              79 I1          .GLOBAL         _ET_CPUA_RD_ADR         ;読出ｱﾄﾞﾚｽ
+ 2163                              80 I1          .GLOBAL         _ET_CPUA_RD_BUF         ;32byte(16w)
+ 2164                              81 I1  ;       ===========================================
+ 2165                              82 I1  ;       ===     CPUA==>書込2(32byte)    ｽﾃｰﾀｽWR ===
+ 2166                              83 I1  ;       ===     2008-10-20                      ===
+ 2167                              84 I1  ;       ===========================================
+ 2168                              85 I1          .GLOBAL         _ET_CPUA_WR2_ADR        ;STS WR LINE
+ 2169                              86 I1          .GLOBAL         _ET_CPUA_WR2_BUF        ;32byte(16w)
+ 2170                              87 I1          .GLOBAL         _ET_CPUA_WR2_REQ        ;
+ 2171                              88 I1          .GLOBAL         _ET_CPUA_WR2_ACK        ;
+ 2172                              89 I1          .GLOBAL         _ET_CPUA_WR2_CNT        ;
+ 2173                              90 I1  
+ 2174                              91 I1  
+ 2175                              92 I1  ;;;     ===========================================
+ 2176                              93 I1  ;;;     ===     2009-06-19 komtrax(ET2)対応     ===
+ 2177                              94 I1  ;;;     ===========================================
+ 2178                              95 I1  ;;;     .GLOBAL         _ET2_SEQ_IDT01          ;FA2,3 seq-->et2
+ 2179                              96 I1  ;;;     .GLOBAL         _ET2_SEQ_IDT02          ;FA4,5 seq-->et2
+ 2180                              97 I1  ;;;     .GLOBAL         _ET2_SEQ_QDT01          ;FA6,7 et2-->seq
+ 2181                              98 I1  ;;;     .GLOBAL         _ET2_SEQ_QDT02          ;FA8,9 et2-->seq
+ 2182                              99 I1  ;;;;    ============== 使用付加(2009-06-19)　後はﾊﾞﾝｸだけ============
+ 2183                             100 I1  ;       ===========================================
+ 2184                             101 I1  ;       ===     2009-07-24 komtrax(ET2)対応     ===
+ 2185                             102 I1  ;       ===========================================
+ 2186                             103 I1  ;       ------------(KOMTRAX空間に対して SIT_MEM)
+ 2187                             104 I1          .GLOBAL         _ET2_SITM_ADR           ;FA2,3 SIT4->ET1  R/W ADR
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE     3
+PROGRAM NAME =
+
+ 2188                             105 I1          .GLOBAL         _ET2_SITM_REQ           ;FA4   SIT4->ET1  HND=BIT7 R/W=BIT6(BIT5~B
+                                          IT0は空間)
+ 2189                             106 I1          .GLOBAL         _ET2_SITM_ACK           ;FA5   SIT4<-ET1
+ 2190                             107 I1          .GLOBAL         _ET2_SITM_WRDT          ;FA6,7 SIT4->ET1  WR data
+ 2191                             108 I1          .GLOBAL         _ET2_SITM_RDDT          ;FA8,9(SIT4<-ET1) RD data
+ 2192                             109 I1          .GLOBAL         _ET2_SEQ_IDT01          ;FAA,B seq(SQ149)-->et2
+ 2193                             110 I1          .GLOBAL         _ET2_SEQ_QDT01          ;FAC,D et2-->seq(SQ86)
+ 2194                             111 I1  ;;;;    ============== 使用不可(2009-07-24)　後はﾊﾞﾝｸだけ============
+ 2195                             112 I1  
+ 2196                             113 I1  
+ 2197                              19             .import         _MEM_ARI                        ;1BYTE(H'840 statu "A5")
+ 2198                              20             .import         _MEM_BNK_ADR1                   ;1BYTE(H'900 d0=0/d0=1 bank)
+ 2199                              21     
+ 2200                              22             .import         _MEM_ARI_REAL           ;MC
+ 2201                              23     
+ 2202                              24             .IMPORT _CPUD_ET1_DP_TOP
+ 2203                              25             .IMPORT _ET1_DP_TOP
+ 2204                              26             .IMPORT _OPTION_ET1_ARI                 ;005A CPUB-->CPUD
+ 2205                              27     
+ 2206                              28     
+ 2207                              29     _BAS_ET1_DP_TOP         .DEFINE         "_CPUD_ET1_DP_TOP"
+ 2208                              30     _ET1_ET1_DP_TOP         .DEFINE         "_ET1_DP_TOP"
+ 2209                              31     
+ 2210          00000000            32     __BAS_TOP               .EQU    -_CPUD_ET1_DP_TOP+_CPUD_ET1_DP_TOP
+ 2211          00000000            33     __ET1_TOP               .EQU    -_CPUD_ET1_DP_TOP+_ET1_DP_TOP
+ 2212                              34     
+ 2213                              35     ;;_ET2_DEBUG_TRG        .DEFINE         "1"             ; ﾃﾞﾊﾞｯｸ
+ 2214                              36     _ET2_DEBUG_TRG  .DEFINE         "0"             ;出荷
+ 2215                              37     
+ 2216                              38     
+ 2217                              39     
+ 2218                              40     ;       ===========================================
+ 2219                              41     ;       ===             ET1 TOREND DATA         ===
+ 2220                              42     ;       ===========================================
+ 2221                              43             .IMPORT         _CPUA_SND_INI_ET1       ;INITAL CODE REQ
+ 2222                              44             .IMPORT         _CPUA_RCV_INI_ET1       ;INITAL CODE ACK
+ 2223                              45     ;;;;    .IMPORT         _CPUA_SND_REQ_ET1       ;H'12345678(req)
+ 2224                              46     ;;;;    .IMPORT         _CPUA_RCV_ACK_ET1       ;H'87654321(ack)
+ 2225                              47     ;;;;    .IMPORT         _CPUA_SND_REQ_ADR       ;TOPADRESS (192K+32K 256Kbyte)
+ 2226                              48     ;;;;    .IMPORT         _CPUA_SND_REQ_CNT       ;1~128個
+ 2227                              49     ;;;;    .IMPORT         _CPUA_SND_DAT           ;(256byte MAX)
+ 2228                              50     ;;;;    .IMPORT         _CPUA_SND_END           ;
+ 2229                              51     
+ 2230                              52     
+ 2231                              53             .EXPORT _ET1_CPU_MAIN_MOV
+ 2232                              54             .EXPORT _ET1_CPU_HIGH_MOV
+ 2233                              55     
+ 2234                              56     ;       --------KOMTRAXのためのEXTERN
+ 2235                              57     ;;;     .IMPORT         _SEQ_024_SV             ;DPRAM(島村参照使用設定)2009-*-*   24.6
+ 2236                              58             .IMPORT         _SEQAB_DP_TOP           ;高速アクセス用
+ 2237                              59     
+ 2238                              60     ;       ------2011-01-14 処理軽減のため10msec作成---
+ 2239                              61     
+ 2240                              62     ;       ***************************************************
+ 2241                              63     ;       ***                                             ***
+ 2242                              64     ;       ***                                             ***
+ 2243                              65     ;       ***     ET1-SOFT(設定転送,ﾄﾚﾝﾄﾞ転送)            ***
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE     4
+PROGRAM NAME =
+
+ 2244                              66     ;       ***     (high:TREND)                            ***
+ 2245                              67     ;       ***                                             ***
+ 2246                              68     ;       ***                                             ***
+ 2247                              69     ;       ***************************************************
+ 2248 00000000                     70             .SECTION        Bfram, DATA                     ; B4007000H
+ 2249 00000000                     71             .SECTION        P,CODE                  ;
+ 2250 00000000                     72             .ALIGN  4                                       ;
+ 2251 00000000                     73     _ET1_CPU_HIGH_MOV
+ 2252                              74             SUB_START
+ 2253 00000000 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 2254                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 2255 00000002 D10A                75             MOV.L   #_ET1_INITAL_FLG,R1                     ;
+ 2256 00000004 6011                76             MOV.W   @R1,R0                                  ;
+ 2257 00000006 C840                77             TST     #BIT6,R0                                ;
+ 2258                              78             TST_BIT_OF ET1_CPU_HIGHMV_END                   ;
+ 2259 00000008 890C                   M           BT      ET1_CPU_HIGHMV_END
+ 2260                              79     
+ 2261                              80     ;       ---------- ET1/CPUA ﾃﾞｰﾀ転送--------------
+ 2262                              81             FAR_JSR #_ET1_CPUA_DT_MOVE,R0
+ 2263 0000000A D009                   M           MOV.L   #_ET1_CPUA_DT_MOVE,R0           ;ﾃｰﾌﾞﾙｱﾄﾞﾚｽの内容をREGへ
+ 2264 0000000C 400B                   M           JSR     @R0                     ;
+ 2265 0000000E 0009                   M           NOP                                     ;
+ 2266                              82             FAR_JSR #_CPUD_TO_ET1_SET,R0
+ 2267 00000010 D008                   M           MOV.L   #_CPUD_TO_ET1_SET,R0            ;ﾃｰﾌﾞﾙｱﾄﾞﾚｽの内容をREGへ
+ 2268 00000012 400B                   M           JSR     @R0                     ;
+ 2269 00000014 0009                   M           NOP                                     ;
+ 2270                              83     
+ 2271 00000016 D108                84             MOV.L   #_SEQAB_DP_TOP+24*2,R1          ;[MC]
+ 2272 00000018 6011                85             MOV.W   @R1,R0                          ;
+ 2273 0000001A C840                86             TST     #BIT6,R0                        ;24.6(仕様設定135)
+ 2274                              87             TST_BIT_OF ET1_CPU_HIGHMV_END           ;
+ 2275 0000001C 8902                   M           BT      ET1_CPU_HIGHMV_END
+ 2276                              88     
+ 2277                              89             FAR_JSR #_KOMTRAX_DAT_CPUD_TO_ET1,R0
+ 2278 0000001E D007                   M           MOV.L   #_KOMTRAX_DAT_CPUD_TO_ET1,R0            ;ﾃｰﾌﾞﾙｱﾄﾞﾚｽの内容をREGへ
+ 2279 00000020 400B                   M           JSR     @R0                     ;
+ 2280 00000022 0009                   M           NOP                                     ;
+ 2281                              90     
+ 2282 00000024                     91     ET1_CPU_HIGHMV_END
+ 2283                              92             SUB_END
+ 2284                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 2285 00000024 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 2286                              93             M_RTS
+ 2287 00000026 000B                   M           RTS                             ;RTSの後ろの
+ 2288 00000028 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 2289                              94     
+ 2290                              95     ;       ***************************************************
+ 2291                              96     ;       ***                                             ***
+ 2292                              97     ;       ***                                             ***
+ 2293                              98     ;       ***     ET1-SOFT(設定転送,ﾄﾚﾝﾄﾞ転送)            ***
+ 2294                              99     ;       ***     (MAIN:SV)                               ***
+ 2295                             100     ;       ***                                             ***
+ 2296                             101     ;       ***************************************************
+ 2297                                     ***** BEGIN-POOL *****
+ 2298 0000002A 0000                       ALIGNMENT CODE
+ 2299 0000002C 00000000                   DATA FOR SOURCE-LINE 75
+ 2300 00000030 00000000                   DATA FOR SOURCE-LINE 81
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE     5
+PROGRAM NAME =
+
+ 2301 00000034 00000000                   DATA FOR SOURCE-LINE 82
+ 2302 00000038 00000000                   DATA FOR SOURCE-LINE 84
+ 2303 0000003C 00000000                   DATA FOR SOURCE-LINE 89
+ 2304                                     ***** END-POOL *****
+ 2305 00000040                    102     _ET1_CPU_MAIN_MOV
+ 2306                             103             SUB_START
+ 2307 00000040 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 2308                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 2309                             104     
+ 2310 00000042 D104               105             MOV.L   #_ET1_INITAL_FLG,R1                     ;
+ 2311 00000044 6011               106             MOV.W   @R1,R0                                  ;
+ 2312 00000046 C840               107             TST     #BIT6,R0                                ;
+ 2313                             108             TST_BIT_ON ET1_CPU_MNMV_100                     ;
+ 2314 00000048 8B08                   M           BF      ET1_CPU_MNMV_100
+ 2315                             109             FAR_JSR #_ET1_INITAL_CHK,R0                     ;[ずっとチェックするのはへん]
+ 2316 0000004A D003                   M           MOV.L   #_ET1_INITAL_CHK,R0             ;ﾃｰﾌﾞﾙｱﾄﾞﾚｽの内容をREGへ
+ 2317 0000004C 400B                   M           JSR     @R0                     ;
+ 2318 0000004E 0009                   M           NOP                                     ;
+ 2319                             110             M_BRA   ET1_CPU_MNMV_END                        ;
+ 2320 00000050 A007                   M           BRA     ET1_CPU_MNMV_END
+ 2321 00000052 0009                   M           NOP
+ 2322                             111     
+ 2323                                     ***** BEGIN-POOL *****
+ 2324 00000054 00000000                   DATA FOR SOURCE-LINE 105
+ 2325 00000058 00000000                   DATA FOR SOURCE-LINE 109
+ 2326                                     ***** END-POOL *****
+ 2327 0000005C                    112     ET1_CPU_MNMV_100:
+ 2328                             113             FAR_JSR #_ET1_INIEND_MOVE,R0                    ;
+ 2329 0000005C D002                   M           MOV.L   #_ET1_INIEND_MOVE,R0            ;ﾃｰﾌﾞﾙｱﾄﾞﾚｽの内容をREGへ
+ 2330 0000005E 400B                   M           JSR     @R0                     ;
+ 2331 00000060 0009                   M           NOP                                     ;
+ 2332                             114     
+ 2333                             115     
+ 2334 00000062                    116     ET1_CPU_MNMV_END:
+ 2335                             117     
+ 2336                             118     
+ 2337                             119             SUB_END
+ 2338                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 2339 00000062 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 2340                             120             M_RTS
+ 2341 00000064 000B                   M           RTS                             ;RTSの後ろの
+ 2342 00000066 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 2343                             121     
+ 2344                             122     
+ 2345                             123     ;       ***************************************************
+ 2346                             124     ;       ***                                             ***
+ 2347                             125     ;       ***                                             ***
+ 2348                             126     ;       ***     INITAL                                  ***
+ 2349                             127     ;       ***     (MAIN)                                  ***
+ 2350                             128     ;       ***                                             ***
+ 2351                             129     ;       ***************************************************
+ 2352                             130     ;       ET1からINITL終了があった
+ 2353                                     ***** BEGIN-POOL *****
+ 2354 00000068 00000000                   DATA FOR SOURCE-LINE 113
+ 2355                                     ***** END-POOL *****
+ 2356 0000006C                    131     _ET1_INITAL_CHK:
+ 2357                             132             SUB_START
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE     6
+PROGRAM NAME =
+
+ 2358 0000006C 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 2359                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 2360 0000006E D10E               133             MOV.L   #_ET1_INITAL_FLG,R1             ;
+ 2361 00000070 6011               134             MOV.W   @R1,R0                          ;
+ 2362 00000072 C840               135             TST     #BIT6,R0                        ;
+ 2363                             136             TST_BIT_ON ET1_INIT_CHK_END             ;
+ 2364 00000074 8B36                   M           BF      ET1_INIT_CHK_END
+ 2365                             137     
+ 2366                             138     ;;;;2013-12-12  MOV.L   #_MEM_ARI,R1                    ;
+ 2367 00000076 D10D               139             MOV.L   #_MEM_ARI_REAL,R1               ;一時
+ 2368 00000078 6010               140             MOV.B   @R1,R0                          ;
+ 2369 0000007A 600C               141             EXTU.B  R0,R0                           ;
+ 2370 0000007C 9111               142             MOV.W   #H'00A5,R1                      ;
+ 2371                             143     
+ 2372 0000007E 3010               144             CMP/EQ  R1,R0                           ;
+ 2373 00000080 8B30               145             BF      ET1_INIT_CHK_END                ;未接続
+ 2374                             146     
+ 2375 00000082 D10B               147             MOV.L   #_OPTION_ET1_ARI,R1             ;005A CPUB-->CPUD 2013-12-12
+ 2376 00000084 2101               148             MOV.W   R0,@R1                          ;
+ 2377                             149     
+ 2378                             150             FAR_JSR #_ET1_BANK_SEL0_OUT,R1                          ;
+ 2379 00000086 D10B                   M           MOV.L   #_ET1_BANK_SEL0_OUT,R1          ;ﾃｰﾌﾞﾙｱﾄﾞﾚｽの内容をREGへ
+ 2380 00000088 410B                   M           JSR     @R1                     ;
+ 2381 0000008A 0009                   M           NOP                                     ;
+ 2382                             151     
+ 2383                             152     
+ 2384                             153     ;       --------IPｱﾄﾞﾚｽ----------
+ 2385                             154      MEM_WORD_BLOCK_MOV1    SRC_ADR=_ET1_IPS_ENT+__BAS_TOP,
+ 2386                             155     +                       DST_ADR=_ET1_IPS_ENT+__ET1_TOP,
+ 2387                             156     +                       CNT_DAT=(_ET1_DEF_GAT3+2-_ET1_IPS_ENT)/2,DT_REG=R2,CNT_REG=R3
+ 2388 0000008C DA0A                   M           MOV.L   #_ET1_IPS_ENT+__BAS_TOP,R10                     ;
+ 2389 0000008E DB0B                   M           MOV.L   #_ET1_IPS_ENT+__ET1_TOP,R11                     ;
+ 2390 00000090 9308                   M           MOV.W   #(_ET1_DEF_GAT3+2-_ET1_IPS_ENT)/2,R3            ;
+ 2391                                 M           BLOCK_MOV1      W,2,R10,R11,R2,R3
+ 2392 00000092                        M   JMP000000:                                      ;
+ 2393 00000092 2338                   M           TST     R3,R3   ;
+ 2394                                 M           TST_BIT_OF JMP100000            ;
+ 2395 00000094 8914                   M           BT      JMP100000
+ 2396 00000096 62A5                   M           MOV.W   @R10+,R2        ;
+ 2397 00000098 2B21                   M           MOV.W   R2,@R11 ;
+ 2398 0000009A 7B02                   M           ADD     #2,R11  ;
+ 2399 0000009C 73FF                   M           ADD     #H'FF,R3                ;
+ 2400                                 M           M_BRA   JMP000000                       ;
+ 2401 0000009E AFF8                   M           BRA     JMP000000
+ 2402 000000A0 0009                   M           NOP
+ 2403                                 M   ***** BEGIN-POOL *****
+ 2404 000000A2 00A5                   M   DATA FOR SOURCE-LINE 142
+ 2405 000000A4 0000                   M   DATA FOR SOURCE-LINE 154
+ 2406 000000A6 0000                   M   ALIGNMENT CODE
+ 2407 000000A8 00000000               M   DATA FOR SOURCE-LINE 133
+ 2408 000000AC 00000000               M   DATA FOR SOURCE-LINE 139
+ 2409 000000B0 00000000               M   DATA FOR SOURCE-LINE 147
+ 2410 000000B4 00000000               M   DATA FOR SOURCE-LINE 150
+ 2411 000000B8 00000000               M   DATA FOR SOURCE-LINE 154
+ 2412 000000BC 00000000               M   DATA FOR SOURCE-LINE 154
+ 2413                                 M   ***** END-POOL *****
+ 2414 000000C0                        M   JMP100000:                                      ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE     7
+PROGRAM NAME =
+
+ 2415                             157     
+ 2416                             158     
+ 2417 000000C0 D10A               159             MOV.L   #_ET_CPUB_RCV_INI_ET1+__ET1_TOP,R1              ;
+ 2418 000000C2 6012               160             MOV.L   @R1,R0                                          ;
+ 2419 000000C4 D10A               161             MOV.L   #_ET_CPUB_RCV_INI_ET1+__BAS_TOP,R1              ;
+ 2420 000000C6 2102               162             MOV.L   R0,@R1                                          ;
+ 2421                             163     
+ 2422 000000C8 D40A               164             MOV.L   #_ET1_INIT_ACK,R4                               ;
+ 2423 000000CA 3040               165             CMP/EQ  R4,R0                                           ;
+ 2424 000000CC 8B0A               166             BF      ET1_INIT_CHK_END                                ;未完了
+ 2425                             167     
+ 2426 000000CE D10A               168             MOV.L   #_ET_CPUA_RCV_INI_ET1+__ET1_TOP,R1              ;
+ 2427 000000D0 6012               169             MOV.L   @R1,R0                                          ;
+ 2428 000000D2 D10A               170             MOV.L   #_ET_CPUA_RCV_INI_ET1+__BAS_TOP,R1              ;
+ 2429 000000D4 2102               171             MOV.L   R0,@R1                                          ;
+ 2430                             172     
+ 2431 000000D6 D407               173             MOV.L   #_ET1_INIT_ACK,R4                               ;
+ 2432 000000D8 3040               174             CMP/EQ  R4,R0                                           ;
+ 2433 000000DA 8B03               175             BF      ET1_INIT_CHK_END                                ;未完了
+ 2434                             176     
+ 2435                             177             MEM1_BIT0_TO_BIT7_ORSET MEM=_ET1_INITAL_FLG,LG=W,BIT=BIT6,WKREG=R1      ;bit-set
+ 2436 000000DC D108                   M           MOV.L   #_ET1_INITAL_FLG,R1             ;
+ 2437 000000DE 6011                   M           MOV.W   @R1,R0          ;
+ 2438 000000E0 CB40                   M           OR      #BIT6,R0                ;
+ 2439 000000E2 2101                   M           MOV.W   R0,@R1          ;
+ 2440                             178     
+ 2441 000000E4                    179     ET1_INIT_CHK_END:
+ 2442                             180             SUB_END
+ 2443                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 2444 000000E4 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 2445                             181             M_RTS
+ 2446 000000E6 000B                   M           RTS                             ;RTSの後ろの
+ 2447 000000E8 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 2448                             182     
+ 2449                             183     ;       ***********************************
+ 2450                             184     ;       ***                             ***
+ 2451                             185     ;       ***     INITAL-CODE             ***
+ 2452                             186     ;       ***                             ***
+ 2453                             187     ;       ***********************************
+ 2454                                     ***** BEGIN-POOL *****
+ 2455 000000EA 0000                       ALIGNMENT CODE
+ 2456 000000EC 00000000                   DATA FOR SOURCE-LINE 159
+ 2457 000000F0 00000000                   DATA FOR SOURCE-LINE 161
+ 2458 000000F4 56789ABC                   DATA FOR SOURCE-LINE 164,173
+ 2459 000000F8 00000000                   DATA FOR SOURCE-LINE 168
+ 2460 000000FC 00000000                   DATA FOR SOURCE-LINE 170
+ 2461 00000100 00000000                   DATA FOR SOURCE-LINE 177
+ 2462                                     ***** END-POOL *****
+ 2463 00000104                    188     _ET1_INIEND_MOVE:
+ 2464                             189             SUB_START
+ 2465 00000104 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 2466                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 2467                             190             FAR_JSR #_ET1_BANK_SEL0_OUT,R1  ;
+ 2468 00000106 D10D                   M           MOV.L   #_ET1_BANK_SEL0_OUT,R1          ;ﾃｰﾌﾞﾙｱﾄﾞﾚｽの内容をREGへ
+ 2469 00000108 410B                   M           JSR     @R1                     ;
+ 2470 0000010A 0009                   M           NOP                                     ;
+ 2471                             191     
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE     8
+PROGRAM NAME =
+
+ 2472                             192     
+ 2473                             193     
+ 2474                             194     ;;;[MC] MOV.L   #_ET1_INIT_REQ,R0
+ 2475                             195     ;;;[MC] REG_MOV_TO_MEM  DST_ADR=_ET_CPUB_SND_INI_ET1,L1=L,DT_REG=R0,WKREG1=R1
+ 2476                             196     
+ 2477                             197     
+ 2478                             198             MEM_MOV_TO_MEM  SRC_ADR=_ET_CPUB_SND_INI_ET1+__BAS_TOP,L1=L,
+ 2479                             199     +                       DST_ADR=_ET_CPUB_SND_INI_ET1+__ET1_TOP,L2=L,
+ 2480                             200     +                       WKREG1=R1,WKREG2=R2,WKREG3=R3
+ 2481 0000010C D10C                   M           MOV.L   #_ET_CPUB_SND_INI_ET1+__BAS_TOP,R1
+ 2482 0000010E 6212                   M           MOV.L   @R1,R2  ;WK1=SRC_ADR WK2=data
+ 2483 00000110 D30C                   M           MOV.L   #_ET_CPUB_SND_INI_ET1+__ET1_TOP,R3      ;DST_ADR
+ 2484 00000112 2322                   M           MOV.L   R2,@R3  ;DST_ADR
+ 2485                             201     
+ 2486                             202     ;       ==== CPUA<=>ET1 ====
+ 2487                             203             MEM_MOV_TO_MEM  SRC_ADR=_ET_CPUA_SND_INI_ET1+__BAS_TOP,L1=L,
+ 2488                             204     +                       DST_ADR=_ET_CPUA_SND_INI_ET1+__ET1_TOP,L2=L,
+ 2489                             205     +                       WKREG1=R1,WKREG2=R2,WKREG3=R3
+ 2490 00000114 D10C                   M           MOV.L   #_ET_CPUA_SND_INI_ET1+__BAS_TOP,R1
+ 2491 00000116 6212                   M           MOV.L   @R1,R2  ;WK1=SRC_ADR WK2=data
+ 2492 00000118 D30C                   M           MOV.L   #_ET_CPUA_SND_INI_ET1+__ET1_TOP,R3      ;DST_ADR
+ 2493 0000011A 2322                   M           MOV.L   R2,@R3  ;DST_ADR
+ 2494                             206     
+ 2495                             207             MEM_MOV_TO_MEM  SRC_ADR=_ET_CPUA_RCV_INI_ET1+__ET1_TOP,L1=L,
+ 2496                             208     +                       DST_ADR=_ET_CPUA_RCV_INI_ET1+__BAS_TOP,L2=L,
+ 2497                             209     +                       WKREG1=R1,WKREG2=R2,WKREG3=R3
+ 2498 0000011C D10C                   M           MOV.L   #_ET_CPUA_RCV_INI_ET1+__ET1_TOP,R1
+ 2499 0000011E 6212                   M           MOV.L   @R1,R2  ;WK1=SRC_ADR WK2=data
+ 2500 00000120 D30C                   M           MOV.L   #_ET_CPUA_RCV_INI_ET1+__BAS_TOP,R3      ;DST_ADR
+ 2501 00000122 2322                   M           MOV.L   R2,@R3  ;DST_ADR
+ 2502                             210     
+ 2503                             211     
+ 2504                             212     ;       ------MC CPUB-----
+ 2505 00000124 D10C               213             MOV.L   #_ET_CPUB_RCV_INI_ET1+__ET1_TOP,R1              ;
+ 2506 00000126 6012               214             MOV.L   @R1,R0                                          ;
+ 2507 00000128 D10C               215             MOV.L   #_ET_CPUB_RCV_INI_ET1+__BAS_TOP,R1              ;
+ 2508 0000012A 2102               216             MOV.L   R0,@R1                                          ;
+ 2509                             217     
+ 2510 0000012C D108               218             MOV.L   #_ET_CPUA_RCV_INI_ET1+__ET1_TOP,R1              ;
+ 2511 0000012E 6012               219             MOV.L   @R1,R0                                          ;
+ 2512 00000130 D108               220             MOV.L   #_ET_CPUA_RCV_INI_ET1+__BAS_TOP,R1              ;
+ 2513 00000132 2102               221             MOV.L   R0,@R1                                          ;
+ 2514                             222     
+ 2515                             223             SUB_END
+ 2516                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 2517 00000134 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 2518                             224             M_RTS
+ 2519 00000136 000B                   M           RTS                             ;RTSの後ろの
+ 2520 00000138 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 2521                             225     
+ 2522                             226     ;       ***********************************
+ 2523                             227     ;       ***                             ***
+ 2524                             228     ;       ***     Input R2                ***
+ 2525                             229     ;       ***                             ***
+ 2526                             230     ;       ***********************************
+ 2527                                     ***** BEGIN-POOL *****
+ 2528 0000013A 0000                       ALIGNMENT CODE
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE     9
+PROGRAM NAME =
+
+ 2529 0000013C 00000000                   DATA FOR SOURCE-LINE 190
+ 2530 00000140 00000000                   DATA FOR SOURCE-LINE 198
+ 2531 00000144 00000000                   DATA FOR SOURCE-LINE 198
+ 2532 00000148 00000000                   DATA FOR SOURCE-LINE 203
+ 2533 0000014C 00000000                   DATA FOR SOURCE-LINE 203
+ 2534 00000150 00000000                   DATA FOR SOURCE-LINE 207,218
+ 2535 00000154 00000000                   DATA FOR SOURCE-LINE 207,220
+ 2536 00000158 00000000                   DATA FOR SOURCE-LINE 213
+ 2537 0000015C 00000000                   DATA FOR SOURCE-LINE 215
+ 2538                                     ***** END-POOL *****
+ 2539 00000160                    231     _ET1_BANK_SEL0_OUT:
+ 2540                             232             SUB_START
+ 2541 00000160 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 2542                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 2543 00000162 222A               233             XOR     R2,R2
+ 2544 00000164 D103               234             MOV.L   #_ET1_BANK_SEL,R1                       ;
+ 2545 00000166 2121               235             MOV.W   R2,@R1                                  ;
+ 2546                             236     
+ 2547 00000168 D103               237             MOV.L   #_MEM_BNK_ADR1,R1               ;1BYTE(H'900 d0=0/d0=1 bank)
+ 2548 0000016A 2120               238             MOV.B   R2,@R1                          ;BANK OUT
+ 2549                             239             SUB_END
+ 2550                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 2551 0000016C 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 2552                             240             M_RTS
+ 2553 0000016E 000B                   M           RTS                             ;RTSの後ろの
+ 2554 00000170 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 2555                             241     
+ 2556                             242     ;       ***********************************
+ 2557                             243     ;       ***                             ***
+ 2558                             244     ;       ***     CPUA-->ET1              ***
+ 2559                             245     ;       ***             DATA,TRIG       ***
+ 2560                             246     ;       ***     ET1-->CPUA              ***
+ 2561                             247     ;       ***                             ***
+ 2562                             248     ;       ***********************************
+ 2563                                     ***** BEGIN-POOL *****
+ 2564 00000172 0000                       ALIGNMENT CODE
+ 2565 00000174 00000000                   DATA FOR SOURCE-LINE 234
+ 2566 00000178 00000000                   DATA FOR SOURCE-LINE 237
+ 2567                                     ***** END-POOL *****
+ 2568 0000017C                    249     _ET1_CPUA_DT_MOVE:
+ 2569                             250             SUB_START
+ 2570 0000017C 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 2571                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 2572                             251     
+ 2573                             252     
+ 2574 0000017E D10A               253             MOV.L   #_ET_CPUA_SND_REQ_ET1+__BAS_TOP,R1      ;_CPUA_SND_REQ_ET1
+ 2575 00000180 6212               254             MOV.L   @R1,R2                                                          ;
+ 2576 00000182 D10A               255             MOV.L   #_CPUA_REQ_OLD,R1                                               ;
+ 2577 00000184 6012               256             MOV.L   @R1,R0                                                          ;
+ 2578 00000186 2122               257             MOV.L   R2,@R1                                                          ;
+ 2579 00000188 202A               258             XOR     R2,R0                                                           ;
+ 2580 0000018A 2008               259             TST     R0,R0                                                           ;
+ 2581                             260             TST_BIT_OF ET1_CPUA_DT_MV100                                            ;ﾄﾘｶﾞ変化
+                                          なし
+ 2582 0000018C 8920                   M           BT      ET1_CPUA_DT_MV100
+ 2583                             261     
+ 2584                             262      MEM_WORD_BLOCK_MOV1    SRC_ADR=_ET_CPUA_SND_DAT+__BAS_TOP,
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE    10
+PROGRAM NAME =
+
+ 2585                             263     +                       DST_ADR=_ET_CPUA_SND_DAT+__ET1_TOP,
+ 2586                             264     +                       CNT_DAT=_ET1_CPUAB_BUF_MAX/2,DT_REG=R2,CNT_REG=R3
+ 2587 0000018E DA08                   M           MOV.L   #_ET_CPUA_SND_DAT+__BAS_TOP,R10                 ;
+ 2588 00000190 DB08                   M           MOV.L   #_ET_CPUA_SND_DAT+__ET1_TOP,R11                 ;
+ 2589 00000192 9307                   M           MOV.W   #_ET1_CPUAB_BUF_MAX/2,R3                ;
+ 2590                                 M           BLOCK_MOV1      W,2,R10,R11,R2,R3
+ 2591 00000194                        M   JMP000001:                                      ;
+ 2592 00000194 2338                   M           TST     R3,R3   ;
+ 2593                                 M           TST_BIT_OF JMP100001            ;
+ 2594 00000196 890F                   M           BT      JMP100001
+ 2595 00000198 62A5                   M           MOV.W   @R10+,R2        ;
+ 2596 0000019A 2B21                   M           MOV.W   R2,@R11 ;
+ 2597 0000019C 7B02                   M           ADD     #2,R11  ;
+ 2598 0000019E 73FF                   M           ADD     #H'FF,R3                ;
+ 2599                                 M           M_BRA   JMP000001                       ;
+ 2600 000001A0 AFF8                   M           BRA     JMP000001
+ 2601 000001A2 0009                   M           NOP
+ 2602                                 M   ***** BEGIN-POOL *****
+ 2603 000001A4 0080                   M   DATA FOR SOURCE-LINE 262
+ 2604 000001A6 0000                   M   ALIGNMENT CODE
+ 2605 000001A8 00000000               M   DATA FOR SOURCE-LINE 253
+ 2606 000001AC 00000000               M   DATA FOR SOURCE-LINE 255
+ 2607 000001B0 00000000               M   DATA FOR SOURCE-LINE 262
+ 2608 000001B4 00000000               M   DATA FOR SOURCE-LINE 262
+ 2609                                 M   ***** END-POOL *****
+ 2610 000001B8                        M   JMP100001:                                      ;
+ 2611                             265     
+ 2612                             266      MEM_MOV_TO_MEM         SRC_ADR=_ET_CPUA_SND_REQ_CNT+__BAS_TOP,L1=L,
+ 2613                             267     +                       DST_ADR=_ET_CPUA_SND_REQ_CNT+__ET1_TOP,L2=L,
+ 2614                             268     +                       WKREG1=R1,WKREG2=R2,WKREG3=R3
+ 2615 000001B8 D109                   M           MOV.L   #_ET_CPUA_SND_REQ_CNT+__BAS_TOP,R1
+ 2616 000001BA 6212                   M           MOV.L   @R1,R2  ;WK1=SRC_ADR WK2=data
+ 2617 000001BC D309                   M           MOV.L   #_ET_CPUA_SND_REQ_CNT+__ET1_TOP,R3      ;DST_ADR
+ 2618 000001BE 2322                   M           MOV.L   R2,@R3  ;DST_ADR
+ 2619                             269     
+ 2620                             270     
+ 2621                             271      MEM_MOV_TO_MEM         SRC_ADR=_ET_CPUA_SND_REQ_ADR+__BAS_TOP,L1=L,
+ 2622                             272     +                       DST_ADR=_ET_CPUA_SND_REQ_ADR+__ET1_TOP,L2=L,
+ 2623                             273     +                       WKREG1=R1,WKREG2=R2,WKREG3=R3
+ 2624 000001C0 D109                   M           MOV.L   #_ET_CPUA_SND_REQ_ADR+__BAS_TOP,R1
+ 2625 000001C2 6212                   M           MOV.L   @R1,R2  ;WK1=SRC_ADR WK2=data
+ 2626 000001C4 D309                   M           MOV.L   #_ET_CPUA_SND_REQ_ADR+__ET1_TOP,R3      ;DST_ADR
+ 2627 000001C6 2322                   M           MOV.L   R2,@R3  ;DST_ADR
+ 2628                             274     
+ 2629                             275      MEM_MOV_TO_MEM         SRC_ADR=_ET_CPUA_SND_REQ_ET1+__BAS_TOP,L1=L,
+ 2630                             276     +                       DST_ADR=_ET_CPUA_SND_REQ_ET1+__ET1_TOP,L2=L,
+ 2631                             277     +                       WKREG1=R1,WKREG2=R2,WKREG3=R3
+ 2632 000001C8 D109                   M           MOV.L   #_ET_CPUA_SND_REQ_ET1+__BAS_TOP,R1
+ 2633 000001CA 6212                   M           MOV.L   @R1,R2  ;WK1=SRC_ADR WK2=data
+ 2634 000001CC D309                   M           MOV.L   #_ET_CPUA_SND_REQ_ET1+__ET1_TOP,R3      ;DST_ADR
+ 2635 000001CE 2322                   M           MOV.L   R2,@R3  ;DST_ADR
+ 2636                             278     
+ 2637                             279     
+ 2638                             280     
+ 2639                             281     
+ 2640                             282     
+ 2641 000001D0                    283     ET1_CPUA_DT_MV100:
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE    11
+PROGRAM NAME =
+
+ 2642                             284     
+ 2643                             285     ;       ------------- ET1 --> CPUA ---------------
+ 2644                             286      MEM_MOV_TO_MEM SRC_ADR=_ET_CPUA_RCV_ACK_ET1+__ET1_TOP,L1=L,
+ 2645                             287     +               DST_ADR=_ET_CPUA_RCV_ACK_ET1+__BAS_TOP,L2=L,
+ 2646                             288     +               WKREG1=R1,WKREG2=R2,WKREG3=R3
+ 2647 000001D0 D109                   M           MOV.L   #_ET_CPUA_RCV_ACK_ET1+__ET1_TOP,R1
+ 2648 000001D2 6212                   M           MOV.L   @R1,R2  ;WK1=SRC_ADR WK2=data
+ 2649 000001D4 D309                   M           MOV.L   #_ET_CPUA_RCV_ACK_ET1+__BAS_TOP,R3      ;DST_ADR
+ 2650 000001D6 2322                   M           MOV.L   R2,@R3  ;DST_ADR
+ 2651                             289     
+ 2652                             290             SUB_END
+ 2653                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 2654 000001D8 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 2655                             291             M_RTS
+ 2656 000001DA 000B                   M           RTS                             ;RTSの後ろの
+ 2657 000001DC 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 2658                             292     
+ 2659                             293     
+ 2660                             294     ;       *******************************************
+ 2661                             295     ;       ***                                     ***
+ 2662                             296     ;       ***             無条件転送              ***
+ 2663                             297     ;       ***                                     ***
+ 2664                             298     ;       ***                                     ***
+ 2665                             299     ;       *******************************************
+ 2666                             300     ;
+ 2667                                     ***** BEGIN-POOL *****
+ 2668 000001DE 0000                       ALIGNMENT CODE
+ 2669 000001E0 00000000                   DATA FOR SOURCE-LINE 266
+ 2670 000001E4 00000000                   DATA FOR SOURCE-LINE 266
+ 2671 000001E8 00000000                   DATA FOR SOURCE-LINE 271
+ 2672 000001EC 00000000                   DATA FOR SOURCE-LINE 271
+ 2673 000001F0 00000000                   DATA FOR SOURCE-LINE 275
+ 2674 000001F4 00000000                   DATA FOR SOURCE-LINE 275
+ 2675 000001F8 00000000                   DATA FOR SOURCE-LINE 286
+ 2676 000001FC 00000000                   DATA FOR SOURCE-LINE 286
+ 2677                                     ***** END-POOL *****
+ 2678 00000200                    301     _CPUD_TO_ET1_SET
+ 2679                             302             SUB_START
+ 2680 00000200 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 2681                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 2682                             303     
+ 2683                             304     ;;2014 MEM_WORD_BLOCK_MOV1      SRC_ADR=_ET1_IPS_ENT+__BAS_TOP,
+ 2684                             305     ;;2014                  DST_ADR=_ET1_IPS_ENT+__ET1_TOP,
+ 2685                             306     ;;2014                  CNT_DAT=(_ET1_DEF_GAT3+2-_ET1_IPS_ENT)/2,DT_REG=R2,CNT_REG=R3
+ 2686                             307     
+ 2687                             308     
+ 2688                             309     
+ 2689                             310     ;_ET1_IPS_ENT           .SRES   2                       ;[PON.CLR]IPｱﾄﾞﾚｽ確定
+ 2690                             311     ;_ET1_IPS_ADR0          .SRES   2                       ;IPｱﾄﾞﾚｽ
+ 2691                             312     ;_ET1_IPS_ADR1          .SRES   2                       ;IPｱﾄﾞﾚｽ
+ 2692                             313     ;_ET1_IPS_ADR2          .SRES   2                       ;IPｱﾄﾞﾚｽ
+ 2693                             314     ;_ET1_IPS_ADR3          .SRES   2                       ;IPｱﾄﾞﾚｽ
+ 2694                             315     ;_ET1_SUB_NET0          .SRES   2                       ;ｻﾌﾞﾈｯﾄﾏｽｸ
+ 2695                             316     ;_ET1_SUB_NET1          .SRES   2                       ;ｻﾌﾞﾈｯﾄﾏｽｸ
+ 2696                             317     ;_ET1_SUB_NET2          .SRES   2                       ;ｻﾌﾞﾈｯﾄﾏｽｸ
+ 2697                             318     ;_ET1_SUB_NET3          .SRES   2                       ;ｻﾌﾞﾈｯﾄﾏｽｸ
+ 2698                             319     ;_ET1_DEF_GAT0          .SRES   2                       ;ﾃﾞﾌｫﾙﾄｹﾞｰﾄｳｪｲ
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE    12
+PROGRAM NAME =
+
+ 2699                             320     ;_ET1_DEF_GAT1          .SRES   2                       ;ﾃﾞﾌｫﾙﾄｹﾞｰﾄｳｪｲ
+ 2700                             321     ;_ET1_DEF_GAT2          .SRES   2                       ;ﾃﾞﾌｫﾙﾄｹﾞｰﾄｳｪｲ
+ 2701                             322     ;_ET1_DEF_GAT3          .SRES   2                       ;ﾃﾞﾌｫﾙﾄｹﾞｰﾄｳｪｲ
+ 2702                             323     
+ 2703                             324     ;       ET1==>CPUD ADR.MONI
+ 2704                             325      MEM_WORD_BLOCK_MOV1    SRC_ADR=_ET1_IPM_ADR0+__ET1_TOP,
+ 2705                             326     +                       DST_ADR=_ET1_IPM_ADR0+__BAS_TOP,
+ 2706                             327     +                       CNT_DAT=(_ET1_IPM_ADR3+2-_ET1_IPM_ADR0)/2,DT_REG=R2,CNT_REG=R3
+ 2707 00000202 DA06                   M           MOV.L   #_ET1_IPM_ADR0+__ET1_TOP,R10                    ;
+ 2708 00000204 DB06                   M           MOV.L   #_ET1_IPM_ADR0+__BAS_TOP,R11                    ;
+ 2709 00000206 9307                   M           MOV.W   #(_ET1_IPM_ADR3+2-_ET1_IPM_ADR0)/2,R3           ;
+ 2710                                 M           BLOCK_MOV1      W,2,R10,R11,R2,R3
+ 2711 00000208                        M   JMP000002:                                      ;
+ 2712 00000208 2338                   M           TST     R3,R3   ;
+ 2713                                 M           TST_BIT_OF JMP100002            ;
+ 2714 0000020A 890B                   M           BT      JMP100002
+ 2715 0000020C 62A5                   M           MOV.W   @R10+,R2        ;
+ 2716 0000020E 2B21                   M           MOV.W   R2,@R11 ;
+ 2717 00000210 7B02                   M           ADD     #2,R11  ;
+ 2718 00000212 73FF                   M           ADD     #H'FF,R3                ;
+ 2719                                 M           M_BRA   JMP000002                       ;
+ 2720 00000214 AFF8                   M           BRA     JMP000002
+ 2721 00000216 0009                   M           NOP
+ 2722                                 M   ***** BEGIN-POOL *****
+ 2723 00000218 0000                   M   DATA FOR SOURCE-LINE 325
+ 2724 0000021A 0000                   M   ALIGNMENT CODE
+ 2725 0000021C 00000000               M   DATA FOR SOURCE-LINE 325
+ 2726 00000220 00000000               M   DATA FOR SOURCE-LINE 325
+ 2727                                 M   ***** END-POOL *****
+ 2728 00000224                        M   JMP100002:                                      ;
+ 2729                             328     
+ 2730                             329     ;       ET1==>CPUD VER.MONI
+ 2731                             330     ;       -------2014-01-07
+ 2732 00000224 D109               331             MOV.L   #_ET1_VER+__ET1_TOP,R1          ;
+ 2733 00000226 6012               332             MOV.L   @R1,R0                          ;
+ 2734 00000228 D109               333             MOV.L   #_ET1_VER+__BAS_TOP,R1          ;
+ 2735 0000022A 2102               334             MOV.L   R0,@R1
+ 2736                             335     
+ 2737                             336     
+ 2738                             337     
+ 2739                             338     
+ 2740                             339     
+ 2741                             340     ;;_ET1_IPM_ADR0         .SRES   2                       ;IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+ 2742                             341     ;;_ET1_IPM_ADR1         .SRES   2                       ;IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+ 2743                             342     ;;_ET1_IPM_ADR2         .SRES   2                       ;IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+ 2744                             343     ;;_ET1_IPM_ADR3         .SRES   2                       ;IPｱﾄﾞﾚｽ(ﾓﾆﾀ)
+ 2745                             344     
+ 2746 0000022C                    345     _CPUD2ET_000:
+ 2747 0000022C DA09               346             MOV.L   #_ET_LDCMND_REQ+__ET1_TOP,R10
+ 2748 0000022E 60A0               347             MOV.B   @R10,R0
+ 2749 00000230 8801               348             CMP/EQ  #1,R0
+ 2750 00000232 8B1C               349             BF      _CPUD2ET_100
+ 2751                             350     
+ 2752                             351     ;       <<< ET1からのﾛｰﾀﾞｺﾏﾝﾄﾞ発行 >>>
+ 2753                             352     ;                                                       ; ET1ﾛｰﾀﾞｺﾏﾝﾄﾞ -> CPUD
+ 2754                             353             MEM_WORD_BLOCK_MOV1     SRC_ADR=_ET_LDCMND_AREA+__ET1_TOP,
+ 2755                             354     +                               DST_ADR=_ET_LDCMND_AREA+__BAS_TOP,
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE    13
+PROGRAM NAME =
+
+ 2756                             355     +                               CNT_DAT=(512/2), DT_REG=R2, CNT_REG=R3
+ 2757 00000234 DA08                   M           MOV.L   #_ET_LDCMND_AREA+__ET1_TOP,R10                  ;
+ 2758 00000236 DB09                   M           MOV.L   #_ET_LDCMND_AREA+__BAS_TOP,R11                  ;
+ 2759 00000238 9307                   M           MOV.W   #(512/2),R3             ;
+ 2760                                 M           BLOCK_MOV1      W,2,R10,R11,R2,R3
+ 2761 0000023A                        M   JMP000003:                                      ;
+ 2762 0000023A 2338                   M           TST     R3,R3   ;
+ 2763                                 M           TST_BIT_OF JMP100003            ;
+ 2764 0000023C 8910                   M           BT      JMP100003
+ 2765 0000023E 62A5                   M           MOV.W   @R10+,R2        ;
+ 2766 00000240 2B21                   M           MOV.W   R2,@R11 ;
+ 2767 00000242 7B02                   M           ADD     #2,R11  ;
+ 2768 00000244 73FF                   M           ADD     #H'FF,R3                ;
+ 2769                                 M           M_BRA   JMP000003                       ;
+ 2770 00000246 AFF8                   M           BRA     JMP000003
+ 2771 00000248 0009                   M           NOP
+ 2772                                 M   ***** BEGIN-POOL *****
+ 2773 0000024A 0100                   M   DATA FOR SOURCE-LINE 353
+ 2774 0000024C 00000000               M   DATA FOR SOURCE-LINE 331
+ 2775 00000250 00000000               M   DATA FOR SOURCE-LINE 333
+ 2776 00000254 00000000               M   DATA FOR SOURCE-LINE 346
+ 2777 00000258 00000000               M   DATA FOR SOURCE-LINE 353
+ 2778 0000025C 00000000               M   DATA FOR SOURCE-LINE 353
+ 2779                                 M   ***** END-POOL *****
+ 2780 00000260                        M   JMP100003:                                      ;
+ 2781                             356     
+ 2782 00000260 DA0B               357             MOV.L   #_ET_LDCMND_REQ+__BAS_TOP,R10
+ 2783 00000262 D00C               358             MOV.L   #1,R0
+ 2784 00000264 6008               359             SWAP.B  R0,R0
+ 2785 00000266 2A01               360             MOV.W   R0,@R10                                 ; CPUDへﾛｰﾀﾞｺﾏﾝﾄﾞ有り通知
+ 2786                             361     
+ 2787 00000268 DA0B               362             MOV.L   #_ET_LDCMND_REQ+__ET1_TOP,R10
+ 2788 0000026A D00C               363             MOV.L   #0,R0
+ 2789 0000026C 2A00               364             MOV.B   R0,@R10
+ 2790                             365     
+ 2791                             366     
+ 2792                             367     ;       << CPUDからのﾚｽﾎﾟﾝｽ待ち>>
+ 2793 0000026E                    368     _CPUD2ET_100:
+ 2794 0000026E DA0C               369             MOV.L   #_ET_LDCMND_RES+__BAS_TOP,R10
+ 2795 00000270 60A1               370             MOV.W   @R10,R0
+ 2796 00000272 6008               371             SWAP.B  R0,R0
+ 2797 00000274 8801               372             CMP/EQ  #1,R0                                   ; 1:CPUDﾛｰﾀﾞｺﾏﾝﾄﾞ有り
+ 2798 00000276 8B1F               373             BF      _CPUD2ET_200
+ 2799                             374     
+ 2800                             375     ;       <<< CPUDからのﾛｰﾀﾞｺﾏﾝﾄﾞ応答 >>>
+ 2801                             376     ;                                                       ; CPUDﾛｰﾀﾞｺﾏﾝﾄﾞ -> ET1
+ 2802                             377             MEM_WORD_BLOCK_MOV1     SRC_ADR=_ET_LDCMND_AREA+__BAS_TOP,
+ 2803                             378     +                               DST_ADR=_ET_LDCMND_AREA+__ET1_TOP,
+ 2804                             379     +                               CNT_DAT=(512/2), DT_REG=R2, CNT_REG=R3
+ 2805 00000278 DA0A                   M           MOV.L   #_ET_LDCMND_AREA+__BAS_TOP,R10                  ;
+ 2806 0000027A DB0B                   M           MOV.L   #_ET_LDCMND_AREA+__ET1_TOP,R11                  ;
+ 2807 0000027C 9307                   M           MOV.W   #(512/2),R3             ;
+ 2808                                 M           BLOCK_MOV1      W,2,R10,R11,R2,R3
+ 2809 0000027E                        M   JMP000004:                                      ;
+ 2810 0000027E 2338                   M           TST     R3,R3   ;
+ 2811                                 M           TST_BIT_OF JMP100004            ;
+ 2812 00000280 8914                   M           BT      JMP100004
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE    14
+PROGRAM NAME =
+
+ 2813 00000282 62A5                   M           MOV.W   @R10+,R2        ;
+ 2814 00000284 2B21                   M           MOV.W   R2,@R11 ;
+ 2815 00000286 7B02                   M           ADD     #2,R11  ;
+ 2816 00000288 73FF                   M           ADD     #H'FF,R3                ;
+ 2817                                 M           M_BRA   JMP000004                       ;
+ 2818 0000028A AFF8                   M           BRA     JMP000004
+ 2819 0000028C 0009                   M           NOP
+ 2820                                 M   ***** BEGIN-POOL *****
+ 2821 0000028E 0100                   M   DATA FOR SOURCE-LINE 377
+ 2822 00000290 00000000               M   DATA FOR SOURCE-LINE 357
+ 2823 00000294 00000001               M   DATA FOR SOURCE-LINE 358
+ 2824 00000298 00000000               M   DATA FOR SOURCE-LINE 362
+ 2825 0000029C 00000000               M   DATA FOR SOURCE-LINE 363
+ 2826 000002A0 00000000               M   DATA FOR SOURCE-LINE 369
+ 2827 000002A4 00000000               M   DATA FOR SOURCE-LINE 377
+ 2828 000002A8 00000000               M   DATA FOR SOURCE-LINE 377
+ 2829                                 M   ***** END-POOL *****
+ 2830 000002AC                        M   JMP100004:                                      ;
+ 2831                             380     
+ 2832 000002AC DA04               381             MOV.L   #_ET_LDCMND_RES+__ET1_TOP,R10           ;
+ 2833 000002AE D005               382             MOV.L   #1,R0
+ 2834 000002B0 2A00               383             MOV.B   R0,@R10                                 ; ET1へﾛｰﾀﾞｺﾏﾝﾄﾞ有り通知()本当はSW
+                                          APしてﾜｰﾄﾞﾗｲﾄが正解
+ 2835                             384     
+ 2836 000002B2 DA05               385             MOV.L   #_ET_LDCMND_RES+__BAS_TOP,R10           ;
+ 2837 000002B4 D005               386             MOV.L   #0,R0                                   ;
+ 2838 000002B6 2A01               387             MOV.W   R0,@R10                                 ;
+ 2839                             388     
+ 2840 000002B8                    389     _CPUD2ET_200:
+ 2841                             390     
+ 2842                             391     
+ 2843                             392     
+ 2844                             393             SUB_END
+ 2845                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 2846 000002B8 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 2847                             394             M_RTS
+ 2848 000002BA 000B                   M           RTS                             ;RTSの後ろの
+ 2849 000002BC 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 2850                             395     
+ 2851                             396     ;       ***********************************
+ 2852                             397     ;       ***                             ***
+ 2853                             398     ;       ***     CPUB-->ET1              ***
+ 2854                             399     ;       ***             DATA,TRIG       ***
+ 2855                             400     ;       ***                             ***
+ 2856                             401     ;       ***********************************
+ 2857                             402     ;       128byte単位で7FFFまで転送する
+ 2858                             403     
+ 2859                             404     
+ 2860                             405     ;       *******************************************
+ 2861                             406     ;       ***                                     ***
+ 2862                             407     ;       ***                                     ***
+ 2863                             408     ;       ***                                     ***
+ 2864                             409     ;       ***     KOMTRAXデータ部                 ***
+ 2865                             410     ;       ***     (有効だけにしておく)            ***
+ 2866                             411     ;       ***     2014-09-30                      ***
+ 2867                             412     ;       ***     品番/WDT/                       ***
+ 2868                             413     ;       ***     CPUD<=>ET1                      ***
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE    15
+PROGRAM NAME =
+
+ 2869                             414     ;       ***                                     ***
+ 2870                             415     ;       *******************************************
+ 2871                             416     ;_ET2_SITM_ADR          .SRES   2                       ;FA2,3 SIT4->ET1  R/W ADR
+ 2872                             417     ;_ET2_SITM_REQ          .SRES   1                       ;[PON.CLR]FA4   SIT4->ET1  HND=BIT
+                                          7 R/W=BIT6(BIT5~BIT0は空間)
+ 2873                             418     ;_ET2_SITM_ACK          .SRES   1                       ;[PON.CLR]FA5   SIT4<-ET1;
+ 2874                             419     ;_ET2_SITM_WRDT         .SRES   2                       ;FA6,7 SIT4->ET1  WR data
+ 2875                             420     ;_ET2_SITM_RDDT         .SRES   2                       ;FA8,9(SIT4<-ET1) RD data
+ 2876                             421     ;_ET2_SEQ_IDT01         .sres   2                       ;[PON.CLR]FAA,B seq(SQ149)-->et2
+ 2877                             422     ;_ET2_SEQ_QDT01         .sres   2                       ;[PON.CLR]FAC,D et2-->seq(SQ86)
+ 2878                             423     
+ 2879                             424             .IMPORT _ET2_WORD_SITM_REQ              ;CPUD/B間はﾜｰﾄﾞで行う ET2_SITM_REQ
+ 2880                             425             .IMPORT _ET2_WORD_SITM_ACK              ;CPUD/B間はﾜｰﾄﾞで行う ET2_SITM_ACK
+ 2881                             426     
+ 2882                                     ***** BEGIN-POOL *****
+ 2883 000002BE 0000                       ALIGNMENT CODE
+ 2884 000002C0 00000000                   DATA FOR SOURCE-LINE 381
+ 2885 000002C4 00000001                   DATA FOR SOURCE-LINE 382
+ 2886 000002C8 00000000                   DATA FOR SOURCE-LINE 385
+ 2887 000002CC 00000000                   DATA FOR SOURCE-LINE 386
+ 2888                                     ***** END-POOL *****
+ 2889 000002D0                    427             .ALIGN  4
+ 2890 000002D0                    428     _KOMTRAX_DAT_CPUD_TO_ET1
+ 2891                             429             SUB_START
+ 2892 000002D0 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 2893                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 2894                             430     
+ 2895                             431     ;       -------高速ｼｰｹﾝｽ 1ｻｲｸﾙ信号 CPUD(SQ149)==>ET1 -----------------
+ 2896                             432      MEM_MOV_TO_MEM         SRC_ADR=_ET2_SEQ_IDT01+__BAS_TOP,L1=W,
+ 2897                             433     +                       DST_ADR=_ET2_SEQ_IDT01+__ET1_TOP,L2=W,
+ 2898                             434     +                       WKREG1=R1,WKREG2=R2,WKREG3=R3
+ 2899 000002D2 D118                   M           MOV.L   #_ET2_SEQ_IDT01+__BAS_TOP,R1
+ 2900 000002D4 6211                   M           MOV.W   @R1,R2  ;WK1=SRC_ADR WK2=data
+ 2901 000002D6 D318                   M           MOV.L   #_ET2_SEQ_IDT01+__ET1_TOP,R3    ;DST_ADR
+ 2902 000002D8 2321                   M           MOV.W   R2,@R3  ;DST_ADR
+ 2903                             435     
+ 2904                             436     ;       -------高速ｼｰｹﾝｽ ｱﾝﾃﾅ     ET1==>CPUD(SQ87) -----------------
+ 2905                             437      MEM_MOV_TO_MEM         SRC_ADR=_ET2_SEQ_QDT01+__ET1_TOP,L1=W,
+ 2906                             438     +                       DST_ADR=_ET2_SEQ_QDT01+__BAS_TOP,L2=W,
+ 2907                             439     +                       WKREG1=R1,WKREG2=R2,WKREG3=R3
+ 2908 000002DA D118                   M           MOV.L   #_ET2_SEQ_QDT01+__ET1_TOP,R1
+ 2909 000002DC 6211                   M           MOV.W   @R1,R2  ;WK1=SRC_ADR WK2=data
+ 2910 000002DE D318                   M           MOV.L   #_ET2_SEQ_QDT01+__BAS_TOP,R3    ;DST_ADR
+ 2911 000002E0 2321                   M           MOV.W   R2,@R3  ;DST_ADR
+ 2912                             440     
+ 2913                             441     
+ 2914                             442     ;       -------------- 書込コマンド CPUD==>ET1-----------------
+ 2915                             443     ;;;;;;;;;       MOV.L   #_ET2_SITM_REQ+__BAS_TOP,R1             ;CPUDのDPRAMはﾜｰﾄﾞｱｸｾｽのみ
+ 2916                             444     ;;;;;;;;;       MOV.W   @R1,R2                                  ;+0番地側
+ 2917                             445     ;;;;;;;;;       SHLR8   R2                                      ;
+ 2918                             446     ;;;;;;;;;       EXTU.B  R2,R2                                   ;
+ 2919                             447     
+ 2920 000002E2 D118               448             MOV.L   #_ET2_WORD_SITM_REQ,R1                  ;CPUD/B間はﾜｰﾄﾞで行う ET2_SITM_REQ
+ 2921 000002E4 6211               449             MOV.W   @R1,R2                                  ;
+ 2922 000002E6 622C               450             EXTU.B  R2,R2                                   ;
+ 2923 000002E8 D117               451             MOV.L   #_CPUD_ET2_REQ_OLD,R1                   ;
+ 2924 000002EA 6011               452             MOV.W   @R1,R0                                  ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE    16
+PROGRAM NAME =
+
+ 2925 000002EC 2121               453             MOV.W   R2,@R1                                  ;
+ 2926                             454     
+ 2927 000002EE 202A               455             XOR     R2,R0                                   ;
+ 2928 000002F0 2008               456             TST     R0,R0                                   ;
+ 2929                             457             TST_BIT_OF ET1_CPUD_DT_MV100                    ;ﾄﾘｶﾞ変化なし
+ 2930 000002F2 890B                   M           BT      ET1_CPUD_DT_MV100
+ 2931                             458     
+ 2932                             459     
+ 2933                             460     
+ 2934                             461      MEM_MOV_TO_MEM         SRC_ADR=_ET2_SITM_ADR+__BAS_TOP,L1=W,
+ 2935                             462     +                       DST_ADR=_ET2_SITM_ADR+__ET1_TOP,L2=W,
+ 2936                             463     +                       WKREG1=R1,WKREG2=R2,WKREG3=R3
+ 2937 000002F4 D115                   M           MOV.L   #_ET2_SITM_ADR+__BAS_TOP,R1
+ 2938 000002F6 6211                   M           MOV.W   @R1,R2  ;WK1=SRC_ADR WK2=data
+ 2939 000002F8 D315                   M           MOV.L   #_ET2_SITM_ADR+__ET1_TOP,R3     ;DST_ADR
+ 2940 000002FA 2321                   M           MOV.W   R2,@R3  ;DST_ADR
+ 2941                             464     
+ 2942                             465      MEM_MOV_TO_MEM         SRC_ADR=_ET2_SITM_WRDT+__BAS_TOP,L1=W,
+ 2943                             466     +                       DST_ADR=_ET2_SITM_WRDT+__ET1_TOP,L2=W,
+ 2944                             467     +                       WKREG1=R1,WKREG2=R2,WKREG3=R3
+ 2945 000002FC D115                   M           MOV.L   #_ET2_SITM_WRDT+__BAS_TOP,R1
+ 2946 000002FE 6211                   M           MOV.W   @R1,R2  ;WK1=SRC_ADR WK2=data
+ 2947 00000300 D315                   M           MOV.L   #_ET2_SITM_WRDT+__ET1_TOP,R3    ;DST_ADR
+ 2948 00000302 2321                   M           MOV.W   R2,@R3  ;DST_ADR
+ 2949                             468     
+ 2950 00000304 D110               469             MOV.L   #_CPUD_ET2_REQ_OLD,R1                   ;
+ 2951 00000306 6011               470             MOV.W   @R1,R0                                  ;
+ 2952 00000308 D114               471             MOV.L   #_ET2_SITM_REQ+__ET1_TOP,R1             ;
+ 2953 0000030A 2100               472             MOV.B   R0,@R1                                  ;
+ 2954                             473     
+ 2955                             474     
+ 2956 0000030C                    475     ET1_CPUD_DT_MV100
+ 2957                             476     
+ 2958                             477     
+ 2959                             478     ;       -------------- 読出コマンド ET1=>CPUD-----------------
+ 2960 0000030C D114               479             MOV.L   #_ET2_SITM_ACK+__ET1_TOP,R1             ;
+ 2961 0000030E 6210               480             MOV.B   @R1,R2                                  ;
+ 2962 00000310 622C               481             EXTU.B  R2,R2                                   ;
+ 2963                             482     
+ 2964 00000312 D114               483             MOV.L   #_ET2_CPUD_ACK_OLD,R1                   ;
+ 2965 00000314 6011               484             MOV.W   @R1,R0                                  ;
+ 2966 00000316 2121               485             MOV.W   R2,@R1                                  ;
+ 2967 00000318 202A               486             XOR     R2,R0                                   ;
+ 2968 0000031A 2008               487             TST     R0,R0                                   ;
+ 2969                             488             TST_BIT_OF ET1_CPUD_DT_MV200                    ;
+ 2970 0000031C 8907                   M           BT      ET1_CPUD_DT_MV200
+ 2971                             489     
+ 2972                             490      MEM_MOV_TO_MEM         SRC_ADR=_ET2_SITM_RDDT+__ET1_TOP,L1=W,
+ 2973                             491     +                       DST_ADR=_ET2_SITM_RDDT+__BAS_TOP,L2=W,
+ 2974                             492     +                       WKREG1=R1,WKREG2=R2,WKREG3=R3
+ 2975 0000031E D112                   M           MOV.L   #_ET2_SITM_RDDT+__ET1_TOP,R1
+ 2976 00000320 6211                   M           MOV.W   @R1,R2  ;WK1=SRC_ADR WK2=data
+ 2977 00000322 D312                   M           MOV.L   #_ET2_SITM_RDDT+__BAS_TOP,R3    ;DST_ADR
+ 2978 00000324 2321                   M           MOV.W   R2,@R3  ;DST_ADR
+ 2979                             493     
+ 2980                             494     
+ 2981                             495     ;       --_ET2_SITM_ACKにﾊﾞｲﾄﾗｲﾄできない--------
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE    17
+PROGRAM NAME =
+
+ 2982 00000326 D10F               496             MOV.L   #_ET2_CPUD_ACK_OLD,R1                   ;
+ 2983 00000328 6011               497             MOV.W   @R1,R0                                  ;
+ 2984 0000032A D111               498             MOV.L   #_ET2_WORD_SITM_ACK,R1                  ;CPUD-B間専用
+ 2985 0000032C 2101               499             MOV.W   R0,@R1                                  ;
+ 2986                             500     
+ 2987 0000032E                    501     ET1_CPUD_DT_MV200
+ 2988                             502     
+ 2989                             503     
+ 2990                             504     
+ 2991                             505             SUB_END
+ 2992                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 2993 0000032E 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 2994                             506             M_RTS
+ 2995 00000330 000B                   M           RTS                             ;RTSの後ろの
+ 2996 00000332 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 2997                             507     
+ 2998                             508     
+ 2999                             509     
+ 3000                             510     
+ 3001                             511     
+ 3002                             512     ;       ***************************************************
+ 3003                             513     ;       ***                                             ***
+ 3004                             514     ;       ***                                             ***
+ 3005                             515     ;       ***             wkram定義                       ***
+ 3006                             516     ;       ***                                             ***
+ 3007                             517     ;       ***                                             ***
+ 3008                             518     ;       ***************************************************
+ 3009                                     ***** BEGIN-POOL *****
+ 3010 00000334 00000000                   DATA FOR SOURCE-LINE 432
+ 3011 00000338 00000000                   DATA FOR SOURCE-LINE 432
+ 3012 0000033C 00000000                   DATA FOR SOURCE-LINE 437
+ 3013 00000340 00000000                   DATA FOR SOURCE-LINE 437
+ 3014 00000344 00000000                   DATA FOR SOURCE-LINE 448
+ 3015 00000348 00000000                   DATA FOR SOURCE-LINE 451,469
+ 3016 0000034C 00000000                   DATA FOR SOURCE-LINE 461
+ 3017 00000350 00000000                   DATA FOR SOURCE-LINE 461
+ 3018 00000354 00000000                   DATA FOR SOURCE-LINE 465
+ 3019 00000358 00000000                   DATA FOR SOURCE-LINE 465
+ 3020 0000035C 00000000                   DATA FOR SOURCE-LINE 471
+ 3021 00000360 00000000                   DATA FOR SOURCE-LINE 479
+ 3022 00000364 00000000                   DATA FOR SOURCE-LINE 483,496
+ 3023 00000368 00000000                   DATA FOR SOURCE-LINE 490
+ 3024 0000036C 00000000                   DATA FOR SOURCE-LINE 490
+ 3025 00000370 00000000                   DATA FOR SOURCE-LINE 498
+ 3026                                     ***** END-POOL *****
+ 3027 00000000                    519             .SECTION        Bwkram1,DATA                    ;
+ 3028                             520     
+ 3029                             521             .EXPORT         _ET1_INITAL_FLG                 ; SHIMA
+ 3030                             522     
+ 3031 00000000                    523             .ALIGN  4                                       ;
+ 3032 00000000 00000004           524     _CPU_REQ_DAT_CNT        .SRES   4                       ;
+ 3033 00000004 00000002           525     _ET1_INITAL_FLG         .SRES   2                       ;
+ 3034 00000006 00000002           526     _ET1_BANK_SEL           .SRES   2                       ;現在選択バック
+ 3035 00000008 00000002           527     _ET1_BANK_ACS           .SRES   2                       ;ﾊﾞﾝｸｱｸｾｽ中
+ 3036 0000000A 00000002           528     _CPU_REQ_DAT_FLG        .SRES   2                       ;
+ 3037                             529     
+ 3038 0000000C                    530             .ALIGN  4                                       ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE    18
+PROGRAM NAME =
+
+ 3039 0000000C 00000004           531     _CPUA_REQ_OLD           .SRES   4                       ;
+ 3040                             532     
+ 3041                             533     
+ 3042                             534     
+ 3043                             535     ;       ***************************************************
+ 3044                             536     ;       ***                                             ***
+ 3045                             537     ;       ***             2014-09-29                      ***
+ 3046                             538     ;       ***             komtrax cpub                    ***
+ 3047                             539     ;       ***             cpub通り道だけ                  ***
+ 3048                             540     ;       ***                                             ***
+ 3049                             541     ;       ***************************************************
+ 3050 00000010 00000002           542     _CPUD_ET2_REQ_OLD               .SRES   2                       ;
+ 3051 00000012 00000002           543     _ET2_CPUD_ACK_OLD               .SRES   2                       ;
+ 3052                             544     
+ 3053                             545     
+ 3054                             546     
+ 3055                             547     
+ 3056                             548     ;       -------------------------------------------
+ 3057                             549     ;       ---                                     ---
+ 3058                             550     ;       ---     2009-07-27 KOMTRAX              ---
+ 3059                             551     ;       ---                                     ---
+ 3060                             552     ;       ---                                     ---
+ 3061                             553     ;       -------------------------------------------
+ 3062                             554     ;       -------- 2009-07-27(PROCESS)---------------
+ 3063 00000014                    555             .ALIGN  4                                       ;
+ 3064                             556     ;;[[]]_KMT_TRS_CMD              .SRES   2                       ;=ADR(_KMT_TRSSV1_CMD)
+ 3065                             557     ;;[[]]_KMT_TRSPV_CNT            .SRES   2                       ;書込/読出ﾃﾞｰﾀ数
+ 3066                             558     ;;[[]]_KMT_TRS_SCAN             .SRES   2                       ;16ﾌﾟﾛｾｽまで起動可能なよう
+                                          に監視
+ 3067                             559     ;;[[]]_KMT_REQ_SIG              .SRES   2                       ;
+ 3068                             560     ;;[[]]
+ 3069                             561     ;;[[]]; -------- ﾌﾟﾛｾｽのﾗｯﾁﾃﾞｰﾀ -------
+ 3070                             562     ;;[[]]  .ALIGN  4                                       ;
+ 3071                             563     ;;[[]]_KMT_TRSLT_TOPADR .SRES   4                       ;ｽﾄﾗｸﾁｬ
+ 3072                             564     ;;[[]]_KMT_TRSLT_MEMKND .SRES   2                       ;0:固定 (SIT_MEMを対象)
+ 3073                             565     ;;[[]]_KMT_TRSLT_OBJADR .SRES   2                       ;TOP_ADR
+ 3074                             566     ;;[[]]_KMT_TRSLT_CNT            .SRES   2                       ;MAX 1~256 word
+ 3075                             567     ;;[[]]_KMT_TRSLT_DAT            .SRES   2*256                   ;MAX 256word
+ 3076                             568     ;;[[]]
+ 3077                             569     ;;[[]]; --------------------------------
+ 3078                             570     ;;[[]]; ----    EVENT SOFT->TRANS SOFT
+ 3079                             571     ;;[[]]; -------- 2009-07-27(API1)-------
+ 3080                             572     ;;[[]]  .ALIGN  4                                                       ;
+ 3081                             573     ;;[[]]_KMT_TRSSV1_FORM:                                 ;配列
+ 3082                             574     ;;[[]]_KMT_TRSSV1_TOP:                                  ;配列
+ 3083                             575     ;;[[]]_KMT_TRSSV1_CMD           .SRES   2                       ;1:WRITE 2:READ ANS=0:IDLE
+ 3084                             576     ;;[[]]_KMT_TRSSV1_MEMKND        .SRES   2                       ;0:固定 (SIT_MEMを対象)
+ 3085                             577     ;;[[]]_KMT_TRSSV1_OBJADR        .SRES   2                       ;TOP_ADR()
+ 3086                             578     ;;[[]]_KMT_TRSSV1_CNT           .SRES   2                       ;MAX 1~256 word
+ 3087                             579     ;;[[]]_KMT_TRSSV1_DAT           .SRES   2*8                     ;MAX 256word "8CHAR MAX16C
+                                          HAR"
+ 3088                             580     ;;[[]]
+ 3089                             581     ;;[[]]
+ 3090                             582     ;;[[]]; ============= HAND WRITE ==========
+ 3091                             583     ;;[[]]_KMT_TRSSV2_TOP:  .SRES   2*4+2*2                 ;配列(1word MAX 2word)
+ 3092                             584     ;;[[]]_KMT_TRSSV3_TOP:  .SRES   2*4+2*50                ;配列32word(MAX64word)
+ 3093                             585     ;;[[]]_KMT_TRSSV4_TOP:  .SRES   2*4+2*64                ;配列32word(MAX50word)
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE    19
+PROGRAM NAME =
+
+ 3094                             586     ;;[[]]_KMT_TRSSV5_TOP:  .SRES   2*4+2*80                ;80WORD
+ 3095                             587     ;;[[]]_KMT_TRSSV6_TOP:  .SRES   2*4+2*64                ;32WORD
+ 3096                             588     ;;[[]]_KMT_EVENT_FLG            .SRES   2                       ;ｲﾍﾞﾝﾄのｽﾃｯﾌﾟ管理BIT1,2,3
+                                          ??なぜBIT0使わなかった?
+ 3097                             589     ;;[[]]_KMT_EVENT_CHAR           .SRES   8                       ;8文字*8:64文字
+ 3098                             590     ;;[[]]_KMT_EVENT_SIGTIM .SRES   2                       ;
+ 3099                             591     ;;[[]]_KMT_EVENT_CHGF           .SRES   2                       ;ｷｬﾗｸﾀﾃﾞｰﾀ
+ 3100                             592     ;;[[]]_KMT_DLYSCAN_TIM  .SRES   2                       ;
+ 3101                             593     ;;[[]]_KMT_OLD_CHRNO            .SRES   2*8                     ;FFFF->dataの時のみ
+ 3102                             594     ;;[[]]_KMT_USE_CHRNO            .SRES   2*8                     ;
+ 3103                             595     ;;[[]]_KMT_CHK_CHRNO            .SRES   2*8                     ;
+ 3104                             596     ;;[[]]_KMT_STS_SQ087            .SRES   2                       ;
+ 3105                             597     ;;[[]]_KMT_1CYCL_SIGTIM .SRES   2                       ;
+ 3106                             598     ;;[[]]_KMT_HANDWR_FLG           .SRES   2                       ;HANDｼｪｲｸWR
+ 3107                             599     ;;[[]]_KMT_HANDWDT_CNT  .SRES   2                       ;
+ 3108                             600     ;;[[]]_KMT_HANDWDT_TIM  .SRES   2                       ;
+ 3109                             601     ;;[[]]_KMT_STS1RD_FLG           .SRES   2                       ;ｽﾃｰﾀｽREAD　50WMAX
+ 3110                             602     ;;[[]]_KMT_STS1_SET             .SRES   2                       ;BIT0~BIT7(確定ﾃﾞｰﾀあり)
+ 3111                             603     ;;[[]]_KMT_STS1_AREA            .SRES   2*50                    ;MAX50word(16WORD)
+ 3112                             604     ;;[[]]_KMT_STS1MN_SQ87  .SRES   2                       ;
+ 3113                             605     ;;[[]]_KMT_COM1_AREA            .SRES   2*50                    ;
+ 3114                             606     ;;[[]]_KMT_TYP_011              .SRES   2                       ;0:010型/:011型機能
+ 3115                             607     ;;[[]]_KMT_PROC_10MS            .SRES   2                       ;10msecﾀｲﾏ作成
+ 3116                             608     ;;[[]]_KMT_HINBAN_SIGTIM        .SRES   2       ;150msec信号作成用
+ 3117                             609     ;;[[]]_KMT_HINBAN_FLG           .SRES   2       ;150msec信号作成用
+ 3118                             610     ;;[[]]_KMT_HINBAN_SEL           .SRES   2       ;BIT0=1:開始(87.4)　BIT1=1:終了(87.4)
+ 3119                             611     ;;[[]]_KMT_HINBAN_CHGF  .SRES   2       ;BIT0=1開始ｲﾍﾞﾝﾄ BIT1:終了ｲﾍﾞﾝﾄ
+ 3120                             612     ;;[[]]
+ 3121                             613     ;;[[]];
+ 3122                             614     ;;[[]]_KMT_HINBAN_TRG_NUM       .SRES   2                       ;0個[保留なし],1個,2個,3個
+                                          ,4個
+ 3123                             615     ;;[[]];;;;;;;_KMT_HINBAN_TRG_FLG        .SRES   2*_HINBAN_BUF_MAX               ;保留が発
+                                          生した場合の処理
+ 3124                             616     ;;[[]]                                                  ;0:ﾃﾞｰﾀ存在なし BIT0=1[開始],BIT1=
+                                          1[終了]
+ 3125                             617     ;;[[]]                                                  ;+0:現在
+ 3126                             618     ;;[[]]                                                  ;+1:次回
+ 3127                             619     ;;[[]]                                                  ;+2:次々回
+ 3128                             620     ;;[[]]                                                  ;+3:次次々回
+ 3129                             621     ;;[[]]                                                  ;+4:次次次々回
+ 3130                             622     ;;[[]]                                                  ;
+ 3131                             623     ;;[[]]; -------- 4byteﾃﾞｰﾀでも2byteｱｸｾｽしかしない------------
+ 3132                             624     ;;[[]]
+ 3133                             625     ;;[[]]
+ 3134                             626     ;;[[]]; -------- 消耗処理-------------
+ 3135                             627     ;;[[]]_KMT_SYOUMO_SIGTIM        .SRES   2       ;150msec信号作成用
+ 3136                             628     ;;[[]]_KMT_SYOUMO_FLG           .SRES   2       ;150msec信号作成用
+ 3137                             629     ;;[[]]_KMT_SYOUMO_CHGF  .SRES   2       ;BIT0=1開始ｲﾍﾞﾝﾄ BIT1:終了ｲﾍﾞﾝﾄ
+ 3138                             630     ;;[[]]
+ 3139                             631     ;;[[]]; -------------------------------------------
+ 3140                             632     ;;[[]]; ---     確定して送るだけの状態のデータ  ---
+ 3141                             633     ;;[[]]; ---     2011-01-14                      ---
+ 3142                             634     ;;[[]]; -------------------------------------------
+ 3143                             635     ;;[[]]; -------- 4byteﾃﾞｰﾀでも2byteｱｸｾｽしかしない------------
+ 3144                             636     ;;;;;;;_KMT_HMI_SYOUMO_DAT      .SRES   __SITM_SYOUMO_CNT       ;64byte
+ 3145                             637     ;;;;;;;_KMT_HMI_HINBAN_BUF      .SRES   __SITM_HINBAN_CNT*_HINBAN_BUF_MAX       ;6BUFF
+ 3146                             638     
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE    20
+PROGRAM NAME =
+
+ 3147                             639     ;       ----- CPUD <-> ET1 -----------------------
+ 3148                             640     ;;;;;;;;_ET1_REQ_FLG            .SRES   2               ; ET1ﾛｰﾀﾞｺﾏﾝﾄﾞ REQ FLG
+ 3149                             641     ;;;;;;;;_CPUD_RES_FLG           .SRES   2               ; CPUDﾛｰﾀﾞｺﾏﾝﾄﾞ REQ FLG
+ 3150                             642     
+ 3151                             643     ;
+ 3152                             644     ;;;;    .SECTION        P,CODE                  ;
+ 3153                             645     
+ 3154                             646             .END
+  *****TOTAL ERRORS       0
+  *****TOTAL WARNINGS     0
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE    21
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+BIT0                                      EQU  00000001     15*
+BIT1                                      EQU  00000002     16*
+BIT10                                     EQU  00000400     25*
+BIT11                                     EQU  00000800     26*
+BIT12                                     EQU  00001000     27*
+BIT13                                     EQU  00002000     28*
+BIT14                                     EQU  00004000     29*
+BIT15                                     EQU  00008000     30*
+BIT16                                     EQU  00010000     31*
+BIT17                                     EQU  00020000     32*
+BIT18                                     EQU  00040000     33*
+BIT19                                     EQU  00080000     34*
+BIT2                                      EQU  00000004     17*
+BIT20                                     EQU  00100000     35*
+BIT21                                     EQU  00200000     36*
+BIT22                                     EQU  00400000     37*
+BIT23                                     EQU  00800000     38*
+BIT24                                     EQU  01000000     39*
+BIT25                                     EQU  02000000     40*
+BIT26                                     EQU  04000000     41*
+BIT27                                     EQU  08000000     42*
+BIT28                                     EQU  10000000     43*
+BIT29                                     EQU  20000000     44*
+BIT3                                      EQU  00000008     18*
+BIT30                                     EQU  40000000     45*
+BIT31                                     EQU  80000000     46*
+BIT4                                      EQU  00000010     19*
+BIT5                                      EQU  00000020     20*
+BIT6                                      EQU  00000040     21* 2257  2273  2312  2362  2438 
+BIT7                                      EQU  00000080     22*
+BIT8                                      EQU  00000100     23*
+BIT9                                      EQU  00000200     24*
+Bfram                            Bfram    SCT  00000000   2248*
+Bwkram1                          Bwkram1  SCT  00000000   3027*
+ET1_CPUA_DT_MV100                P             000001D0   2582  2641*
+ET1_CPUD_DT_MV100                P             0000030C   2930  2956*
+ET1_CPUD_DT_MV200                P             0000032E   2970  2987*
+ET1_CPU_HIGHMV_END               P             00000024   2259  2275  2282*
+ET1_CPU_MNMV_100                 P             0000005C   2314  2327*
+ET1_CPU_MNMV_END                 P             00000062   2320  2334*
+ET1_INIT_CHK_END                 P             000000E4   2364  2373  2424  2433  2441*
+H_BYTE                                    EQU  00000000     82*
+JMP000000                        P             00000092   2392* 2401 
+JMP000001                        P             00000194   2591* 2600 
+JMP000002                        P             00000208   2711* 2720 
+JMP000003                        P             0000023A   2761* 2770 
+JMP000004                        P             0000027E   2809* 2818 
+JMP100000                        P             000000C0   2395  2414*
+JMP100001                        P             000001B8   2594  2610*
+JMP100002                        P             00000224   2714  2728*
+JMP100003                        P             00000260   2764  2780*
+JMP100004                        P             000002AC   2812  2830*
+L_BYTE                                    EQU  00000001     81*
+NBIT0                                     EQU  000000FE     49*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE    22
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+NBIT1                                     EQU  000000FD     50*
+NBIT10                                    EQU  0000FBFF     60*
+NBIT11                                    EQU  0000F7FF     61*
+NBIT12                                    EQU  0000EFFF     62*
+NBIT13                                    EQU  0000DFFF     63*
+NBIT14                                    EQU  0000BFFF     64*
+NBIT15                                    EQU  00007FFF     65*
+NBIT2                                     EQU  000000FB     51*
+NBIT3                                     EQU  000000F7     52*
+NBIT4                                     EQU  000000EF     53*
+NBIT5                                     EQU  000000DF     54*
+NBIT6                                     EQU  000000BF     55*
+NBIT7                                     EQU  0000007F     56*
+NBIT8                                     EQU  0000FEFF     58*
+NBIT9                                     EQU  0000FDFF     59*
+P                                P        SCT  00000000   2249*
+XBIT0                                     EQU  00000000     68*
+XBIT1                                     EQU  00000001     69*
+XBIT2                                     EQU  00000002     70*
+XBIT3                                     EQU  00000003     71*
+XBIT4                                     EQU  00000004     72*
+XBIT5                                     EQU  00000005     73*
+XBIT6                                     EQU  00000006     74*
+XBIT7                                     EQU  00000007     75*
+_CB_BAKUP_CMD1                            EQU  00005678    114*
+_CB_BAKUP_CMD2                            EQU  00001234    115*
+_CB_BAK_SUM_COD1                          EQU  5AA51234    112*
+_CB_BAK_SUM_COD2                          EQU  A55A4321    113*
+_CB_ERR_INFO_MEM                          EQU  00000080    138*
+_CB_ERR_INFO_PSIZE                        EQU  00000008    139*
+_CB_STS_BUF_1BLK                          EQU  00000040    117*  119 
+_CB_STS_BUF_BLKMAX                        EQU  00000008    118*  119 
+_CB_STS_BUF_MAX                           EQU  00000200    119*
+_CB_TRD_BEFORE                            EQU  00000060    127*
+_CB_TRD_BUF_DP_MAX                        EQU  00000080    131*
+_CB_TRD_BUF_MAX                           EQU  00000800    128*
+_CB_TRD_DP_1CNT                           EQU  00000008    130*
+_CB_TRD_DP_CH                             EQU  00000004    123*
+_CB_TRD_SMP_CNT                           EQU  00000080    126*
+_CPUA_RCV_INI_ET1                         IMPT 00000000   2222 
+_CPUA_REQ_OLD                    Bwkram1       0000000C   2576  3039*
+_CPUA_SND_INI_ET1                         IMPT 00000000   2221 
+_CPUD2ET_000                     P             0000022C   2746*
+_CPUD2ET_100                     P             0000026E   2750  2793*
+_CPUD2ET_200                     P             000002B8   2798  2840*
+_CPUD_ET1_DP_TOP                          IMPT 00000000   2202  2210  2210  2211 
+_CPUD_ET2_REQ_OLD                Bwkram1       00000010   2923  2950  3050*
+_CPUD_TO_ET1_SET                 P             00000200   2267  2678*
+_CPU_REQ_DAT_CNT                 Bwkram1       00000000   3032*
+_CPU_REQ_DAT_FLG                 Bwkram1       0000000A   3036*
+_DUMMY_SUM_CODE                           EQU  5AA53CC3    105*
+_ET1_BANK_ACS                    Bwkram1       00000008   3035*
+_ET1_BANK_SEL                    Bwkram1       00000006   2544  3034*
+_ET1_BANK_SEL0_OUT               P             00000160   2379  2468  2539*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE    23
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_ET1_CPUAB_BUF_MAX                        EQU  00000100   2065* 2589 
+_ET1_CPUA_ADR_MAX                         EQU  00060000   2068*
+_ET1_CPUA_DT_MOVE                P             0000017C   2263  2568*
+_ET1_CPUB_ADR_MAX                         EQU  00008000   2066*
+_ET1_CPU_HIGH_MOV                P        EXPT 00000000   2232  2251*
+_ET1_CPU_MAIN_MOV                P        EXPT 00000040   2231  2305*
+_ET1_DATA_COD                             EQU  5A3CC3A5   2072*
+_ET1_DEF_GAT0                             IMPT 00000000   2146 
+_ET1_DEF_GAT1                             IMPT 00000000   2147 
+_ET1_DEF_GAT2                             IMPT 00000000   2148 
+_ET1_DEF_GAT3                             IMPT 00000000   2149  2390 
+_ET1_DP_TOP                               IMPT 00000000   2203  2211 
+_ET1_INIEND_MOVE                 P             00000104   2329  2463*
+_ET1_INITAL_CHK                  P             0000006C   2316  2356*
+_ET1_INITAL_FLG                  Bwkram1  EXPT 00000004   2255  2310  2360  2436  3029  3033*
+_ET1_INIT_ACK                             EQU  56789ABC   2071* 2422  2431 
+_ET1_INIT_REQ                             EQU  12345678   2070*
+_ET1_IPM_ADR0                             IMPT 00000000   2150  2707  2708  2709 
+_ET1_IPM_ADR1                             IMPT 00000000   2151 
+_ET1_IPM_ADR2                             IMPT 00000000   2152 
+_ET1_IPM_ADR3                             IMPT 00000000   2153  2709 
+_ET1_IPS_ADR0                             IMPT 00000000   2138 
+_ET1_IPS_ADR1                             IMPT 00000000   2139 
+_ET1_IPS_ADR2                             IMPT 00000000   2140 
+_ET1_IPS_ADR3                             IMPT 00000000   2141 
+_ET1_IPS_ENT                              IMPT 00000000   2137  2388  2389  2390 
+_ET1_RDWR2_BUFMAX                         EQU  00000020   2076*
+_ET1_SUB_NET0                             IMPT 00000000   2142 
+_ET1_SUB_NET1                             IMPT 00000000   2143 
+_ET1_SUB_NET2                             IMPT 00000000   2144 
+_ET1_SUB_NET3                             IMPT 00000000   2145 
+_ET1_VER                                  IMPT 00000000   2134  2732  2734 
+_ET1_WD_HAND_COD                          EQU  00001234   2077*
+_ET2_CPUD_ACK_OLD                Bwkram1       00000012   2964  2982  3051*
+_ET2_SEQ_IDT01                            IMPT 00000000   2192  2899  2901 
+_ET2_SEQ_QDT01                            IMPT 00000000   2193  2908  2910 
+_ET2_SITM_ACK                             IMPT 00000000   2189  2960 
+_ET2_SITM_ADR                             IMPT 00000000   2187  2937  2939 
+_ET2_SITM_RDDT                            IMPT 00000000   2191  2975  2977 
+_ET2_SITM_REQ                             IMPT 00000000   2188  2952 
+_ET2_SITM_WRDT                            IMPT 00000000   2190  2945  2947 
+_ET2_WORD_SITM_ACK                        IMPT 00000000   2880  2984 
+_ET2_WORD_SITM_REQ                        IMPT 00000000   2879  2920 
+_ET_CPUA_RCV_ACK_ET1                      IMPT 00000000   2119  2647  2649 
+_ET_CPUA_RCV_INI_ET1                      IMPT 00000000   2117  2426  2428  2498  2500  2510  2512 
+_ET_CPUA_RD_ACK                           IMPT 00000000   2160 
+_ET_CPUA_RD_ADR                           IMPT 00000000   2162 
+_ET_CPUA_RD_BUF                           IMPT 00000000   2163 
+_ET_CPUA_RD_CNT                           IMPT 00000000   2161 
+_ET_CPUA_RD_REQ                           IMPT 00000000   2159 
+_ET_CPUA_SND_DAT                          IMPT 00000000   2123  2587  2588 
+_ET_CPUA_SND_END                          IMPT 00000000   2124 
+_ET_CPUA_SND_INI_ET1                      IMPT 00000000   2116  2490  2492 
+_ET_CPUA_SND_REQ_ADR                      IMPT 00000000   2121  2624  2626 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE    24
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_ET_CPUA_SND_REQ_CNT                      IMPT 00000000   2122  2615  2617 
+_ET_CPUA_SND_REQ_ET1                      IMPT 00000000   2118  2574  2632  2634 
+_ET_CPUA_WR2_ACK                          IMPT 00000000   2171 
+_ET_CPUA_WR2_ADR                          IMPT 00000000   2168 
+_ET_CPUA_WR2_BUF                          IMPT 00000000   2169 
+_ET_CPUA_WR2_CNT                          IMPT 00000000   2172 
+_ET_CPUA_WR2_REQ                          IMPT 00000000   2170 
+_ET_CPUB_RCV_INI_ET1                      IMPT 00000000   2103  2417  2419  2505  2507 
+_ET_CPUB_SND_INI_ET1                      IMPT 00000000   2102  2481  2483 
+_ET_LDCMND_AREA                           IMPT 00000000   2131  2757  2758  2805  2806 
+_ET_LDCMND_REQ                            IMPT 00000000   2132  2747  2782  2787 
+_ET_LDCMND_RES                            IMPT 00000000   2133  2794  2832  2836 
+_KOMTRAX_DAT_CPUD_TO_ET1         P             000002D0   2278  2890*
+_MEM_ARI                                  IMPT 00000000   2197 
+_MEM_ARI_REAL                             IMPT 00000000   2200  2367 
+_MEM_BNK_ADR1                             IMPT 00000000   2198  2547 
+_OPTION_ET1_ARI                           IMPT 00000000   2204  2375 
+_SEQAB_DP_TOP                             IMPT 00000000   2236  2271 
+_START_ACK_COD                            EQU  00004321    213*
+_START_REQ_COD                            EQU  00009876    212*
+_VUPCHECK_EQU                             EQU  11AB3739     98*
+__BAS_TOP                                 EQU  00000000   2210* 2388  2419  2428  2481  2490  2500  2507  2512  2574  2587  2615 
+                                                          2624  2632  2649  2708  2734  2758  2782  2794  2805  2836  2899  2910 
+                                                          2937  2945  2977 
+__ET1_TOP                                 EQU  00000000   2211* 2389  2417  2426  2483  2492  2498  2505  2510  2588  2617  2626 
+                                                          2634  2647  2707  2732  2747  2757  2787  2806  2832  2901  2908  2939 
+                                                          2947  2952  2960  2975 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:24:44                                                  PAGE    25
+
+*** SECTION DATA LIST
+
+SECTION                          ATTRIBUTE    SIZE             START
+
+Bfram                            REL-DATA    000000000        
+P                                REL-CODE    000000374        
+Bwkram1                          REL-DATA    000000014        

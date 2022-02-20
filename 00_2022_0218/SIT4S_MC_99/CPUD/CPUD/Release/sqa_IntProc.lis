@@ -1,0 +1,1135 @@
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE     1
+PROGRAM NAME =
+
+    1                               1     ;****************************************************************************************
+    2                               2     ;* File Name    : ssa_IntProc.src
+    3                               3     ;* Function     : シーケンス 割込み処理
+    4                               4     ;* Author       : Designed by T.Akiba, Coded by T.Akiba
+    5                               5     ;* Date         : 2009-11-20 Akiba
+    6                               6     ;* Update       : 2010-08-11 Y.Kobayashi(コード整理)
+    7                               7     ;****************************************************************************************
+    8                               8     
+    9                               9     ;********************************************************************
+   10                              10     ;* INCLUDE
+   11                              11     ;********************************************************************
+ 2292                              19     
+ 2293 00000000                     20             .SECTION        P,CODE
+ 2294                              21     
+ 2295                              22     ;********************************************************************
+ 2296                              23     ;* PUBLIC 宣言 PROGRAM
+ 2297                              24     ;********************************************************************
+ 2298                              25             .IMPORT         _SEQ_RUN_MAIN1
+ 2299                              26             .IMPORT         _SeqRunFlg
+ 2300                              27             .EXPORT         _SEQ_INT_TIM10MS
+ 2301                              28     
+ 2302                              29     
+ 2303                              30     ;********************************************************************
+ 2304                              31     ;* FUNCTION     : 10msタイマ割込み
+ 2305                              32     ;* DATE         : 09/11/20 Akiba
+ 2306                              33     ;* UPDATE       :
+ 2307                              34     ;********************************************************************
+ 2308 00000000                     35     _SEQ_INT_TIM10MS:
+ 2309                              36             SUB_START
+ 2310 00000000 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 2311                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 2312                              37     
+ 2313                              38             FAR_JSR #_SEQ_TIM_10MS,R0
+ 2314 00000002 D005                   M           MOV.L   #_SEQ_TIM_10MS,R0               ;ﾃｰﾌﾞﾙｱﾄﾞﾚｽの内容をREGへ
+ 2315 00000004 400B                   M           JSR     @R0                     ;
+ 2316 00000006 0009                   M           NOP                                     ;
+ 2317                              39     
+ 2318                              40     ;;      10ms割込みが10回で100msﾀｲﾏ起動に変更 ADD 100114 AKIBA
+ 2319                              41     ;;      FAR_JSR #_SEQ_TIM_100MS,R0              ;
+ 2320 00000008 D104                42             MOV.L   #_SEQ_TIM_WK100M,R1             ;
+ 2321 0000000A 6011                43             MOV.W   @R1,R0                          ;
+ 2322 0000000C 8800                44             CMP/EQ  #0,R0                           ;
+ 2323 0000000E 8907                45             BT      SEQ_INT_TIM10MS_100             ; 10ms割込確認(10回で100msﾀｲﾏ起動)
+ 2324 00000010 70FF                46             ADD     #-1,R0                          ;
+ 2325 00000012 2101                47             MOV.W   R0,@R1                          ;
+ 2326                              48             M_BRA   SEQ_INT_TIM10MS_101             ;
+ 2327 00000014 A009                   M           BRA     SEQ_INT_TIM10MS_101
+ 2328 00000016 0009                   M           NOP
+ 2329                              49     
+ 2330                                     ***** BEGIN-POOL *****
+ 2331 00000018 00000000                   DATA FOR SOURCE-LINE 38
+ 2332 0000001C 00000000                   DATA FOR SOURCE-LINE 42
+ 2333                                     ***** END-POOL *****
+ 2334 00000020                     50     SEQ_INT_TIM10MS_100:
+ 2335                              51             FAR_JSR #_SEQ_TIM_100MS,R0              ; 100msﾀｲﾏ起動
+ 2336 00000020 D006                   M           MOV.L   #_SEQ_TIM_100MS,R0              ;ﾃｰﾌﾞﾙｱﾄﾞﾚｽの内容をREGへ
+ 2337 00000022 400B                   M           JSR     @R0                     ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE     2
+PROGRAM NAME =
+
+ 2338 00000024 0009                   M           NOP                                     ;
+ 2339 00000026 9008                52             MOV.W   #D'9,R0                         ;
+ 2340 00000028 2101                53             MOV.W   R0,@R1                          ;
+ 2341                              54     
+ 2342 0000002A                     55     SEQ_INT_TIM10MS_101:
+ 2343                              56     ;;      10ms割込みが100回で1000msﾀｲﾏ起動に変更 ADD 100114 AKIBA
+ 2344                              57     ;;      FAR_JSR #_SEQ_TIM_1000MS,R0
+ 2345 0000002A D105                58             MOV.L   #_SEQ_TIM_WK1000M,R1            ;
+ 2346 0000002C 6011                59             MOV.W   @R1,R0                          ;
+ 2347 0000002E 8800                60             CMP/EQ  #0,R0                           ;
+ 2348 00000030 8908                61             BT      SEQ_INT_TIM10MS_200             ; 10ms割込確認(100回で1000msﾀｲﾏ起動)
+ 2349 00000032 70FF                62             ADD     #-1,R0                          ;
+ 2350 00000034 2101                63             MOV.W   R0,@R1                          ;
+ 2351                              64             M_BRA   SEQ_INT_TIM10MS_201             ;
+ 2352 00000036 A00A                   M           BRA     SEQ_INT_TIM10MS_201
+ 2353 00000038 0009                   M           NOP
+ 2354                              65     
+ 2355                                     ***** BEGIN-POOL *****
+ 2356 0000003A 0009                       DATA FOR SOURCE-LINE 52
+ 2357 0000003C 00000000                   DATA FOR SOURCE-LINE 51
+ 2358 00000040 00000000                   DATA FOR SOURCE-LINE 58
+ 2359                                     ***** END-POOL *****
+ 2360 00000044                     66     SEQ_INT_TIM10MS_200:
+ 2361                              67             FAR_JSR #_SEQ_TIM_1000MS,R0             ; 1000msﾀｲﾏ起動
+ 2362 00000044 D00B                   M           MOV.L   #_SEQ_TIM_1000MS,R0             ;ﾃｰﾌﾞﾙｱﾄﾞﾚｽの内容をREGへ
+ 2363 00000046 400B                   M           JSR     @R0                     ;
+ 2364 00000048 0009                   M           NOP                                     ;
+ 2365 0000004A 9011                68             MOV.W   #D'99,R0                        ;
+ 2366 0000004C 2101                69             MOV.W   R0,@R1                          ;
+ 2367                              70     
+ 2368 0000004E                     71     SEQ_INT_TIM10MS_201:
+ 2369                              72             FAR_JSR #_SEQ_TIM1S_LD,R0               ; ﾗﾀﾞｰﾂｰﾙ 受信ﾀｲﾑｱｳﾄﾀｲﾏ add 091215 akiba
+ 2370 0000004E D00A                   M           MOV.L   #_SEQ_TIM1S_LD,R0               ;ﾃｰﾌﾞﾙｱﾄﾞﾚｽの内容をREGへ
+ 2371 00000050 400B                   M           JSR     @R0                     ;
+ 2372 00000052 0009                   M           NOP                                     ;
+ 2373                              73     
+ 2374                              74     ;;----- ｼｰｹﾝｽﾒｲﾝﾙｰﾁﾝ1実行 Add 100106 AKIBA -----
+ 2375 00000054 D109                75             MOV.L   #_SeqRunFlg,R1                  ; 運転ﾌﾗｸﾞ確認
+ 2376 00000056 6011                76             MOV.W   @R1,R0
+ 2377 00000058 8800                77             CMP/EQ  #0,R0
+ 2378 0000005A 8906                78             BT      SEQ_INT_TIM10MS_300
+ 2379 0000005C D108                79             MOV.L   #_SEQ_CMP_START,R1              ; ｺﾝﾊﾟｲﾙ中ﾌﾗｸﾞ確認
+ 2380 0000005E 6011                80             MOV.W   @R1,R0
+ 2381 00000060 8800                81             CMP/EQ  #0,R0
+ 2382 00000062 8902                82             BT      SEQ_INT_TIM10MS_300
+ 2383                              83             FAR_JSR #_SEQ_RUN_MAIN1,R0
+ 2384 00000064 D007                   M           MOV.L   #_SEQ_RUN_MAIN1,R0              ;ﾃｰﾌﾞﾙｱﾄﾞﾚｽの内容をREGへ
+ 2385 00000066 400B                   M           JSR     @R0                     ;
+ 2386 00000068 0009                   M           NOP                                     ;
+ 2387                              84     
+ 2388 0000006A                     85     SEQ_INT_TIM10MS_300:
+ 2389                              86             SUB_END
+ 2390                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 2391 0000006A 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 2392                              87             M_RTS
+ 2393 0000006C 000B                   M           RTS                             ;RTSの後ろの
+ 2394 0000006E 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE     3
+PROGRAM NAME =
+
+ 2395                              88     
+ 2396                              89     ;********************************************************************
+ 2397                              90     ;* FUNCTION     : 1msタイマ割込み
+ 2398                              91     ;* DATE         : 09/11/20 Akiba
+ 2399                              92     ;* UPDATE       :
+ 2400                              93     ;********************************************************************
+ 2401                              94             .IMPORT         _SEQ_RUN_MAIN3
+ 2402                              95             .EXPORT         _SEQ_INT_TIM1MS
+ 2403                              96     
+ 2404                                     ***** BEGIN-POOL *****
+ 2405 00000070 0063                       DATA FOR SOURCE-LINE 68
+ 2406 00000072 0000                       ALIGNMENT CODE
+ 2407 00000074 00000000                   DATA FOR SOURCE-LINE 67
+ 2408 00000078 00000000                   DATA FOR SOURCE-LINE 72
+ 2409 0000007C 00000000                   DATA FOR SOURCE-LINE 75
+ 2410 00000080 00000000                   DATA FOR SOURCE-LINE 79
+ 2411 00000084 00000000                   DATA FOR SOURCE-LINE 83
+ 2412                                     ***** END-POOL *****
+ 2413 00000088                     97     _SEQ_INT_TIM1MS:
+ 2414                              98             SUB_START
+ 2415 00000088 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 2416                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 2417                              99     
+ 2418                             100             FAR_JSR #_SEQ_TIM_1MS,R0
+ 2419 0000008A D008                   M           MOV.L   #_SEQ_TIM_1MS,R0                ;ﾃｰﾌﾞﾙｱﾄﾞﾚｽの内容をREGへ
+ 2420 0000008C 400B                   M           JSR     @R0                     ;
+ 2421 0000008E 0009                   M           NOP                                     ;
+ 2422                             101     
+ 2423                             102     ;;----- ｼｰｹﾝｽﾒｲﾝﾙｰﾁﾝ3実行 Add 100106 AKIBA -----
+ 2424 00000090 D107               103             MOV.L   #_SeqRunFlg,R1                  ; 運転ﾌﾗｸﾞ確認
+ 2425 00000092 6011               104             MOV.W   @R1,R0
+ 2426 00000094 8800               105             CMP/EQ  #0,R0
+ 2427 00000096 8906               106             BT      SEQ_INT_TIM1MS_100
+ 2428 00000098 D106               107             MOV.L   #_SEQ_CMP_START,R1              ; ｺﾝﾊﾟｲﾙ中ﾌﾗｸﾞ確認
+ 2429 0000009A 6011               108             MOV.W   @R1,R0
+ 2430 0000009C 8800               109             CMP/EQ  #0,R0
+ 2431 0000009E 8902               110             BT      SEQ_INT_TIM1MS_100
+ 2432                             111             FAR_JSR #_SEQ_RUN_MAIN3,R0
+ 2433 000000A0 D005                   M           MOV.L   #_SEQ_RUN_MAIN3,R0              ;ﾃｰﾌﾞﾙｱﾄﾞﾚｽの内容をREGへ
+ 2434 000000A2 400B                   M           JSR     @R0                     ;
+ 2435 000000A4 0009                   M           NOP                                     ;
+ 2436                             112     
+ 2437 000000A6                    113     SEQ_INT_TIM1MS_100:
+ 2438                             114             SUB_END
+ 2439                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 2440 000000A6 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 2441                             115             M_RTS
+ 2442 000000A8 000B                   M           RTS                             ;RTSの後ろの
+ 2443 000000AA 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 2444                             116     
+ 2445                             117     ;********************************************************************
+ 2446                             118     ;* FUNCTION     : タイマカウント マクロ
+ 2447                             119     ;* DATE         : 09/11/20 Akiba
+ 2448                             120     ;* UPDATE       :
+ 2449                             121     ;********************************************************************
+ 2450                             122             .MACRO  SEQ_TIM_CNT1 ADR_REG,LATE
+ 2451                             123     
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE     4
+PROGRAM NAME =
+
+ 2452                             124             MOV.L   @(__TMCT_FLG,\ADR_REG),R0       ;
+ 2453                             125             AND     #(BIT2+BIT1+BIT0),R0            ;
+ 2454                             126             CMP/EQ  #(BIT1+BIT0),R0                 ;
+ 2455                             127             BF      JMP01\@                         ;
+ 2456                             128             MOV.L   @(__TMCT_PV,\ADR_REG),R0        ;
+ 2457                             129             ADD     #\LATE,R0
+ 2458                             130             MOV.L   R0,@(__TMCT_PV,\ADR_REG)        ;
+ 2459                             131     
+ 2460                             132     JMP01\@:
+ 2461                             133             ADD     #__TMCT_ST_CNT,\ADR_REG ;
+ 2462                             134     
+ 2463                             135             .ENDM
+ 2464                             136     
+ 2465                             137     ;********************************************************************
+ 2466                             138     ;* FUNCTION     : 1msタイマ処理
+ 2467                             139     ;* DATE         : 09/11/20 Akiba
+ 2468                             140     ;* UPDATE       :
+ 2469                             141     ;********************************************************************
+ 2470                                     ***** BEGIN-POOL *****
+ 2471 000000AC 00000000                   DATA FOR SOURCE-LINE 100
+ 2472 000000B0 00000000                   DATA FOR SOURCE-LINE 103
+ 2473 000000B4 00000000                   DATA FOR SOURCE-LINE 107
+ 2474 000000B8 00000000                   DATA FOR SOURCE-LINE 111
+ 2475                                     ***** END-POOL *****
+ 2476 000000BC                    142     _SEQ_TIM_1MS
+ 2477                             143             SUB_START
+ 2478 000000BC 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 2479                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 2480                             144     
+ 2481                             145     ;       ---------------- 1msecﾀｲﾏｶｳﾝﾄ-----------
+ 2482 000000BE DA08               146             MOV.L   #_SEQ_TMR_DATA+(_T_0001MS_TOP*__TMCT_ST_CNT),R10        ;416~
+ 2483 000000C0 930C               147             MOV.W   #_T_0001MS_CNT,R3
+ 2484                             148     
+ 2485 000000C2                    149     SEQ_TIM1MS_100
+ 2486 000000C2 2338               150             TST     R3,R3                                   ;
+ 2487                             151             TST_BIT_OF SEQ_TIM1MS_200
+ 2488 000000C4 890E                   M           BT      SEQ_TIM1MS_200
+ 2489                             152     
+ 2490                             153             SEQ_TIM_CNT1 ADR_REG=R10,LATE=1                 ;
+ 2491                                 M   
+ 2492 000000C6 50A2                   M           MOV.L   @(__TMCT_FLG,R10),R0    ;
+ 2493 000000C8 C907                   M           AND     #(BIT2+BIT1+BIT0),R0            ;
+ 2494 000000CA 8803                   M           CMP/EQ  #(BIT1+BIT0),R0                 ;
+ 2495 000000CC 8B02                   M           BF      JMP0100000                              ;
+ 2496 000000CE 50A0                   M           MOV.L   @(__TMCT_PV,R10),R0     ;
+ 2497 000000D0 7001                   M           ADD     #1,R0
+ 2498 000000D2 1A00                   M           MOV.L   R0,@(__TMCT_PV,R10)     ;
+ 2499                                 M   
+ 2500 000000D4                        M   JMP0100000:
+ 2501 000000D4 7A0C                   M           ADD     #__TMCT_ST_CNT,R10      ;
+ 2502                                 M   
+ 2503 000000D6 73FF               154             ADD     #-1,R3
+ 2504                             155             M_BRA   SEQ_TIM1MS_100
+ 2505 000000D8 AFF3                   M           BRA     SEQ_TIM1MS_100
+ 2506 000000DA 0009                   M           NOP
+ 2507                             156     
+ 2508                                     ***** BEGIN-POOL *****
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE     5
+PROGRAM NAME =
+
+ 2509 000000DC 0040                       DATA FOR SOURCE-LINE 147
+ 2510 000000DE 0000                       ALIGNMENT CODE
+ 2511 000000E0 00000000                   DATA FOR SOURCE-LINE 146
+ 2512                                     ***** END-POOL *****
+ 2513 000000E4                    157     SEQ_TIM1MS_200
+ 2514                             158     
+ 2515                             159             SUB_END
+ 2516                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 2517 000000E4 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 2518                             160             M_RTS
+ 2519 000000E6 000B                   M           RTS                             ;RTSの後ろの
+ 2520 000000E8 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 2521                             161     
+ 2522                             162     ;********************************************************************
+ 2523                             163     ;* FUNCTION     : 10msタイマ処理
+ 2524                             164     ;* DATE         : 09/11/20 Akiba
+ 2525                             165     ;* UPDATE       :
+ 2526                             166     ;********************************************************************
+ 2527 000000EA                    167     _SEQ_TIM_10MS
+ 2528                             168             SUB_START
+ 2529 000000EA 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 2530                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 2531                             169     
+ 2532                             170     ;       ---------------- 10msecﾀｲﾏｶｳﾝﾄ-----------
+ 2533 000000EC DA07               171             MOV.L   #_SEQ_TMR_DATA+_T_0010MS_TOP*__TMCT_ST_CNT,R10          ;416~
+ 2534 000000EE 930C               172             MOV.W   #_T_0010MS_CNT,R3
+ 2535                             173     
+ 2536 000000F0                    174     SEQ_TIM10MS_100
+ 2537 000000F0 2338               175             TST     R3,R3                                   ;
+ 2538                             176             TST_BIT_OF SEQ_TIM10MS_200
+ 2539 000000F2 890D                   M           BT      SEQ_TIM10MS_200
+ 2540                             177     
+ 2541                             178             SEQ_TIM_CNT1 ADR_REG=R10,LATE=1                 ;
+ 2542                                 M   
+ 2543 000000F4 50A2                   M           MOV.L   @(__TMCT_FLG,R10),R0    ;
+ 2544 000000F6 C907                   M           AND     #(BIT2+BIT1+BIT0),R0            ;
+ 2545 000000F8 8803                   M           CMP/EQ  #(BIT1+BIT0),R0                 ;
+ 2546 000000FA 8B02                   M           BF      JMP0100001                              ;
+ 2547 000000FC 50A0                   M           MOV.L   @(__TMCT_PV,R10),R0     ;
+ 2548 000000FE 7001                   M           ADD     #1,R0
+ 2549 00000100 1A00                   M           MOV.L   R0,@(__TMCT_PV,R10)     ;
+ 2550                                 M   
+ 2551 00000102                        M   JMP0100001:
+ 2552 00000102 7A0C                   M           ADD     #__TMCT_ST_CNT,R10      ;
+ 2553                                 M   
+ 2554 00000104 73FF               179             ADD     #-1,R3
+ 2555                             180             M_BRA   SEQ_TIM10MS_100
+ 2556 00000106 AFF3                   M           BRA     SEQ_TIM10MS_100
+ 2557 00000108 0009                   M           NOP
+ 2558                             181     
+ 2559                                     ***** BEGIN-POOL *****
+ 2560 0000010A 0100                       DATA FOR SOURCE-LINE 172
+ 2561 0000010C 00000000                   DATA FOR SOURCE-LINE 171
+ 2562                                     ***** END-POOL *****
+ 2563 00000110                    182     SEQ_TIM10MS_200
+ 2564                             183     
+ 2565                             184     ;       ---------------- 100msecﾀｲﾏｶｳﾝﾄ-----------
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE     6
+PROGRAM NAME =
+
+ 2566 00000110 DA07               185             MOV.L   #_SEQ_TMR_DATA+_T_0100MS_TOP*__TMCT_ST_CNT,R10          ;416~
+ 2567 00000112 930C               186             MOV.W   #_T_0100MS_CNT,R3
+ 2568                             187     
+ 2569 00000114                    188     SEQ_TIM10MS_300
+ 2570 00000114 2338               189             TST     R3,R3                                   ;
+ 2571                             190             TST_BIT_OF SEQ_TIM10MS_400
+ 2572 00000116 890D                   M           BT      SEQ_TIM10MS_400
+ 2573                             191     
+ 2574                             192             SEQ_TIM_CNT1 ADR_REG=R10,LATE=1                 ;
+ 2575                                 M   
+ 2576 00000118 50A2                   M           MOV.L   @(__TMCT_FLG,R10),R0    ;
+ 2577 0000011A C907                   M           AND     #(BIT2+BIT1+BIT0),R0            ;
+ 2578 0000011C 8803                   M           CMP/EQ  #(BIT1+BIT0),R0                 ;
+ 2579 0000011E 8B02                   M           BF      JMP0100002                              ;
+ 2580 00000120 50A0                   M           MOV.L   @(__TMCT_PV,R10),R0     ;
+ 2581 00000122 7001                   M           ADD     #1,R0
+ 2582 00000124 1A00                   M           MOV.L   R0,@(__TMCT_PV,R10)     ;
+ 2583                                 M   
+ 2584 00000126                        M   JMP0100002:
+ 2585 00000126 7A0C                   M           ADD     #__TMCT_ST_CNT,R10      ;
+ 2586                                 M   
+ 2587 00000128 73FF               193             ADD     #-1,R3
+ 2588                             194             M_BRA   SEQ_TIM10MS_300
+ 2589 0000012A AFF3                   M           BRA     SEQ_TIM10MS_300
+ 2590 0000012C 0009                   M           NOP
+ 2591                             195     
+ 2592                                     ***** BEGIN-POOL *****
+ 2593 0000012E 0080                       DATA FOR SOURCE-LINE 186
+ 2594 00000130 00000000                   DATA FOR SOURCE-LINE 185
+ 2595                                     ***** END-POOL *****
+ 2596 00000134                    196     SEQ_TIM10MS_400
+ 2597                             197     
+ 2598                             198             SUB_END
+ 2599                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 2600 00000134 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 2601                             199             M_RTS
+ 2602 00000136 000B                   M           RTS                             ;RTSの後ろの
+ 2603 00000138 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 2604                             200     
+ 2605                             201     ;********************************************************************
+ 2606                             202     ;* FUNCTION     : 100msタイマ処理
+ 2607                             203     ;* DATE         : 09/11/20 Akiba
+ 2608                             204     ;* UPDATE       :
+ 2609                             205     ;********************************************************************
+ 2610 0000013A                    206     _SEQ_TIM_100MS
+ 2611                             207             SUB_START
+ 2612 0000013A 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 2613                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 2614                             208     
+ 2615                             209     ;       ---------------- 1000msecﾀｲﾏｶｳﾝﾄ-----------
+ 2616 0000013C DA07               210             MOV.L   #_SEQ_TMR_DATA+_T_1000MS_TOP*__TMCT_ST_CNT,R10          ;416~
+ 2617 0000013E 930C               211             MOV.W   #_T_1000MS_CNT,R3
+ 2618                             212     
+ 2619 00000140                    213     SEQ_TIM100MS_100
+ 2620 00000140 2338               214             TST     R3,R3                                   ;
+ 2621                             215             TST_BIT_OF SEQ_TIM100MS_200
+ 2622 00000142 890D                   M           BT      SEQ_TIM100MS_200
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE     7
+PROGRAM NAME =
+
+ 2623                             216     
+ 2624                             217             SEQ_TIM_CNT1 ADR_REG=R10,LATE=1                 ;
+ 2625                                 M   
+ 2626 00000144 50A2                   M           MOV.L   @(__TMCT_FLG,R10),R0    ;
+ 2627 00000146 C907                   M           AND     #(BIT2+BIT1+BIT0),R0            ;
+ 2628 00000148 8803                   M           CMP/EQ  #(BIT1+BIT0),R0                 ;
+ 2629 0000014A 8B02                   M           BF      JMP0100003                              ;
+ 2630 0000014C 50A0                   M           MOV.L   @(__TMCT_PV,R10),R0     ;
+ 2631 0000014E 7001                   M           ADD     #1,R0
+ 2632 00000150 1A00                   M           MOV.L   R0,@(__TMCT_PV,R10)     ;
+ 2633                                 M   
+ 2634 00000152                        M   JMP0100003:
+ 2635 00000152 7A0C                   M           ADD     #__TMCT_ST_CNT,R10      ;
+ 2636                                 M   
+ 2637 00000154 73FF               218             ADD     #-1,R3
+ 2638                             219             M_BRA   SEQ_TIM100MS_100
+ 2639 00000156 AFF3                   M           BRA     SEQ_TIM100MS_100
+ 2640 00000158 0009                   M           NOP
+ 2641                             220     
+ 2642                                     ***** BEGIN-POOL *****
+ 2643 0000015A 0020                       DATA FOR SOURCE-LINE 211
+ 2644 0000015C 00000000                   DATA FOR SOURCE-LINE 210
+ 2645                                     ***** END-POOL *****
+ 2646 00000160                    221     SEQ_TIM100MS_200
+ 2647                             222     
+ 2648                             223             SUB_END
+ 2649                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 2650 00000160 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 2651                             224             M_RTS
+ 2652 00000162 000B                   M           RTS                             ;RTSの後ろの
+ 2653 00000164 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 2654                             225     
+ 2655                             226     ;********************************************************************
+ 2656                             227     ;* FUNCTION     : 1000msタイマ処理
+ 2657                             228     ;* DATE         : 09/11/20 Akiba
+ 2658                             229     ;* UPDATE       :
+ 2659                             230     ;********************************************************************
+ 2660 00000166                    231     _SEQ_TIM_1000MS
+ 2661                             232             SUB_START
+ 2662 00000166 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 2663                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 2664                             233     ;       ---------------- 1000msecﾀｲﾏｶｳﾝﾄ-----------
+ 2665 00000168 DA07               234             MOV.L   #_SEQ_TMR_DATA+_T_0001HR_TOP*__TMCT_ST_CNT,R10          ;416~
+ 2666 0000016A 930C               235             MOV.W   #_T_0001HR_CNT,R3
+ 2667                             236     
+ 2668 0000016C                    237     SEQ_TIM1000MS_100
+ 2669 0000016C 2338               238             TST     R3,R3                                   ;
+ 2670                             239             TST_BIT_OF SEQ_TIM1000MS_200
+ 2671 0000016E 890D                   M           BT      SEQ_TIM1000MS_200
+ 2672                             240     
+ 2673                             241             SEQ_TIM_CNT1 ADR_REG=R10,LATE=1                 ;
+ 2674                                 M   
+ 2675 00000170 50A2                   M           MOV.L   @(__TMCT_FLG,R10),R0    ;
+ 2676 00000172 C907                   M           AND     #(BIT2+BIT1+BIT0),R0            ;
+ 2677 00000174 8803                   M           CMP/EQ  #(BIT1+BIT0),R0                 ;
+ 2678 00000176 8B02                   M           BF      JMP0100004                              ;
+ 2679 00000178 50A0                   M           MOV.L   @(__TMCT_PV,R10),R0     ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE     8
+PROGRAM NAME =
+
+ 2680 0000017A 7001                   M           ADD     #1,R0
+ 2681 0000017C 1A00                   M           MOV.L   R0,@(__TMCT_PV,R10)     ;
+ 2682                                 M   
+ 2683 0000017E                        M   JMP0100004:
+ 2684 0000017E 7A0C                   M           ADD     #__TMCT_ST_CNT,R10      ;
+ 2685                                 M   
+ 2686 00000180 73FF               242             ADD     #-1,R3
+ 2687                             243             M_BRA   SEQ_TIM1000MS_100
+ 2688 00000182 AFF3                   M           BRA     SEQ_TIM1000MS_100
+ 2689 00000184 0009                   M           NOP
+ 2690                             244     
+ 2691                                     ***** BEGIN-POOL *****
+ 2692 00000186 0020                       DATA FOR SOURCE-LINE 235
+ 2693 00000188 00000000                   DATA FOR SOURCE-LINE 234
+ 2694                                     ***** END-POOL *****
+ 2695 0000018C                    245     SEQ_TIM1000MS_200
+ 2696                             246     
+ 2697                             247             SUB_END
+ 2698                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 2699 0000018C 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 2700                             248             M_RTS
+ 2701 0000018E 000B                   M           RTS                             ;RTSの後ろの
+ 2702 00000190 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 2703                             249     
+ 2704                             250     ;********************************************************************
+ 2705                             251     ;* FUNCTION     : ラダーツール タイマ処理(タイムアウト)
+ 2706                             252     ;* DATE         : 09/11/20 Akiba
+ 2707                             253     ;* UPDATE       :
+ 2708                             254     ;********************************************************************
+ 2709 00000192                    255     _SEQ_TIM1S_LD
+ 2710                             256             SUB_START
+ 2711 00000192 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 2712                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 2713                             257     
+ 2714 00000194 D304               258             MOV.L   #_SEQ_LD_TIMOUT,R3
+ 2715 00000196 6031               259             MOV.W   @R3,R0
+ 2716 00000198 2008               260             TST     R0,R0
+ 2717                             261             TST_BIT_OF SEQ_TIM1S_LD_100
+ 2718 0000019A 8901                   M           BT      SEQ_TIM1S_LD_100
+ 2719 0000019C 70FF               262             ADD     #-1,R0
+ 2720 0000019E 2301               263             MOV.W   R0,@R3
+ 2721                             264     
+ 2722 000001A0                    265     SEQ_TIM1S_LD_100
+ 2723                             266             SUB_END
+ 2724                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 2725 000001A0 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 2726                             267             M_RTS
+ 2727 000001A2 000B                   M           RTS                             ;RTSの後ろの
+ 2728 000001A4 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 2729                             268     
+ 2730                                     ***** BEGIN-POOL *****
+ 2731 000001A6 0000                       ALIGNMENT CODE
+ 2732 000001A8 00000000                   DATA FOR SOURCE-LINE 258
+ 2733                                     ***** END-POOL *****
+ 2734                             269             .END
+  *****TOTAL ERRORS       0
+  *****TOTAL WARNINGS     0
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE     9
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+ADDL_ADR                                  IMPT 00000000   1950 
+ADDL_OFS                                  IMPT 00000000   1951 
+ADDWI_DT_LH                               IMPT 00000000   1955 
+ADDWI_DT_LL                               IMPT 00000000   1956 
+ADDW_ADR                                  IMPT 00000000   1945 
+ADDW_OFS                                  IMPT 00000000   1946 
+ANDL_ADR                                  IMPT 00000000   1980 
+ANDL_OFS                                  IMPT 00000000   1981 
+ANDN_ADR                                  IMPT 00000000   1736 
+ANDN_BIT                                  IMPT 00000000   1738 
+ANDN_OFS                                  IMPT 00000000   1737 
+ANDWI_DT_LH                               IMPT 00000000   1985 
+ANDWI_DT_LL                               IMPT 00000000   1986 
+ANDW_ADR                                  IMPT 00000000   1975 
+ANDW_OFS                                  IMPT 00000000   1976 
+AND_ADR                                   IMPT 00000000   1730 
+AND_BIT                                   IMPT 00000000   1732 
+AND_OFS                                   IMPT 00000000   1731 
+A_REG                                     REG             2274*
+BIT0                                      EQU  00000001     19* 2493  2494  2544  2545  2577  2578  2627  2628  2676  2677 
+BIT1                                      EQU  00000002     20* 2493  2494  2544  2545  2577  2578  2627  2628  2676  2677 
+BIT10                                     EQU  00000400     29*
+BIT11                                     EQU  00000800     30*
+BIT12                                     EQU  00001000     31*
+BIT13                                     EQU  00002000     32*
+BIT14                                     EQU  00004000     33*
+BIT15                                     EQU  00008000     34*
+BIT16                                     EQU  00010000     35*
+BIT17                                     EQU  00020000     36*
+BIT18                                     EQU  00040000     37*
+BIT19                                     EQU  00080000     38*
+BIT2                                      EQU  00000004     21* 2493  2544  2577  2627  2676 
+BIT20                                     EQU  00100000     39*
+BIT21                                     EQU  00200000     40*
+BIT22                                     EQU  00400000     41*
+BIT23                                     EQU  00800000     42*
+BIT24                                     EQU  01000000     43*
+BIT25                                     EQU  02000000     44*
+BIT26                                     EQU  04000000     45*
+BIT27                                     EQU  08000000     46*
+BIT28                                     EQU  10000000     47*
+BIT29                                     EQU  20000000     48*
+BIT3                                      EQU  00000008     22*
+BIT30                                     EQU  40000000     49*
+BIT31                                     EQU  80000000     50*
+BIT4                                      EQU  00000010     23*
+BIT5                                      EQU  00000020     24*
+BIT6                                      EQU  00000040     25*
+BIT7                                      EQU  00000080     26*
+BIT8                                      EQU  00000100     27*
+BIT9                                      EQU  00000200     28*
+CLR_ADR                                   IMPT 00000000   1808 
+CLR_OFS                                   IMPT 00000000   1809 
+CTBL_REG                                  REG             2278*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE    10
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+DSETLI_DT_HH                              IMPT 00000000   2029 
+DSETLI_DT_HL                              IMPT 00000000   2030 
+DSETLI_DT_LH                              IMPT 00000000   2031 
+DSETLI_DT_LL                              IMPT 00000000   2032 
+DSETWI_DT_LH                              IMPT 00000000   1803 
+DSETWI_DT_LL                              IMPT 00000000   1804 
+DTBL_REG                                  REG             2279*
+D_REG                                     REG             2277*
+EQL_ADR                                   IMPT 00000000   1860 
+EQL_OFS                                   IMPT 00000000   1861 
+EQWI_DT_LH                                IMPT 00000000   1865 
+EQWI_DT_LL                                IMPT 00000000   1866 
+EQW_ADR                                   IMPT 00000000   1855 
+EQW_OFS                                   IMPT 00000000   1856 
+GEL_ADR                                   IMPT 00000000   1905 
+GEL_OFS                                   IMPT 00000000   1906 
+GEWI_DT_LH                                IMPT 00000000   1910 
+GEWI_DT_LL                                IMPT 00000000   1911 
+GEW_ADR                                   IMPT 00000000   1900 
+GEW_OFS                                   IMPT 00000000   1901 
+GTL_ADR                                   IMPT 00000000   1890 
+GTL_OFS                                   IMPT 00000000   1891 
+GTWI_DT_LH                                IMPT 00000000   1895 
+GTWI_DT_LL                                IMPT 00000000   1896 
+GTW_ADR                                   IMPT 00000000   1885 
+GTW_OFS                                   IMPT 00000000   1886 
+H_BYTE                                    EQU  00000000     86*
+JMP0100000                       P             000000D4   2495  2500*
+JMP0100001                       P             00000102   2546  2551*
+JMP0100002                       P             00000126   2579  2584*
+JMP0100003                       P             00000152   2629  2634*
+JMP0100004                       P             0000017E   2678  2683*
+LDL_ADR                                   IMPT 00000000   1840 
+LDL_OFS                                   IMPT 00000000   1841 
+LDN_ADR                                   IMPT 00000000   1724 
+LDN_BIT                                   IMPT 00000000   1726 
+LDN_OFS                                   IMPT 00000000   1725 
+LDW_ADR                                   IMPT 00000000   1835 
+LDW_OFS                                   IMPT 00000000   1836 
+LD_ADR                                    IMPT 00000000   1718 
+LD_BIT                                    IMPT 00000000   1720 
+LD_OFS                                    IMPT 00000000   1719 
+LEL_ADR                                   IMPT 00000000   1935 
+LEL_OFS                                   IMPT 00000000   1936 
+LEWI_DT_LH                                IMPT 00000000   1940 
+LEWI_DT_LL                                IMPT 00000000   1941 
+LEW_ADR                                   IMPT 00000000   1930 
+LEW_OFS                                   IMPT 00000000   1931 
+LTL_ADR                                   IMPT 00000000   1920 
+LTL_OFS                                   IMPT 00000000   1921 
+LTWI_DT_LH                                IMPT 00000000   1925 
+LTWI_DT_LL                                IMPT 00000000   1926 
+LTW_ADR                                   IMPT 00000000   1915 
+LTW_OFS                                   IMPT 00000000   1916 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE    11
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+L_BYTE                                    EQU  00000001     85*
+M_REG                                     REG             2276*
+NBIT0                                     EQU  000000FE     53*
+NBIT1                                     EQU  000000FD     54*
+NBIT10                                    EQU  0000FBFF     64*
+NBIT11                                    EQU  0000F7FF     65*
+NBIT12                                    EQU  0000EFFF     66*
+NBIT13                                    EQU  0000DFFF     67*
+NBIT14                                    EQU  0000BFFF     68*
+NBIT15                                    EQU  00007FFF     69*
+NBIT2                                     EQU  000000FB     55*
+NBIT3                                     EQU  000000F7     56*
+NBIT4                                     EQU  000000EF     57*
+NBIT5                                     EQU  000000DF     58*
+NBIT6                                     EQU  000000BF     59*
+NBIT7                                     EQU  0000007F     60*
+NBIT8                                     EQU  0000FEFF     62*
+NBIT9                                     EQU  0000FDFF     63*
+NEL_ADR                                   IMPT 00000000   1875 
+NEL_OFS                                   IMPT 00000000   1876 
+NEWI_DT_LH                                IMPT 00000000   1880 
+NEWI_DT_LL                                IMPT 00000000   1881 
+NEW_ADR                                   IMPT 00000000   1870 
+NEW_OFS                                   IMPT 00000000   1871 
+N_REG                                     REG             2275*
+ORL_ADR                                   IMPT 00000000   1995 
+ORL_OFS                                   IMPT 00000000   1996 
+ORN_ADR                                   IMPT 00000000   1748 
+ORN_BIT                                   IMPT 00000000   1750 
+ORN_OFS                                   IMPT 00000000   1749 
+ORWI_DT_LH                                IMPT 00000000   2000 
+ORWI_DT_LL                                IMPT 00000000   2001 
+ORW_ADR                                   IMPT 00000000   1990 
+ORW_OFS                                   IMPT 00000000   1991 
+OR_ADR                                    IMPT 00000000   1742 
+OR_BIT                                    IMPT 00000000   1744 
+OR_OFS                                    IMPT 00000000   1743 
+P                                P        SCT  00000000   2293*
+PLF_ADR                                   IMPT 00000000   1779 
+PLF_BIT                                   IMPT 00000000   1781 
+PLF_OFS                                   IMPT 00000000   1780 
+PLS_ADR                                   IMPT 00000000   1773 
+PLS_BIT                                   IMPT 00000000   1775 
+PLS_OFS                                   IMPT 00000000   1774 
+R0_REG                                    REG             2283*
+R10_REG                                   REG             2289*
+R1_REG                                    REG             2284*
+R2_REG                                    REG             2285*
+R3_REG                                    REG             2286*
+R4_REG                                    REG             2287*
+R9_REG                                    REG             2288*
+RSTCD_SETBIT                              IMPT 00000000   1769 
+RST_ADR                                   IMPT 00000000   1767 
+RST_OFS                                   IMPT 00000000   1768 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE    12
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+SEQ_INT_TIM10MS_100              P             00000020   2323  2334*
+SEQ_INT_TIM10MS_101              P             0000002A   2327  2342*
+SEQ_INT_TIM10MS_200              P             00000044   2348  2360*
+SEQ_INT_TIM10MS_201              P             0000004E   2352  2368*
+SEQ_INT_TIM10MS_300              P             0000006A   2378  2382  2388*
+SEQ_INT_TIM1MS_100               P             000000A6   2427  2431  2437*
+SEQ_TIM1000MS_100                P             0000016C   2668* 2688 
+SEQ_TIM1000MS_200                P             0000018C   2671  2695*
+SEQ_TIM100MS_100                 P             00000140   2619* 2639 
+SEQ_TIM100MS_200                 P             00000160   2622  2646*
+SEQ_TIM10MS_100                  P             000000F0   2536* 2556 
+SEQ_TIM10MS_200                  P             00000110   2539  2563*
+SEQ_TIM10MS_300                  P             00000114   2569* 2589 
+SEQ_TIM10MS_400                  P             00000134   2572  2596*
+SEQ_TIM1MS_100                   P             000000C2   2485* 2505 
+SEQ_TIM1MS_200                   P             000000E4   2488  2513*
+SEQ_TIM1S_LD_100                 P             000001A0   2718  2722*
+SETCD_SETBIT                              IMPT 00000000   1763 
+SET_ADR                                   IMPT 00000000   1761 
+SET_OFS                                   IMPT 00000000   1762 
+STCD_CLRBIT                               IMPT 00000000   1757 
+STCD_SETBIT                               IMPT 00000000   1756 
+STL_ADR                                   IMPT 00000000   1850 
+STL_OFS                                   IMPT 00000000   1851 
+STW_ADR                                   IMPT 00000000   1845 
+STW_OFS                                   IMPT 00000000   1846 
+ST_ADR                                    IMPT 00000000   1754 
+ST_OFS                                    IMPT 00000000   1755 
+SUBL_ADR                                  IMPT 00000000   1965 
+SUBL_OFS                                  IMPT 00000000   1966 
+SUBWI_DT_LH                               IMPT 00000000   1970 
+SUBWI_DT_LL                               IMPT 00000000   1971 
+SUBW_ADR                                  IMPT 00000000   1960 
+SUBW_OFS                                  IMPT 00000000   1961 
+TOP_REG                                   REG             2280*
+WCTR_UNH                                  IMPT 00000000   1819 
+WCTR_UNL                                  IMPT 00000000   1820 
+WSC_ADR                                   IMPT 00000000   1824 
+WSC_BTD                                   IMPT 00000000   1826 
+WSC_OFS                                   IMPT 00000000   1825 
+WSR_ADR                                   IMPT 00000000   1830 
+WSR_OFS                                   IMPT 00000000   1831 
+WTMR_DGT                                  IMPT 00000000   1815 
+WTMR_UNH                                  IMPT 00000000   1813 
+WTMR_UNL                                  IMPT 00000000   1814 
+XBIT0                                     EQU  00000000     72*
+XBIT1                                     EQU  00000001     73*
+XBIT2                                     EQU  00000002     74*
+XBIT3                                     EQU  00000003     75*
+XBIT4                                     EQU  00000004     76*
+XBIT5                                     EQU  00000005     77*
+XBIT6                                     EQU  00000006     78*
+XBIT7                                     EQU  00000007     79*
+XORL_ADR                                  IMPT 00000000   2010 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE    13
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+XORL_OFS                                  IMPT 00000000   2011 
+XORWI_DT_LH                               IMPT 00000000   2015 
+XORWI_DT_LL                               IMPT 00000000   2016 
+XORW_ADR                                  IMPT 00000000   2005 
+XORW_OFS                                  IMPT 00000000   2006 
+_ADDL_CHG                                 IMPT 00000000   2092 
+_ADDL_CODE                                IMPT 00000000   1949 
+_ADDL_CODE_END                            IMPT 00000000   1952 
+_ADDWI_CHG                                IMPT 00000000   2093 
+_ADDWI_CODE                               IMPT 00000000   1954 
+_ADDWI_CODE_END                           IMPT 00000000   1957 
+_ADDW_CHG                                 IMPT 00000000   2091 
+_ADDW_CODE                                IMPT 00000000   1944 
+_ADDW_CODE_END                            IMPT 00000000   1947 
+_ADD_CODE                                 IMPT 00000000   2019 
+_ADD_CODE_END                             IMPT 00000000   2020 
+_ADD_SUB                                  IMPT 00000000   1703 
+_AMRG_CHG                                 IMPT 00000000   2059 
+_AMRG_CODE                                IMPT 00000000   1784 
+_AMRG_CODE_END                            IMPT 00000000   1785 
+_ANDL_CHG                                 IMPT 00000000   2100 
+_ANDL_CODE                                IMPT 00000000   1979 
+_ANDL_CODE_END                            IMPT 00000000   1982 
+_ANDN_CHG                                 IMPT 00000000   2044 
+_ANDN_CODE                                IMPT 00000000   1735 
+_ANDN_CODE_END                            IMPT 00000000   1739 
+_ANDWI_CHG                                IMPT 00000000   2101 
+_ANDWI_CODE                               IMPT 00000000   1984 
+_ANDWI_CODE_END                           IMPT 00000000   1987 
+_ANDW_CHG                                 IMPT 00000000   2099 
+_ANDW_CODE                                IMPT 00000000   1974 
+_ANDW_CODE_END                            IMPT 00000000   1977 
+_ANDW_SUB                                 IMPT 00000000   1700 
+_AND_CHG                                  IMPT 00000000   2043 
+_AND_CODE                                 IMPT 00000000   1729 
+_AND_CODE_END                             IMPT 00000000   1733 
+_CB_BAKUP_CMD1                            EQU  00005678    118*
+_CB_BAKUP_CMD2                            EQU  00001234    119*
+_CB_BAK_SUM_COD1                          EQU  5AA51234    116*
+_CB_BAK_SUM_COD2                          EQU  A55A4321    117*
+_CB_ERR_INFO_MEM                          EQU  00000080    142*
+_CB_ERR_INFO_PSIZE                        EQU  00000008    143*
+_CB_STS_BUF_1BLK                          EQU  00000040    121*  123 
+_CB_STS_BUF_BLKMAX                        EQU  00000008    122*  123 
+_CB_STS_BUF_MAX                           EQU  00000200    123*
+_CB_TRD_BEFORE                            EQU  00000060    131*
+_CB_TRD_BUF_DP_MAX                        EQU  00000080    135*
+_CB_TRD_BUF_MAX                           EQU  00000800    132*
+_CB_TRD_DP_1CNT                           EQU  00000008    134*
+_CB_TRD_DP_CH                             EQU  00000004    127*
+_CB_TRD_SMP_CNT                           EQU  00000080    130*
+_CLR_CHG                                  IMPT 00000000   2057 
+_CLR_CODE                                 IMPT 00000000   1807 
+_CLR_CODE_END                             IMPT 00000000   1810 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE    14
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_CLR_SUB                                  IMPT 00000000   1689 
+_DI_X_TOP1                                IMPT 00000000   1654 
+_DI_X_TOP2                                IMPT 00000000   1655 
+_DO_Y_TOP1                                IMPT 00000000   1656 
+_DO_Y_TOP2                                IMPT 00000000   1657 
+_DSETLI_CHG                               IMPT 00000000   2109 
+_DSETLI_CODE                              IMPT 00000000   2028 
+_DSETLI_CODE_END                          IMPT 00000000   2033 
+_DSETWI_CHG                               IMPT 00000000   2058 
+_DSETWI_CODE                              IMPT 00000000   1802 
+_DSETWI_CODE_END                          IMPT 00000000   1805 
+_DUMMY_SUM_CODE                           EQU  5AA53CC3    109*
+_ENDNRG_CHG                               IMPT 00000000   2064 
+_ENDNRG_CODE                              IMPT 00000000   1799 
+_ENDNRG_CODE_END                          IMPT 00000000   1800 
+_END_CHG                                  IMPT 00000000   2065 
+_END_CODE                                 IMPT 00000000   2025 
+_END_CODE_END                             IMPT 00000000   2026 
+_END_SUB                                  IMPT 00000000   1705 
+_EQL_CHG                                  IMPT 00000000   2073 
+_EQL_CODE                                 IMPT 00000000   1859 
+_EQL_CODE_END                             IMPT 00000000   1862 
+_EQWI_CHG                                 IMPT 00000000   2074 
+_EQWI_CODE                                IMPT 00000000   1864 
+_EQWI_CODE_END                            IMPT 00000000   1867 
+_EQW_CHG                                  IMPT 00000000   2072 
+_EQW_CODE                                 IMPT 00000000   1854 
+_EQW_CODE_END                             IMPT 00000000   1857 
+_EQ_SUB                                   IMPT 00000000   1696 
+_GEL_CHG                                  IMPT 00000000   2082 
+_GEL_CODE                                 IMPT 00000000   1904 
+_GEL_CODE_END                             IMPT 00000000   1907 
+_GEWI_CHG                                 IMPT 00000000   2083 
+_GEWI_CODE                                IMPT 00000000   1909 
+_GEWI_CODE_END                            IMPT 00000000   1912 
+_GEW_CHG                                  IMPT 00000000   2081 
+_GEW_CODE                                 IMPT 00000000   1899 
+_GEW_CODE_END                             IMPT 00000000   1902 
+_GTL_CHG                                  IMPT 00000000   2079 
+_GTL_CODE                                 IMPT 00000000   1889 
+_GTL_CODE_END                             IMPT 00000000   1892 
+_GTWI_CHG                                 IMPT 00000000   2080 
+_GTWI_CODE                                IMPT 00000000   1894 
+_GTWI_CODE_END                            IMPT 00000000   1897 
+_GTW_CHG                                  IMPT 00000000   2078 
+_GTW_CODE                                 IMPT 00000000   1884 
+_GTW_CODE_END                             IMPT 00000000   1887 
+_GT_SUB                                   IMPT 00000000   1698 
+_LDL_CHG                                  IMPT 00000000   2068 
+_LDL_CODE                                 IMPT 00000000   1839 
+_LDL_CODE_END                             IMPT 00000000   1842 
+_LDNRG_CHG                                IMPT 00000000   2063 
+_LDNRG_CODE                               IMPT 00000000   1796 
+_LDNRG_CODE_END                           IMPT 00000000   1797 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE    15
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_LDN_CHG                                  IMPT 00000000   2042 
+_LDN_CODE                                 IMPT 00000000   1723 
+_LDN_CODE_END                             IMPT 00000000   1727 
+_LDON_CHG                                 IMPT 00000000   2040 
+_LDON_CODE                                IMPT 00000000   1714 
+_LDON_CODE_END                            IMPT 00000000   1715 
+_LDW_CHG                                  IMPT 00000000   2067 
+_LDW_CODE                                 IMPT 00000000   1834 
+_LDW_CODE_END                             IMPT 00000000   1837 
+_LDW_SUB                                  IMPT 00000000   1694 
+_LD_CHG                                   IMPT 00000000   2041 
+_LD_CODE                                  IMPT 00000000   1717 
+_LD_CODE_END                              IMPT 00000000   1721 
+_LEL_CHG                                  IMPT 00000000   2089 
+_LEL_CODE                                 IMPT 00000000   1934 
+_LEL_CODE_END                             IMPT 00000000   1937 
+_LEWI_CHG                                 IMPT 00000000   2090 
+_LEWI_CODE                                IMPT 00000000   1939 
+_LEWI_CODE_END                            IMPT 00000000   1942 
+_LEW_CHG                                  IMPT 00000000   2088 
+_LEW_CODE                                 IMPT 00000000   1929 
+_LEW_CODE_END                             IMPT 00000000   1932 
+_LE_SUB                                   IMPT 00000000   1699 
+_LTL_CHG                                  IMPT 00000000   2086 
+_LTL_CODE                                 IMPT 00000000   1919 
+_LTL_CODE_END                             IMPT 00000000   1922 
+_LTWI_CHG                                 IMPT 00000000   2087 
+_LTWI_CODE                                IMPT 00000000   1924 
+_LTWI_CODE_END                            IMPT 00000000   1927 
+_LTW_CHG                                  IMPT 00000000   2085 
+_LTW_CODE                                 IMPT 00000000   1914 
+_LTW_CODE_END                             IMPT 00000000   1917 
+_MKIND_A                                  EQU  00000040   2250*
+_MKIND_A_ADR                              EQU  00001610   2249*
+_MKIND_C                                  EQU  00000040   2232* 2233 
+_MKIND_CD                                 EQU  00000400   2236* 2237 
+_MKIND_CD_ADR                             EQU  00000900   2235* 2237 
+_MKIND_C_ADR                              EQU  000004C0   2231* 2233 
+_MKIND_F                                  EQU  00000110   2246* 2247 
+_MKIND_F_ADR                              EQU  00000D00   2245* 2247 
+_MKIND_L                                  EQU  00000040   2228* 2229 
+_MKIND_L_ADR                              EQU  00000440   2227* 2229 
+_MKIND_M                                  EQU  00000400   2226* 2227 
+_MKIND_M_ADR                              EQU  00000040   2225* 2227 
+_MKIND_S                                  EQU  00000800   2248* 2249 
+_MKIND_S_ADR                              EQU  00000E10   2247* 2249 
+_MKIND_T                                  EQU  00000040   2230* 2231 
+_MKIND_TBL                                IMPT 00000000   2139 
+_MKIND_TBL_TOP                            IMPT 00000000   2140 
+_MKIND_TD                                 EQU  00000400   2234* 2235 
+_MKIND_TD_ADR                             EQU  00000500   2233* 2235 
+_MKIND_T_ADR                              EQU  00000480   2229* 2231 
+_MKIND_W0                                 EQU  00000000   2220* 2221 
+_MKIND_W0_ADR                             EQU  00000000   2219*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE    16
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_MKIND_W1                                 EQU  00000000   2238* 2239 
+_MKIND_W1_ADR                             EQU  00000D00   2237* 2239 
+_MKIND_W2                                 EQU  00000000   2240* 2241 
+_MKIND_W2_ADR                             EQU  00000D00   2239* 2241 
+_MKIND_W3                                 EQU  00000000   2242* 2243 
+_MKIND_W3_ADR                             EQU  00000D00   2241* 2243 
+_MKIND_W4                                 EQU  00000000   2244* 2245 
+_MKIND_W4_ADR                             EQU  00000D00   2243* 2245 
+_MKIND_X                                  EQU  00000020   2222* 2223 
+_MKIND_X_ADR                              EQU  00000000   2221* 2223 
+_MKIND_Y                                  EQU  00000020   2224* 2225 
+_MKIND_Y_ADR                              EQU  00000020   2223* 2225 
+_NEL_CHG                                  IMPT 00000000   2076 
+_NEL_CODE                                 IMPT 00000000   1874 
+_NEL_CODE_END                             IMPT 00000000   1877 
+_NEWI_CHG                                 IMPT 00000000   2077 
+_NEWI_CODE                                IMPT 00000000   1879 
+_NEWI_CODE_END                            IMPT 00000000   1882 
+_NEW_CHG                                  IMPT 00000000   2075 
+_NEW_CODE                                 IMPT 00000000   1869 
+_NEW_CODE_END                             IMPT 00000000   1872 
+_NE_SUB                                   IMPT 00000000   1697 
+_NOP_CHG                                  IMPT 00000000   2039 
+_NOP_CODE                                 IMPT 00000000   1711 
+_NOP_CODE_END                             IMPT 00000000   1712 
+_OMRG_CHG                                 IMPT 00000000   2060 
+_OMRG_CODE                                IMPT 00000000   1787 
+_OMRG_CODE_END                            IMPT 00000000   1788 
+_ORL_CHG                                  IMPT 00000000   2103 
+_ORL_CODE                                 IMPT 00000000   1994 
+_ORL_CODE_END                             IMPT 00000000   1997 
+_ORN_CHG                                  IMPT 00000000   2046 
+_ORN_CODE                                 IMPT 00000000   1747 
+_ORN_CODE_END                             IMPT 00000000   1751 
+_ORWI_CHG                                 IMPT 00000000   2104 
+_ORWI_CODE                                IMPT 00000000   1999 
+_ORWI_CODE_END                            IMPT 00000000   2002 
+_ORW_CHG                                  IMPT 00000000   2102 
+_ORW_CODE                                 IMPT 00000000   1989 
+_ORW_CODE_END                             IMPT 00000000   1992 
+_ORW_SUB                                  IMPT 00000000   1701 
+_OR_CHG                                   IMPT 00000000   2045 
+_OR_CODE                                  IMPT 00000000   1741 
+_OR_CODE_END                              IMPT 00000000   1745 
+_PLF_CHG                                  IMPT 00000000   2048 
+_PLF_CODE                                 IMPT 00000000   1778 
+_PLF_CODE_END                             IMPT 00000000   1782 
+_PLF_SUB                                  IMPT 00000000   1688 
+_PLS_CHG                                  IMPT 00000000   2047 
+_PLS_CODE                                 IMPT 00000000   1772 
+_PLS_CODE_END                             IMPT 00000000   1776 
+_PLS_SUB                                  IMPT 00000000   1687 
+_POP_CHG                                  IMPT 00000000   2062 
+_POP_CODE                                 IMPT 00000000   1793 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE    17
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_POP_CODE_END                             IMPT 00000000   1794 
+_PUSH_CHG                                 IMPT 00000000   2061 
+_PUSH_CODE                                IMPT 00000000   1790 
+_PUSH_CODE_END                            IMPT 00000000   1791 
+_RST_CHG                                  IMPT 00000000   2052 
+_RST_CODE                                 IMPT 00000000   1766 
+_RST_CODE_END                             IMPT 00000000   1770 
+_SEQ_ARG1_DATA                            IMPT 00000000   1635 
+_SEQ_ARG2_DATA                            IMPT 00000000   1642 
+_SEQ_ARG3_DATA                            IMPT 00000000   1649 
+_SEQ_ASM_RAM_TOP                          IMPT 00000000   1613 
+_SEQ_A_SET                                EQU  00000020   2189* 2250 
+_SEQ_BBIT_CHG_TBL                         IMPT 00000000   2120 
+_SEQ_CARD_MAX                             EQU  00000C00   2190*
+_SEQ_CARD_RAM                             IMPT 00000000   1627 
+_SEQ_CD_SET                               EQU  00000200   2182* 2236 
+_SEQ_CHG_TBL0                             IMPT 00000000   2116 
+_SEQ_CMP_ERR1                             IMPT 00000000   1633 
+_SEQ_CMP_ERR2                             IMPT 00000000   1640 
+_SEQ_CMP_ERR3                             IMPT 00000000   1647 
+_SEQ_CMP_ERR_ADR1                         IMPT 00000000   1634 
+_SEQ_CMP_ERR_ADR2                         IMPT 00000000   1641 
+_SEQ_CMP_ERR_ADR3                         IMPT 00000000   1648 
+_SEQ_CMP_START                            IMPT 00000000   1661  2379  2428 
+_SEQ_CTR_DATA                             IMPT 00000000   1630 
+_SEQ_C_SET                                EQU  00000020   2180* 2182  2232 
+_SEQ_DRG1_DATA                            IMPT 00000000   1638 
+_SEQ_DRG2_DATA                            IMPT 00000000   1645 
+_SEQ_DRG3_DATA                            IMPT 00000000   1652 
+_SEQ_F_SET                                EQU  00000088   2187* 2246 
+_SEQ_INT_TIM10MS                 P        EXPT 00000000   2300  2308*
+_SEQ_INT_TIM1MS                  P        EXPT 00000088   2402  2413*
+_SEQ_LD_TIMOUT                            IMPT 00000000   1669  2714 
+_SEQ_L_SET                                EQU  00000020   2178* 2228 
+_SEQ_MAX_BYTE                             EQU  0000001E   2213*
+_SEQ_MRG1_DATA                            IMPT 00000000   1636 
+_SEQ_MRG2_DATA                            IMPT 00000000   1643 
+_SEQ_MRG3_DATA                            IMPT 00000000   1650 
+_SEQ_M_SET                                EQU  00000200   2177* 2226 
+_SEQ_NRG1_DATA                            IMPT 00000000   1637 
+_SEQ_NRG2_DATA                            IMPT 00000000   1644 
+_SEQ_NRG3_DATA                            IMPT 00000000   1651 
+_SEQ_POU_SET                              EQU  00004000   2214*
+_SEQ_RUN1                                 IMPT 00000000   1616 
+_SEQ_RUN1_END                             IMPT 00000000   1617 
+_SEQ_RUN1_TOP                             IMPT 00000000   1615 
+_SEQ_RUN2                                 IMPT 00000000   1620 
+_SEQ_RUN2_END                             IMPT 00000000   1621 
+_SEQ_RUN2_TOP                             IMPT 00000000   1619 
+_SEQ_RUN3                                 IMPT 00000000   1624 
+_SEQ_RUN3_END                             IMPT 00000000   1625 
+_SEQ_RUN3_TOP                             IMPT 00000000   1623 
+_SEQ_RUN_CHG1_ERR_END                     IMPT 00000000   2097 
+_SEQ_RUN_MAIN1                            IMPT 00000000   2298  2384 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE    18
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_SEQ_RUN_MAIN3                            IMPT 00000000   2401  2433 
+_SEQ_SR_FLG                               IMPT 00000000   1631 
+_SEQ_S_SET                                EQU  00000400   2188* 2248 
+_SEQ_TD_SET                               EQU  00000200   2181* 2234 
+_SEQ_TIM1S_LD                    P             00000192   2370  2709*
+_SEQ_TIM_1000MS                  P             00000166   2362  2660*
+_SEQ_TIM_100MS                   P             0000013A   2336  2610*
+_SEQ_TIM_10MS                    P             000000EA   2314  2527*
+_SEQ_TIM_1MS                     P             000000BC   2419  2476*
+_SEQ_TIM_WK1000M                          IMPT 00000000   1672  2345 
+_SEQ_TIM_WK100M                           IMPT 00000000   1671  2320 
+_SEQ_TMR_DATA                             IMPT 00000000   1629  2482  2533  2566  2616  2665 
+_SEQ_T_SET                                EQU  00000020   2179* 2181  2230 
+_SEQ_W0_SET                               EQU  00000000   2174* 2220 
+_SEQ_W1_SET                               EQU  00000000   2183* 2238 
+_SEQ_W2_SET                               EQU  00000000   2184* 2240 
+_SEQ_W3_SET                               EQU  00000000   2185* 2242 
+_SEQ_W4_SET                               EQU  00000000   2186* 2244 
+_SEQ_X_SET                                EQU  00000010   2175* 2222 
+_SEQ_Y_SET                                EQU  00000010   2176* 2224 
+_SET_CHG                                  IMPT 00000000   2051 
+_SET_CODE                                 IMPT 00000000   1760 
+_SET_CODE_END                             IMPT 00000000   1764 
+_SQ_ERR_END                               EQU  0000FF00   2167*
+_SQ_NML_COD                               EQU  00000000   2165*
+_SQ_NML_END                               EQU  00000055   2166*
+_START_ACK_COD                            EQU  00004321    217*
+_START_REQ_COD                            EQU  00009876    216*
+_STL_CHG                                  IMPT 00000000   2070 
+_STL_CODE                                 IMPT 00000000   1849 
+_STL_CODE_END                             IMPT 00000000   1852 
+_STW_CHG                                  IMPT 00000000   2069 
+_STW_CODE                                 IMPT 00000000   1844 
+_STW_CODE_END                             IMPT 00000000   1847 
+_STW_SUB                                  IMPT 00000000   1695 
+_ST_CHG                                   IMPT 00000000   2049 
+_ST_CODE                                  IMPT 00000000   1753 
+_ST_CODE_END                              IMPT 00000000   1758 
+_SUBL_CHG                                 IMPT 00000000   2095 
+_SUBL_CODE                                IMPT 00000000   1964 
+_SUBL_CODE_END                            IMPT 00000000   1967 
+_SUBWI_CHG                                IMPT 00000000   2096 
+_SUBWI_CODE                               IMPT 00000000   1969 
+_SUBWI_CODE_END                           IMPT 00000000   1972 
+_SUBW_CHG                                 IMPT 00000000   2094 
+_SUBW_CODE                                IMPT 00000000   1959 
+_SUBW_CODE_END                            IMPT 00000000   1962 
+_SUB_CODE                                 IMPT 00000000   2022 
+_SUB_CODE_END                             IMPT 00000000   2023 
+_SUB_SUB                                  IMPT 00000000   1704 
+_SeqLd_MKIND_TBL_TOP                      IMPT 00000000   2141 
+_SeqRunFlg                                IMPT 00000000   2299  2375  2424 
+_SeqSysStat                               IMPT 00000000   1663 
+_T_0001HR_CNT                             EQU  00000020   2269* 2666 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE    19
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_T_0001HR_TOP                             EQU  000001E0   2268* 2665 
+_T_0001MS_CNT                             EQU  00000040   2267* 2268  2483 
+_T_0001MS_TOP                             EQU  000001A0   2266* 2268  2482 
+_T_0010MS_CNT                             EQU  00000100   2261* 2262  2534 
+_T_0010MS_TOP                             EQU  00000000   2260* 2262  2533 
+_T_0100MS_CNT                             EQU  00000080   2263* 2264  2567 
+_T_0100MS_TOP                             EQU  00000100   2262* 2264  2566 
+_T_1000MS_CNT                             EQU  00000020   2265* 2266  2617 
+_T_1000MS_TOP                             EQU  00000180   2264* 2266  2616 
+_VUPCHECK_EQU                             EQU  11AB3739    102*
+_WCTR_CHG                                 IMPT 00000000   2055 
+_WCTR_CODE                                IMPT 00000000   1818 
+_WCTR_CODE_END                            IMPT 00000000   1821 
+_WCTR_SUB                                 IMPT 00000000   1691 
+_WSC_CHG                                  IMPT 00000000   2050 
+_WSC_CODE                                 IMPT 00000000   1823 
+_WSC_CODE_END                             IMPT 00000000   1827 
+_WSC_SUB                                  IMPT 00000000   1692 
+_WSR_CHG                                  IMPT 00000000   2056 
+_WSR_CODE                                 IMPT 00000000   1829 
+_WSR_CODE_END                             IMPT 00000000   1832 
+_WSR_SUB                                  IMPT 00000000   1693 
+_WTMR_CHG                                 IMPT 00000000   2054 
+_WTMR_CODE                                IMPT 00000000   1812 
+_WTMR_CODE_END                            IMPT 00000000   1816 
+_WTMR_SUB                                 IMPT 00000000   1690 
+_XORL_CHG                                 IMPT 00000000   2106 
+_XORL_CODE                                IMPT 00000000   2009 
+_XORL_CODE_END                            IMPT 00000000   2012 
+_XORWI_CHG                                IMPT 00000000   2107 
+_XORWI_CODE                               IMPT 00000000   2014 
+_XORWI_CODE_END                           IMPT 00000000   2017 
+_XORW_CHG                                 IMPT 00000000   2105 
+_XORW_CODE                                IMPT 00000000   2004 
+_XORW_CODE_END                            IMPT 00000000   2007 
+_XORW_SUB                                 IMPT 00000000   1702 
+_X_PUSH_TOP1                              IMPT 00000000   1658 
+_X_PUSH_TOP2                              IMPT 00000000   1659 
+__TMCT_FLG                                EQU  00000008   2258* 2492  2543  2576  2626  2675 
+__TMCT_PV                                 EQU  00000000   2256* 2496  2498  2547  2549  2580  2582  2630  2632  2679  2681 
+__TMCT_ST_CNT                             EQU  0000000C   2255* 2482  2501  2533  2552  2566  2585  2616  2635  2665  2684 
+__TMCT_SV                                 EQU  00000004   2257*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 20:26:25                                                  PAGE    20
+
+*** SECTION DATA LIST
+
+SECTION                          ATTRIBUTE    SIZE             START
+
+P                                REL-CODE    0000001AC        

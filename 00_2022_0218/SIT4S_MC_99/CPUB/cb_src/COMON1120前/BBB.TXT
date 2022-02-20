@@ -1,0 +1,82 @@
+;	===================================
+;	===	起動処理		===
+;	===================================
+	MEM1_BIT0_F_ADCLR MEM=(_SQ_CBWK_TOP+_WKSQCB206),LG=W,BIT=(~BIT3),WKRG1=R1,WKRG2=R4
+	FAR_JSR	#_SV_UP_HOLD_CHK,R0				;(上昇ﾎｰﾙﾄﾞ工程作成/)
+	FAR_JSR	#_UP_HOLD_FLG_CLR1,R0				;(不要でしょう)
+	FAR_JSR	#_UP_HOLD_FLG_CLR2,R0				;
+
+;	==== 2004-01-28 ==
+	XOR	R0,R0
+	MOV.L	#_ENC360_OVER_FLG,R1		;
+	MOV.W	R0,@R1				;
+
+	FAR_JSR	#_SFTY_MASK_END,R0	;(結果としてはﾏｽｸするかもしれない)
+	FAR_JSR	#_CB_CTL_START_INI,R0
+	FAR_JSR	#_STOPPING_TIM_MOV_INI,R0	;
+
+	FAR_JSR	#_MN_POS_CTRL_START,R0							;
+
+
+
+
+	MEM1_DATA_SET MEM=_DRV_ACT_FLG,LG=W,DATA=BIT0,WKREG1=R1,WKREG2=R2	;運転動作ﾌﾗｸﾞ BIT0:運転中
+
+	FAR_JSR	#_CMPSTP_CTRL_REDY_CLR,R0	;//準備完了にしたいをOFF
+	FAR_JSR	#_RDY_OF,R1			;
+
+;	==== 2007-09-07 ちゃんとｾﾙﾌを生かす===
+	.IMPORT	_PAR_SELFCHK_POWSEL
+
+	MOV.L	#_PAR_SELFCHK_POWSEL,R1		;
+	MOV.W	@R1,R0				;
+	CMP/EQ	#1,R0				;
+	BT	SELF_FORCE_POW_100		;"1"ならちゃんとセルフする
+
+;	===== 2006-12-06 [1]=====
+	MOV.W	#BIT0,R0			;"0"なら起動１回後はセルフしない
+	MOV.L	#_SELF_LOCK_FLG,R1		;
+	MOV.W	R0,@R1				;
+	XOR	R2,R2				;
+	XOR	R3,R3				;
+	MOV.L	#_SELF_CHK_SEL,R1		;
+	MOV.W	R2,@R1				;
+	MOV.L	#_SELF_CHK_MATHED,R1		;
+	MOV.W	R3,@R1				;
+
+SELF_FORCE_POW_100
+
+;	====== 2007-01-16========
+	FAR_JSR	#_START_SFTY_LOCK_CLR,R0
+
+
+
+
+
+;;;	XOR	R0,R0				;
+;;;	MOV.L	#_CMPSTEP_POS_START,R1		;//起動したいは終わり側にも使用する
+;;;	MOV.W	R0,@R1				;
+;;;	FAR_JSR	#_CPU_BA_STR_OF_OUT,R0		;(相手の起動信号ｸﾘｱ)
+	M_BRA	RDY_CHK_0399			;
+
+;	====== 保持状態=======
+RDY_CHK_0290:				;((((()))))
+	FAR_JSR	#_CPU_BA_RDY_ON_JG,R0	;
+	TST	R0,R0			;
+	TST_BIT_OF RDY_CHK_0299		;相手側CPUのせいで準備未完了へ
+	M_BRA	RDY_CHK_0399		;
+
+;	======= 準備完了失敗====
+RDY_CHK_0299:
+	FAR_JSR	#_CMPSTP_POS_START_CLR,R0	;//起動したいをOFF
+	FAR_JSR	#_CMPSTP_CTRL_REDY_CLR,R0	;//準備完了にしたいをOFF
+	FAR_JSR	#_RDY_OF,R0			;準備未完了へ遷移
+;;;	FAR_JSR	#_TEPA_PLSCNT_CLR,R0		;2006-07-28
+
+;	------- 2007-01-16----------
+	XOR	R0,R0
+	MOV.L	#_DRV_START_KEEP,R1		;FLG
+	MOV.W	R0,@R1				;
+
+RDY_CHK_0399:
+	M_BRA	RDY_CHK_EXIT

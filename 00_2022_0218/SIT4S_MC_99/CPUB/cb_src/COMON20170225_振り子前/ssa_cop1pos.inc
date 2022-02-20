@@ -1,0 +1,648 @@
+;	***********************************
+;	***				***
+;	***	ﾎﾟｼﾞｼｮﾅ動作		***
+;	***				***
+;	***********************************
+;	cpuaだけ
+;
+;	①"自動ﾀﾞｲﾊｲﾄｽﾀｰﾄ":手動ﾀﾞｲﾊｲﾄと同一演算にてﾀﾞｲﾊｲﾄ位置を表示する
+;	②位置比較
+;
+;	341.9
+	.IMPORT		_SVP_ATSLID_OBJ1	; スライド自動調節設定値（現在動作中）0.001mm
+	.IMPORT		_SVP_ATSLID_DNOBJ1	; スライド自動調節　下降停止 0~99
+	.IMPORT		_SVP_ATSLID_UPOBJ1	; スライド自動調節　上昇停止 "
+	.IMPORT		_SVP_ATSLID_BAKLNG	; スライド自動調節　戻り量   "
+	.IMPORT		_SVP_ATSLID_COEF1	; スライド自動調節　制御精度 "
+	.IMPORT		_SVP_SLPOS_DIR		;位置決め方向 0(上昇)/1(下降)
+	.IMPORT		_SVP_SL_TENPOS		;小数点
+
+
+	.EXPORT	_POSITIONER_DAIHAITO
+_POSITIONER_DAIHAITO
+	SUB_START
+
+	MOV.L	#_POSINER_FLG,R5		;
+	MOV.W	@R5,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON POSITIONER_DAICTL_100	;
+
+	MOV.L	#_CB_SEQ_CB_SEL341,R1		;341.9
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT9,R4			;
+	TST	R4,R0				;
+	TST_BIT_ON POSITIONER_DAICTL_020	;
+	M_BRA	POSITIONER_DAICTL_EXT		;
+
+;	-------------- 起動-----------------
+POSITIONER_DAICTL_020
+	MOV.B	#BIT0,R0			;
+	MOV.W	R0,@R5				;FLG.0=1
+
+;	------------------------------------
+	XOR	R0,R0				;
+	MOV.L	#_POSINER_RETRY_CNT,R1		;
+	MOV.W	R0,@R1				;
+
+
+	MOV.B	#BIT1,R0			;上昇からの+位置決め中
+	MOV.L	#_SVP_SLPOS_DIR,R1		;位置決め方向
+	MOV.W	@R1,R4				;
+	TST	R4,R4				;
+	TST_BIT_OF POSITIONER_DAICTL_040	;
+	MOV.B	#BIT6+BIT1,R0			;下降からの+位置決め中
+POSITIONER_DAICTL_040:
+	MOV.L	#_POSINER_STS,R1		;BIT0(完了),BIT1(位置決め中),BIT2(失敗),BIT3(上昇),BIT4(下降), BIT6:(DIR)
+	MOV.W	R0,@R1				;
+	FAR_JSR	#_POSITIONER_DAI_DATA,R0
+	M_BRA	POSITIONER_DAICTL_800
+
+
+
+;	----------------------------------------------
+POSITIONER_DAICTL_100
+
+	MOV.L	#_PVX_DAI_POS1,R1		;ﾀﾞｲﾊｲﾄ表示値・制御値
+	MOV.L	@R1,R2				;SAVE R2 -->NEXT CALC USED
+	MOV.L	#_POSINER_PV_POS,R1		;//目標位置
+	MOV.L	R2,@R1				;
+
+	MOV.L	#_CB_SEQ_CB_SEL341,R1		;341.9
+	MOV.W	@R1,R2				;
+	MOV.W	#BIT9,R4			;
+	TST	R4,R2				;
+	TST_BIT_ON POSITIONER_DAICTL_200	;
+
+;	--------------- 指令OFF 終了---------------
+	XOR	R0,R0				;
+	MOV.L	#_POSINER_FLG,R5		;
+	MOV.W	R0,@R5				;
+	MOV.L	#_POSINER_STS,R1		;
+	MOV.W	R0,@R1				;
+	M_BRA	POSITIONER_DAICTL_800
+
+;	-------------- 運転--------------------
+POSITIONER_DAICTL_200
+	MOV.L	#_POSINER_FLG,R5		;
+	MOV.W	@R5,R0				;
+	TST	#BIT1,R0			;
+	TST_BIT_ON POSITIONER_DAICTL_300	;
+
+;	------- 初期演算--------
+	FAR_JSR	#_POSITIONER_DAI_OBJ1MAK,R0				;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_POSINER_FLG,LG=W,BIT=BIT1,WKREG=R1	;
+	M_BRA	POSITIONER_DAICTL_800
+
+;	----------------------------------------
+POSITIONER_DAICTL_300
+	TST	#BIT2,R0			;
+	TST_BIT_ON POSITIONER_DAICTL_400	;
+
+	FAR_JSR	#_POSITIONER_DAI_OBJ1CMP,R0	;//目標位置+ｵｰﾊﾞ量
+	PUSH_REG1 R0				;
+	FAR_JSR	#_POSITIONER_DAI_OUT,R1		;input R0
+	POP_REG1 R0
+	TST	R0,R0
+	TST_BIT_ON POSITIONER_DAICTL_350
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_POSINER_FLG,LG=W,BIT=BIT2,WKREG=R1	;
+POSITIONER_DAICTL_350
+	M_BRA	POSITIONER_DAICTL_800
+
+
+;	----------------------------------------
+POSITIONER_DAICTL_400
+	TST	#BIT3,R0			;
+	TST_BIT_ON POSITIONER_DAICTL_500	;
+	FAR_JSR	#_POSITIONER_DAI_OBJ2CMP,R0	;//目標位置+ｵｰﾊﾞ量-すべり
+	PUSH_REG1 R0				;
+	FAR_JSR	#_POSITIONER_DAI_OUT,R1		;input R0
+	POP_REG1 R0
+	TST	R0,R0
+	TST_BIT_ON POSITIONER_DAICTL_450
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_POSINER_FLG,LG=W,BIT=BIT3,WKREG=R1	;
+
+
+	MOV.L	#_POSINER_STOPCHK_TIM1,R1;//1000 1秒
+	MOV.W	#D'1000,R2		;
+	MOV.W	R2,@R1			;
+	MOV.L	#_POSINER_STOPCHK_TIM2,R1;//1000 1秒
+	MOV.W	R2,@R1			;
+
+
+	MOV.L	#_POSINER_PV_POS,R1	;
+	MOV.L	@R1,R2			;
+	MOV.L	#_POSINER_OLDPV_POS,R1	;
+	MOV.L	R2,@R1			;
+	MOV.L	#_POSINER_MOSTPV_POS,R1	;//指令OFF後のｲﾝﾎﾟｼﾞｼｮﾝにもっとも近い位置
+	MOV.L	R2,@R1			;
+
+POSITIONER_DAICTL_450
+	M_BRA	POSITIONER_DAICTL_800
+
+
+;	-------------- 停止待ち------------------
+POSITIONER_DAICTL_500
+	TST	#BIT4,R0			;
+	TST_BIT_ON POSITIONER_DAICTL_800	;
+
+	FAR_JSR	#_POSITIONER_DAI_STPCHK,R1	;
+	TST	R0,R0				;
+	TST_BIT_OF POSITIONER_DAICTL_590	;"R0=1 END R0=-1 END(失敗)
+
+	CMP/EQ	#1,R0				;
+	BF	POSITIONER_DAICTL_530		;
+
+;	正常終了
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_POSINER_FLG,LG=W,BIT=BIT4,WKREG=R1	;
+
+;	位置決め完了ON
+;	BIT0(完了),BIT1(位置決め中),BIT2(失敗),BIT3(上昇),BIT4(下降), BIT6:(DIR)
+	MEM1_BIT0_TO_BIT7_ANDCLR MEM=_POSINER_STS,LG=W,BIT=(~(BIT4|BIT3|BIT1)),WKREG=R1	;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_POSINER_STS,LG=W,BIT=BIT0,WKREG=R1	;
+	M_BRA	POSITIONER_DAICTL_800
+
+
+POSITIONER_DAICTL_530
+;	異常終了
+	MOV.L	#_POSINER_RETRY_CNT,R1
+	MOV.W	@R1,R2
+	ADD	#1,R2
+	MOV.W	R2,@R1
+	MOV.B	#3,R4
+	CMP/HS	R2,R4			;
+	BT	POSITIONER_DAICTL_550	;R2=<R4(3) ﾘﾄﾗｲ(通常+ﾘﾄﾗｲ3回=4回までやる)
+
+;	異常終了
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_POSINER_FLG,LG=W,BIT=BIT4,WKREG=R1	;
+;	異常完了ON
+;	BIT0(完了),BIT1(位置決め中),BIT2(失敗),BIT3(上昇),BIT4(下降), BIT6:(DIR)
+	MEM1_BIT0_TO_BIT7_ANDCLR MEM=_POSINER_STS,LG=W,BIT=(~(BIT4|BIT3|BIT1)),WKREG=R1	;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_POSINER_STS,LG=W,BIT=BIT2,WKREG=R1	;
+	M_BRA	POSITIONER_DAICTL_800
+
+;	----------------ﾘﾄﾗｲ開始-----------
+POSITIONER_DAICTL_550
+	MOV.B	#BIT0,R0			;
+	MOV.L	#_POSINER_FLG,R1		;
+	MOV.W	R0,@R1				;初期化
+
+POSITIONER_DAICTL_590
+	M_BRA	POSITIONER_DAICTL_800
+
+
+
+;	-----------------------------------
+POSITIONER_DAICTL_800
+
+
+
+
+
+	MOV.L	#_POSINER_STS,R1			;
+	MOV.W	@R1,R0					;
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB251,R1		;251
+	MOV.W	@R1,R2					;
+	MOV.W	#(BIT5+BIT4+BIT3+BIT2+BIT1+BIT0),R4	;
+	AND	R4,R0
+	NOT	R4,R4
+	AND	R4,R2
+	OR	R0,R2
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB251,R1		;251
+	MOV.W	R2,@R1					;
+
+
+
+
+
+POSITIONER_DAICTL_EXT
+
+	SUB_END
+	M_RTS
+
+
+;_SVP_KANDO_A21				.SRES	4	;感度
+;_SVP_UPDATA_A21			.SRES	4	;上限
+;_SVP_DNDATA_A21			.SRES	4	;下限
+;_SVP_GENITI_A21			.SRES	4	;現位置
+;_SVP_MODORI_A21			.SRES	2	;戻り量
+;_SVP_DNSTOP_A21			.SRES	2	;下降停止
+;_SVP_UPSTOP_A21			.SRES	2	;上昇停止
+;_SVP_SSEIDO_A21			.SRES	2	;制御精度
+
+
+;_SVP_SLID_POS1		.SRES	4	;ｽﾗｲﾄﾞ位置　生産
+;_SVP_SLID_POS2		.SRES	4	;ｽﾗｲﾄﾞ位置　段取1
+;_SVP_SLID_POS3		.SRES	4	;ｽﾗｲﾄﾞ位置　段取2
+;
+;	***********************************************************
+;	***							***
+;	***	[上昇から開始]					***
+;	***	設定+戻り量(現在位置＋戻り量)			***
+;	***	設定+戻り量-下降量(現在位置＋戻り量-下降量)	***
+;	***							***
+;	***********************************************************
+
+_POSITIONER_DAI_OBJ1MAK:
+	SUB_START
+
+	MOV.L	#_POSINER_SV_POS,R1		;//目標位置
+	MOV.L	@R1,R2				;
+
+	MOV.L	#_POSINER_RETRY_CNT,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF POSITIONER_DAIOBJ1MK_100	;
+
+	MOV.L	#_POSINER_PV_POS,R1		;
+	MOV.L	@R1,R2				;[R5目標位置]
+
+POSITIONER_DAIOBJ1MK_100:
+
+;	in R2
+
+	MOV.L	#_POSINER_STS,R1		;BIT0(完了),BIT1(位置決め中),BIT2(失敗),BIT3(上昇),BIT4(下降), BIT6:(DIR)
+	MOV.W	@R1,R0				;
+	TST	#BIT6,R0			;方向
+	TST_BIT_ON POSITIONER_DAIOBJ1MK_200	;
+
+;	---------- 上昇から開始-----------
+	MOV.L	#_SET1_ATSLID_BAKLNG,R1		;//スライド自動調節　戻り量   "
+	MOV.L	@R1,R3				;0.001mm(ADD)
+
+	MOV.L	#_SET1_ATSLID_DNOBJ1,R1		;//スライド自動調節　下降停止 0~99
+	MOV.L	@R1,R4				;0.001mm
+	M_BRA	POSITIONER_DAIOBJ1MK_300
+
+
+POSITIONER_DAIOBJ1MK_200:
+;	------- 下降から開始 -------------
+	MOV.L	#_SET1_ATSLID_BAKLNG,R1		;//スライド自動調節　戻り量   "
+	MOV.L	@R1,R3				;0.001mm(ADD)
+	NEG	R3,R3
+
+	MOV.L	#_SET1_ATSLID_UPOBJ1,R1		;//スライド自動調節　上昇停止 0~99
+	MOV.L	@R1,R4				;0.001mm
+	NEG	R4,R4				;
+
+POSITIONER_DAIOBJ1MK_300:
+
+
+	ADD	R3,R2				;
+	FAR_JSR	#_POSITIONER_UPDN_LIMIT,R0	;
+
+
+;	-------------停止位置は一定--------------
+	MOV.L	#_POSINER_SV_OVRPOS,R1		;//目標位置+ｵｰﾊﾞ量
+	MOV.L	R2,@R1				;
+
+
+	MOV.L	#_POSINER_SV_POS,R1		;//目標位置
+	MOV.L	@R1,R2				;
+
+	ADD	R4,R2				;目標+β
+	FAR_JSR	#_POSITIONER_UPDN_LIMIT,R0	;
+	MOV.L	#_POSINER_SV_STPPOS,R1		;//目標位置+停止量
+	MOV.L	R2,@R1				;
+
+	SUB_END
+	M_RTS
+
+
+;	INPU R2,DESTORY R1,R3,ANS R2
+_POSITIONER_UPDN_LIMIT
+	SUB_START
+
+	MOV.L	#_SET1_RNAPOS_MAXP,R1	;19機械上限機械 ?0.001mm
+	MOV.L	@R1,R3			;UP
+	CMP/GE	R2,R3			;
+	BT	POSITIONER_UPDNLMT100	;R2(SV)=<R3(MAX) OK
+	MOV	R3,R2			;
+POSITIONER_UPDNLMT100			;
+
+	MOV.L	#_SET1_RNAPOS_MINP,R1	;1A 機械下限機械
+	MOV.L	@R1,R3			;DN
+	CMP/GE	R3,R2			;
+	BT	POSITIONER_UPDNLMT200	;R3(MIN)=<R2(MAX) OK
+	MOV	R3,R2			;
+POSITIONER_UPDNLMT200			;
+
+	SUB_END
+	M_RTS
+
+
+
+;	*******************************************
+;	***					***
+;	***	設定データを0.001mmにする	***
+;	***					***
+;	*******************************************
+_POSITIONER_DAI_DATA
+	SUB_START
+
+	MOV.L	#_SVP_SL_TENPOS,R1		;
+	MOV.W	@R1,R0				;
+	MOV.L	#_SET1_ATDAT_DOTPOS,R1		;//小数点
+	MOV.W	R0,@R1				;
+
+	MOV.W	#D'1,R3				;LATE
+	CMP/EQ	#3,R0
+	BT	POSITIONER_DAIDAT_100		;小数点3桁
+
+	MOV.W	#D'10,R3			;
+	CMP/EQ	#2,R0
+	BT	POSITIONER_DAIDAT_100		;小数点2桁
+
+	MOV.W	#D'100,R3			;
+	CMP/EQ	#1,R0
+	BT	POSITIONER_DAIDAT_100		;小数点1桁
+
+	MOV.W	#D'1000,R3			;小数点無し
+
+POSITIONER_DAIDAT_100				;
+
+
+	MOV.L	#_SVP_ATSLID_DNOBJ1,R1		; スライド自動調節　下降停止 0~99
+	MOV.W	@R1,R2				;
+	DMULS.L	R2,R3				;
+	STS.L	MACL,R2				;
+	MOV.L	#_SET1_ATSLID_DNOBJ1,R1		;//スライド自動調節　下降停止 0~99
+	MOV.L	R2,@R1				;0.001mm
+
+	MOV.L	#_SVP_ATSLID_UPOBJ1,R1		; スライド自動調節　上昇停止 "
+	MOV.W	@R1,R2				;
+	DMULS.L	R2,R3				;
+	STS.L	MACL,R2				;
+	MOV.L	#_SET1_ATSLID_UPOBJ1,R1		;//スライド自動調節　上昇停止 "
+	MOV.L	R2,@R1				;0.001mm
+
+	MOV.L	#_SVP_ATSLID_BAKLNG,R1		; スライド自動調節　戻り量   "
+	MOV.W	@R1,R2				;
+	DMULS.L	R2,R3				;
+	STS.L	MACL,R2				;
+	MOV.L	#_SET1_ATSLID_BAKLNG,R1		;//スライド自動調節　戻り量   "
+	MOV.L	R2,@R1				;0.001mm
+
+	MOV.L	#_SVP_ATSLID_COEF1,R1		; スライド自動調節　制御精度 "
+	MOV.W	@R1,R2				;
+	DMULS.L	R2,R3				;
+	STS.L	MACL,R2				;
+	MOV.L	#_SET1_ATSLID_COEF1,R1		;
+	MOV.L	R2,@R1				;0.001mm
+
+
+	MOV.L	#_SVP_ATSLID_OBJ1,R1		; スライド自動調節設定値（現在動作中）0.001mm
+	MOV.L	@R1,R2				;0.001mm
+	MOV.L	#_POSINER_SV_POS,R1		;//目標位置0.001mm
+	MOV.L	R2,@R1				;
+
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***		戻り位置比較		***
+;	***					***
+;	*******************************************
+_POSITIONER_DAI_OBJ1CMP:
+	SUB_START
+
+
+	MOV.L	#_POSINER_PV_POS,R1		;//目標位置
+	MOV.L	@R1,R2				;
+
+	MOV.L	#_POSINER_SV_OVRPOS,R1		;//目標位置+ｵｰﾊﾞ量
+	MOV.L	@R1,R3				;
+
+	MOV.L	#_POSINER_STS,R1		;BIT0(完了),BIT1(位置決め中),BIT2(失敗),BIT3(上昇),BIT4(下降), BIT6:(DIR)
+	MOV.W	@R1,R0				;
+	TST	#BIT6,R0			;方向
+	TST_BIT_ON POSITIONER_DAI_OBJ1CP_100	;
+
+;	上昇
+	CMP/GE	R3,R2				;SV(R3)=<PV(R2)?
+	BT POSITIONER_DAI_OBJ1CP_OVR		;YES
+	M_BRA	POSITIONER_DAI_OBJ1CP_WATUP	;
+
+POSITIONER_DAI_OBJ1CP_100:
+
+;	下降
+	CMP/GE	R2,R3				;PV(R2)=<SV(R3)?
+	BT POSITIONER_DAI_OBJ1CP_OVR		;YES
+	M_BRA	POSITIONER_DAI_OBJ1CP_WATDN	;
+
+
+
+POSITIONER_DAI_OBJ1CP_WATUP:
+	MOV.B	#1,R0
+	M_BRA	POSITIONER_DAI_OBJ1CP_END	
+
+POSITIONER_DAI_OBJ1CP_WATDN:
+	MOV.B	#-1,R0
+	M_BRA	POSITIONER_DAI_OBJ1CP_END	
+	
+POSITIONER_DAI_OBJ1CP_OVR:
+	XOR	R0,R0				;
+POSITIONER_DAI_OBJ1CP_END:
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***		指令OFF位置比較		***
+;	***					***
+;	*******************************************
+_POSITIONER_DAI_OBJ2CMP:
+	SUB_START
+
+
+	MOV.L	#_POSINER_PV_POS,R1		;//目標位置
+	MOV.L	@R1,R2				;
+
+	MOV.L	#_POSINER_SV_STPPOS,R1		;//目標位置+ｵｰﾊ量-下降量
+	MOV.L	@R1,R3				;
+
+	MOV.L	#_POSINER_STS,R1		;BIT0(完了),BIT1(位置決め中),BIT2(失敗),BIT3(上昇),BIT4(下降), BIT6:(DIR)
+	MOV.W	@R1,R0				;
+	TST	#BIT6,R0			;方向
+	TST_BIT_ON POSITIONER_DAI_OBJ2CP_100	;
+
+;	上昇から開始の下降中
+	CMP/GE	R2,R3				;PV(R2)=<SV(R3)?
+	BT POSITIONER_DAI_OBJ2CP_STP		;YES
+	M_BRA	POSITIONER_DAI_OBJ2CP_WATDN	;
+
+POSITIONER_DAI_OBJ2CP_100:
+
+;	下降から開始の上昇中
+	CMP/GE	R3,R2				;SV(R3)=<PV(R2)?
+	BT POSITIONER_DAI_OBJ2CP_STP		;YES
+	M_BRA	POSITIONER_DAI_OBJ2CP_WATUP	;
+
+
+
+POSITIONER_DAI_OBJ2CP_WATUP:
+	MOV.B	#1,R0
+	M_BRA	POSITIONER_DAI_OBJ2CP_END	
+POSITIONER_DAI_OBJ2CP_WATDN:
+	MOV.B	#-1,R0				;
+	M_BRA	POSITIONER_DAI_OBJ2CP_END	
+	
+POSITIONER_DAI_OBJ2CP_STP:
+	XOR	R0,R0
+POSITIONER_DAI_OBJ2CP_END:
+
+	SUB_END
+	M_RTS
+
+
+
+_POSITIONER_DAI_OUT:
+	SUB_START
+	
+	XOR	R2,R2		;停止
+
+	TST	R0,R0
+	TST_BIT_OF POSITIONER_DAIOUT_100
+
+	MOV.B	#BIT3,R2
+	CMP/EQ	#1,R0
+	BT	POSITIONER_DAIOUT_100
+
+	MOV.B	#BIT4,R2
+
+POSITIONER_DAIOUT_100:
+	MOV.L	#_POSINER_STS,R1
+	MOV.W	@R1,R0	
+	AND	#LOW ~(BIT4+BIT3),R0
+	OR	R2,R0
+	MOV.W	R0,@R1			;
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***		停止待ち		***
+;	***					***
+;	*******************************************
+;	基本は１秒間動作しなくなって、インポジ内にいるか
+;	R0=0(動作中) R0=1(停止　ｲﾝﾎﾟｼﾞOK) R0=-1(停止,ｲﾝﾎﾟｼﾞ異常)
+;	・動作方向の位置が１秒間更新されなかったとき
+;		MOV.L	#_POSINER_STOPCHK_TIM1,R1;//1000 1秒
+;	・0.01mmの移動が1秒間無い
+_POSITIONER_DAI_STPCHK:
+	SUB_START
+
+	MOV.L	#_POSINER_PV_POS,R1	;
+	MOV.L	@R1,R2			;
+
+	MOV.L	#_POSINER_MOSTPV_POS,R5	;//指令OFF後のｲﾝﾎﾟｼﾞｼｮﾝにもっとも近い位置
+	MOV.L	@R5,R4				;
+
+	MOV.L	#_POSINER_STS,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT6,R0			;方向 0:下降(減少)で終了
+	TST_BIT_ON POSITIONER_DAI_STPCK100	;
+
+	CMP/GE	R4,R2				;最下位置(R4)=<現在位置(R2)
+	BT	POSITIONER_DAI_STPCK200		;OK
+	M_BRA	POSITIONER_DAI_STPCK150		;移動した
+
+
+POSITIONER_DAI_STPCK100:
+	CMP/GE	R2,R4				;現在位置(R2)=<最上位置(R4)
+	BT	POSITIONER_DAI_STPCK200		;OK
+POSITIONER_DAI_STPCK150:			;
+
+	MOV.L	R2,@R5				;最下位置(最上位置)更新:動いた
+
+	MOV.W	#D'1000,R0
+	MOV.L	#_POSINER_STOPCHK_TIM1,R1	;
+	MOV.W	R0,@R1
+	MOV.L	#_POSINER_STOPCHK_TIM2,R1	;
+	MOV.W	R0,@R1
+
+
+POSITIONER_DAI_STPCK200:
+	MOV.L	#_POSINER_STOPCHK_TIM1,R4
+	MOV.W	@R4,R0
+	TST	R0,R0
+	TST_BIT_OF POSITIONER_DAI_STPCK250		;
+	ADD	#-1,R0
+	MOV.W	R0,@R4					;
+	TST	R0,R0					;
+	TST_BIT_ON POSITIONER_DAI_STPCK230
+	MOV.L	#_POSINER_OLDPV_POS,R1			;
+	MOV.L	R2,@R1					;R2(NOW),R3(OLD)
+POSITIONER_DAI_STPCK230:
+	M_BRA	POSITIONER_DAI_STPCKWAT			;
+
+
+POSITIONER_DAI_STPCK250:
+;	---FIRSTﾀｲﾏOK---
+	MOV.L	#_POSINER_OLDPV_POS,R5
+	MOV.L	@R5,R3			;R2(NOW),R3(OLD)
+	SUB	R2,R3			;
+	CMP/PZ	R3			;
+	BT	POSITIONER_DAI_STPCK280	;
+	NEG	R3,R3			;
+POSITIONER_DAI_STPCK280:		;
+	MOV.W	#D'10,R0
+	CMP/HI	R3,R0			;R3<R0(10 0.01mm)
+	BT	POSITIONER_DAI_STPCK300	;
+
+;	------------- 0.01mm動いた------------
+	MOV.L	R2,@R5				;前回位置更新
+	MOV.W	#D'1000,R0			;
+	MOV.L	#_POSINER_STOPCHK_TIM2,R1	;
+	MOV.W	R0,@R1				;
+
+POSITIONER_DAI_STPCK300:			;
+
+
+	DN_TIME LG=W,MEM_ADR=_POSINER_STOPCHK_TIM2,WKREG1=R1,WKREG2=R4	;10msec 定周期
+
+	MOV.L	#_POSINER_STOPCHK_TIM2,R4
+	MOV.W	@R4,R0
+	TST	R0,R0
+	TST_BIT_ON POSITIONER_DAI_STPCKWAT		;
+
+
+;	停止終了,ｲﾝﾎﾟｼﾞｼｮﾝ
+	MOV.L	#_POSINER_PV_POS,R1		;
+	MOV.L	@R1,R2				;
+	MOV.L	#_POSINER_SV_POS,R1		;//目標位置
+	MOV.L	@R1,R3				;
+	SUB	R2,R3				;
+	CMP/PZ	R3			
+	BT	POSITIONER_DAI_STPCK320		;
+	NEG	R3,R3
+POSITIONER_DAI_STPCK320:			;
+
+	MOV.L	#_SET1_ATSLID_COEF1,R1		;
+	MOV.L	@R1,R0				;0.001mm
+	CMP/GE	R3,R0				;
+	BT	POSITIONER_DAI_STPCKINP		;ｲﾝﾎﾟｼﾞｼｮﾝ
+	M_BRA	POSITIONER_DAI_STPCKERR		;
+
+
+POSITIONER_DAI_STPCKWAT:	
+	XOR	R0,R0
+	M_BRA	POSITIONER_DAI_STPCKEND		;
+
+POSITIONER_DAI_STPCKERR:			;
+	MOV.B	#-1,R0				;
+	M_BRA	POSITIONER_DAI_STPCKEND		;
+
+POSITIONER_DAI_STPCKINP:			;
+	MOV.B	#1,R0				;
+
+POSITIONER_DAI_STPCKEND:
+
+	SUB_END
+	M_RTS
+
+

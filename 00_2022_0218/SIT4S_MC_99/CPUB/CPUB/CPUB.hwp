@@ -1,0 +1,325 @@
+[HIMDBVersion]
+2.0
+[DATABASE_VERSION]
+"2.8" 
+[PROJECT_DETAILS]
+"CPUB" "D:\SIT4S_MC_99\CPUB\CPUB" "D:\SIT4S_MC_99\CPUB\CPUB\CPUB.hwp" "SuperH RISC engine" "Renesas SuperH Standard" "Application" "SH3-DSP" "SH7727" 
+[INFORMATION]
+"プロジェクト情報がありません" 
+[TOOL_CHAIN]
+"Renesas SuperH RISC engine Standard Toolchain" "9.4.1.0" 
+[CONFIGURATIONS]
+"Debug" "D:\SIT4S_MC_99\CPUB\CPUB\Debug" 
+"Release" "D:\SIT4S_MC_99\CPUB\CPUB\Release" 
+[BUILD_PHASES]
+"Renesas OptLinker" 1 
+"Renesas SH Assembler" 1 
+"Renesas SH C/C++ Compiler" 1 
+"Renesas SH C/C++ Library Generator" 1 
+[TOOL_ENVIRONMENT]
+[EXTENSIONS]
+"Absolute file" "ABS" 
+"Assembly include file" "INC" 
+"Assembly list file" "LIS" 
+"Assembly source file" "ASM" 
+"Assembly source file" "SRC" 
+"Binary file" "BIN" 
+"C header file" "H" 
+"C list file" "LST" 
+"C source file" "C" 
+"C++ header file" "HPP" 
+"C++ list file" "LPP" 
+"C++ source file" "CC" 
+"C++ source file" "CP" 
+"C++ source file" "CPP" 
+"CPU information file" "CPU" 
+"Calling information file" "CAL" 
+"Debug information file" "DBG" 
+"Expanded assembly source file" "EXP" 
+"Hex file" "HEX" 
+"Library file" "LIB" 
+"Library information file" "LBP" 
+"Linkage map file" "MAP" 
+"Linkage symbol file" "FSY" 
+"Object file" "OBJ" 
+"Optimize map file" "bls" 
+"Preprocessed C source file" "P" 
+"Preprocessed C++ source file" "PP" 
+"Profile file" "PRO" 
+"Relocatable file" "REL" 
+"Rts information file" "RTS" 
+"S-Record file" "MOT" 
+"Stack information file" "SNI" 
+"TD include object file" "RTI" 
+[FILE_GROUPS]
+"Absolute file" "BIN" "NONE" "" 
+"Assembly include file" "TEXT" "EDITOR" "" 
+"Assembly list file" "TEXT" "EDITOR" "" 
+"Assembly source file" "TEXT" "EDITOR" "" 
+"Binary file" "BIN" "NONE" "" 
+"C header file" "TEXT" "EDITOR" "" 
+"C list file" "TEXT" "EDITOR" "" 
+"C source file" "TEXT" "EDITOR" "" 
+"C++ header file" "TEXT" "EDITOR" "" 
+"C++ list file" "TEXT" "EDITOR" "" 
+"C++ source file" "TEXT" "EDITOR" "" 
+"CPU information file" "BIN" "NONE" "" 
+"Calling information file" "BIN" "NONE" "" 
+"Debug information file" "BIN" "NONE" "" 
+"Expanded assembly source file" "TEXT" "EDITOR" "" 
+"Hex file" "TEXT" "EDITOR" "" 
+"Library file" "BIN" "NONE" "" 
+"Library information file" "TEXT" "EDITOR" "" 
+"Linkage map file" "TEXT" "EDITOR" "" 
+"Linkage symbol file" "TEXT" "EDITOR" "" 
+"Object file" "BIN" "NONE" "" 
+"Optimize map file" "BIN" "NONE" "" 
+"Preprocessed C source file" "TEXT" "EDITOR" "" 
+"Preprocessed C++ source file" "TEXT" "EDITOR" "" 
+"Profile file" "BIN" "NONE" "" 
+"Relocatable file" "BIN" "NONE" "" 
+"Rts information file" "BIN" "NONE" "" 
+"S-Record file" "TEXT" "EDITOR" "" 
+"Stack information file" "BIN" "NONE" "" 
+"TD include object file" "BIN" "NONE" "" 
+[ASSOCIATED_APPLICATIONS]
+[TOOLCHAIN_PHASE]
+"Renesas OptLinker" 
+"Renesas SH Assembler" 
+"Renesas SH C/C++ Compiler" 
+"Renesas SH C/C++ Library Generator" 
+[UTILITY_PHASE]
+[CUSTOM_PHASES]
+[CUSTOM_PHASE_INPUT_GROUP]
+[CUSTOM_PHASE_OUTPUT_SYNTAX]
+[BUILD_ORDER]
+"Renesas SH C/C++ Library Generator" 1 
+"Renesas SH C/C++ Compiler" 1 
+"Renesas SH Assembler" 1 
+"Renesas OptLinker" 1 
+[BUILD_PHASE_DETAILS]
+"Renesas OptLinker" "Object file|Library file|Relocatable file" 0 
+"Renesas SH Assembler" "Assembly source file|Linkage symbol file" 1 
+"Renesas SH C/C++ Compiler" "C source file|C++ source file" 1 
+"Renesas SH C/C++ Library Generator" "" 0 
+[BUILD_FILE_ORDER_Assembly source file]
+"Renesas SH Assembler" 1 
+[BUILD_FILE_ORDER_C source file]
+"Renesas SH C/C++ Compiler" 1 
+[BUILD_FILE_ORDER_C++ source file]
+"Renesas SH C/C++ Compiler" 1 
+[BUILD_FILE_ORDER_Linkage symbol file]
+"Renesas SH Assembler" 1 
+[SCRAP]
+"Project Generator Setup File" "$(PROJDIR)\CPUB.pgs" 
+[MAPPINGS]
+"Assembly source file" "Renesas SH Assembler" "Renesas SH C/C++ Compiler" 
+"Library file" "Renesas OptLinker" "Renesas SH C/C++ Library Generator" 
+"Object file" "Renesas OptLinker" "Renesas SH Assembler" 
+"Object file" "Renesas OptLinker" "Renesas SH C/C++ Compiler" 
+[PROJECT_FILES]
+"D:\SIT4S_MC_99\CPUB\CPUB\CPUB.c" "User" "C source file" 2 
+"D:\SIT4S_MC_99\CPUB\CPUB\dbsct.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\CPUB\hw_src\CPU_REG.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\CPUB\hw_src\ssa_ctbl.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\CPUB\hw_src\ssa_dio1.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\CPUB\hw_src\ssa_frif.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\CPUB\hw_src\ssa_had1.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\CPUB\hw_src\ssa_mem1.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\CPUB\hwsetup.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\CPUB\initsct.c" "User" "C source file" 2 
+"D:\SIT4S_MC_99\CPUB\CPUB\intprg.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\CPUB\resetprg.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\CPUB\sbrk.c" "User" "C source file" 2 
+"D:\SIT4S_MC_99\CPUB\CPUB\stacksct.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\CPUB\vecttbl.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\CPUB\vhandler.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_acrm.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_cblp.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_cbmn.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_com1.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_ctrl.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_dtmk.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_else.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_err1.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_khad.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_pcal.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_pos1.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_scal.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_self.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_tbl1.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_tbl2.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC\ssa_et1b.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC\ssa_k.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC\ssa_wrmk.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC\ssc_k.c" "User" "C source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC\ssc_wrmk.c" "User" "C source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\y_src\ssa_dioy.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\y_src\ssa_y.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\y_src\ssc_wrmy.c" "User" "C source file" 2 
+"D:\SIT4S_MC_99\CPUB\hmi_src\fit_src\ssa_opram.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\hmi_src\fit_src\ssc_work.c" "User" "C source file" 2 
+"D:\SIT4S_MC_99\CPUB\hmi_src\fit_src\ssc_wrmh.c" "User" "C source file" 2 
+"D:\SIT4S_MC_99\CPUB\hmi_src\s_src\ssa_hmi2.src" "User" "Assembly source file" 2 
+"D:\SIT4S_MC_99\CPUB\hmi_src\s_src\ssc_dif1.c" "User" "C source file" 2 
+"D:\SIT4S_MC_99\CPUB\hmi_src\s_src\ssc_wrms.c" "User" "C source file" 2 
+"D:\SIT4S_MC_99\comon\cpub_inc\ssa_dummymem.src" "User" "Assembly source file" 2 
+[FOLDER]
+"Assembly source file" "Assembly source file" 
+"C source file" "C source file" 
+[GENERAL_DATA_PROJECT]
+"USE_CUSTOM_LINKAGE_ORDER" "0" 
+[ON_DEMAND_COMPONENTS_LOADED]
+[SYNC_SESSION_NAMES]
+[SESSIONS]
+"DefaultSession" "D:\SIT4S_MC_99\CPUB\CPUB\DefaultSession.hsf" 0 
+[GENERAL_DATA_SESSION_DefaultSession]
+[OPTIONS_Debug_Renesas OptLinker]
+"Single Shot" "0b603680d9681d10" 5 
+[OPTIONS_Debug_Renesas SH Assembler]
+"Assembly source file" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\dbsct.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\hw_src\CPU_REG.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\hw_src\ssa_ctbl.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\hw_src\ssa_dio1.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\hw_src\ssa_frif.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\hw_src\ssa_had1.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\hw_src\ssa_mem1.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\hwsetup.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\intprg.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\resetprg.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\stacksct.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\vecttbl.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\vhandler.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_acrm.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_cblp.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_cbmn.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_com1.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_ctrl.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_dtmk.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_else.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_err1.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_khad.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_pcal.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_pos1.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_scal.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_self.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_tbl1.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_tbl2.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC\ssa_et1b.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC\ssa_k.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC\ssa_wrmk.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\y_src\ssa_dioy.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\y_src\ssa_y.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\hmi_src\fit_src\ssa_opram.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\hmi_src\s_src\ssa_hmi2.src" "0430104c2ee61d10" 4 
+"D:\SIT4S_MC_99\comon\cpub_inc\ssa_dummymem.src" "0430104c2ee61d10" 4 
+"Linkage symbol file" "0430104c2ee61d10" 4 
+[OPTIONS_Debug_Renesas SH C/C++ Compiler]
+"C source file" "0430104c2ee61d10" 2 
+"C++ source file" "0430104c2ee61d10" 3 
+"D:\SIT4S_MC_99\CPUB\CPUB\CPUB.c" "0430104c2ee61d10" 2 
+"D:\SIT4S_MC_99\CPUB\CPUB\initsct.c" "0430104c2ee61d10" 2 
+"D:\SIT4S_MC_99\CPUB\CPUB\sbrk.c" "0430104c2ee61d10" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC\ssc_k.c" "0430104c2ee61d10" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC\ssc_wrmk.c" "0430104c2ee61d10" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\y_src\ssc_wrmy.c" "0430104c2ee61d10" 2 
+"D:\SIT4S_MC_99\CPUB\hmi_src\fit_src\ssc_work.c" "0430104c2ee61d10" 2 
+"D:\SIT4S_MC_99\CPUB\hmi_src\fit_src\ssc_wrmh.c" "0430104c2ee61d10" 2 
+"D:\SIT4S_MC_99\CPUB\hmi_src\s_src\ssc_dif1.c" "0430104c2ee61d10" 2 
+"D:\SIT4S_MC_99\CPUB\hmi_src\s_src\ssc_wrms.c" "0430104c2ee61d10" 2 
+[OPTIONS_Debug_Renesas SH C/C++ Library Generator]
+"Single Shot" "01999fb649beec10" 1 
+[OPTIONS_Debug]
+"" 0 
+"[B|CTYPE|0] [B|MATH|0] [B|IOS|0] [B|NEW|1] [B|CPPSTRING|0] [S|ENDIAN|BIG] [B|COMPLEX|0] [V|VERSION|7] [B|SPEED|0] [S|ROUND|ZERO] [B|STDIO|1] [S|OUTPUTPATH|^"$(CONFIGDIR)\$(PROJECTNAME).lib^"] [B|RUNTIME|1] [S|CPU|SH3DSP] [B|STDLIB|1] [B|STRING|1] [B|DENORMALIZE|0] [B|MATHF|0] [B|STDARG|0] " 1 
+"[V|VERSION|1] [S|INCLUDE|^"D:\SIT4S_MC_99\comon^"|^"D:\SIT4S_MC_99\CPUB\CPUB\hw_src^"|^"D:\SIT4S_MC_99\CPUB\CPUB^"|^"D:\SIT4S_MC_99\CPUB\cb_src\COMON^"|^"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC^"|^"D:\SIT4S_MC_99\CPUB\cb_src\y_src^"|^"D:\SIT4S_MC_99\CPUB\hmi_src\fit_src^"|^"D:\SIT4S_MC_99\CPUB\hmi_src\s_src^"|^"D:\SIT4S_MC_99\CPUB\cb_src\COMON\cb_table^"|^"D:\SIT4S_MC_99\CPUB\CPUB\color_src^"|^"D:\SIT4S_MC_99\et1comon^"|^"D:\SIT4S_MC_99\comon\cpub_inc^"|^"D:\SIT4S_MC_99\cb_table^"] [B|DEBUG|1] [S|OUTPUTPATH|^"$(CONFIGDIR)\$(FILELEAF).obj^"] [S|LITERAL|POOL|BRANCH|JUMP|RETURN] [S|DISPSIZE|12] [I|TAB|8] [B|ERRORPATH|1] [B|CHGINCPATH|1] [S|CPU|SH3DSP] [S|ENDIAN|BIG] [S|ROUND|ZERO] [B|DENORMALIZE|0]
+" 4 
+"[V|VERSION|6] [S|INPUTLIBRARY|^"$(TCINSTALL)\lib\sh3dspnb.lib^"] [S|FORM|STYPE] [S|BYTE_COUNT_VALUE|FF] [B|DEBUG|1] [S|ROM|(D,R)|(P,PRAM)|(PvupsciROM,PvupsciRAM)|(Pcall,PcallRAM)|(INTHandler,INTHdlrRAM)|(INTTBL,INTTBLRAM)|(IntPRG,IntPRGRAM)|(PHiROM,PHiRAM)] [S|CRC|NONE|00000000] [B|LIST|1] [S|LIST|^"$(CONFIGDIR)\$(PROJECTNAME).map^"] [S|SHOW|METHODCUSTOM|] [S|OUTPUT|^"$(CONFIGDIR)\$(PROJECTNAME).mot^"] [I|SPACE|^"FF^"] [B|OPTIMIZE|0] [I|CACHESIZE|000000008] [I|CACHELINE|000000020] [S|START|INTHdlrRAM,INTTBLRAM,IntPRGRAM(0C000800)|PcallRAM(0C002000)|PRAM(0C004000)|Bwkram1,B,R(0C090000)|PvupsciRAM(0C180000)|Bvupwkram(0C1A0000)|REG1(0A4000000)|PHiRAM(0A5007000)|Bwkiram1(0A5017000)|Stack(0A50187F0)|RSTHandler(0AC600000)|INTHandler,INTTBL,IntPRG(0AC600800)|VECTTBL(0AC602000)|ResetPRG(0AC602400)|Phwsetup1,Chwsetup1(0AC602800)|PvupsciROM(0AC604000)|Pcall(0AC608000)|Pstart,Pstart1(0AC60A000)|P,PHiROM,C,D(0AC60B000)|Psum_code(0AC67FF00)|Psum_code2(0AC69FF00)|Bfram(0B4000000)|BframSEQ(0B4007000)|Bopram(0B5000000)|BdpramAB(0B8000000)|Bdpram(0B8800000)|Bfrom(0B9000000)|Pcbsys(0B90B0000)|Pcb_TBL1X(0B90C0000)|Bposlsi1(0BA000000)|Bdio(0BB000000)|REG2(0FFFFF000)] [S|MEMORY|HIGH]
+" 5 
+"[V|VERSION|7] [S|INCLUDE|^"D:\SIT4S_MC_99\comon^"|^"D:\SIT4S_MC_99\CPUB\CPUB\hw_src^"|^"D:\SIT4S_MC_99\CPUB\CPUB^"|^"D:\SIT4S_MC_99\CPUB\cb_src\COMON^"|^"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC^"|^"D:\SIT4S_MC_99\CPUB\cb_src\y_src^"|^"D:\SIT4S_MC_99\CPUB\hmi_src\fit_src^"|^"D:\SIT4S_MC_99\CPUB\hmi_src\s_src^"|^"D:\SIT4S_MC_99\CPUB\cb_src\COMON\cb_table^"|^"D:\SIT4S_MC_99\CPUB\CPUB\color_src^"|^"D:\SIT4S_MC_99\comon\cpub_inc^"] [S|OUTPUTPATH|^"$(CONFIGDIR)\$(FILELEAF).obj^"] [B|DEBUG|1] [S|ALIGN4|ALL] [B|TBR|0] [B|STUFF|0] [S|BSS_ORDER|DECLARATION] [S|MXGEN_MEM0|00000000] [S|MXGEN_MEM1|00000000] [B|LIST|0] [B|OPTIMIZE|0] [S|GBR|AUTO] [S|INLINE|DEFAULT] [I|INLINE|20] [S|ALIAS|NOANSI] [S|MISRA2004_CHECK_RULE|ALL] [S|MISRA2004_RULE|1.1|3.4|4.1|5.2|5.3|5.4|5.5|5.6|5.7|6.1|6.2|6.3|6.4|6.5|7.1|8.1|8.2|8.3|8.5|8.6|8.7|8.8|8.11|8.12|9.2|9.3|10.1|10.2|10.3|10.4|10.5|10.6|11.1|11.2|11.3|11.4|11.5|12.1|12.2|12.3|12.4|12.5|12.6|12.7|12.8|12.9|12.10|12.11|12.12|12.13|13.1|13.2|13.3|13.4|13.7|14.1|14.2|14.3|14.4|14.5|14.6|14.7|14.8|14.9|14.10|15.1|15.2|15.3|15.4|15.5|16.1|16.2|16.3|16.4|16.5|16.6|16.8|16.9|17.3|17.4|17.5|17.6|18.1|18.2|18.4|19.1|20.2|20.4|20.5|20.7|20.8|20.9|20.10|20.11|20.12] [S|MISRA1998_CHECK_RULE|ALL] [S|MISRA1998_RULE|1|5|8|12|13|14|17|18|19|20|21|22|24|28|29|31|32|33|34|35|36|37|38|39|40|42|43|44|45|46|48|49|50|51|53|54|55|56|57|58|59|60|61|62|63|64|65|68|69|70|71|72|73|74|75|76|77|78|79|80|82|83|84|85|99|101|102|103|104|105|106|108|110|111|112|113|115|118|119|121|122|123|124|125|126|127] [S|MISRA_GROUP_FILE_PATH|^"$(PROJDIR)\$(PROJECTNAME).rde^"] [S|OPT_RANGE|ALL] [I|MAX_UNROLL|1] [S|CPU|SH3DSP] [B|CHGINCPATH|1]
+" 2 
+"[V|VERSION|7] [S|INCLUDE|^"D:\SIT4S_MC_99\comon^"|^"D:\SIT4S_MC_99\CPUB\CPUB\hw_src^"|^"D:\SIT4S_MC_99\CPUB\CPUB^"|^"D:\SIT4S_MC_99\CPUB\cb_src\COMON^"|^"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC^"|^"D:\SIT4S_MC_99\CPUB\cb_src\y_src^"|^"D:\SIT4S_MC_99\CPUB\hmi_src\fit_src^"|^"D:\SIT4S_MC_99\CPUB\hmi_src\s_src^"|^"D:\SIT4S_MC_99\CPUB\cb_src\COMON\cb_table^"|^"D:\SIT4S_MC_99\CPUB\CPUB\color_src^"|^"D:\SIT4S_MC_99\comon\cpub_inc^"] [S|OUTPUTPATH|^"$(CONFIGDIR)\$(FILELEAF).obj^"] [B|DEBUG|1] [S|ALIGN4|ALL] [B|TBR|0] [B|STUFF|0] [S|BSS_ORDER|DECLARATION] [S|MXGEN_MEM0|00000000] [S|MXGEN_MEM1|00000000] [B|LIST|0] [B|OPTIMIZE|0] [S|GBR|AUTO] [S|INLINE|DEFAULT] [I|INLINE|20] [S|ALIAS|NOANSI] [S|MISRA2004_CHECK_RULE|ALL] [S|MISRA2004_RULE|1.1|3.4|4.1|5.2|5.3|5.4|5.5|5.6|5.7|6.1|6.2|6.3|6.4|6.5|7.1|8.1|8.2|8.3|8.5|8.6|8.7|8.8|8.11|8.12|9.2|9.3|10.1|10.2|10.3|10.4|10.5|10.6|11.1|11.2|11.3|11.4|11.5|12.1|12.2|12.3|12.4|12.5|12.6|12.7|12.8|12.9|12.10|12.11|12.12|12.13|13.1|13.2|13.3|13.4|13.7|14.1|14.2|14.3|14.4|14.5|14.6|14.7|14.8|14.9|14.10|15.1|15.2|15.3|15.4|15.5|16.1|16.2|16.3|16.4|16.5|16.6|16.8|16.9|17.3|17.4|17.5|17.6|18.1|18.2|18.4|19.1|20.2|20.4|20.5|20.7|20.8|20.9|20.10|20.11|20.12] [S|MISRA1998_CHECK_RULE|ALL] [S|MISRA1998_RULE|1|5|8|12|13|14|17|18|19|20|21|22|24|28|29|31|32|33|34|35|36|37|38|39|40|42|43|44|45|46|48|49|50|51|53|54|55|56|57|58|59|60|61|62|63|64|65|68|69|70|71|72|73|74|75|76|77|78|79|80|82|83|84|85|99|101|102|103|104|105|106|108|110|111|112|113|115|118|119|121|122|123|124|125|126|127] [S|MISRA_GROUP_FILE_PATH|^"$(PROJDIR)\$(PROJECTNAME).rde^"] [S|OPT_RANGE|ALL] [I|MAX_UNROLL|1] [S|LANG|CPP] [S|CPU|SH3DSP] [B|CHGINCPATH|1]
+" 3 
+[EXCLUDED_FILES_Debug]
+[LINKAGE_ORDER_Debug]
+[GENERAL_DATA_CONFIGURATION_Debug]
+[OPTIONS_Release_Renesas OptLinker]
+"Single Shot" "049549c420e71d10" 5 
+[OPTIONS_Release_Renesas SH Assembler]
+"Assembly source file" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\dbsct.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\hw_src\CPU_REG.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\hw_src\ssa_ctbl.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\hw_src\ssa_dio1.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\hw_src\ssa_frif.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\hw_src\ssa_had1.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\hw_src\ssa_mem1.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\hwsetup.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\intprg.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\resetprg.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\stacksct.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\vecttbl.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\CPUB\vhandler.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_acrm.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_cblp.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_cbmn.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_com1.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_ctrl.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_dtmk.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_else.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_err1.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_khad.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_pcal.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_pos1.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_scal.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_self.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_tbl1.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\COMON\ssa_tbl2.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC\ssa_et1b.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC\ssa_k.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC\ssa_wrmk.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\y_src\ssa_dioy.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\cb_src\y_src\ssa_y.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\hmi_src\fit_src\ssa_opram.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\CPUB\hmi_src\s_src\ssa_hmi2.src" "0603d35f1ee61d10" 4 
+"D:\SIT4S_MC_99\comon\cpub_inc\ssa_dummymem.src" "0603d35f1ee61d10" 4 
+"Linkage symbol file" "0603d35f1ee61d10" 4 
+[OPTIONS_Release_Renesas SH C/C++ Compiler]
+"C source file" "0603d35f1ee61d10" 2 
+"C++ source file" "0603d35f1ee61d10" 3 
+"D:\SIT4S_MC_99\CPUB\CPUB\CPUB.c" "0603d35f1ee61d10" 2 
+"D:\SIT4S_MC_99\CPUB\CPUB\initsct.c" "0603d35f1ee61d10" 2 
+"D:\SIT4S_MC_99\CPUB\CPUB\sbrk.c" "0603d35f1ee61d10" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC\ssc_k.c" "0603d35f1ee61d10" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC\ssc_wrmk.c" "0603d35f1ee61d10" 2 
+"D:\SIT4S_MC_99\CPUB\cb_src\y_src\ssc_wrmy.c" "0603d35f1ee61d10" 2 
+"D:\SIT4S_MC_99\CPUB\hmi_src\fit_src\ssc_work.c" "0603d35f1ee61d10" 2 
+"D:\SIT4S_MC_99\CPUB\hmi_src\fit_src\ssc_wrmh.c" "0603d35f1ee61d10" 2 
+"D:\SIT4S_MC_99\CPUB\hmi_src\s_src\ssc_dif1.c" "0603d35f1ee61d10" 2 
+"D:\SIT4S_MC_99\CPUB\hmi_src\s_src\ssc_wrms.c" "0603d35f1ee61d10" 2 
+[OPTIONS_Release_Renesas SH C/C++ Library Generator]
+"Single Shot" "005c00c649beec10" 1 
+[OPTIONS_Release]
+"" 0 
+"[B|CTYPE|0] [B|MATH|0] [B|IOS|0] [B|NEW|1] [B|CPPSTRING|0] [S|ENDIAN|BIG] [B|COMPLEX|0] [V|VERSION|7] [B|SPEED|0] [S|ROUND|ZERO] [B|STDIO|1] [S|OUTPUTPATH|^"$(CONFIGDIR)\$(PROJECTNAME).lib^"] [B|RUNTIME|1] [S|CPU|SH3DSP] [B|STDLIB|1] [B|STRING|1] [B|DENORMALIZE|0] [B|MATHF|0] [B|STDARG|0] " 1 
+"[V|VERSION|1] [S|INCLUDE|^"D:\SIT4S_MC_99\comon^"|^"D:\SIT4S_MC_99\CPUB\CPUB\hw_src^"|^"D:\SIT4S_MC_99\CPUB\CPUB^"|^"D:\SIT4S_MC_99\CPUB\cb_src\COMON^"|^"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC^"|^"D:\SIT4S_MC_99\CPUB\cb_src\y_src^"|^"D:\SIT4S_MC_99\CPUB\hmi_src\fit_src^"|^"D:\SIT4S_MC_99\CPUB\hmi_src\s_src^"|^"D:\SIT4S_MC_99\CPUB\cb_src\COMON\cb_table^"|^"D:\SIT4S_MC_99\CPUB\CPUB\color_src^"|^"D:\SIT4S_MC_99\et1comon^"|^"D:\SIT4S_MC_99\cb_table^"|^"D:\SIT4S_MC_99\comon\cpub_inc^"] [B|DEBUG|1] [S|OUTPUTPATH|^"$(CONFIGDIR)\$(FILELEAF).obj^"] [S|LITERAL|POOL|BRANCH|JUMP|RETURN] [S|DISPSIZE|12] [B|LIST|1] [S|LISTPATH|^"$(CONFIGDIR)\$(FILELEAF).lis^"] [I|TAB|8] [B|ERRORPATH|1] [B|CHGINCPATH|1] [S|CPU|SH3DSP] [S|ENDIAN|BIG] [S|ROUND|ZERO] [B|DENORMALIZE|0]
+" 4 
+"[V|VERSION|6] [S|INPUTLIBRARY|^"$(TCINSTALL)\lib\sh3dspnb.lib^"] [S|FORM|STYPE] [S|BYTE_COUNT_VALUE|FF] [B|DEBUG|1] [S|ROM|(D,R)|(P,PRAM)|(PvupsciROM,PvupsciRAM)|(Pcall,PcallRAM)|(INTHandler,INTHdlrRAM)|(INTTBL,INTTBLRAM)|(IntPRG,IntPRGRAM)|(PHiROM,PHiRAM)] [S|CRC|NONE|00000000] [B|LIST|1] [S|LIST|^"$(CONFIGDIR)\$(PROJECTNAME).map^"] [S|SHOW|METHODCUSTOM|SYMBOL|TOTAL_SIZE] [S|OUTPUT|^"$(CONFIGDIR)\$(PROJECTNAME).mot^"] [I|SPACE|^"FF^"] [B|OPTIMIZE|0] [I|CACHESIZE|000000008] [I|CACHELINE|000000020] [S|START|INTHdlrRAM,INTTBLRAM,IntPRGRAM(0C000800)|PcallRAM(0C002000)|PRAM(0C004000)|Bwkram1,B,R(0C090000)|PvupsciRAM(0C180000)|Bvupwkram(0C1A0000)|RSTHandler(0A0000000)|INTHandler,INTTBL,IntPRG(0A0000800)|VECTTBL(0A0002000)|ResetPRG(0A0002400)|Phwsetup1,Chwsetup1(0A0002800)|PvupsciROM(0A0004000)|Pcall(0A0008000)|Pstart,Pstart1(0A000A000)|P,PHiROM,C,D(0A000B000)|Psum_code(0A007FF00)|Psum_code2(0A009FF00)|REG1(0A4000000)|PHiRAM(0A5007000)|Bwkiram1(0A5017000)|Stack(0A50187F0)|Bfram(0B4000000)|BframSEQ(0B4007000)|Bopram(0B5000000)|BdpramAB(0B8000000)|Bdpram(0B8800000)|Bfrom(0B9000000)|Pcbsys(0B90B0000)|Pcb_TBL1X(0B90C0000)|Bposlsi1(0BA000000)|Bdio(0BB000000)|REG2(0FFFFF000)] [S|MEMORY|HIGH]
+" 5 
+"[V|VERSION|7] [S|INCLUDE|^"D:\SIT4S_MC_99\comon^"|^"D:\SIT4S_MC_99\CPUB\CPUB\hw_src^"|^"D:\SIT4S_MC_99\CPUB\CPUB^"|^"D:\SIT4S_MC_99\CPUB\cb_src\COMON^"|^"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC^"|^"D:\SIT4S_MC_99\CPUB\cb_src\y_src^"|^"D:\SIT4S_MC_99\CPUB\hmi_src\fit_src^"|^"D:\SIT4S_MC_99\CPUB\hmi_src\s_src^"|^"D:\SIT4S_MC_99\CPUB\cb_src\COMON\cb_table^"|^"D:\SIT4S_MC_99\CPUB\CPUB\color_src^"|^"D:\SIT4S_MC_99\comon\cpub_inc^"] [S|OUTPUTPATH|^"$(CONFIGDIR)\$(FILELEAF).obj^"] [B|DEBUG|1] [S|ALIGN4|ALL] [B|TBR|0] [B|STUFF|0] [S|BSS_ORDER|DECLARATION] [S|MXGEN_MEM0|00000000] [S|MXGEN_MEM1|00000000] [B|LIST|0] [B|OPTIMIZE|0] [S|GBR|AUTO] [S|INLINE|DEFAULT] [I|INLINE|20] [S|ALIAS|NOANSI] [S|MISRA2004_CHECK_RULE|ALL] [S|MISRA2004_RULE|1.1|3.4|4.1|5.2|5.3|5.4|5.5|5.6|5.7|6.1|6.2|6.3|6.4|6.5|7.1|8.1|8.2|8.3|8.5|8.6|8.7|8.8|8.11|8.12|9.2|9.3|10.1|10.2|10.3|10.4|10.5|10.6|11.1|11.2|11.3|11.4|11.5|12.1|12.2|12.3|12.4|12.5|12.6|12.7|12.8|12.9|12.10|12.11|12.12|12.13|13.1|13.2|13.3|13.4|13.7|14.1|14.2|14.3|14.4|14.5|14.6|14.7|14.8|14.9|14.10|15.1|15.2|15.3|15.4|15.5|16.1|16.2|16.3|16.4|16.5|16.6|16.8|16.9|17.3|17.4|17.5|17.6|18.1|18.2|18.4|19.1|20.2|20.4|20.5|20.7|20.8|20.9|20.10|20.11|20.12] [S|MISRA1998_CHECK_RULE|ALL] [S|MISRA1998_RULE|1|5|8|12|13|14|17|18|19|20|21|22|24|28|29|31|32|33|34|35|36|37|38|39|40|42|43|44|45|46|48|49|50|51|53|54|55|56|57|58|59|60|61|62|63|64|65|68|69|70|71|72|73|74|75|76|77|78|79|80|82|83|84|85|99|101|102|103|104|105|106|108|110|111|112|113|115|118|119|121|122|123|124|125|126|127] [S|MISRA_GROUP_FILE_PATH|^"$(PROJDIR)\$(PROJECTNAME).rde^"] [S|OPT_RANGE|ALL] [I|MAX_UNROLL|1] [S|CPU|SH3DSP] [B|CHGINCPATH|1]
+" 2 
+"[V|VERSION|7] [S|INCLUDE|^"D:\SIT4S_MC_99\comon^"|^"D:\SIT4S_MC_99\CPUB\CPUB\hw_src^"|^"D:\SIT4S_MC_99\CPUB\CPUB^"|^"D:\SIT4S_MC_99\CPUB\cb_src\COMON^"|^"D:\SIT4S_MC_99\CPUB\cb_src\K_SRC^"|^"D:\SIT4S_MC_99\CPUB\cb_src\y_src^"|^"D:\SIT4S_MC_99\CPUB\hmi_src\fit_src^"|^"D:\SIT4S_MC_99\CPUB\hmi_src\s_src^"|^"D:\SIT4S_MC_99\CPUB\cb_src\COMON\cb_table^"|^"D:\SIT4S_MC_99\CPUB\CPUB\color_src^"|^"D:\SIT4S_MC_99\comon\cpub_inc^"] [S|OUTPUTPATH|^"$(CONFIGDIR)\$(FILELEAF).obj^"] [B|DEBUG|1] [S|ALIGN4|ALL] [B|TBR|0] [B|STUFF|0] [S|BSS_ORDER|DECLARATION] [S|MXGEN_MEM0|00000000] [S|MXGEN_MEM1|00000000] [B|LIST|0] [B|OPTIMIZE|0] [S|GBR|AUTO] [S|INLINE|DEFAULT] [I|INLINE|20] [S|ALIAS|NOANSI] [S|MISRA2004_CHECK_RULE|ALL] [S|MISRA2004_RULE|1.1|3.4|4.1|5.2|5.3|5.4|5.5|5.6|5.7|6.1|6.2|6.3|6.4|6.5|7.1|8.1|8.2|8.3|8.5|8.6|8.7|8.8|8.11|8.12|9.2|9.3|10.1|10.2|10.3|10.4|10.5|10.6|11.1|11.2|11.3|11.4|11.5|12.1|12.2|12.3|12.4|12.5|12.6|12.7|12.8|12.9|12.10|12.11|12.12|12.13|13.1|13.2|13.3|13.4|13.7|14.1|14.2|14.3|14.4|14.5|14.6|14.7|14.8|14.9|14.10|15.1|15.2|15.3|15.4|15.5|16.1|16.2|16.3|16.4|16.5|16.6|16.8|16.9|17.3|17.4|17.5|17.6|18.1|18.2|18.4|19.1|20.2|20.4|20.5|20.7|20.8|20.9|20.10|20.11|20.12] [S|MISRA1998_CHECK_RULE|ALL] [S|MISRA1998_RULE|1|5|8|12|13|14|17|18|19|20|21|22|24|28|29|31|32|33|34|35|36|37|38|39|40|42|43|44|45|46|48|49|50|51|53|54|55|56|57|58|59|60|61|62|63|64|65|68|69|70|71|72|73|74|75|76|77|78|79|80|82|83|84|85|99|101|102|103|104|105|106|108|110|111|112|113|115|118|119|121|122|123|124|125|126|127] [S|MISRA_GROUP_FILE_PATH|^"$(PROJDIR)\$(PROJECTNAME).rde^"] [S|OPT_RANGE|ALL] [I|MAX_UNROLL|1] [S|LANG|CPP] [S|CPU|SH3DSP] [B|CHGINCPATH|1]
+" 3 
+[EXCLUDED_FILES_Release]
+[LINKAGE_ORDER_Release]
+[GENERAL_DATA_CONFIGURATION_Release]
+[GENERAL_DATA_CONFIGURATION_SESSION_Debug_DefaultSession]
+[SESSION_DATA_CONFIGURATION_SESSION_Debug_DefaultSession]
+"MEMORY_MAPPING_OPTIONS" "" 
+[GENERAL_DATA_CONFIGURATION_SESSION_Release_DefaultSession]
+[SESSION_DATA_CONFIGURATION_SESSION_Release_DefaultSession]
+"MEMORY_MAPPING_OPTIONS" "" 
+[EXT_DEBUGGER_INFO]
+0 "" "" "" "" 
+[END]

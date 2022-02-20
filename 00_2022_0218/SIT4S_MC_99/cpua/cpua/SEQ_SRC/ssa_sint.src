@@ -1,0 +1,234 @@
+;	******************************************************************
+;	**********	TIMER SEQUENCE BIT SET MACRO	        **********
+;	**********						**********
+;	**********	Name		: _SEQ_TIM_CNT(start/stop)*********
+;	**********	Input		: R6 = TIMER DATA ADRS	**********
+;	**********			: R0 = 2 (start/stop AREA)********
+;	**********	Output		: R6 = R6+4		**********
+;	**********	Destroy		: R1,R2			**********
+;	******************************************************************
+
+;;;;;	MOV.L	#_SEQ_TMR_DT_TOP,R6		;
+;;;;;	MOV.L	#2,R0				; TIMER START FLG AREA
+;
+	.MACRO	_SEQ_TIM_CNT
+;
+;	***	TIMMER COUNT DOWN MACRO		***
+;;SAITO	MOV.B	@(R0,R6),R1			; timmer count start bit LOAD
+;;SAITO	TST	R1,R1				;
+;;SAITO	BT	_JMP000\@			;
+;
+	MOV.B	@(R0,R6),R1			; timmer count start bit LOAD
+	MOV.B	#BIT0,R2			;
+	CMP/EQ	R1,R2				;
+	BF	_JMP000\@			;
+
+	MOV.W	@R6,R1				;  timer PV data LOAD
+
+	MOV.L	#1,R2				;
+	CLRT					; T <- 0 CLEAR
+	SUBC	R2,R1				; TIMER PV DATA -1
+	XOR	R2,R2				;
+	ADDC	R2,R1				; counter = FFFF --> 0 set
+	MOV.W	R1,@R6				; TIMER DATA -1 SET
+;
+_JMP000\@:
+;
+	MOV.L	#4,R1				;
+	ADD	R1,R6				; next timer data adr set
+
+	.ENDM
+
+
+
+
+;	***************************************************
+;	***						***
+;	***						***
+;	***	シーケンスタイマ10msec 割込み		***
+;	***						***
+;	***						***
+;	***************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"		; EQU
+	.INCLUDE	"sh7750rg.ext"		; 
+	.INCLUDE	"ssa_swrm.ext"		; 
+	.INCLUDE	"shn_cmd1.mac"		; 
+	.INCLUDE	"ssa_wram.ext"		; 
+	.INCLUDE	"ssa_seq1.ext"		; 
+	.INCLUDE	"ssa_seq1.equ"		; 
+	.INCLUDE	"dp_cpuab.ext"		; 
+	.INCLUDE	"dp_cpud.ext"		; //[2013-11-29 MC]
+
+	.LIST	ON
+
+
+	.SECTION	P,CODE			;
+
+
+
+
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 PROGRAM	***
+;	//	***********************************
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 MEMORY,HARD	***
+;	//	***********************************
+
+;	//	***********************************
+;	//	***	PUBLIC 宣言 PROGRAM	***
+;	//	***********************************
+	.EXPORT		_SEQ_INT_TIM10MS
+
+
+_SEQ_INT_TIM10MS:
+	SUB_START
+
+	MOV.L	#_SEQ_TMR_DATA,R6		;
+	MOV.L	#2,R0				; TIMER START FLG AREA
+
+	M_BRA	_SEQ_INT_TM10MS_000		;
+
+_SEQ_INT_TM10MS_000:
+	_SEQ_TIM_CNT				;1
+	_SEQ_TIM_CNT				;2
+	_SEQ_TIM_CNT				;3
+	_SEQ_TIM_CNT				;4
+	_SEQ_TIM_CNT				;5
+	_SEQ_TIM_CNT				;6
+	_SEQ_TIM_CNT				;7
+	_SEQ_TIM_CNT				;8
+	_SEQ_TIM_CNT				;9
+	_SEQ_TIM_CNT				;10
+	M_BRA	_SEQ_INT_TM10MS_010		;
+
+_SEQ_INT_TM10MS_010:
+	_SEQ_TIM_CNT				;11
+	_SEQ_TIM_CNT				;12
+	_SEQ_TIM_CNT				;13
+	_SEQ_TIM_CNT				;14
+	_SEQ_TIM_CNT				;15
+	_SEQ_TIM_CNT				;16
+	_SEQ_TIM_CNT				;17
+	_SEQ_TIM_CNT				;18
+	_SEQ_TIM_CNT				;19
+	_SEQ_TIM_CNT				;20
+
+	M_BRA	_SEQ_INT_TM10MS_020		;
+
+_SEQ_INT_TM10MS_020:
+	_SEQ_TIM_CNT				;21
+	_SEQ_TIM_CNT				;22
+	_SEQ_TIM_CNT				;23
+	_SEQ_TIM_CNT				;24
+	_SEQ_TIM_CNT				;25
+	_SEQ_TIM_CNT				;26
+	_SEQ_TIM_CNT				;27
+	_SEQ_TIM_CNT				;28
+	_SEQ_TIM_CNT				;29
+	_SEQ_TIM_CNT				;30
+
+	M_BRA	_SEQ_INT_TM10MS_030		;
+
+_SEQ_INT_TM10MS_030:
+	_SEQ_TIM_CNT				;31
+	_SEQ_TIM_CNT				;32
+	_SEQ_TIM_CNT				;33
+	_SEQ_TIM_CNT				;34
+	_SEQ_TIM_CNT				;35
+	_SEQ_TIM_CNT				;36
+	_SEQ_TIM_CNT				;37
+	_SEQ_TIM_CNT				;38
+	_SEQ_TIM_CNT				;39
+	_SEQ_TIM_CNT				;40
+
+	M_BRA	_SEQ_INT_TM10MS_040		;
+
+_SEQ_INT_TM10MS_040:
+	_SEQ_TIM_CNT				;41
+	_SEQ_TIM_CNT				;42
+	_SEQ_TIM_CNT				;43
+	_SEQ_TIM_CNT				;44
+	_SEQ_TIM_CNT				;45
+	_SEQ_TIM_CNT				;46
+	_SEQ_TIM_CNT				;47
+	_SEQ_TIM_CNT				;48
+	_SEQ_TIM_CNT				;49
+	_SEQ_TIM_CNT				;50
+
+	M_BRA	_SEQ_INT_TM10MS_050		;
+
+_SEQ_INT_TM10MS_050:
+	_SEQ_TIM_CNT				;51
+	_SEQ_TIM_CNT				;52
+	_SEQ_TIM_CNT				;53
+	_SEQ_TIM_CNT				;54
+	_SEQ_TIM_CNT				;55
+	_SEQ_TIM_CNT				;56
+	_SEQ_TIM_CNT				;57
+	_SEQ_TIM_CNT				;58
+	_SEQ_TIM_CNT				;59
+	_SEQ_TIM_CNT				;60
+
+	M_BRA	_SEQ_INT_TM10MS_060		;
+
+_SEQ_INT_TM10MS_060:
+	_SEQ_TIM_CNT				;61
+	_SEQ_TIM_CNT				;62
+	_SEQ_TIM_CNT				;63
+	_SEQ_TIM_CNT				;64
+	_SEQ_TIM_CNT				;65
+	_SEQ_TIM_CNT				;66
+	_SEQ_TIM_CNT				;67
+	_SEQ_TIM_CNT				;68
+	_SEQ_TIM_CNT				;69
+	_SEQ_TIM_CNT				;70
+
+	M_BRA	_SEQ_INT_TM10MS_070		;
+
+_SEQ_INT_TM10MS_070:
+	_SEQ_TIM_CNT				;71
+	_SEQ_TIM_CNT				;72
+	_SEQ_TIM_CNT				;73
+	_SEQ_TIM_CNT				;74
+	_SEQ_TIM_CNT				;75
+	_SEQ_TIM_CNT				;76
+	_SEQ_TIM_CNT				;77
+	_SEQ_TIM_CNT				;78
+	_SEQ_TIM_CNT				;79
+	_SEQ_TIM_CNT				;80
+
+	M_BRA	_SEQ_INT_TM10MS_080		;
+
+_SEQ_INT_TM10MS_080:
+	_SEQ_TIM_CNT				;81
+	_SEQ_TIM_CNT				;82
+	_SEQ_TIM_CNT				;83
+	_SEQ_TIM_CNT				;84
+	_SEQ_TIM_CNT				;85
+	_SEQ_TIM_CNT				;86
+	_SEQ_TIM_CNT				;87
+	_SEQ_TIM_CNT				;88
+	_SEQ_TIM_CNT				;89
+	_SEQ_TIM_CNT				;90
+
+	M_BRA	_SEQ_INT_TM10MS_090		;
+
+_SEQ_INT_TM10MS_090:
+	_SEQ_TIM_CNT				;91
+	_SEQ_TIM_CNT				;92
+	_SEQ_TIM_CNT				;93
+	_SEQ_TIM_CNT				;94
+	_SEQ_TIM_CNT				;95
+	_SEQ_TIM_CNT				;96
+
+
+	SUB_END
+	M_RTS
+
+
+
+	.END
+

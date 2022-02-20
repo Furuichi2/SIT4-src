@@ -1,0 +1,93 @@
+;	***************************************************
+;	***						***
+;	***	テーブル				***
+;	***						***
+;	***						***
+;	***************************************************
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 PROGRAM	***
+;	//	***********************************
+
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 MEMORY,HARD	***
+;	//	***********************************
+	.INCLUDE	"cm_equ1.equ"		; //共通定義:必ず実行ﾌﾟﾛｸﾞﾗﾑにｲﾝｸﾙｰﾄﾞする事
+	.INCLUDE	"ssa_khad.equ"		; //equ定義
+
+;	//	***********************************
+;	//	***	PUBLIC 宣言 PROGRAM	***
+;	//	***********************************
+	.EXPORT	_DIG_PLS_CHG_INF1_TOP			;
+	.EXPORT	_PLS_DIG_CHG_INF1_TOP			;
+
+	.EXPORT	_DIG_PLS_CHG_TBL1_TOP		;
+	.EXPORT	_PLS_DIG_CHG_TBL1_TOP		;下り
+	.EXPORT	_PLS_DIG_CHG_TBL2_TOP		;上り
+
+	.EXPORT	_CLNK_SV_CHG_LINK_TBL_TOP
+	.EXPORT	_LINK_PV_CHG_CLNK_TBL_TOP	;
+
+	.EXPORT	_DIG_PLS_CHG_TBL1_END		;
+	.EXPORT	_PLS_DIG_CHG_TBL1_END		;(ｱﾄﾞﾚｽﾁｪｯｸの為)
+	.EXPORT	_PLS_DIG_CHG_TBL2_END		;(ｱﾄﾞﾚｽﾁｪｯｸの為)
+
+;	//	***********************************
+;	//	***	セクション		***
+;	//	***********************************
+		.SECTION	Pcb_TBL1X, CODE		;
+		.EXPORT		_CB_TABLEX		;使用(sh2で使用)
+_CB_TABLEX:
+
+;;;	.AIF	_CB_TBL_SEL	EQ	_CB_TBL_FLASH
+;;;	====== このファイルは外部空間へ割り当てる===
+;;;		.SECTION	Pcb_TBL1X, CODE		;
+;;;		.EXPORT		_CB_TABLEX		;使用(sh2で使用)
+;;_CB_TABLEX:
+;;	.AELSE
+;;	====== 内臓空間===
+;;;;;2004-03-29		.SECTION	Pcb_TBL1,CODE		;
+;;;;;2004-03-29		.EXPORT	_CB_TABLE			;未使用
+;;;;;2004-03-29	_CB_TABLE:
+;;;	.AENDI
+
+
+;	主に異常検出及び画面設定
+		.ORG	H'0000			;(SH4:58000/SH2:48000)
+_DIG_PLS_CHG_TBL1_TOP:				;14400byte(3840H)
+	.INCLUDE	"dig_dat1.inc"		;dig-->pls
+_DIG_PLS_CHG_TBL1_END:				;
+
+		.ORG	H'3F00			;64byte
+_DIG_PLS_CHG_INF1_TOP:				;
+	.INCLUDE	"dig_info.inc"		;ｲﾝﾌｫﾒｰｼｮﾝ
+
+
+		.ORG	H'3F80			;(SH4:62000/SH2:52000)
+_PLS_DIG_CHG_INF1_TOP:				;
+	.INCLUDE	"pls_info.inc"		;ｲﾝﾌｫﾒｰｼｮﾝ
+
+		.ORG	H'4000			;
+_PLS_DIG_CHG_TBL1_TOP:
+	.INCLUDE	"pls_dat1.inc"		;pls(mm)->dig 下降
+_PLS_DIG_CHG_TBL1_END:
+
+
+		.ORG	H'0A000			;A000~EE20(20000d)
+_PLS_DIG_CHG_TBL2_TOP:
+	.INCLUDE	"pls_dat2.inc"		;pls(mm)->dig 上昇
+_PLS_DIG_CHG_TBL2_END:
+
+
+		.ORG	H'0F000			;
+_CLNK_SV_CHG_LINK_TBL_TOP:
+	.INCLUDE	"Cdig_dat.inc"			;ｸﾗﾝｸ->ﾘﾝｸ
+_CLNK_SV_CHG_LINK_TBL_END:
+
+		.ORG	H'12000				;
+_LINK_PV_CHG_CLNK_TBL_TOP:				;
+	.INCLUDE	"Ldig_dat.inc"			;ﾘﾝｸ->ｸﾗﾝｸ
+_LINK_PV_CHG_CLNK_TBL_END:
+
+	.END

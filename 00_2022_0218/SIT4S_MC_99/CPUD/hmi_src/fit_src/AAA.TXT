@@ -1,0 +1,66 @@
+U2b CAM_KOUTEI_SEARCH1(U2b sel,S2b dig){
+	U2b	stepmax;
+	U2b	ansstep=0;
+	U2b	objdig;
+	U2b	dig_n1,dig_n,dig_last;
+	U2b	firststep=0,laststep=0;
+	U2b	dir=0;
+	U2b	*srv;
+	int	i;
+
+	return(0);							//2014/09/10
+
+	dig_n1	= SV_TAIKIKAKU_SRV;	//½À°Ä’n“_
+	dig_n	= SV_TAIKIKAKU_SRV;	//
+	stepmax	= SV_DANSUU_SRV+1;
+	if((1<stepmax)&&(stepmax<=11)){//1~10¨2~11
+		if(SEQ_050_SV & BIT_1) {//”½“]
+			dig_last=dig_n1;//‘Ò‹@“_‚É–ß‚é
+	    }else{
+			if(SEQ_050_SV & BIT_2) {//‚Ó‚è‚±
+				dig_last=3600-dig_n1;	//180.0-taiki+180.0
+			}else{//‰ñ“]
+				dig_last=dig_n1+3600;	//370.0“x‚Å‚à—Ç‚¢
+			}
+		}
+		objdig	=dig*10;//0.1“x
+		srv		= &SV_1DANDEG_SRV;	//
+
+		for(i=0;i<stepmax;i++){
+			dig_n1	=dig_n;
+			if(i==(stepmax-1)){//ÅŒã
+				dig_n	=dig_last;
+			}else{
+				dig_n	=srv[i];
+			}
+			if(dig_n1!=dig_n){
+				if(dig_n1<dig_n){
+					dir=0;//³“]
+					if((dig_n1<=objdig) && (objdig<dig_n) ){//50.0(n1)<=dig<100.0(n)
+						laststep=i+1;
+						if(firststep==0){
+							firststep=laststep;
+						}
+					}
+				}else{
+					dir=1;//‹t“]
+					if((dig_n1>=objdig) && (objdig>dig_n)  ){//100.0(n1) >= dig > 50.0(n)
+						laststep=i+1;
+						if(firststep==0){
+							firststep=laststep;
+						}
+					}
+					
+				}
+			}
+		}
+	
+		if(sel==0){//sel=0 first
+			ansstep=firststep;
+		}else{
+			ansstep=laststep;
+		}
+	}
+
+	return(ansstep);//
+}

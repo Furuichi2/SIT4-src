@@ -1,0 +1,3 @@
+#include	"cm_equ1.h"		//MC‚É‚Ä•ª—£
+#include	"dp_cpud.h"		//[MC-add 2013-11]
+#include	"dp_cpud_b.h"	//[MC-add 2013-11]

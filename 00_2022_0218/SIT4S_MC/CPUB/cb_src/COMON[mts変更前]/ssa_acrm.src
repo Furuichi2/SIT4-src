@@ -1,0 +1,224 @@
+;//	*******************************************
+;//	***		振り子加速		***
+;//	*******************************************
+;//	.SECTION	B,data		;0C1E0000~
+
+	.INCLUDE	"ssa_acrm.ext"		; //
+
+	.SECTION	Bwkram1,data		;0C1E0000~
+
+	.ALIGN	4						;
+_ACC_LAST_SPD		.SRES	4	;最大速度から求まる
+_ACC_STOP_SPD		.SRES	4	;ステップ速度停止の中で求まる（停止予定の行程）
+_ACC_STEP_SPD		.SRES	4	;ステップ
+
+
+_ACC_LAST_POINT		.SRES	2	;最大速度から求まる
+_ACC_STOP_POINT		.SRES	2	;ステップ速度停止の中で求まる（停止予定の行程）
+_ACC_STEP_POINT		.SRES	2	;ステップ
+_ACC_STEP_FLG		.SRES	2	;BIT0:START BIT1:CALC BIT2:LIMIT
+_ACC_CTRL_STS1		.SRES	2	;
+_ACC_CTRL_STS2		.SRES	2	;
+
+_ACC_STOP_NUMBER	.SRES	2	;停止に使用するデータ番号=停止ステップ
+_ACC_STEP_NUMBER	.SRES	2	;加減速に使用するデータ番号=動作ステップ
+
+_ACC_POS_STEP		.SRES	2	;
+_ACC_STR_STEP		.SRES	2	;
+
+	.ALIGN	4			;
+_ACC_ANS_ACCDAT		.SRES	4	;(加速または減速すべき　加速度):0変化するﾃﾞｰﾀがない
+
+
+;	----------------------------------------------------
+_ACCB_ACCLAT_TIM1	.SRES	2	;ふりこで使用する最大加減速時間 設定
+
+;	---------------------------------------------------
+;
+;	・各段に変速テーブル（加速または減速）と停止テーブルが存在する
+;	・変速状態（加速中または減速）での停止は、そのテーブルの停止テーブルに従う
+;	・停止テーブルは常に増加方向:パルスが必要(パルスでサーチする)
+;	・加速テーブルも常に増加方向:パルスは不要(速度でサーチする)
+;	・減速テーブルは常に増加方向:パルスは不要(速度でサーチする)
+;
+
+
+	.ALIGN	4						;
+					;INFOMAINTION
+_ACC_INF1_STEP001	.SRES	2	;//BIT2=[加速:0/減速:1] BIT1=[]   BIT0=0(停止) =1(連続)
+_ACC_INF1_STEP002	.SRES	2	;//
+_ACC_INF1_STEP003	.SRES	2	;
+_ACC_INF1_STEP004	.SRES	2	;
+_ACC_INF1_STEP005	.SRES	2	;
+_ACC_INF1_STEP006	.SRES	2	;
+_ACC_INF1_STEP007	.SRES	2	;
+_ACC_INF1_STEP008	.SRES	2	;
+_ACC_INF1_STEP009	.SRES	2	;
+_ACC_INF1_STEP010	.SRES	2	;
+_ACC_INF1_STEP011	.SRES	2	;
+
+
+	.ALIGN	4						;
+_ACC_INF1_STEPSP01	.SRES	2*2	;000%[前状態],050%[設定]
+_ACC_INF1_STEPSP02	.SRES	2*2	;050%[前状態],100%[設定]
+_ACC_INF1_STEPSP03	.SRES	2*2	;100%[前状態],100%[設定](この場合は前の状態の加減速をCOPY)
+_ACC_INF1_STEPSP04	.SRES	2*2	;
+_ACC_INF1_STEPSP05	.SRES	2*2	;
+_ACC_INF1_STEPSP06	.SRES	2*2	;
+_ACC_INF1_STEPSP07	.SRES	2*2	;
+_ACC_INF1_STEPSP08	.SRES	2*2	;
+_ACC_INF1_STEPSP09	.SRES	2*2	;
+_ACC_INF1_STEPSP10	.SRES	2*2	;
+_ACC_INF1_STEPSP11	.SRES	2*2	;
+
+
+
+
+
+
+;	----------------------------------------------
+;	最大速度時の加減速時間(設定値と同じもの：上下限チェック済み)
+;;;[2013-05-20 前から未使用]_ACC_BASEDAT_ACCTM	.SRES	2	;加減速時間
+;;;[2013-05-20 前から未使用];最大速度時の減速速度
+;;;[2013-05-20 前から未使用]
+;;;[2013-05-20 前から未使用]_ACC_BASEDAT_STPVTBL	.SRES	2*1024	;//
+;;;[2013-05-20 前から未使用];最大速度時の減速パルス
+;;;[2013-05-20 前から未使用]	.ALIGN	4						;
+;;;[2013-05-20 前から未使用]_ACC_BASEDAT_STPPTBL	.SRES	4*1024	;//
+
+
+;
+;	---------------------------------------------------
+;各段可変速用の加減速速度
+	.ALIGN	4						;
+_ACC_STEP001_VTBL	.SRES	2*1024	;//
+_ACC_STEP002_VTBL	.SRES	2*1024	;//
+_ACC_STEP003_VTBL	.SRES	2*1024	;//
+_ACC_STEP004_VTBL	.SRES	2*1024	;//
+_ACC_STEP005_VTBL	.SRES	2*1024	;//
+_ACC_STEP006_VTBL	.SRES	2*1024	;//
+_ACC_STEP007_VTBL	.SRES	2*1024	;//
+_ACC_STEP008_VTBL	.SRES	2*1024	;//
+_ACC_STEP009_VTBL	.SRES	2*1024	;//
+_ACC_STEP010_VTBL	.SRES	2*1024	;//
+_ACC_STEP011_VTBL	.SRES	2*1024	;//
+
+
+;	---------------------------------------------------
+;各段可変速用の加減速時間
+	.ALIGN	4	;
+_ACC_STEPDUM_ACTM	.SRES	2	;2013-05-20 (V1=0の設定ができないので参照されることはない)
+					;
+_ACC_STEP001_ACTM	.SRES	2	;
+_ACC_STEP002_ACTM	.SRES	2	;
+_ACC_STEP003_ACTM	.SRES	2	;
+_ACC_STEP004_ACTM	.SRES	2	;
+_ACC_STEP005_ACTM	.SRES	2	;
+_ACC_STEP006_ACTM	.SRES	2	;
+_ACC_STEP007_ACTM	.SRES	2	;
+_ACC_STEP008_ACTM	.SRES	2	;
+_ACC_STEP009_ACTM	.SRES	2	;
+_ACC_STEP010_ACTM	.SRES	2	;
+_ACC_STEP011_ACTM	.SRES	2	;
+
+;	================================================
+;
+;各段停止用の減速速度
+;					格段の停止時
+	.ALIGN	4						;
+_ACC_STOP001_VTBL	.SRES	2*1024	;//
+_ACC_STOP002_VTBL	.SRES	2*1024	;//
+_ACC_STOP003_VTBL	.SRES	2*1024	;//
+_ACC_STOP004_VTBL	.SRES	2*1024	;//
+_ACC_STOP005_VTBL	.SRES	2*1024	;//
+_ACC_STOP006_VTBL	.SRES	2*1024	;//
+_ACC_STOP007_VTBL	.SRES	2*1024	;//
+_ACC_STOP008_VTBL	.SRES	2*1024	;//
+_ACC_STOP009_VTBL	.SRES	2*1024	;//
+_ACC_STOP010_VTBL	.SRES	2*1024	;//
+_ACC_STOP011_VTBL	.SRES	2*1024	;//
+
+;各段停止用の減速パルス
+	.ALIGN	4						;
+_ACC_STOP001_PTBL	.SRES	4*1024	;//
+_ACC_STOP002_PTBL	.SRES	4*1024	;//
+_ACC_STOP003_PTBL	.SRES	4*1024	;//
+_ACC_STOP004_PTBL	.SRES	4*1024	;//
+_ACC_STOP005_PTBL	.SRES	4*1024	;//
+_ACC_STOP006_PTBL	.SRES	4*1024	;//
+_ACC_STOP007_PTBL	.SRES	4*1024	;//
+_ACC_STOP008_PTBL	.SRES	4*1024	;//
+_ACC_STOP009_PTBL	.SRES	4*1024	;//
+_ACC_STOP010_PTBL	.SRES	4*1024	;//
+_ACC_STOP011_PTBL	.SRES	4*1024	;//
+
+	.ALIGN	4	;
+_ACC_STOP001_ACTM	.SRES	2	;
+_ACC_STOP002_ACTM	.SRES	2	;
+_ACC_STOP003_ACTM	.SRES	2	;
+_ACC_STOP004_ACTM	.SRES	2	;
+_ACC_STOP005_ACTM	.SRES	2	;
+_ACC_STOP006_ACTM	.SRES	2	;
+_ACC_STOP007_ACTM	.SRES	2	;
+_ACC_STOP008_ACTM	.SRES	2	;
+_ACC_STOP009_ACTM	.SRES	2	;
+_ACC_STOP010_ACTM	.SRES	2	;
+_ACC_STOP011_ACTM	.SRES	2	;
+
+
+
+;	*******************************************
+;	***					***
+;	***	加速度パターン入れ替え		***
+;	***					***
+;	*******************************************
+	.ALIGN	4				
+_ACC_IN_TBL_TIM		.SRES	2		;255msec時間 ループ数は256
+_ACC_IN_TBLUSE		.SRES	2*1024		;
+
+;	*******************************************
+;	***					***
+;	***	最大速度入れ替え		***
+;	***					***
+;	*******************************************
+	.ALIGN	4				
+_TBLCALC_ACC_MAXRPM	.SRES	4		;ﾃｰﾌﾞﾙから算出される最大回転数
+_TBLCALC_ACC_MAXTIM	.SRES	4		;ﾃｰﾌﾞﾙから算出される最大加速時間
+
+;	-------------------------------------------
+;	---					---
+;	---	ｵｰﾊﾞﾗｲﾄﾞ対策			---
+;	---					---
+;	-------------------------------------------
+	.ALIGN	4						;
+_ACC_REST_ABS_PLSX		.SRES	8	;//比率倍(CPUAのみ使用)
+_ACC_CALC_SPDX			.SRES	4	;
+_ACC_CALC_SPD			.SRES	4	;
+_ACC_POSCTL_SV_SPDX		.SRES	4	;				;･････
+_ACC_POSCTL_RL_SPDX		.SRES	4	;
+_ACC_POSCTL_SV_UP_ACCX		.SRES	4	;
+_ACC_POSCTL_SV_DN_ACCX		.SRES	4	;
+
+
+
+
+
+
+
+
+
+
+
+;//	-----------------------------------
+;//	---	2013-02-05		---
+;//	-----------------------------------
+_SVX_OBJ_SPD_OLDTOP		.SRES	2*20	;
+_SVX_UPAREA_SPD0OLD		.SRES	2	;
+
+
+
+
+
+
+
+	.END

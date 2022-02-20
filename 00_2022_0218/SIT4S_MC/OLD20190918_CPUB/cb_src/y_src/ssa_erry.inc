@@ -1,0 +1,1097 @@
+;	***************************************************
+;	***						***
+;	***						***
+;	***		異常処理ソフト			***
+;	***						***
+;	***						***
+;	***************************************************
+;	ssa_err1.srcからINCLUDEする
+
+;	============== 2008-09-15 SAITO =====================
+	.MACRO	_MC_ERRTIM_PRESET WKRAM,ERRTIM
+
+	MOV.L	#\ERRTIM,R1		;
+	MOV.L	#\WKRAM,R0		;
+	MOV.W	@R0,R0			;
+	MOV.W	R0,@R1			; PRESET
+
+	.ENDM
+;	=====================================================
+
+
+
+;	***************************************************
+;	***						***
+;	***						***
+;	***		異常処理ソフト			***
+;	***						***
+;	***						***
+;	***************************************************
+;	ssa_err1.srcからINCLUDEする
+
+_SQER213	.EQU	0*2			; SEQ213
+_SQER214	.EQU	1*2			; SEQ214
+_SQER215	.EQU	2*2			; SEQ215
+_SQER216	.EQU	3*2			; SEQ216
+_SQER217	.EQU	4*2			; SEQ217
+_SQER218	.EQU	5*2			; SEQ218
+_SQER219	.EQU	6*2			; SEQ219
+_SQER220	.EQU	7*2			; SEQ220
+_SQER221	.EQU	8*2			; SEQ221
+_SQER222	.EQU	9*2			; SEQ222
+_SQER223	.EQU	10*2			; SEQ223
+_SQER224	.EQU	11*2			; SEQ224
+_SQER225	.EQU	12*2			; SEQ225
+
+
+	.ALIGN	4
+
+
+	.MACRO	_MC_ERR_SYSP_SET SYSP,WKRAM
+	MOV.L	#\SYSP,R1		;
+	MOV.L	#\WKRAM,R2		;
+	MOV.W	@R1,R1			;
+	MOV.W	R1,@R2			;
+	.ENDM
+
+
+	.MACRO	_MC_ERR_SYSP_SET_LT SYSP,WKRAM,LATE
+	MOV.L	#\SYSP,R1					;
+	MOV.W	@R1,R2						;
+	MOV.W	#\LATE,R4					;
+	FAR_JSR	#_FPU_DIVS_32REG2_32REG1_R4_32REG2_R2,R0	;
+	ADD	#1,R2
+	MOV.L	#\WKRAM,R1					;
+	MOV.W	R2,@R1						;
+	.ENDM
+
+	.EXPORT	_INIT_ERR_SYSP_SET
+
+;	*******************************************
+;	***	ｲﾆｼｬﾙ時にｼｽﾊﾟﾗ→WORKRAM		***
+;	*******************************************
+_INIT_ERR_SYSP_SET:
+	SUB_START
+
+;	*** SYSPARA -> WORKRAM ***
+	_MC_ERR_SYSP_SET_LT _PAR_SFTSWER_TM,_WPAR1_SFTSWER_TM,_ACT_ERR1_DT1	;安全装置選択ＳＷ異常時間１秒
+	_MC_ERR_SYSP_SET_LT _PAR_BTNER_TM,_WPAR1_BTNER_TM,_ACT_ERR1_DT1		;運転ボタン異常時間１秒
+	_MC_ERR_SYSP_SET_LT _PAR_MODSER_TM1,_WPAR1_MODSER_TM1,_ACT_ERR1_DT1	;入力モード選択ＳＷ無し異常時間１秒
+	_MC_ERR_SYSP_SET_LT _PAR_MODSER_TM2,_WPAR1_MODSER_TM2,_ACT_ERR1_DT1	;入力モード2個以上選択異常時間0.1秒
+	_MC_ERR_SYSP_SET_LT _PAR_VLVER11_TM1,_WPAR1_VLVER11_TM1,_ACT_ERR1_DT1	;バルブ1異常1時間ON-OF;
+	_MC_ERR_SYSP_SET_LT _PAR_VLVER12_TM1,_WPAR1_VLVER12_TM1,_ACT_ERR1_DT1	;バルブ1異常2時間OF-ON;
+	_MC_ERR_SYSP_SET_LT _PAR_VLVER21_TM1,_WPAR1_VLVER21_TM1,_ACT_ERR1_DT1	;バルブ2異常1時間ON-OF;
+	_MC_ERR_SYSP_SET_LT _PAR_VLVER22_TM1,_WPAR1_VLVER22_TM1,_ACT_ERR1_DT1	;バルブ2異常2時間OF-ON;
+	_MC_ERR_SYSP_SET_LT _PAR_VLVER31_TM1,_WPAR1_VLVER31_TM1,_ACT_ERR1_DT1	;バルブ3異常1時間ON-OF;
+	_MC_ERR_SYSP_SET_LT _PAR_VLVER32_TM1,_WPAR1_VLVER32_TM1,_ACT_ERR1_DT1	;バルブ3異常2時間OF-ON;
+	_MC_ERR_SYSP_SET_LT _PAR_CMPER2_TM,_WPAR1_CMPER2_TM,_ACT_ERR1_DT1	;二重回路2異常時間
+	_MC_ERR_SYSP_SET_LT _PAR_FSFTTRER_TM,_WPAR1_FSFTTRER_TM,_ACT_ERR1_DT1	;前安全装置FCYCL用ﾄﾗﾝｼﾞｽﾀ異常時間
+	_MC_ERR_SYSP_SET_LT _PAR_RSFTTRER_TM,_WPAR1_RSFTTRER_TM,_ACT_ERR1_DT1	;後安全装置FCYCL用ﾄﾗﾝｼﾞｽﾀ異常時間
+
+
+;	*** WORKRAM -> TIMER ***
+	_MC_ERR_SYSP_SET _WPAR1_SFTSWER_TM,_SFTSW_ERR_TM	;安全装置選択ＳＷ異常時間１秒
+	_MC_ERR_SYSP_SET _WPAR1_BTNER_TM,_BTNER_ERR_TM		;運転ボタン異常時間１秒
+	_MC_ERR_SYSP_SET _WPAR1_MODSER_TM1,_NCHSW_ERR_TM1	;入力モード選択ＳＷ無し異常時間１秒
+	_MC_ERR_SYSP_SET _WPAR1_MODSER_TM2,_NCHSW_ERR_TM2	;入力モード2個以上選択異常時間0.1秒
+	_MC_ERR_SYSP_SET _WPAR1_VLVER11_TM1,_VLVER11_ERR_TM	;バルブ1異常1時間ON-OF;
+	_MC_ERR_SYSP_SET _WPAR1_VLVER12_TM1,_VLVER12_ERR_TM	;バルブ1異常2時間OF-ON;
+	_MC_ERR_SYSP_SET _WPAR1_VLVER21_TM1,_VLVER21_ERR_TM	;バルブ2異常1時間ON-OF;
+	_MC_ERR_SYSP_SET _WPAR1_VLVER22_TM1,_VLVER22_ERR_TM	;バルブ2異常2時間OF-ON;
+	_MC_ERR_SYSP_SET _WPAR1_VLVER31_TM1,_VLVER31_ERR_TM	;バルブ3異常1時間ON-OF;
+	_MC_ERR_SYSP_SET _WPAR1_VLVER32_TM1,_VLVER32_ERR_TM	;バルブ3異常2時間OF-ON;
+	_MC_ERR_SYSP_SET _WPAR1_CMPER2_TM,_CMP2_ERR_TM2		;
+	_MC_ERR_SYSP_SET _WPAR1_FSFTTRER_TM,_FSFT_TRERR_TM	;前安全装置FCYCL用ﾄﾗﾝｼﾞｽﾀ異常時間
+	_MC_ERR_SYSP_SET _WPAR1_RSFTTRER_TM,_RSFT_TRERR_TM	;後安全装置FCYCL用ﾄﾗﾝｼﾞｽﾀ異常時間
+
+	MOV.L	#_ERR_CHK_OK_FLG,R1			;
+	MOV.W	#H'5AA5,R0				;
+	MOV.W	R0,@R1					;異常ﾁｪｯｸ処理開始ﾌﾗｸﾞ
+
+
+	SUB_END
+	M_RTS
+
+
+	.EXPORT		_ERR_ACT1		;異常処理 2002-08-23 SAITO
+
+;	********** SIT3_CPUB PROGRAM **********
+	.AIF	_SIT_CPU_SEL	EQ	_SIT3_CPUB
+	.IMPORT		_PBDR			; 生値 2003-01-20 SAITO
+	.IMPORT		_PLDR			; 生値 2003-01-20 SAITO
+
+;	********** SIT4_CPUB PROGRAM **********
+	.AELIF	_SIT_CPU_SEL	EQ	_SIT4_CPUB
+	.IMPORT		_dio_top1			;
+	.AENDI
+
+_ERR_ACT1:	;
+	SUB_START
+;;;;;	PUSH_ALL
+
+	MOV.L	#_ERR_CHK_OK_FLG,R1			;
+	MOV.W	@R1,R0					;
+	MOV.W	#H'5AA5,R1				;
+	CMP/EQ	R0,R1					;
+	BT	_ERR_ACT1_000				;
+	M_BRA	_ERR_ACT1_EXIT				;
+
+_ERR_ACT1_000:
+
+	FAR_JSR	#_DEBUG_VF_CHK_SEL,R0			;
+;	***********************************************************
+;	***		ｾﾙﾌﾁｪｯｸ中は見ない異常			***
+;	***********************************************************
+
+	MOV.L	#_SELF_ACT_FLG,R1			; ｾﾙﾌﾁｪｯｸ中 CHECK
+	MOV.W	@R1,R1					;
+	TST	R1,R1					;
+	BT	_ERR_ACT1_100				;
+
+;	=== セルフチェック中はタイマセット ===
+;;;;;	MOV.L	#_VLVER11_ERR_TM,R1		;//
+;;;;;	MOV.L	#_WPAR1_VLVER11_TM1,R0		;
+;;;;;	MOV.W	@R0,R0				; 2008-09-15 SAITO BUG修正
+;;;;;	MOV.W	R0,@R1				; PRESET
+;;;;;
+;;;;;	MOV.L	#_VLVER12_ERR_TM,R1		;//
+;;;;;	MOV.L	#_WPAR1_VLVER12_TM1,R0		;
+;;;;;	MOV.W	@R0,R0				; 2008-09-15 SAITO BUG修正
+;;;;;	MOV.W	R0,@R1				; PRESET
+;;;;;
+;;;;;	MOV.L	#_VLVER21_ERR_TM,R1		;//
+;;;;;	MOV.L	#_WPAR1_VLVER21_TM1,R0		;
+;;;;;	MOV.W	@R0,R0				; 2008-09-15 SAITO BUG修正
+;;;;;	MOV.W	R0,@R1				; PRESET
+;;;;;
+;;;;;	MOV.L	#_VLVER22_ERR_TM,R1		;//
+;;;;;	MOV.L	#_WPAR1_VLVER22_TM1,R0		;
+;;;;;	MOV.W	@R0,R0				; 2008-09-15 SAITO BUG修正
+;;;;;	MOV.W	R0,@R1				; PRESET
+;;;;;
+;;;;;	MOV.L	#_VLVER31_ERR_TM,R1		;//
+;;;;;	MOV.L	#_WPAR1_VLVER31_TM1,R0		;
+;;;;;	MOV.W	@R0,R0				; 2008-09-15 SAITO BUG修正
+;;;;;	MOV.W	R0,@R1				; PRESET
+;;;;;
+;;;;;	MOV.L	#_VLVER32_ERR_TM,R1		;//
+;;;;;	MOV.L	#_WPAR1_VLVER32_TM1,R0		;
+;;;;;	MOV.W	@R0,R0				; 2008-09-15 SAITO BUG修正
+;;;;;	MOV.W	R0,@R1				; PRESET
+
+	_MC_ERRTIM_PRESET _WPAR1_VLVER11_TM1,_VLVER11_ERR_TM		; 2008-09-15 SAITO BUG修正
+	_MC_ERRTIM_PRESET _WPAR1_VLVER12_TM1,_VLVER12_ERR_TM		; 2008-09-15 SAITO BUG修正
+	_MC_ERRTIM_PRESET _WPAR1_VLVER21_TM1,_VLVER21_ERR_TM		; 2008-09-15 SAITO BUG修正
+	_MC_ERRTIM_PRESET _WPAR1_VLVER22_TM1,_VLVER22_ERR_TM		; 2008-09-15 SAITO BUG修正
+	_MC_ERRTIM_PRESET _WPAR1_VLVER31_TM1,_VLVER31_ERR_TM		; 2008-09-15 SAITO BUG修正
+	_MC_ERRTIM_PRESET _WPAR1_VLVER32_TM1,_VLVER32_ERR_TM		; 2008-09-15 SAITO BUG修正
+
+
+;;;DEBUG;	======= DEBUG MONI SQ242~247 =============================== 2008-09-15 確認したら削除すること
+;;;DEBUG	MOV.L	#_WPAR1_VLVER11_TM1,R1
+;;;DEBUG	MOV.L	#_SQ_CBWK_TOP+_SQCB242,R2
+;;;DEBUG	MOV.W	@R1,R0
+;;;DEBUG	MOV.W	R0,@R2
+;;;DEBUG
+;;;DEBUG	MOV.L	#_WPAR1_VLVER12_TM1,R1
+;;;DEBUG	MOV.L	#_SQ_CBWK_TOP+_SQCB243,R2
+;;;DEBUG	MOV.W	@R1,R0
+;;;DEBUG	MOV.W	R0,@R2
+;;;DEBUG
+;;;DEBUG	MOV.L	#_WPAR1_VLVER21_TM1,R1
+;;;DEBUG	MOV.L	#_SQ_CBWK_TOP+_SQCB244,R2
+;;;DEBUG	MOV.W	@R1,R0
+;;;DEBUG	MOV.W	R0,@R2
+;;;DEBUG
+;;;DEBUG	MOV.L	#_WPAR1_VLVER22_TM1,R1
+;;;DEBUG	MOV.L	#_SQ_CBWK_TOP+_SQCB245,R2
+;;;DEBUG	MOV.W	@R1,R0
+;;;DEBUG	MOV.W	R0,@R2
+;;;DEBUG
+;;;DEBUG	MOV.L	#_WPAR1_VLVER31_TM1,R1
+;;;DEBUG	MOV.L	#_SQ_CBWK_TOP+_SQCB246,R2
+;;;DEBUG	MOV.W	@R1,R0
+;;;DEBUG	MOV.W	R0,@R2
+;;;DEBUG
+;;;DEBUG	MOV.L	#_WPAR1_VLVER32_TM1,R1
+;;;DEBUG	MOV.L	#_SQ_CBWK_TOP+_SQCB247,R2
+;;;DEBUG	MOV.W	@R1,R0
+;;;DEBUG	MOV.W	R0,@R2
+;;;DEBUG
+;;;DEBUG	M_BRA	_ERR_ACT1_DEBUG_DEBUG
+;;;DEBUG
+;;;DEBUG_ERR_ACT1_DEBUG_DEBUG
+;;;DEBUG
+;;;DEBUG;	===========================================================
+
+
+	M_BRA	_ERR_ACT1_120				; ｾﾙﾌﾁｪｯｸ中 THEN JUMP
+
+_ERR_ACT1_100:
+
+;	=== 電圧異常CHK (VSER) ===
+	ERR_MAKE_MC _MC_CHK_VSER,_ER_SQRAM_WK2+_SQER214,BIT0
+	ERR_SET1 _ER_SQRAM_WK2+_SQER214,BIT0,_SQ_CBWK_TOP+_SQCB214,_SH4_SQERRAM+_SQER214,BIT0,_EMG_STOP,H'2140	;2010-12-21
+
+;	=== VALVE FEED1 VON1 CHECK	SQ215.0 ===
+	_MC_CHK_VF_ON	SEQBIT=BIT0,VONBIT=_WOVN1,VFBIT=BIT4
+	ERR_MAKE _ER_SQRAM_WK1+_SQER215,BIT0
+	ERR_MAKE2 _ER_SQRAM_WK1+_SQER215,BIT0,_ER_SQRAM_WK2+_SQER215,BIT0,_VLVER11_ERR_TM,_WPAR1_VLVER11_TM1
+	ERR_SET1 _ER_SQRAM_WK2+_SQER215,BIT0,_SQ_CBWK_TOP+_SQCB215,_SH4_SQERRAM+_SQER215,BIT0,_EMG_STOP,H'2150	;2010-12-21
+
+;	=== VALVE FEED1 VOFF1 CHECK	SQ215.1 ===
+	_MC_CHK_VF_OFF	SEQBIT=BIT1,VOFFBIT=_WOVN1,VFBIT=BIT4
+	ERR_MAKE _ER_SQRAM_WK1+_SQER215,BIT1
+	ERR_MAKE2 _ER_SQRAM_WK1+_SQER215,BIT1,_ER_SQRAM_WK2+_SQER215,BIT1,_VLVER12_ERR_TM,_WPAR1_VLVER12_TM1
+	ERR_SET1 _ER_SQRAM_WK2+_SQER215,BIT1,_SQ_CBWK_TOP+_SQCB215,_SH4_SQERRAM+_SQER215,BIT1,_EMG_STOP,H'2151	;2010-12-21
+
+;	=== VALVE FEED2 VON2 CHECK	SQ215.2 ===
+	_MC_CHK_VF_ON	SEQBIT=BIT2,VONBIT=_WOVN2,VFBIT=BIT6
+	ERR_MAKE _ER_SQRAM_WK1+_SQER215,BIT2
+	ERR_MAKE2 _ER_SQRAM_WK1+_SQER215,BIT2,_ER_SQRAM_WK2+_SQER215,BIT2,_VLVER21_ERR_TM,_WPAR1_VLVER21_TM1
+	ERR_SET1 _ER_SQRAM_WK2+_SQER215,BIT2,_SQ_CBWK_TOP+_SQCB215,_SH4_SQERRAM+_SQER215,BIT2,_EMG_STOP,H'2152	;2010-12-21
+
+;	=== VALVE FEED2 VOFF2 CHECK	SQ215.3 ===
+	_MC_CHK_VF_OFF	SEQBIT=BIT3,VOFFBIT=_WOVN2,VFBIT=BIT6
+	ERR_MAKE _ER_SQRAM_WK1+_SQER215,BIT3
+	ERR_MAKE2 _ER_SQRAM_WK1+_SQER215,BIT3,_ER_SQRAM_WK2+_SQER215,BIT3,_VLVER22_ERR_TM,_WPAR1_VLVER22_TM1
+	ERR_SET1 _ER_SQRAM_WK2+_SQER215,BIT3,_SQ_CBWK_TOP+_SQCB215,_SH4_SQERRAM+_SQER215,BIT3,_EMG_STOP,H'2153	;2010-12-21
+
+;	=== VALVE FEED3 VON3 CHECK	SQ215.4 ===
+	_MC_CHK_VF_ON	SEQBIT=BIT4,VONBIT=_WOVN3,VFBIT=BIT8
+	ERR_MAKE _ER_SQRAM_WK1+_SQER215,BIT4
+	ERR_MAKE2 _ER_SQRAM_WK1+_SQER215,BIT4,_ER_SQRAM_WK2+_SQER215,BIT4,_VLVER31_ERR_TM,_WPAR1_VLVER31_TM1
+	ERR_SET1 _ER_SQRAM_WK2+_SQER215,BIT4,_SQ_CBWK_TOP+_SQCB215,_SH4_SQERRAM+_SQER215,BIT4,_EMG_STOP,H'2154	;2010-12-21
+
+;	=== VALVE FEED2 VOFF2 CHECK	SQ215.3 ===
+	_MC_CHK_VF_OFF	SEQBIT=BIT5,VOFFBIT=_WOVN3,VFBIT=BIT8
+	ERR_MAKE _ER_SQRAM_WK1+_SQER215,BIT5
+	ERR_MAKE2 _ER_SQRAM_WK1+_SQER215,BIT5,_ER_SQRAM_WK2+_SQER215,BIT5,_VLVER32_ERR_TM,_WPAR1_VLVER32_TM1
+	ERR_SET1 _ER_SQRAM_WK2+_SQER215,BIT5,_SQ_CBWK_TOP+_SQCB215,_SH4_SQERRAM+_SQER215,BIT5,_EMG_STOP,H'2155	;2010-12-21
+
+_ERR_ACT1_120:
+
+;	***********************************************************
+;	***		必ずチェックする異常			***
+;	***********************************************************
+;	=== CPU2 WDT UP異常CHECK 	SQ214.2 ===
+	MOV.L	#_CB_SEQ_SW_SEL029,R1		;//SEQ 29.0
+	MOV.W	@R1,R0				;
+	TST	#BIT1,R0			;(異常解除)
+	TST_BIT_ON _CMP2_ERR_100
+
+;	=== 二重回路異常CHECK		SQ214.4 ===
+	ERR_MAKE1 _CHK_CMP2_ERR,_ER_SQRAM_WK1+_SQER214,BIT4
+	ERR_MAKE2 _ER_SQRAM_WK1+_SQER214,BIT4,_ER_SQRAM_WK2+_SQER214,BIT4,_CMP2_ERR_TM2,_WPAR1_CMPER2_TM
+	ERR_SET1 _ER_SQRAM_WK2+_SQER214,BIT4,_SQ_CBWK_TOP+_SQCB214,_SH4_SQERRAM+_SQER214,BIT4,_ERR_DUMMY,H'2144	;2010-12-21
+
+;	================================= 二重回路異常発生時のﾃﾞｰﾀﾗｯﾁ
+	MOV.L	#(_ER_SQRAM_WK2+_SQER214),R1	;
+	MOV.W	@R1,R0				;
+	TST	#BIT4,R0			;
+	TST_BIT_OF _CMP2_ERR_100		; 正常 THEN JUMP
+
+	MOV.L	#_CMP2_ERR_FIRST,R1		; 初めて二重回路異常発生？
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON _CMP2_ERR_100		; NO THEN JUMP
+
+	MOV.L	#_CPUN_2CMP_DATA,R1		;
+	MOV.W	@R1,R0				;
+	MOV.L	#_CPUN_2CMP_LATCH2,R1		;
+	MOV.W	R0,@R1				; 相手二重回路異常ﾃﾞｰﾀﾗｯﾁ
+
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB203),R1	;
+	MOV.W	@R1,R2				;
+	MOV.L	#_CPUN_2CMP_LATCH1,R1		;
+	MOV.W	R2,@R1				; 自分二重回路異常ﾃﾞｰﾀﾗｯﾁ
+
+	XOR	R0,R2				;
+
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB219),R1	;
+	MOV.W	R2,@R1				; 自分と相手の違うデータをシーケンスに出す
+
+	MOV.W	#H'2144,R4			;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+
+	MOV.L	#_CMP2_ERR_FIRST,R1		; 初めて二重回路異常発生
+	MOV.W	#H'FFFF,R0			;
+	MOV.W	R0,@R1				; 初めて二重回路異常発生SET ﾘｾｯﾄでｸﾘｱ
+_CMP2_ERR_100:
+;	=================================
+
+
+;	=== 安全装置異常CHECK		SQ213.2 ===
+	ERR_MAKE1 _CHK_SAFETY_SW,_ER_SQRAM_WK1+_SQER213,BIT2
+	ERR_MAKE2 _ER_SQRAM_WK1+_SQER213,BIT2,_ER_SQRAM_WK2+_SQER213,BIT2,_SFTSW_ERR_TM,_WPAR1_SFTSWER_TM
+	ERR_SET1 _ER_SQRAM_WK2+_SQER213,BIT2,_SQ_CBWK_TOP+_SQCB213,_SH4_SQERRAM+_SQER213,BIT2,_EMG_STOP,H'2132	;2010-12-21
+
+;	=== 運転釦異常CHECK		SQ213.1 ===
+	ERR_MAKE1 _CHK_BOTTON,_ER_SQRAM_WK1+_SQER213,BIT1
+	ERR_MAKE2 _ER_SQRAM_WK1+_SQER213,BIT1,_ER_SQRAM_WK2+_SQER213,BIT1,_BTNER_ERR_TM,_WPAR1_BTNER_TM
+	ERR_SET1 _ER_SQRAM_WK2+_SQER213,BIT1,_SQ_CBWK_TOP+_SQCB213,_SH4_SQERRAM+_SQER213,BIT1,_EMG_STOP,H'2131	;2010-12-21
+
+;	=== NOTCH SW 選択無 CHECK	SQ213.0 ===
+	ERR_MAKE1 _CHK_NOTCHSW2,_ER_SQRAM_WK1+_SQER213,BIT0
+	ERR_MAKE2 _ER_SQRAM_WK1+_SQER213,BIT0,_ER_SQRAM_WK2+_SQER213,BIT0,_NCHSW_ERR_TM1,_WPAR1_MODSER_TM1
+	ERR_SET1 _ER_SQRAM_WK2+_SQER213,BIT0,_SQ_CBWK_TOP+_SQCB213,_SH4_SQERRAM+_SQER213,BIT0,_EMG_STOP,H'2130	;2010-12-21
+
+;	=== NOTCH SW 2個以上選択 CHECK	SQ213.0 ===
+	ERR_MAKE1 _CHK_NOTCHSW3,_ER_SQRAM_WK1+_SQER213,BIT0
+	ERR_MAKE2 _ER_SQRAM_WK1+_SQER213,BIT0,_ER_SQRAM_WK2+_SQER213,BIT0,_NCHSW_ERR_TM2,_WPAR1_MODSER_TM2
+	ERR_SET1 _ER_SQRAM_WK2+_SQER213,BIT0,_SQ_CBWK_TOP+_SQCB213,_SH4_SQERRAM+_SQER213,BIT0,_EMG_STOP,H'2130	;2010-12-21
+
+;	=== 前安全装置トランジスタ異常CHECK	SQ217.4 ===
+	ERR_MAKE1 _CHK_FSFTY_TR,_ER_SQRAM_WK1+_SQER217,BIT4
+	ERR_MAKE2 _ER_SQRAM_WK1+_SQER217,BIT4,_ER_SQRAM_WK2+_SQER217,BIT4,_FSFT_TRERR_TM,_WPAR1_FSFTTRER_TM
+	ERR_SET1 _ER_SQRAM_WK2+_SQER217,BIT4,_SQ_CBWK_TOP+_SQCB217,_SH4_SQERRAM+_SQER217,BIT4,_EMG_STOP,H'2174	;2010-12-21
+
+;	=== 後安全装置トランジスタ異常CHECK	SQ217.5 ===
+	ERR_MAKE1 _CHK_RSFTY_TR,_ER_SQRAM_WK1+_SQER217,BIT5
+	ERR_MAKE2 _ER_SQRAM_WK1+_SQER217,BIT5,_ER_SQRAM_WK2+_SQER217,BIT5,_RSFT_TRERR_TM,_WPAR1_RSFTTRER_TM
+	ERR_SET1 _ER_SQRAM_WK2+_SQER217,BIT5,_SQ_CBWK_TOP+_SQCB217,_SH4_SQERRAM+_SQER217,BIT5,_EMG_STOP,H'2175	;2010-12-21
+
+	MOV.L	#_CB_SEQ_SW_SEL029,R1		;//SEQ 29.0
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;(異常解除)
+	TST_BIT_OF HD_WDT_CPUERR_CHK000
+	M_BRA	ERR_ACT1_9000
+HD_WDT_CPUERR_CHK000:
+
+;	=== CPU2 WDT UP異常CHECK 	SQ214.2 ===
+	ERR_MAKE1 _CHK_CPUN_WDTER,_ER_SQRAM_WK2+_SQER214,BIT2
+	ERR_SET1 _ER_SQRAM_WK2+_SQER214,BIT2,_SQ_CBWK_TOP+_SQCB214,_SH4_SQERRAM+_SQER214,BIT2,_EMG_STOP,H'2142	;2010-12-21
+
+;	=== CPU2 異常CHECK 		SQ214.1 ===
+	ERR_MAKE1 _CHK_CPUN_ERR,_ER_SQRAM_WK2+_SQER214,BIT1
+	ERR_SET1 _ER_SQRAM_WK2+_SQER214,BIT1,_SQ_CBWK_TOP+_SQCB214,_SH4_SQERRAM+_SQER214,BIT1,_EMG_STOP,H'2141	;2010-12-21
+
+
+;	=== ＦＲＯＭサムチェック異常	SQ224.0 ===
+;////	MOV.L	#(_SQ_CBWK_TOP+_SQCB224),R1		;
+;////	MOV.W	@R1,R0					;
+;////	TST	#BIT0,R0				;
+;////	TST_BIT_OF _FROM_SUM_EXIT			; FROMサムチェック異常をシーケンスに出す 消さない
+
+;////	FAR_JSR	#_EMG_STOP,R0				; 異常を解除しない
+
+_FROM_SUM_EXIT:
+
+
+;	=== ｷｰﾌﾟﾘﾚｰﾊﾞｯｸｱｯﾌﾟ異常ﾁｪｯｸ ===
+	FAR_JSR	#_CHK_KEEPRY_BUKUP,R0			;
+
+
+
+
+
+ERR_ACT1_9000:
+;-------2010-12-08 移動
+;	*** 異常関係のﾀｲﾏ ***
+	DN_TIME W,_SFTSW_ERR_TM,R1,R2		;//
+	DN_TIME W,_BTNER_ERR_TM,R1,R2		;//
+	DN_TIME W,_NCHSW_ERR_TM1,R1,R2		;//
+	DN_TIME W,_NCHSW_ERR_TM2,R1,R2		;//
+	DN_TIME W,_VLVER11_ERR_TM,R1,R2		;//
+	DN_TIME W,_VLVER12_ERR_TM,R1,R2		;//
+	DN_TIME W,_VLVER21_ERR_TM,R1,R2		;//
+	DN_TIME W,_VLVER22_ERR_TM,R1,R2		;//
+	DN_TIME W,_VLVER31_ERR_TM,R1,R2		;//
+	DN_TIME W,_VLVER32_ERR_TM,R1,R2		;//
+;;;;2個ある不具合	DN_TIME W,_SFTSW_ERR_TM,R1,R2		;//
+	DN_TIME W,_CMP2_ERR_TM2,R1,R2		;//
+	DN_TIME W,_FSFT_TRERR_TM,R1,R2		;//
+	DN_TIME W,_RSFT_TRERR_TM,R1,R2		;//
+
+_ERR_ACT1_EXIT:
+
+;	*** シーケンスに出さない異常 ***
+;	=== 安全装置切替ERR CHECK ===
+_ELSE_ERR_CHECK:
+	FAR_JSR #_ER_CHK_SFYSW_CHG,R0		; 安全装置SWが切り替わったかﾁｪｯｸ
+	TST	R0,R0				;
+	TST_BIT_OF _ELSE_ERR_CHK020		;
+
+	MOV.W	#H'0018,R4				;2010-12-21
+	FAR_JSR	#_EMG_STOP,R0			;
+
+_ELSE_ERR_CHK020:
+
+;;;;;	POP_ALL
+	SUB_END
+	M_RTS
+
+
+
+;	************************************
+;	***	運転釦 N.O=N.C=1 CHECK	 ***	SQ213.1
+;	************************************
+;	R0=00   正常		R0=FF 異常
+_CHK_BOTTON:
+	SUB_START
+
+	XOR	R0,R0					;
+	MOV.L	#_DBG_ERRCHK_NASI+_SQER213,R1		;
+	MOV.W	@R1,R1					;
+	MOV.W	#BIT1,R2				;
+	TST	R2,R1					;
+	BF	_CHK_BTTN_EXT				; ﾁｪｯｸしないBIT ON THEN EXIT
+
+	MOV.L	#_PK_PORT_CTL_DATA,R1			;
+	MOV.W	@R1,R1					;
+	MOV	R1,R3					;
+	MOV.W	#(BIT8+BIT9),R2				; R_BOTTON N.C,N.O LOAD
+	AND	R2,R1					;
+	CMP/EQ	R2,R1					;
+	BF	_CHK_BTTN_020				; 正常 THEN JUMP
+
+	MOV.W	#H'FFFF,R0				;N.C=N.O=1 THEN ERR CODE SET
+
+_CHK_BTTN_020:
+	MOV.W	#(BIT10+BIT11),R2			; L_BOTTON N.C,N.O LOAD
+	AND	R2,R3					;
+	CMP/EQ	R2,R3					;
+	BF	_CHK_BTTN_EXT				; 正常 THEN JUMP
+
+_CHK_BTTN_ERR:
+	MOV.W	#H'FFFF,R0				;N.C=N.O=1 THEN ERR CODE SET
+_CHK_BTTN_EXT:
+
+	SUB_END
+	M_RTS
+
+
+;	**************************
+;	*** 運転ﾓｰﾄﾞなし CHECK ***	SQ213.0
+;	**************************
+_CHK_NOTCHSW2:
+	SUB_START
+
+	XOR	R0,R0					;
+	MOV.L	#_DBG_ERRCHK_NASI+_SQER213,R1		;
+	MOV.W	@R1,R1					;
+	MOV.W	#BIT0,R2				;
+	TST	R2,R1					;
+	BF	_CHK_NCHSW2_EXT				; ﾁｪｯｸしないBIT ON THEN EXIT
+
+	MOV.L	#_PK_PORT_CTL_DATA,R1			; NOTCH SW DATA LOAD
+	MOV.W	@R1,R1					;
+	MOV.W	#(BIT6+BIT5+BIT4+BIT3+BIT2+BIT1+BIT0),R2;
+	TST	R2,R1					;
+	BF	_CHK_NCHSW2_EXT				;
+
+	MOV.W	#H'FFFF,R0				;ERR CODE SET
+_CHK_NCHSW2_EXT:
+
+	SUB_END
+	M_RTS
+
+;	*********************************
+;	*** 運転ﾓｰﾄﾞ2個以上選択 CHECK ***	SQ213.0
+;	*********************************
+_CHK_NOTCHSW3:
+	SUB_START
+
+	XOR	R0,R0					;
+	MOV.L	#_DBG_ERRCHK_NASI+_SQER213,R1		;
+	MOV.W	@R1,R1					;
+	MOV.W	#BIT0,R2				;
+	TST	R2,R1					;
+	BF	_CHK_NCHSW3_EXT				; ﾁｪｯｸしないBIT ON THEN EXIT
+
+	MOV.L	#_PK_PORT_CTL_DATA,R1			; NOTCH SW DATA LOAD
+	MOV.W	@R1,R1					;
+	MOV.W	#(BIT6+BIT5+BIT4+BIT3+BIT2+BIT1+BIT0),R2;
+	AND	R2,R1					;
+	XOR	R2,R2					;
+	XOR	R3,R3					;
+	SHLR	R1					; BIT0
+	ADDC	R3,R2					;
+	SHLR	R1					; BIT1
+	ADDC	R3,R2					;
+	SHLR	R1					; BIT2
+	ADDC	R3,R2					;
+	SHLR	R1					; BIT3
+	ADDC	R3,R2					;
+	SHLR	R1					; BIT4
+	ADDC	R3,R2					;
+	SHLR	R1					; BIT5
+	ADDC	R3,R2					;
+	SHLR	R1					; BIT6
+	ADDC	R3,R2					;
+
+	MOV.W	#2,R3					;
+	CMP/GE	R3,R2					;
+	BF	_CHK_NCHSW3_EXT
+
+	MOV.W	#H'FFFF,R0				;ERR CODE SET
+_CHK_NCHSW3_EXT:
+
+	SUB_END
+	M_RTS
+
+
+;	***************************************
+;	*** 安全装置有効／無効ＳＷ異常CHECK ***		SQ213.2
+;	***************************************
+_CHK_SAFETY_SW:
+	SUB_START
+
+	XOR	R0,R0					;
+	MOV.L	#_DBG_ERRCHK_NASI+_SQER213,R1		;
+	MOV.W	@R1,R1					;
+	MOV.W	#BIT2,R2				;
+	TST	R2,R1					;
+	BF	_CHK_SFTYSW_EXT				; ﾁｪｯｸしないBIT ON THEN EXIT
+
+	MOV.L	#_PK_PORT_CTL_DATA,R1			; SAFETY SW DATA LOAD
+	MOV.W	@R1,R1					;
+	MOV.W	#(BIT13+BIT12),R2			;
+	AND	R2,R1					;
+	MOV.W	#BIT12,R2				;
+	CMP/EQ	R2,R1					;
+	BT	_CHK_SFTYSW_EXT
+
+	MOV.W	#BIT13,R2				;
+	CMP/EQ	R2,R1					;
+	BT	_CHK_SFTYSW_EXT				;
+
+	MOV.W	#H'FFFF,R0				; BIT4=BIT5 THEN ERR
+							; ERR CODE SET
+_CHK_SFTYSW_EXT:
+
+	SUB_END
+	M_RTS
+
+
+;	*********************************
+;	*** LSA2リミットＳＷ異常CHECK ***	SQ215.7
+;	*********************************
+_CHK_LSA2_SW:
+	SUB_START
+
+	XOR	R0,R0					;
+	MOV.L	#_DBG_ERRCHK_NASI+_SQER215,R1		;
+	MOV.W	@R1,R1					;
+	MOV.W	#BIT7,R2				;
+	TST	R2,R1					;
+	BF	_CHK_LSA2SW_EXT				; ﾁｪｯｸしないBIT ON THEN EXIT
+
+	MOV.L	#_PJ_PORT_CTL_DATA,R1			; LSA2 SW DATA LOAD
+	MOV.W	@R1,R1					;
+	MOV.W	#BIT1,R2				;
+	TST	R2,R1					; LSA2 CHECK
+	BT	_CHK_LSA2SW_EXT				; LSA2=ON THEN ERR
+
+	MOV.W	#H'FFFF,R0				; ERR CODE SET
+_CHK_LSA2SW_EXT:
+
+	SUB_END
+	M_RTS
+
+;	*********************************
+;	*** LSA1リミットＳＷ異常CHECK ***	SQ215.6
+;	*********************************
+_CHK_LSA1_SW:
+	SUB_START
+
+	XOR	R0,R0					;
+	MOV.L	#_DBG_ERRCHK_NASI+_SQER215,R1		;
+	MOV.W	@R1,R1					;
+	MOV.W	#BIT6,R2				;
+	TST	R2,R1					;
+	BF	_CHK_LSA1SW_EXT				; ﾁｪｯｸしないBIT ON THEN EXIT
+
+	MOV.L	#_PJ_PORT_CTL_DATA,R1			; LSA2 SW DATA LOAD
+	MOV.W	@R1,R1					;
+	MOV.W	#BIT0,R2				;
+	TST	R2,R1					; LSA1 CHECK
+	BT	_CHK_LSA1SW_EXT				; LSA1=ON THEN ERR
+
+	MOV.W	#H'FFFF,R0				; ERR CODE SET
+_CHK_LSA1SW_EXT:
+
+	SUB_END
+	M_RTS
+
+
+	.IMPORT	_SEQ_CARD_RAM		;
+
+;	******************************************************************
+;	*** ｼｽﾃﾑ設定画面のｲﾝﾀｰﾛｯｸ4がONならVFの異常処理はやらない DEBUG ***
+;	******************************************************************
+_DEBUG_VF_CHK_SEL:
+	SUB_START
+
+;;;	MOV.L	#(_SEQ_CARD_RAM+_SQ029),R6		;
+	MOV.L	#_CB_SEQ_SW_SEL029,R6			;//SEQ 29.0 2007-08-21
+	
+	MOV.W	@R6,R0					;
+	TST	#BIT4,R0				;
+	TST_BIT_ON _DEBUG_VF_CHK_SEL100			;
+
+	MOV.L	#_DBG_ERRCHK_NASI+_SQER215,R1		;
+	XOR	R0,R0					;
+	MOV.W	R0,@R1					; ﾁｪｯｸあり
+
+	M_BRA	_DEBUG_VF_CHK_SEL_EXIT			;
+
+_DEBUG_VF_CHK_SEL100:
+	MOV.L	#_DBG_ERRCHK_NASI+_SQER215,R1		;
+	MOV.W	#H'FFFF,R0				;
+	MOV.W	R0,@R1					; ﾁｪｯｸあり
+
+_DEBUG_VF_CHK_SEL_EXIT:
+
+	SUB_END
+	M_RTS
+
+
+	.EXPORT	_ERR_RST_CLR
+
+;	*************************************
+;	*** ﾘｾｯﾄでｸﾘｱする異常関係ｼｰｹﾝｽRAM ***
+;	*************************************
+_ERR_RST_CLR:
+	SUB_START
+
+	XOR	R0,R0				;
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB213),R1	;
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB214),R1	;
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB215),R1	;
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB216),R1	;
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB217),R1	;
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB218),R1	;
+	MOV.W	R0,@R1				;
+
+;;	MOV.L	#(_SQ_CBWK_TOP+_SQCB219),R1	;
+;;	MOV.W	R0,@R1				;
+
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB220),R1	;
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB221),R1	;2004-02-19
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB222),R1	;2004-02-19
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB223),R1	;2004-05-10
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB224),R1	;
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB225),R1	;
+	MOV.W	R0,@R1				;
+
+
+	MOV.L	#(_SH4_SQERRAM+_SQER213),R1	;
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SH4_SQERRAM+_SQER214),R1	;
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SH4_SQERRAM+_SQER215),R1	;
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SH4_SQERRAM+_SQER216),R1	;
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SH4_SQERRAM+_SQER217),R1	;
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SH4_SQERRAM+_SQER218),R1	;
+	MOV.W	R0,@R1				;
+
+;;	MOV.L	#(_SH4_SQERRAM+_SQER219),R1	;
+;;	MOV.W	R0,@R1				;
+
+	MOV.L	#(_SH4_SQERRAM+_SQER220),R1	;
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SH4_SQERRAM+_SQER221),R1	;2004-02-19
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SH4_SQERRAM+_SQER222),R1	;2004-02-19
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SH4_SQERRAM+_SQER223),R1	;2004-05-10
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SH4_SQERRAM+_SQER224),R1	;
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SH4_SQERRAM+_SQER225),R1	;
+	MOV.W	R0,@R1				;
+
+
+;---------二重回路分離-------------
+;;;	XOR	R0,R0
+;;;	MOV.L	#(_SH4_SQERRAM+_SQER219),R1	;
+;;;	MOV.W	R0,@R1				;
+;;;	MOV.L	#(_SQ_CBWK_TOP+_SQCB219),R1	;
+;;;	MOV.W	R0,@R1				;
+;;;	MOV.L	#_CMP2_ERR_FIRST,R1		; 初めて二重回路異常発生
+;;;	MOV.W	R0,@R1				; ﾘｾｯﾄでｸﾘｱ
+
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	*** ﾘｾｯﾄでﾀｲﾏﾌﾟﾘｾｯﾄする		***
+;	***	_ERR_RST_CLRと分離	***
+;	***	2011-01-07		***
+;	***********************************
+_ERR_RST_TIM_PRESET:
+	SUB_START
+
+
+;---------二重回路分離-------------
+	XOR	R0,R0
+	MOV.L	#(_SH4_SQERRAM+_SQER219),R1	;
+	MOV.W	R0,@R1				;
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB219),R1	;
+	MOV.W	R0,@R1				;
+	MOV.L	#_CMP2_ERR_FIRST,R1		; 初めて二重回路異常発生
+	MOV.W	R0,@R1				; ﾘｾｯﾄでｸﾘｱ
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	二重回路異常ﾁｪｯｸ	***
+;	***********************************
+_CHK_CMP2_ERR:
+	SUB_START
+
+	XOR	R0,R0					;
+	MOV.L	#_DBG_ERRCHK_NASI+_SQER214,R1		;
+	MOV.W	@R1,R1					;
+	MOV.W	#BIT4,R2				;
+	TST	R2,R1					;
+	BF	_CHK_CMP2ERR_EXT			; ﾁｪｯｸしないBIT ON THEN EXIT
+
+	MOV.L	#_CPUN_2CMP_DATA,R1			; 相手二重回路異常ﾃﾞｰﾀ CHECK
+	MOV.W	@R1,R3					;
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB203),R1		; 自分二重回路異常ﾃﾞｰﾀ CHECK
+	MOV.W	@R1,R2					;
+
+	MOV.W	#H'01FF,R1				;
+	AND	R1,R2					;
+
+	XOR	R3,R2					;
+	TST	R2,R2					;
+	TST_BIT_OF _CHK_CMP2ERR_EXT			; NO ERR THEN JUMP
+
+	MOV.W	#H'FFFF,R0				; ERR CODE SET
+;;;;;	MOV.W	#H'0000,R0				; ERR CODE SET DEBUG
+
+_CHK_CMP2ERR_EXT:
+
+	SUB_END
+	M_RTS
+
+
+;	**************************************
+;	*** 即異常にしないときダミーに使う ***
+;	**************************************
+_ERR_DUMMY:
+	SUB_START
+
+	NOP
+
+	SUB_END
+	M_RTS
+
+
+
+;	**************************************
+;	*** 安全装置SWが切り替わったかﾁｪｯｸ ***
+;	**************************************
+_ER_CHK_SFYSW_CHG:
+	SUB_START
+
+	XOR	R0,R0					;
+
+	MOV.L	#_PK_PORT_CTL_DATA,R1			; LSA2 SW DATA LOAD
+	MOV.W	@R1,R1					;
+	MOV.W	#(BIT13+BIT12),R2			; NEW SFTON,SFTOFF LOAD
+	AND	R2,R1					;
+	MOV.L	#_ER_SFTSW_CHG_OLD,R4			;
+	MOV.W	@R4,R5					; OLD LOAD
+	MOV.W	R1,@R4					; NEW -> OLD SAVE
+
+	XOR	R5,R1					;
+	TST	R1,R1					;
+	TST_BIT_OF _ER_CHK_SFYSW_CHG_EXIT		; NO CHANGE THEN NOMAL JUMP
+
+	MOV.W	#H'FFFF,R0				; 変化あり THEN 異常
+
+_ER_CHK_SFYSW_CHG_EXIT:
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***	CPU2 WDT UP異常CHECK	***	SQ214.2
+;	***********************************
+_CHK_CPUN_WDTER:
+	SUB_START
+
+	XOR	R0,R0					;
+	MOV.L	#_DBG_ERRCHK_NASI+_SQER214,R1		;
+	MOV.W	@R1,R1					;
+	MOV.W	#BIT2,R2				;
+	TST	R2,R1					;
+	TST_BIT_ON _CHK_CPUN_WDTER_EXT			; ﾁｪｯｸしないBIT ON THEN EXIT
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+;	=== CPUA ===
+	MOV.L	#(_IOGA1_CTRL_DAT1+_IOGAi_PC),R1	;
+	MOV.W	@R1,R2					;
+	MOV.W	#BIT4,R3				;
+	TST	R3,R2					;
+	TST_BIT_OF _CHK_CPUN_WDTER_EXT			;
+	.AELSE
+;	=== CPUB ===
+	MOV.L	#_PL_PORT_CTL_DATA,R1			;
+	MOV.W	@R1,R2					;
+	MOV.W	#BIT0,R3				;
+	TST	R3,R2					;
+	TST_BIT_OF _CHK_CPUN_WDTER_EXT			;
+	.AENDI
+
+	MOV.W	#H'FFFF,R0				;ERR CODE SET
+
+_CHK_CPUN_WDTER_EXT:
+
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***	CPU2 異常CHECK		***	SQ214.1
+;	***********************************
+_CHK_CPUN_ERR:
+	SUB_START
+
+	XOR	R0,R0					;
+	MOV.L	#_DBG_ERRCHK_NASI+_SQER214,R1		;
+	MOV.W	@R1,R1					;
+	MOV.W	#BIT1,R2				;
+	TST	R2,R1					;
+	TST_BIT_ON _CHK_CPUNERR_EXT			; ﾁｪｯｸしないBIT ON THEN EXIT
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+;	=== CPUA ===
+	MOV.L	#(_IOGA1_CTRL_DAT1+_IOGAi_PC),R1	;
+	MOV.W	@R1,R2					;
+	MOV.W	#BIT5,R3				;
+	TST	R3,R2					;
+	TST_BIT_OF _CHK_CPUNERR_EXT			;
+	.AELSE
+;	=== CPUB ===
+	MOV.L	#_PL_PORT_CTL_DATA,R1			;
+	MOV.W	@R1,R2					;
+	MOV.W	#BIT10,R3				;
+	TST	R3,R2					;
+	TST_BIT_OF _CHK_CPUNERR_EXT			;
+	.AENDI
+
+	MOV.W	#H'FFFF,R0				;ERR CODE SET
+
+_CHK_CPUNERR_EXT:
+
+	SUB_END
+	M_RTS
+
+
+
+;	*******************************************
+;	***	前安全装置異常ERR CHECK		***	SQ217.4 
+;	*******************************************
+_CHK_FSFTY_TR:
+	SUB_START
+
+	XOR	R0,R0					;
+	MOV.L	#_DBG_ERRCHK_NASI+_SQER217,R1		;
+	MOV.W	@R1,R1					;
+	MOV.W	#BIT4,R2				;
+	TST	R2,R1					;
+	TST_BIT_ON _CHK_FSFY_TR_EXT			; ﾁｪｯｸしないBIT ON THEN EXIT
+
+	MOV.L	#_dq1_cb_out1,R1			;//+0:制御出力(203)
+	MOV.W	@R1,R2					;
+	MOV.W	#BIT7,R3				;
+	AND	R2,R3					; *FCYCL LOAD
+	TST	R3,R3					;
+	TST_BIT_OF _CHK_FSFTY_TR020			; 安全装置無効 THEN JUMP
+
+;	*** 安全装置有効なら ACT=/=DEV THEN ERR ***
+	MOV.L	#_PB_PORT_CTL_DATA,R1			;
+	MOV.W	@R1,R2					; BIT13=FACT
+	MOV.L	#_REAL_INP1_DATA,R1			; 
+	MOV.W	@R1,R3					; BIT6=FDEV
+	SHLR	R3					;
+	SWAP.B	R3,R3					;
+	MOV.W	#BIT13,R4				;
+	XOR	R2,R3					; FACT=FDEV?
+	TST	R4,R3					;
+	TST_BIT_OF _CHK_FSFY_TR_EXT			; FACT=FDEV THEN NORMAL
+
+	MOV.W	#H'FFFF,R0				; ERR CODE SET
+	M_BRA	_CHK_FSFY_TR_EXT			;
+
+;	*** 安全装置無効なら DEV=遮光 THEN ERR ***
+_CHK_FSFTY_TR020:
+	MOV.L	#_REAL_INP1_DATA,R1			; 
+	MOV.W	@R1,R2					; BIT6=FDEV
+	MOV.W	#BIT6,R3				; BIT6=FDEV
+	TST	R2,R3					;
+	TST_BIT_ON _CHK_FSFY_TR_EXT			; 通光 THEN NORMAL
+
+	MOV.W	#H'FFFF,R0				; ERR CODE SET
+
+_CHK_FSFY_TR_EXT:
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***	後安全装置異常ERR CHECK		***	SQ217.5 
+;	*******************************************
+_CHK_RSFTY_TR:
+	SUB_START
+
+;;;;;;;;;;;;;;;;;;;;;;あほ2007-07-20(次回出荷時)	SUB_START
+
+	XOR	R0,R0					;
+	MOV.L	#_DBG_ERRCHK_NASI+_SQER217,R1		;
+	MOV.W	@R1,R1					;
+	MOV.W	#BIT5,R2				;
+	TST	R2,R1					;
+	TST_BIT_ON _CHK_RSFY_TR_EXT			; ﾁｪｯｸしないBIT ON THEN EXIT
+
+	MOV.L	#_dq1_cb_out1,R1			;//+0:制御出力(203)
+	MOV.W	@R1,R2					;
+	MOV.W	#BIT8,R3				;
+	AND	R2,R3					; *RCYCL LOAD
+	TST	R3,R3					;
+	TST_BIT_OF _CHK_RSFTY_TR020			; 安全装置無効 THEN JUMP
+
+;	*** 安全装置有効なら ACT=/=DEV THEN ERR ***
+	MOV.L	#_PB_PORT_CTL_DATA,R1			;
+	MOV.W	@R1,R2					; BIT14=FACT
+	MOV.L	#_REAL_INP1_DATA,R1			; 
+	MOV.W	@R1,R3					; BIT7=FDEV
+	SHLR	R3					;
+	SWAP.B	R3,R3					;
+	MOV.W	#BIT14,R4				;
+	XOR	R2,R3					; RACT=RDEV?
+	TST	R4,R3					;
+	TST_BIT_OF _CHK_RSFY_TR_EXT			; RACT=RDEV THEN NORMAL
+
+	MOV.W	#H'FFFF,R0				; ERR CODE SET
+	M_BRA	_CHK_RSFY_TR_EXT			;
+
+;	*** 安全装置無効なら DEV=遮光 THEN ERR ***
+_CHK_RSFTY_TR020:
+	MOV.L	#_REAL_INP1_DATA,R1			; 
+	MOV.W	@R1,R2					; BIT7=RDEV
+	MOV.W	#BIT7,R3				; BIT7=RDEV
+	TST	R2,R3					;
+	TST_BIT_ON _CHK_RSFY_TR_EXT			; 通光 THEN NORMAL
+
+	MOV.W	#H'FFFF,R0				; ERR CODE SET
+
+_CHK_RSFY_TR_EXT:
+
+	SUB_END
+	M_RTS
+
+
+
+
+;	*******************************************
+;	***	ｷｰﾌﾟﾘﾚｰﾊﾞｯｸｱｯﾌﾟ異常ERR CHECK	***	SQ078.7 
+;	*******************************************
+;
+_CHK_KEEPRY_BUKUP:
+	SUB_START
+
+	MOV.L	#_KEEPRY_BKUP_ERR,R1			;
+	MOV.W	@R1,R0					;
+	TST	R0,R0					;
+	BT	_CHK_KEEPRY_BUKUP_EXIT			; NO ERR THEN EXIT
+
+;;;	MOV.L	#(_SEQ_CARD_RAM+_SQ078),R1		; ｺﾒﾝﾄｱｳﾄ 2008-07-30 SAITO
+	MOV.L	#(_SEQAB_DP_TOP+_SQ078),R1		; DPRAM 2008-07-30 SAITO
+	MOV.W	@R1,R0					;
+	MOV.W	#BIT7,R2				;
+	OR	R2,R0					;
+	MOV.W	R0,@R1					; ERR SET
+
+	XOR	R0,R0					;
+	MOV.L	#_KEEPRY_BKUP_ERR,R1			;
+	MOV.W	R0,@R1					; ERR FLG CLEAR
+
+_CHK_KEEPRY_BUKUP_EXIT:
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+
+
+
+;	*********************************************************** 2007-05-21 SAITO
+;	*****		CPUAER CPUBER 出力ON			*** 機種、CPUにより切り分ける
+;	*********************************************************** このファイルでマクロを呼べないのでばらしている
+_CPUN_ERR_OUT_ON:
+	SUB_START
+
+;;;;;	_MC_CPUAER_ON_WK1	R1,R2,R3			;
+	.AIF	_SIT_CPU_SEL	 EQ	_SIT3_CPUA
+		MOV.L	#_IOGA1_CTRL_DAT1+_IOGAo_PF,R2		;
+		MOV.W	@R2,R1					;
+		MOV.W	#BIT7,R3				;
+		OR	R3,R1					;
+		MOV.W	R1,@R2					; WORK
+	.AELIF	_SIT_CPU_SEL	 EQ	_SIT4_CPUA
+		MOV.L	#_IOGA1_CTRL_DAT1+_IOGA_P5,R2		;
+		MOV.W	@R2,R1					;
+		MOV.W	#BIT7,R3				;
+		OR	R3,R1					;
+		MOV.W	R1,@R2					; WORK
+	.AELIF	_SIT_CPU_SEL	 EQ	_SIT4_CPUB
+		MOV.L	#_IOGA1_CTRL_DAT1+_IOGA_P5,R2		;
+		MOV.W	@R2,R1					;
+		MOV.W	#BIT7,R3				;
+		OR	R3,R1					;
+		MOV.W	R1,@R2					; WORK
+	.AENDI
+
+;;;;;;	_MC_GA1PF_OUT1	R1,R2,R3				; CPUA ERR OUT
+	.AIF	_SIT_CPU_SEL	 EQ	_SIT3_CPUA
+		MOV.L	#_IOGA1_CTRL_DAT1+_IOGAo_PF,R2		; WORK ADDRESS
+		MOV.W	@R2,R1					;
+		MOV.B	#GA1_PFEX,R3				;
+		XOR	R3,\R1					;
+		MOV.L	#_dio_top1+_IOGAo_PF,R2			; IOGA PF ADDRESS
+		MOV.W	R1,@R2					; 実出力SET
+	.AELIF	_SIT_CPU_SEL	 EQ	_SIT4_CPUA
+		MOV.L	#_IOGA1_CTRL_DAT1+_IOGA_P5,R2		;
+		MOV.W	@R2,R1					;
+		MOV.B	#_IO1A_P5EX,R3				;
+		XOR	R3,R1					;
+		MOV.L	#_dio_top1+_IOGA_PDR5,R2		; IOGA PF ADDRESS
+		MOV.W	R1,@R2					; 実出力SET
+	.AELIF	_SIT_CPU_SEL	 EQ	_SIT4_CPUB
+		MOV.L	#_IOGA1_CTRL_DAT1+_IOGA_P5,R2		;
+		MOV.W	@R2,R1					;
+		MOV.B	#_IO1B_P5EX,R3				;
+		XOR	R3,R1					;
+		MOV.L	#_dio_top1+_IOGA_PDR5,R2		; IOGA PF ADDRESS
+		MOV.W	R1,@R2					; 実出力SET
+	.AENDI
+
+	SUB_END
+	M_RTS
+
+
+

@@ -1,0 +1,52 @@
+;	***********************************
+;	***				***
+;	***	SIT3/4ÇÃ ∞ƒﬁä÷åWø∞Ωêÿï™	***
+;	***				***
+;	***********************************
+_TYPE_SIT3	.DEFINE		"0"		;
+_TYPE_SIT4	.DEFINE		"1"		;
+;;_SIT_TYPE_SEL	.DEFINE		"_TYPE_SIT3"	;
+_SIT_TYPE_SEL	.DEFINE		"_TYPE_SIT4"	;
+
+;	***********************************
+;	***				***
+;	***	C/BÇÃ ∞ƒﬁä÷åWø∞Ωêÿï™	***
+;	***				***
+;	***********************************
+_CB_CPUA	.DEFINE		"0"		;
+_CB_CPUB	.DEFINE		"1"		;
+;;_CB_CPU_SEL	.DEFINE		"_CB_CPUA"	;
+_CB_CPU_SEL	.DEFINE		"_CB_CPUB"	;
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+;	=== CPUA ===
+	.AELSE
+;	=== CPUB ===
+	.AENDI
+
+_SIT3_CPUA	.DEFINE		"0"		;
+_SIT3_CPUB	.DEFINE		"1"		;
+_SIT4_CPUA	.DEFINE		"2"		;
+_SIT4_CPUB	.DEFINE		"3"		;
+
+	.AIF	_SIT_TYPE_SEL EQ _TYPE_SIT3
+
+		.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+
+_SIT_CPU_SEL	.DEFINE		"_SIT3_CPUA"	;
+
+		.AELSE
+
+_SIT_CPU_SEL	.DEFINE		"_SIT3_CPUB"	;
+
+		.AENDI
+	.AELSE
+		.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+
+_SIT_CPU_SEL	.DEFINE		"_SIT4_CPUA"	;
+
+		.AELSE
+
+_SIT_CPU_SEL	.DEFINE		"_SIT4_CPUB"	;
+
+		.AENDI
+	.AENDI

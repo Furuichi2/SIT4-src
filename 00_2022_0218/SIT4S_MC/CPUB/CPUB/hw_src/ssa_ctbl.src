@@ -1,0 +1,683 @@
+;	***********************************************************
+;	***							***
+;	***	call table					***
+;	***	ﾊﾞｰｼﾞｮﾝｱｯﾌﾟのboot書き換えしない様に		***
+;	***	ｱﾄﾞﾚｽを変更したくないﾌﾟﾛｸﾞﾗﾑを間接でcallする	***
+;	***							***
+;	***********************************************************
+	.LIST	OFF
+	.include	"CPU_REG.ext"
+	.include	"ssa_ver1.equ"
+	.INCLUDE	"shn_cmd1.mac"			; 
+	.INCLUDE	"cm_equ1.equ"			; EQU
+	.INCLUDE	"ssa_had1.equ"		; 
+	.INCLUDE	"ssa_wrmk.ext"			;
+	.LIST	ON
+
+	.IMPORT		_ASM_K1_CTRL_INT1
+	.IMPORT		_ASM_K1_CTRL_INT2
+	.IMPORT		_ASM_K1_CTRL_INT3
+;;	.IMPORT		_c_k1_ctrl_int1
+;;	.IMPORT		_c_k1_ctrl_int2
+;;	.IMPORT		_c_k1_ctrl_int3
+	.IMPORT		_hmi1_int3
+	.IMPORT		_hmi2_int3
+	.IMPORT		_ENC360_INT
+	.IMPORT		_DI_READ3_MAKE_SEQ200
+	.IMPORT		_DI_READ3_MAKE_SEQ201
+	.IMPORT		_ASM_Y1_CTRL_INT1;//500usec割込
+	.IMPORT		_ASM_Y1_CTRL_INT2;//1msec割込
+	.IMPORT		_ASM_Y1_CTRL_INT3;//5msec程度
+;;;;2013-12-25[mc]	.IMPORT		_COP1_INT_ENC_REF;//2002-12-10
+	.IMPORT		_COP1_INT_TIM_REF;//2003-01-31
+	.IMPORT		_WDT_Rifresh
+
+	.IMPORT		_DEBUG_CNT
+
+
+	.IMPORT		_IOGA1_CTRL_DAT1		; 2006-08-05 SAITO
+	.IMPORT		_dio_top1			; 2006-08-05 SAITO
+
+
+	.EXPORT		_BOOT_CALL			;
+
+;	==============================
+	.IMPORT	_IRQ_EMG_STOP
+	.IMPORT	_IRQ_SFTY_STOP
+	.IMPORT	_IRQ_STP_STOP
+
+
+	.MACRO	SCAN_CHK_SIGn_ON
+	.ENDM
+
+	.MACRO	SCAN_CHK_SIGn_OF
+	.ENDM
+
+
+
+	.SECTION	Pcall,CODE,ALIGN=4		;
+_BOOT_CALL:
+	SHLL2	R0
+	MOV.L	#_BOOT_CALL_TBL_TOP,R1
+	ADD	R0,R1
+	MOV	@R1,R0
+
+	JSR	@R0
+	NOP
+
+	POP_REG1 R1
+	POP_REG1 R0
+
+	SUB_END			;
+	M_RTS
+
+
+;H'040 TLB miss/invalid (load)
+_INT_CALL_TLBMiss_Load
+;H'060 TLB miss/invalid (store)
+_INT_CALL_TLBMiss_Store
+;H'070 TBL exception/CPU Address error in repeat loop
+_INT_CALL_TLBCPU_ADERR
+;H'080 Initial page write
+_INT_CALL_TLBInitial_Page
+;H'0A0 TLB protect (load)
+_INT_CALL_TLBProtect_Load
+;H'0C0 TLB protect (store)
+_INT_CALL_TLBProtect_Store
+;H'0D0 TLB protect in repeat loop
+_INT_CALL_TLBProtect_Loop
+;H'0E0 Address error (load)
+_INT_CALL_Address_load
+;H'100 Address error (store)
+_INT_CALL_Address_store
+;H'120 Reserved
+_INT_CALL_Reserved1
+;H'140 Reserved
+_INT_CALL_Reserved2
+;H'160 TRAPA
+_INT_CALL_TRAPA
+;H'180 Illegal code
+_INT_CALL_Illegal_code
+;H'1A0 Illegal slot
+_INT_CALL_Illegal_slot
+;H'1C0 Nonmaskable interrupt
+_INT_CALL_NMI
+;H'1E0 User breakpoint trap
+_INT_CALL_User_Break
+;H'200 External hardware interrupt
+_INT_CALL_Extern_0000
+;H'220 External hardware interrupt
+_INT_CALL_Extern_0001
+;H'240 External hardware interrupt
+_INT_CALL_Extern_0010
+;H'260 External hardware interrupt
+_INT_CALL_Extern_0011
+;H'280 External hardware interrupt
+_INT_CALL_Extern_0100
+;H'2A0 External hardware interrupt
+_INT_CALL_Extern_0101
+;H'2C0 External hardware interrupt
+_INT_CALL_Extern_0110
+;H'2E0 External hardware interrupt
+_INT_CALL_Extern_0111
+;H'300 External hardware interrupt
+_INT_CALL_Extern_1000
+;H'320 External hardware interrupt
+_INT_CALL_Extern_1001
+;H'340 External hardware interrupt
+_INT_CALL_Extern_1010
+;H'360 External hardware interrupt
+_INT_CALL_Extern_1011
+;H'380 External hardware interrupt
+_INT_CALL_Extern_1100
+;H'3A0 External hardware interrupt
+_INT_CALL_Extern_1101
+;H'3C0 External hardware interrupt
+_INT_CALL_Extern_1110
+;H'3E0 Reserved
+_INT_CALL_Reserved3E0
+	sleep
+	nop
+
+
+;H'400 TMU TUNI0
+	.EXPORT		_INT_CALL_TMU_TUNI0
+_INT_CALL_TMU_TUNI0:		; 500usec
+	SUB_START
+	PUSH_ALL
+
+	MOV.L	#_TCR0,R2
+	MOV.W	@R2,R0
+	MOV.W	#BIT8,R1
+	NOT	R1,R1
+	AND	R1,R0
+	MOV.W	R0,@R2
+
+	.AIF	_SCAN_DEBUG_ENB	EQ _DEBUG_ENB
+;	=== SCAN TIM CHECK  ON
+	.AENDI
+
+
+
+
+	.AIF	_SCAN_DEBUG_ENB	EQ _DEBUG_ENB
+;	=== SCAN TIM CHECK  OFF
+	.AENDI
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;H'420 TMU TUNI1
+	.EXPORT		_INT_CALL_TMU_TUNI1
+_INT_CALL_TMU_TUNI1:		; 1msec
+	SUB_START
+	PUSH_ALL
+
+	MOV.L	#_TCR1,R2
+	MOV.W	@R2,R0
+	MOV.W	#BIT8,R1
+	NOT	R1,R1
+	AND	R1,R0
+	MOV.W	R0,@R2
+
+
+	.IMPORT	_DEBUG_SCAN1_ON			;CPUB
+	FAR_JSR	#_DEBUG_SCAN1_ON,R0		;立花lsi2 PORT7(未使用ﾎﾟｰﾄ)をon/off
+
+
+
+	FAR_JSR	#_WDT_Rifresh,R0			; V02
+
+	FAR_JSR	#_COP1_INT_TIM_REF,R0			;2003-01-31
+
+
+	FAR_JSR	#_ASM_K1_CTRL_INT2,R0			; C/B
+
+	FAR_JSR	#_ASM_Y1_CTRL_INT2,R0
+
+
+	FAR_JSR	#_DI_READ3_MAKE_SEQ200,R0
+	FAR_JSR	#_DI_READ3_MAKE_SEQ201,R0
+
+
+	MOV.L	#_DEBUG_CNT,R10
+	MOV.L	@R10,R0
+	ADD	#1,R0
+	MOV.L	#3599,R2
+	CMP/HI	R2,R0
+	BF	_DEBUG_AAA
+	XOR	R0,R0
+_DEBUG_AAA:
+	MOV.L	R0,@R10
+
+;;;;	.AIF	_SCAN_DEBUG_ENB	EQ _DEBUG_ENB
+	.IMPORT	_DEBUG_SCAN1_OF
+	FAR_JSR	#_DEBUG_SCAN1_OF,R0
+;;;;	.AENDI
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;H'440 TMU TUNI2
+	.EXPORT		_INT_CALL_TMU_TUNI2
+_INT_CALL_TMU_TUNI2:		; 5msec
+	SUB_START
+	PUSH_ALL
+
+	MOV.L	#_TCR2,R2
+	MOV.W	@R2,R0
+	MOV.W	#BIT8,R1
+	NOT	R1,R1
+	AND	R1,R0
+	MOV.W	R0,@R2
+
+	.AIF	_SCAN_DEBUG_ENB	EQ _DEBUG_ENB
+	.AENDI
+
+	FAR_JSR	#_ASM_K1_CTRL_INT3,R0			; C/B
+
+;;	FAR_JSR	#_c_k1_ctrl_int3,R0			; C/B
+
+;//SIT4-MC	FAR_JSR	#_hmi1_int3,R0			; HMI
+
+	FAR_JSR	#_hmi2_int3,R0				; HMI
+	FAR_JSR	#_ASM_Y1_CTRL_INT3,R0
+
+	.AIF	_SCAN_DEBUG_ENB	EQ _DEBUG_ENB
+	.AENDI
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;H'460 TMU TICPI2
+_INT_CALL_TMU_TICPI2
+;H'480 RTC ATI
+_INT_CALL_RTC_ATI
+;H'4A0 RTC PRI
+_INT_CALL_RTC_PRI
+;H'4C0 RTC CUI
+_INT_CALL_RTC_CUI
+;H'4E0 SCI ERI
+_INT_CALL_SCI_ERI
+;H'500 SCI RXI
+_INT_CALL_SCI_RXI
+;H'520 SCI TXI
+_INT_CALL_SCI_TXI
+;H'540 SCI TEI
+_INT_CALL_SCI_TEI
+;H'560 CPG ITI
+_INT_CALL_CPG_ITI
+;H'580 BSC RCMI
+_INT_CALL_BSC_RCMI
+;H'5A0 BSC ROVI
+_INT_CALL_BSC_ROVI
+;H'5C0 Reserved
+_INT_CALL_Reserved5C0
+;H'5E0 H-UDI
+_INT_CALL_H_UDI
+	sleep
+	nop
+
+;	=== EMG =====
+;H'600 IRQ0
+_INT_CALL_IRQ0
+	SUB_START
+	PUSH_ALL
+	FAR_JSR	#_IRQ_EMG_STOP,R0
+
+	MOV.L	#_IRR0,R1
+	MOV.B	@R1,R0
+	MOV.W	#BIT0,R2		;IRQ0:BIT7
+	NOT	R2,R2
+	AND	R2,R0
+	MOV.B	R0,@R1
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+	.IMPORT	_sq_to_cop_com1;//2003-01-31
+;H'620 IRQ1
+_INT_CALL_IRQ1
+	SUB_START
+	PUSH_ALL
+
+
+	FAR_JSR	#_ENC360_INT,R0
+
+
+;	=== 2002-12-10 ｵﾌﾟｼｮﾝ ====
+;;;;;;;;;;;;;;;;;;;2013-12-25[mc]	FAR_JSR	#_COP1_INT_ENC_REF,R0;	;ﾒｶﾌﾟﾚｽ360ｴﾝｺｰﾀﾞﾓｰﾄﾞ用
+
+	MOV.L	#_IRR0,R1
+	MOV.B	@R1,R0
+;;2004-04-02	MOV.W	#BIT5,R2		;missではないか？
+	MOV.W	#BIT1,R2		;IRQ1=BIT6 MISSだけど、実行すればｸﾘｱだからこれは本来不要
+	NOT	R2,R2
+	AND	R2,R0
+	MOV.B	R0,@R1
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	=== DP_INT(未使用) =====
+;H'640 IRQ2
+_INT_CALL_IRQ2
+	SUB_START
+	PUSH_ALL
+	MOV.L	#_IRR0,R1
+	MOV.B	@R1,R0
+	MOV.W	#BIT2,R2
+	NOT	R2,R2
+	AND	R2,R0
+	MOV.B	R0,@R1
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	=== ACTB =====
+;H'660 IRQ3
+_INT_CALL_IRQ3
+	SUB_START
+	PUSH_ALL
+
+	FAR_JSR	#_IRQ_SFTY_STOP,R0
+
+	MOV.L	#_IRR0,R1
+	MOV.B	@R1,R0
+	MOV.W	#BIT3,R2
+	NOT	R2,R2
+	AND	R2,R0
+	MOV.B	R0,@R1
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	=== STPX =====
+;H'680 IRQ4
+_INT_CALL_IRQ4
+	SUB_START
+	PUSH_ALL
+
+	FAR_JSR	#_IRQ_STP_STOP,R0
+	MOV.L	#_IRR0,R1
+	MOV.B	@R1,R0
+	MOV.W	#BIT4,R2
+	NOT	R2,R2
+	AND	R2,R0
+	MOV.B	R0,@R1
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	=== PD(POWER DOWN 未使用) =====
+;H'6A0 IRQ5
+_INT_CALL_IRQ5
+	SUB_START
+	PUSH_ALL
+	MOV.L	#_IRR0,R1
+	MOV.B	@R1,R0
+	MOV.W	#BIT5,R2
+	NOT	R2,R2
+	AND	R2,R0
+	MOV.B	R0,@R1
+	
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;H'6C0 Reserved
+_INT_CALL_Reserved6C0
+;H'6E0 Reserved
+_INT_CALL_Reserved6E0
+;H'700 PINT0_7
+_INT_CALL_PINT0_7
+;H'720 PINT8_15
+_INT_CALL_PINT8_15
+;H'740 Reserved
+_INT_CALL_Reserved740
+;H'760 Reserved
+_INT_CALL_Reserved760
+;H'780 Reserved
+_INT_CALL_Reserved780
+;H'7A0 Reserved
+_INT_CALL_Reserved7A0
+;H'7C0 Reserved
+_INT_CALL_Reserved7C0
+;H'7E0 Reserved
+_INT_CALL_Reserved7E0
+;H'800 DMAC DEI0
+_INT_CALL_DMAC_DEI0
+;H'820 DMAC DEI1
+_INT_CALL_DMAC_DEI1
+;H'840 DMAC DEI2
+_INT_CALL_DMAC_DEI2
+;H'860 DMAC DEI3
+_INT_CALL_DMAC_DEI3
+;H'880 Reserved
+_INT_CALL_Reserved880
+;H'8A0 Reserved
+_INT_CALL_Reserved8A0
+;H'8C0 Reserved
+_INT_CALL_Reserved8C0
+;H'8E0 Reserved
+_INT_CALL_Reserved8E0
+;H'900 SCIF ERI2
+_INT_CALL_SCIF_ERI2
+;H'920 SCIF RXI2
+_INT_CALL_SCIF_RXI2
+;H'940 SCIF BRI2
+_INT_CALL_SCIF_BRI2
+;H'960 SCIF TXI2
+_INT_CALL_SCIF_TXI2
+;H'980 ADC ADI
+_INT_CALL_ADC_ADI
+;H'9A0 LCDC LCDCI
+_INT_CALL_LCDC_LCDCI
+;H'9C0 PCC0
+_INT_CALL_PCC0
+;H'9E0 Reserved
+_INT_CALL_Reserved9E0
+;H'A00 USBH USBHI
+_INT_CALL_USBH_USBHI
+;H'A20 USBF USBFI0
+_INT_CALL_USBF_USBFI0
+;H'A40 USBF USBFI1
+_INT_CALL_USBF_USBFI1
+;H'A60 AFEIF AFEIFI
+_INT_CALL_AFEIF_AFEIFI
+;H'A80 Reserved
+_INT_CALL_ReservedA80
+;H'AA0 Reserved
+_INT_CALL_ReservedAA0
+;H'AC0 Reserved
+_INT_CALL_ReservedAC0
+;H'AE0 Reserved
+_INT_CALL_ReservedAE0
+;H'B00 SIOF SIFERI
+_INT_CALL_SIOF_SIFERI
+;H'B20 SIOF SIFTXI
+_INT_CALL_SIOF_SIFTXI
+;H'B40 SIOF SIFRXI
+_INT_CALL_SIOF_SIFRXI
+;H'B60 SIOF SIFCCI
+_INT_CALL_SIOF_SIFCCI
+; dummy
+_DUMMY_CALL
+	sleep
+	nop
+
+
+	.SECTION	P,CODE			;
+_BOOT_CALL_TBL_TOP:
+	.data.l		H'0				; DUMMY
+	.data.l		H'0				; DUMMY
+	.data.l		H'0				; DUMMY
+	.data.l		H'0				; DUMMY
+
+        ;H'040 TLB miss/invalid (load)
+	.data.l		_INT_CALL_TLBMiss_Load
+        ;H'060 TLB miss/invalid (store)
+	.data.l		_INT_CALL_TLBMiss_Store
+        ;H'070 TBL exception/CPU Address error in repeat loop
+	.data.l		_INT_CALL_TLBCPU_ADERR
+        ;H'080 Initial page write
+	.data.l		_INT_CALL_TLBInitial_Page
+        ;H'0A0 TLB protect (load)
+	.data.l		_INT_CALL_TLBProtect_Load
+        ;H'0C0 TLB protect (store)
+	.data.l		_INT_CALL_TLBProtect_Store
+        ;H'0D0 TLB protect in repeat loop
+	.data.l		_INT_CALL_TLBProtect_Loop
+        ;H'0E0 Address error (load)
+	.data.l		_INT_CALL_Address_load
+        ;H'100 Address error (store)
+	.data.l		_INT_CALL_Address_store
+        ;H'120 Reserved
+	.data.l		_INT_CALL_Reserved1
+        ;H'140 Reserved
+	.data.l		_INT_CALL_Reserved2
+        ;H'160 TRAPA
+	.data.l		_INT_CALL_TRAPA
+        ;H'180 Illegal code
+	.data.l		_INT_CALL_Illegal_code
+        ;H'1A0 Illegal slot
+	.data.l		_INT_CALL_Illegal_slot
+        ;H'1C0 Nonmaskable interrupt
+	.data.l		_INT_CALL_NMI
+        ;H'1E0 User breakpoint trap
+	.data.l		_INT_CALL_User_Break
+        ;H'200 External hardware interrupt
+	.data.l		_INT_CALL_Extern_0000
+        ;H'220 External hardware interrupt
+	.data.l		_INT_CALL_Extern_0001
+        ;H'240 External hardware interrupt
+	.data.l		_INT_CALL_Extern_0010
+        ;H'260 External hardware interrupt
+	.data.l		_INT_CALL_Extern_0011
+        ;H'280 External hardware interrupt
+	.data.l		_INT_CALL_Extern_0100
+        ;H'2A0 External hardware interrupt
+	.data.l		_INT_CALL_Extern_0101
+        ;H'2C0 External hardware interrupt
+	.data.l		_INT_CALL_Extern_0110
+        ;H'2E0 External hardware interrupt
+	.data.l		_INT_CALL_Extern_0111
+        ;H'300 External hardware interrupt
+	.data.l		_INT_CALL_Extern_1000
+        ;H'320 External hardware interrupt
+	.data.l		_INT_CALL_Extern_1001
+        ;H'340 External hardware interrupt
+	.data.l		_INT_CALL_Extern_1010
+        ;H'360 External hardware interrupt
+	.data.l		_INT_CALL_Extern_1011
+        ;H'380 External hardware interrupt
+	.data.l		_INT_CALL_Extern_1100
+        ;H'3A0 External hardware interrupt
+	.data.l		_INT_CALL_Extern_1101
+        ;H'3C0 External hardware interrupt
+	.data.l		_INT_CALL_Extern_1110
+        ;H'3E0 Reserved
+	.data.l		_INT_CALL_Reserved3E0
+        ;H'400 TMU TUNI0
+	.data.l		_INT_CALL_TMU_TUNI0
+        ;H'420 TMU TUNI1
+	.data.l		_INT_CALL_TMU_TUNI1
+        ;H'440 TMU TUNI2
+	.data.l		_INT_CALL_TMU_TUNI2
+        ;H'460 TMU TICPI2
+	.data.l		_INT_CALL_TMU_TICPI2
+        ;H'480 RTC ATI
+	.data.l		_INT_CALL_RTC_ATI
+        ;H'4A0 RTC PRI
+	.data.l		_INT_CALL_RTC_PRI
+        ;H'4C0 RTC CUI
+	.data.l		_INT_CALL_RTC_CUI
+        ;H'4E0 SCI ERI
+	.data.l		_INT_CALL_SCI_ERI
+        ;H'500 SCI RXI
+	.data.l		_INT_CALL_SCI_RXI
+        ;H'520 SCI TXI
+	.data.l		_INT_CALL_SCI_TXI
+        ;H'540 SCI TEI
+	.data.l		_INT_CALL_SCI_TEI
+        ;H'560 CPG ITI
+	.data.l		_INT_CALL_CPG_ITI
+        ;H'580 BSC RCMI
+	.data.l		_INT_CALL_BSC_RCMI
+        ;H'5A0 BSC ROVI
+	.data.l		_INT_CALL_BSC_ROVI
+        ;H'5C0 Reserved
+	.data.l		_INT_CALL_Reserved5C0
+        ;H'5E0 H-UDI
+	.data.l		_INT_CALL_H_UDI
+        ;H'600 IRQ0
+	.data.l		_INT_CALL_IRQ0
+        ;H'620 IRQ1
+	.data.l		_INT_CALL_IRQ1
+        ;H'640 IRQ2
+	.data.l		_INT_CALL_IRQ2
+        ;H'660 IRQ3
+	.data.l		_INT_CALL_IRQ3
+        ;H'680 IRQ4
+	.data.l		_INT_CALL_IRQ4
+        ;H'6A0 IRQ5
+	.data.l		_INT_CALL_IRQ5
+        ;H'6C0 Reserved
+	.data.l		_INT_CALL_Reserved6C0
+        ;H'6E0 Reserved
+	.data.l		_INT_CALL_Reserved6E0
+        ;H'700 PINT0_7
+	.data.l		_INT_CALL_PINT0_7
+        ;H'720 PINT8_15
+	.data.l		_INT_CALL_PINT8_15
+        ;H'740 Reserved
+	.data.l		_INT_CALL_Reserved740
+        ;H'760 Reserved
+	.data.l		_INT_CALL_Reserved760
+        ;H'780 Reserved
+	.data.l		_INT_CALL_Reserved780
+        ;H'7A0 Reserved
+	.data.l		_INT_CALL_Reserved7A0
+        ;H'7C0 Reserved
+	.data.l		_INT_CALL_Reserved7C0
+        ;H'7E0 Reserved
+	.data.l		_INT_CALL_Reserved7E0
+        ;H'800 DMAC DEI0
+	.data.l		_INT_CALL_DMAC_DEI0
+        ;H'820 DMAC DEI1
+	.data.l		_INT_CALL_DMAC_DEI1
+        ;H'840 DMAC DEI2
+	.data.l		_INT_CALL_DMAC_DEI2
+        ;H'860 DMAC DEI3
+	.data.l		_INT_CALL_DMAC_DEI3
+        ;H'880 Reserved
+	.data.l		_INT_CALL_Reserved880
+        ;H'8A0 Reserved
+	.data.l		_INT_CALL_Reserved8A0
+        ;H'8C0 Reserved
+	.data.l		_INT_CALL_Reserved8C0
+        ;H'8E0 Reserved
+	.data.l		_INT_CALL_Reserved8E0
+        ;H'900 SCIF ERI2
+	.data.l		_INT_CALL_SCIF_ERI2
+        ;H'920 SCIF RXI2
+	.data.l		_INT_CALL_SCIF_RXI2
+        ;H'940 SCIF BRI2
+	.data.l		_INT_CALL_SCIF_BRI2
+        ;H'960 SCIF TXI2
+	.data.l		_INT_CALL_SCIF_TXI2
+        ;H'980 ADC ADI
+	.data.l		_INT_CALL_ADC_ADI
+        ;H'9A0 LCDC LCDCI
+	.data.l		_INT_CALL_LCDC_LCDCI
+        ;H'9C0 PCC0
+	.data.l		_INT_CALL_PCC0
+        ;H'9E0 Reserved
+	.data.l		_INT_CALL_Reserved9E0
+        ;H'A00 USBH USBHI
+	.data.l		_INT_CALL_USBH_USBHI
+        ;H'A20 USBF USBFI0
+	.data.l		_INT_CALL_USBF_USBFI0
+        ;H'A40 USBF USBFI1
+	.data.l		_INT_CALL_USBF_USBFI1
+        ;H'A60 AFEIF AFEIFI
+	.data.l		_INT_CALL_AFEIF_AFEIFI
+        ;H'A80 Reserved
+	.data.l		_INT_CALL_ReservedA80
+        ;H'AA0 Reserved
+	.data.l		_INT_CALL_ReservedAA0
+        ;H'AC0 Reserved
+	.data.l		_INT_CALL_ReservedAC0
+        ;H'AE0 Reserved
+	.data.l		_INT_CALL_ReservedAE0
+        ;H'B00 SIOF SIFERI
+	.data.l		_INT_CALL_SIOF_SIFERI
+        ;H'B20 SIOF SIFTXI
+	.data.l		_INT_CALL_SIOF_SIFTXI
+        ;H'B40 SIOF SIFRXI
+	.data.l		_INT_CALL_SIOF_SIFRXI
+        ;H'B60 SIOF SIFCCI
+	.data.l		_INT_CALL_SIOF_SIFCCI
+        ; dummy
+	.data.l		_DUMMY_CALL
+
+    .end
+

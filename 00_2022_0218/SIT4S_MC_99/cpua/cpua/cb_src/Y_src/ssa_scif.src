@@ -1,0 +1,1713 @@
+;	***************************************************
+;	***						***
+;	***	リニアセンサ通信ソフト			***
+;	***	FIFO Serial communications PROGRAM	***
+;	***						***
+;	***						***
+;	***************************************************
+;
+	.LIST	OFF
+
+	.INCLUDE	"cm_equ1.equ"		; EQU
+	.INCLUDE	"sh7750rg.ext"		; 
+	.INCLUDE	"ssa_swrm.ext"		; 
+	.INCLUDE	"shn_cmd1.mac"		; 
+	.INCLUDE	"ssa_ver1.equ"		; 
+	.INCLUDE	"ssa_out1.mac"		; 
+	.INCLUDE	"ssa_kmc1.mac"		; 
+	.INCLUDE	"ssa_wram.ext"		; 
+	.INCLUDE	"ssa_wrmy.ext"		; 
+	.INCLUDE	"ssa_seq1.ext"		; 
+	.INCLUDE	"ssa_seq1.equ"		; 
+	.INCLUDE	"ssa_had1.equ"		; 
+	.INCLUDE	"dp_cpuab.ext"		; 
+	.INCLUDE	"dp_cpud.ext"		; //[2013-11-29 MC]
+
+	.LIST	ON
+
+
+	.SECTION	P,CODE			;
+
+
+
+
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 PROGRAM	***
+;	//	***********************************
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 MEMORY,HARD	***
+;	//	***********************************
+	.IMPORT		_RNA_COM_ERR_CNT;//通信失敗ｶｳﾝﾀ
+	.IMPORT		_RNA_COM_NML_CNT;//正常ｶｳﾝﾀ
+
+	.IMPORT		_ENC_SYSRST_CMD	;//RESET・COMMAND
+	.IMPORT		_ENC_TIMEXT_FLG	;//位置ﾃﾞｰﾀに入れないFLG
+	.IMPORT		_RNA_CMD_SND_CNT;//ｺﾏﾝﾄﾞ送信回数ｶｳﾝﾀ
+	.IMPORT		_RNA_CMD_RD_CNT;//ｺﾏﾝﾄﾞ受信回数ｶｳﾝﾀ
+	.IMPORT		_RNA_RESET_FLG;//RESET-BOTTON ---SET
+	.IMPORT		_RNA_RESET_TIM;//1sec
+	.EXPORT		_RENEA_ERR_RESET_INI
+	.EXPORT		_RNA_SCIF_ERR_CLR2
+
+ 	.IMPORT		_PAR_SFTY_LOGIC;
+	.IMPORT		_IN_PARAM_RNA_CHK	;2008-11-11
+
+	.IMPORT		_RNA_PROTOCOL_X		;//"1"X社製ﾌﾟﾛﾄｺﾙ 2015-10-14
+	.IMPORT		_X_PROTCOL_TMP_REQ;	//REQ:1:START
+	.IMPORT		_X_PROTCOL_TMP_ANS;	//ANS:1:END(nomaL) -1:END(err)
+	.IMPORT		_X_PROTCOL_TMP_PV1;	//通信ﾃﾞｰﾀ1ﾊﾞｲﾄ
+	.IMPORT		_X_PROTCOL_TMP_EVENTCNT;	//REQ:1:START
+	.IMPORT		_X_PROTCOL_TMP_TIME_PV;
+	
+	.IMPORT		_TMP_SCI_DEBUG;
+
+;	//	***********************************
+;	//	***	PUBLIC 宣言 PROGRAM	***
+;	//	***********************************
+
+	.EXPORT		_SCIF_REG_INIT			; SCIF FIFO ﾚｼﾞｽﾀ 通信時初期化
+
+
+
+
+	.EXPORT		_INT_FIFO_ERI			; 受信異常割込み
+	.EXPORT		_INT_FIFO_RXI			; 受信ﾃﾞｰﾀﾌﾙ割込み
+	.EXPORT		_INT_FIFO_BRI			; 受信ﾌﾞﾚｰｸ割込み
+	.EXPORT		_INT_FIFO_TXI			; 送信ｴﾝﾌﾟﾃｨ割込み
+
+
+
+	.EXPORT		_INT2MS_FIFO_RXI		; ﾘﾆｱｾﾝｻ受信読込み
+
+	.EXPORT		_RENIA_SENCER			; ﾘﾆｱｾﾝｻ処理
+	.IMPORT		_CLRSQ206_BIT11
+	.IMPORT		_SETSQ206_BIT11
+
+
+;;;;_RNA_CMD_ID0	.EQU	B'00000001	;POS(000000 + 01固定)
+;;;;_RNA_CMD_ID1	.EQU	B'10000101	;POS(100001 + 01固定)
+;;;;_RNA_CMD_RST	.EQU	B'10001001	;RST(100010 + 01固定)　H'89
+
+_RNA_BUF_NUM	.EQU	8		;8BYTE
+_RNA_CMD_ID0	.EQU	B'00000001	;POS(000000 + 01固定)
+_RNA_CMD_ID1	.EQU	B'10000101	;POS(100001 + 01固定)
+_RNA_CMD_RST	.EQU	B'10001001	;RST(100010 + 01固定)　H'89
+
+
+
+_RNA_BUF_NUMX	.EQU	6		;8BYTE
+_RNA_CMD_ID0X	.EQU	B'00001011	;POS(000010 + 11固定)
+_RNA_CMD_ID1X	.EQU	B'00001011	;POS(000010 + 11固定)ID0=ID1
+_RNA_CMD_RSTX	.EQU	B'10101011	;RST(100010 + 11固定)
+
+_RNA_CMD_TMPX	.EQU	B'00100011	;TMP(001000+  11固定)
+;;未使用　一応確認済み　_RNA_CMD_SPDX	.EQU	B'00010011	;TMP(001000+  11固定)
+
+;	***********************************************************
+;	***							***
+;	***		通信割込み処理				***
+;	***							***
+;	***********************************************************
+;	***********************************
+;	***	受信ｴﾗｰ割込み		***
+;	***********************************
+_INT_FIFO_ERI:
+	SUB_START
+	FAR_JSR	#_RCV2_DATA_ERR_READ_CLR,R0	;Output R1,R2,R3:ｽﾃｰﾀｽ(ﾃﾞｰﾀ読取+異常ｸﾘｱ)
+	FAR_JSR	#_RCV2_DATA_ERR_CHEAK,R0	;Input R1,R2,R3(異常ｽﾃｰﾀｽ作成)
+	MOV.L	#_rcv2_err_hard_INTflg1,R1	;// ﾊｰﾄﾞ異常
+	MOV.W	@R1,R0				;
+	ADD	#1,R0				;
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+
+
+
+;	***********************************
+;	***	受信ﾃﾞｰﾀﾌﾙ割込み	***
+;	***********************************
+_INT_FIFO_RXI:
+_INT2MS_FIFO_RXI:
+	SUB_START
+
+	FAR_JSR	#_RCV2_DATA_ERR_READ_CLR,R0		;
+	FAR_JSR	#_RCV2_DATA_ERR_CHEAK,R0		;
+	MOV.L	#_rcv2_err_hard_INTflg2,R1	;// ﾊｰﾄﾞ異常
+	MOV.W	@R1,R0				;
+	ADD	#1,R0				;
+	MOV.W	R0,@R1				;
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	受信ﾌﾞﾚｰｸ割込み		***
+;	***********************************
+_INT_FIFO_BRI:
+	SUB_START
+
+	FAR_JSR	#_RCV2_DATA_ERR_READ_CLR,R0		;
+	FAR_JSR	#_RCV2_DATA_ERR_CHEAK,R0		;
+	MOV.L	#_rcv2_err_hard_INTflg3,R1	;// ﾊｰﾄﾞ異常
+	MOV.W	@R1,R0				;
+	ADD	#1,R0				;
+	MOV.W	R0,@R1				;
+
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	Output			***
+;	***	R1:ERR			***
+;	***	R2:ERR			***
+;	***	R3:受信数		***
+;	***********************************
+;;;;;	.IMPORT	_PV1_SCRW_POS				
+_RCV2_DATA_ERR_READ_CLR:
+	SUB_START
+
+	MOV.L	#_SCLSR2,R11				; 
+	MOV.W	@R11,R1					; ORER LOAD
+	MOV.L	#_WK_RCV_SCLSR2,R0			;2004-04-12
+	MOV.W	R1,@R0					;
+
+	MOV.L	#_SCFSR2,R12				; 
+	MOV.W	@R12,R2					; STS LOAD
+	MOV.L	#_WK_RCV_SCFSR2,R0			;2004-04-12
+	MOV.W	R2,@R0					;
+
+;	============ 受信ﾊﾞﾌｧ処理 ======
+	MOV.L	#_SCFDR2,R13				;
+	MOV.W	@R13,R3					;受信ﾃﾞｰﾀ個数 LOAD
+	MOV.L	#_WK_RCV_SCFDR2,R0			;//2004-04-12
+	MOV.W	R3,@R0					;
+	MOV.L	#_SCFRDR2,R14				;受信ﾊﾞﾌｧ
+	MOV.L	#_rcv2_data_buf,R6			;受信ﾃﾞｰﾀ格納
+
+	MOV	R3,R0						;
+	MOV.L	#_rcv2_data_INcnt,R5				;
+	MOV.W	R0,@R5
+	AND	#H'1F,R0					;MAX16
+	MOV.L	#_rcv2_data_cnt,R5				;
+	MOV.W	R0,@R5
+
+;	R0,R11,R12:KEEP(R1もKEEP??)
+;	--------------------------------------------------------------
+;	--------  PROTCOL_TMP:2015-10-16 -----------------------------
+;	-------- このままの仕様にならないかもしれないから-------------
+;	-------- 削除すればいい形にしておく		--------------
+;	--------------------------------------------------------------
+	MOV.L	#_X_PROTCOL_TMP_REQ,R4		;通常0
+	MOV.W	@R4,R4				;
+	TST	R4,R4				;
+	TST_BIT_OF RCV2_ERR_DUM_RDCLR_010	;
+
+	FAR_JSR	#_X_PRO_TMP_READ,R4
+	M_BRA	RCV2_ERR_RDCLR_200		;
+
+RCV2_ERR_DUM_RDCLR_010:
+;	---------------------------------------------
+
+
+
+;	======== 通常の位置受信時の個数(8個/6個)
+;;2015-10-14	MOV.W	#8,R4					;
+	MOV.L	#_SND_RCV_INBUFCNT,R4				;2015-10-14
+	MOV.W	@R4,R4						;2015-10-14[8個/6個]
+
+	CMP/EQ	R4,R0						;3+4+1=8byteで正解(3:cmd,sts,sts,4:DATA,1:crc)
+	BT	RCV2_ERR_RDCLR_LOP				;受信個数が足りている
+	PUSH_REG1 R0
+	PUSH_REG1 R1
+	MOV.L	#_RNA_COM_ERR_CNT,R1						;(TIME-OUTｶｳﾝﾀ)
+	MOV.W	@R1,R4								;
+	ADD	#1,R4								;"ERR CNT"
+	MOV.W	R4,@R1								;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_IN_RNA_REF_ERR_FLG1,LG=W,BIT=BIT1,WKREG=R1	;
+	POP_REG1 R1	;2011-05-18
+	POP_REG1 R0	;2011-05-18
+
+
+RCV2_ERR_DUM_RDCLR_020:
+	TST	R0,R0						;
+	TST_BIT_OF RCV2_ERR_DUM_RDCLR_050			;
+	MOV.B	@R14,R4						;DUMMY READ
+	ADD	#-1,R0						;
+	M_BRA	RCV2_ERR_DUM_RDCLR_020				;
+RCV2_ERR_DUM_RDCLR_050:						;
+	M_BRA	RCV2_ERR_RDCLR_150				;個数異常
+
+;	================正常な個数読み取り========
+RCV2_ERR_RDCLR_LOP:
+	TST	R0,R0						;
+	TST_BIT_OF RCV2_ERR_RDCLR_100				;
+	MOV.B	@R14,R4						;
+	MOV.B	R4,@R6						;
+	ADD	#1,R6						;
+	ADD	#-1,R0						;
+	M_BRA	RCV2_ERR_RDCLR_LOP				;
+RCV2_ERR_RDCLR_100:
+
+	MOV.L	#_RNA_COM_NML_CNT,R1	;//正常ｶｳﾝﾀ
+	MOV.W	@R1,R0			;
+	ADD	#1,R0			;
+	MOV.W	R0,@R1			;
+
+;	============ CRC CHEACK =========
+	FAR_JSR	#_CRC_CHK1,R0		;ANS R0=0 NOMAL R0=1 ERR
+	TST	R0,R0			;
+	TST_BIT_OF RCV2_ERR_RDCLR_150	;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_IN_RNA_REF_ERR_FLG1,LG=W,BIT=BIT1,WKREG=R1	;
+;	==============================
+RCV2_ERR_RDCLR_150:
+
+;	=============_SCLSR2================
+	XOR	R0,R0						;
+	MOV.W	R0,@R11						;ｵｰﾊﾞﾗﾝｸﾘｱ
+
+;	============ _SCFSR2================
+	MOV.W	#LWORD ~(BIT7+BIT4+BIT3+BIT2+BIT1+BIT0),R0	; ER,BRK,FER,PER,RDF,DR
+	AND	R2,R0						;(R2 STS)
+	MOV.W	R0,@R12						;
+
+;	------------- 2015-10-14-------------
+	MOV.L	#_RNA_PROTOCOL_X,R0		;//"1"X社製ﾌﾟﾛﾄｺﾙ
+	MOV.W	@R0,R0				;
+	CMP/EQ	#1,R0				;
+	BF	RCV2_RDDATA_COPY100		;現行ﾐﾂﾄﾖ
+
+;	---------------------------------------------
+;	--------X社 受信BUF+2,3,4の3BYTE--------------
+	MOV.L	#_rcv2_data_buf+2,R6				;受信ﾃﾞｰﾀ格納
+	MOV.B	@R6+,R0						;2
+	MOV.L	#_PV0_SCRW_POS+3,R7				;
+	MOV.B	R0,@R7						;
+	ADD	#-1,R7						;
+
+	MOV.B	@R6+,R0						;3
+	MOV.B	R0,@R7						;
+	ADD	#-1,R7						;
+
+	MOV.B	@R6+,R0						;4
+	MOV.B	R0,@R7						;
+	ADD	#-1,R7						;
+
+	XOR	R1,R1
+	CMP/PZ	R0						;
+	BT	RCV2_RDDATA_COPY050				;
+	MOV.B	#-1,R1						;
+RCV2_RDDATA_COPY050
+	MOV.B	R1,@R7						;符号
+	M_BRA	RCV2_RDDATA_COPY200				;
+
+;	--------ﾐﾂﾄﾖ 受信BUF+3,4,5,6の4BYTE--------------
+RCV2_RDDATA_COPY100
+	MOV.L	#_rcv2_data_buf+3,R6				;受信ﾃﾞｰﾀ格納
+	MOV.B	@R6+,R0						;
+	MOV.L	#_PV0_SCRW_POS+3,R7				
+	MOV.B	R0,@R7						;
+	ADD	#-1,R7						;
+
+	MOV.B	@R6+,R0						;
+	MOV.B	R0,@R7						;
+	ADD	#-1,R7						;
+
+	MOV.B	@R6+,R0						;
+	MOV.B	R0,@R7						;
+	ADD	#-1,R7						;
+
+	MOV.B	@R6+,R0						;
+	MOV.B	R0,@R7						;
+
+RCV2_RDDATA_COPY200
+
+;;;2004-04-14	MOV.L	#_PV0_SCRW_POS,R7				
+;;;2004-04-14	MOV.L	@R7,R0
+;;;2004-04-14	MOV.L	#_PV1_SCRW_POS,R7				
+;;;2004-04-14	MOV.L	R0,@R7						;
+
+;	------------ 2008-11-11(ﾘﾆｱｽｹｰﾙからの異常でも位置を読み込み)-----
+	MOV.L	#_IN_PARAM_RNA_CHK,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF RCV2_ERR_RDCLR_200		;(異常に関係なく読む場合は下記でﾘﾌﾚｯｼｭ)
+						;(それ以外は異常ﾁｪｯｸ後の_RNA_DATA_REFでﾘﾌﾚｯｼｭ)
+
+	MOV.L	#_IN_RNA_REF_ERR_FLG1,R1	;
+	MOV.W	@R1,R0				;
+	TST	#BIT1+BIT0,R0
+	TST_BIT_ON RCV2_ERR_RDCLR_200		;通信異常(ﾃﾞｰﾀ捨て)
+
+	MOV.L	#_PV0_SCRW_POS,R7		;
+	MOV.L	@R7,R0				;
+	MOV.L	#_PV1_SCRW_POS,R7		;
+	MOV.L	R0,@R7				;
+
+RCV2_ERR_RDCLR_200:
+
+
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***				***
+;	***				***
+;	***				***
+;	***********************************
+_X_PRO_TMP_READ
+	SUB_START
+
+	MOV.W	#6,R4								;通常と同じ6ﾊﾞｲﾄだった
+										;(仕様書から読み取れなかった)
+	CMP/EQ	R4,R0								;
+	BT	X_PRORCV_ERR_RDCLR_LOP						;受信個数が足りている
+	PUSH_REG1 R0								;
+	PUSH_REG1 R1
+	MOV.L	#_RNA_COM_ERR_CNT,R1						;(TIME-OUTｶｳﾝﾀ)
+	MOV.W	@R1,R4								;
+	ADD	#1,R4								;"ERR CNT"
+	MOV.W	R4,@R1								;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_IN_RNA_REF_ERR_FLG1,LG=W,BIT=BIT1,WKREG=R1	;
+	POP_REG1 R1								;
+	POP_REG1 R0								;
+
+
+X_PRORCV_ERR_DUM_RDCLR_020:
+	TST	R0,R0								;
+	TST_BIT_OF X_PRORCV_ERR_DUM_RDCLR_050					;
+	MOV.B	@R14,R4								;DUMMY READ
+	ADD	#-1,R0								;
+	M_BRA	X_PRORCV_ERR_DUM_RDCLR_020					;
+
+X_PRORCV_ERR_DUM_RDCLR_050:							;
+	M_BRA	X_PRORCV_ERR_RDCLR_150						;個数異常
+
+;	================正常な個数読み取り========
+X_PRORCV_ERR_RDCLR_LOP:
+	TST	R0,R0						;
+	TST_BIT_OF X_PRORCV_ERR_RDCLR_100			;
+	MOV.B	@R14,R4						;
+	MOV.B	R4,@R6						;
+	ADD	#1,R6						;
+	ADD	#-1,R0						;
+	M_BRA	X_PRORCV_ERR_RDCLR_LOP				;
+X_PRORCV_ERR_RDCLR_100:
+
+	MOV.L	#_RNA_COM_NML_CNT,R1	;//正常ｶｳﾝﾀ
+	MOV.W	@R1,R0			;
+	ADD	#1,R0			;
+	MOV.W	R0,@R1			;
+
+;	============ CRC CHEACK =========
+	FAR_JSR	#_X_PRO_TMP_CRC_CHK,R0		;ANS R0=0 NOMAL R0=1 ERR
+	TST	R0,R0			;
+	TST_BIT_OF X_PRORCV_ERR_RDCLR_150	;
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_IN_RNA_REF_ERR_FLG1,LG=W,BIT=BIT1,WKREG=R1	;
+
+;	==============================
+X_PRORCV_ERR_RDCLR_150:
+
+;	=============_SCLSR2================
+	XOR	R0,R0						;
+	MOV.W	R0,@R11						;ｵｰﾊﾞﾗﾝｸﾘｱ
+
+;	============ _SCFSR2================
+	MOV.W	#LWORD ~(BIT7+BIT4+BIT3+BIT2+BIT1+BIT0),R0	; ER,BRK,FER,PER,RDF,DR
+	AND	R2,R0						;(R2 STS)
+	MOV.W	R0,@R12						;
+
+
+;	------------ 2008-11-11(ﾘﾆｱｽｹｰﾙからの異常でも読込)-----
+
+	MOV.L	#_IN_RNA_REF_ERR_FLG1,R1	;
+	MOV.W	@R1,R0				;
+	TST	#BIT1+BIT0,R0
+	TST_BIT_ON X_PRORCV_ERR_RDCLR_200	;
+
+
+;	--------X社 受信BUF+2--------
+	MOV.L	#_rcv2_data_buf+2,R6				;受信ﾃﾞｰﾀ格納
+	MOV.B	@R6+,R0						;2
+	MOV.L	#_X_PROTCOL_TMP_PV1,R7				;
+	MOV.W	R0,@R7						;
+
+	MOV.B	#BIT0,R0
+	MOV.L	#_X_PROTCOL_TMP_ANS,R1			;
+	MOV.W	R0,@R1					;	//ANS:1:END(nomaL) -1:END(err)
+
+	MEM_WORD_BLOCK_MOV1	SRC_ADR=_rcv2_data_buf,DST_ADR=_TMP_SCI_DEBUG,CNT_DAT=4,DT_REG=R2,CNT_REG=R3
+	DN_TIME W,_X_PROTCOL_TMP_EVENTCNT,R1,R2		;
+	M_BRA	X_PRORCV_ERR_RDCLR_250			;
+
+X_PRORCV_ERR_RDCLR_200:
+
+X_PRORCV_ERR_RDCLR_250:
+	XOR	R0,R0
+	MOV.L	#_X_PROTCOL_TMP_REQ,R1	;	//REQ:1:START
+	MOV.W	R0,@R1			;
+
+	SUB_END
+	M_RTS
+
+
+
+_X_PRO_TMP_CRC_CHK
+	SUB_START
+	FAR_JSR	#_CRC_CHK1,R0		;ANS R0=0 NOMAL R0=1 ERR
+	SUB_END
+	M_RTS
+
+
+_X_PRO_SEND_INIT2
+	SUB_START
+	MOV.B	#BIT0,R0
+	MOV.L	#_X_PROTCOL_TMP_REQ,R1		;	//REQ:1:START
+	MOV.W	R0,@R1				;
+
+	SUB_END
+	M_RTS
+
+	.EXPORT	_API_X_PRO_SEND_START1		;
+_API_X_PRO_SEND_START1:
+	SUB_START
+	MOV.L	#_RNA_PROTOCOL_X,R1		;"1"X社製ﾌﾟﾛﾄｺﾙ
+	MOV.W	@R1,R0				;
+	CMP/EQ	#1,R0				;
+	BF	API_X_PRO_SEND_ST1_EXT		;
+
+	MOV.W	#D'2,R0				;
+	MOV.L	#_X_PROTCOL_TMP_EVENTCNT,R1	;
+	MOV.W	R0,@R1				;
+
+	MOV.W	#D'1000,R0			;
+	MOV.L	#_X_PROTCOL_TMP_TIME_PV,R1	;
+	MOV.W	R0,@R1				;
+
+	XOR	R0,R0
+	MOV.L	#_X_PROTCOL_TMP_ANS,R1		;	//ANS:1:END(nomaL) -1:END(err)
+	MOV.W	R0,@R1				;
+
+API_X_PRO_SEND_ST1_EXT:
+
+	SUB_END
+	M_RTS
+
+	.EXPORT	_API_X_PRO_SEND_START2
+_API_X_PRO_SEND_START2:
+	SUB_START
+	MOV.L	#_RNA_PROTOCOL_X,R1		;"1"X社製ﾌﾟﾛﾄｺﾙ
+	MOV.W	@R1,R0				;
+	CMP/EQ	#1,R0				;
+	BF	API_X_PRO_SEND_ST2_EXT		;
+
+	MOV.W	#D'2,R0				;
+	MOV.L	#_X_PROTCOL_TMP_EVENTCNT,R1	;
+	MOV.W	R0,@R1				;
+
+	MOV.W	#D'50,R0
+	MOV.L	#_X_PROTCOL_TMP_TIME_PV,R1
+	MOV.W	R0,@R1				;
+
+	XOR	R0,R0
+	MOV.L	#_X_PROTCOL_TMP_ANS,R1		;	//ANS:1:END(nomaL) -1:END(err)
+	MOV.W	R0,@R1				;
+
+
+API_X_PRO_SEND_ST2_EXT:
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+;	***********************************
+;	***				***
+;	***				***
+;	***				***
+;	***				***
+;	***********************************
+;	input
+_CRC_CHK1:
+	SUB_START
+
+	FAR_JSR	#_CRC_TYPE2,R0	;R0=0 NOMAL R0=1 ERR(R0以外のﾚｼﾞｽﾀは保持する)
+
+	SUB_END
+	M_RTS
+
+
+
+
+
+;	***********************************
+;	***				***
+;	***				***
+;	***				***
+;	***				***
+;	***********************************
+;	input
+;	
+;
+_CRC_TYPE2:
+	SUB_START
+
+
+	PUSH_REG1	R1
+	PUSH_REG1	R2
+	PUSH_REG1	R3
+	PUSH_REG1	R4
+	PUSH_REG1	R5
+	PUSH_REG1	R6
+	PUSH_REG1	R7
+	PUSH_REG1	R8
+	PUSH_REG1	R9
+	PUSH_REG1	R10
+
+
+	MOV.L	#_rcv2_data_buf,R10		;
+	MOV.W	#(BIT7),R8			;
+	MOV.B	#_RNA_BUF_NUM-1,R3		;ﾃﾞｰﾀ数8個
+
+;-2015-10-14--
+	MOV.L	#_RNA_PROTOCOL_X,R1		;//"1"X社製ﾌﾟﾛﾄｺﾙ
+	MOV.W	@R1,R0				;
+	CMP/EQ	#1,R0				;
+	BF	CRC_TYP2_030			;
+	MOV.W	#(BIT7+BIT6+BIT5),R8		;x2+x1+x0==>x7+x6+x5
+	MOV.B	#_RNA_BUF_NUMX-1,R3		;ﾃﾞｰﾀ数6個
+
+CRC_TYP2_030
+
+
+
+
+	XOR	R0,R0				;CRC8結果
+
+CRC_TYP2_LOP050
+
+;---------------------------------------------
+	MOV.B	@R10+,R2			;
+	EXTU.B	R2,R2				;
+
+	MOV.B	#8,R4				;8BIT
+CRC_TYP2_LOP100
+	TST	#BIT0,R0			;
+	TST_BIT_OF CRC_TYP2_150			;
+	SHLR	R0				;
+	XOR	R8,R0				;
+	M_BRA	CRC_TYP2_200			;
+CRC_TYP2_150
+	SHLR	R0				;
+CRC_TYP2_200					;
+
+	MOV.W	#BIT0,R9			;
+	TST	R9,R2				;
+	TST_BIT_OF CRC_TYP2_150X		;
+	XOR	#BIT7,R0
+	SHLR	R2				;
+	M_BRA	CRC_TYP2_200X			;
+CRC_TYP2_150X
+	SHLR	R2				;
+CRC_TYP2_200X					;
+
+	ADD	#-1,R4				;
+	TST	R4,R4				;
+	TST_BIT_ON CRC_TYP2_LOP100		;
+
+
+	EXTU.B	R0,R0				;2014
+
+	ADD	#-1,R3
+	TST	R3,R3				;
+	TST_BIT_ON CRC_TYP2_LOP050		;
+
+	MOV.B	@R10+,R2			;
+	EXTU.B	R2,R2				;2014
+
+	CMP/EQ	R2,R0				;R0:CRC8演算結果
+	BT	CRC_TYP2_250			;
+	MOV.L	#_CRC_ERR_CNT,R1		;
+	MOV.W	@R1,R0				;
+	ADD	#1,R0				;
+	MOV.W	R0,@R1				;
+	
+	MOV.B	#1,R0				;ERR
+	M_BRA	CRC_TYP2_300			;
+
+CRC_TYP2_250					;一致
+	XOR	R0,R0				;OK
+CRC_TYP2_300					;
+
+	POP_REG1	R10
+	POP_REG1	R9
+	POP_REG1	R8
+	POP_REG1	R7
+	POP_REG1	R6
+	POP_REG1	R5
+	POP_REG1	R4
+	POP_REG1	R3
+	POP_REG1	R2
+	POP_REG1	R1
+
+	SUB_END
+	M_RTS
+	
+
+;	***********************************
+;	***				***
+;	***				***
+;	***	mtsではうまくいった	***
+;	***				***
+;	***********************************
+;	input
+;	
+;
+_CRC_TYPE1:
+	SUB_START
+
+
+	PUSH_REG1	R1
+	PUSH_REG1	R2
+	PUSH_REG1	R3
+	PUSH_REG1	R4
+	PUSH_REG1	R5
+	PUSH_REG1	R6
+	PUSH_REG1	R7
+	PUSH_REG1	R8
+	PUSH_REG1	R9
+	PUSH_REG1	R10
+
+
+	MOV.L	#_rcv2_data_buf,R10		;
+	MOV.W	#(BIT8+BIT0),R8			;
+	MOV.B	#_RNA_BUF_NUM-1,R3		;ﾃﾞｰﾀ数8個
+
+	MOV.L	#_RNA_PROTOCOL_X,R1		;//"1"X社製ﾌﾟﾛﾄｺﾙ
+	MOV.W	@R1,R0				;
+	CMP/EQ	#1,R0				;
+	BF	CRC_TYP1_030			;
+	MOV.W	#(BIT2+BIT1+BIT0),R8	;
+	MOV.B	#_RNA_BUF_NUMX-1,R3		;ﾃﾞｰﾀ数6個
+
+
+CRC_TYP1_030
+
+
+
+
+	XOR	R0,R0				;CRC8結果
+
+CRC_TYP1_LOP050
+
+;---------------------------------------------
+	MOV.B	@R10+,R4			;
+
+
+	XOR	R2,R2
+	.arepeat	8			;繰返展開
+	ROTCR	R4				;
+	ROTCL	R2				;
+	.aendr					;
+
+	MOV.B	#8,R4				;8BIT
+CRC_TYP1_LOP100
+	TST	#BIT7,R0			;
+	TST_BIT_OF CRC_TYP1_150			;
+	SHLL	R0				;
+	XOR	R8,R0				;
+	M_BRA	CRC_TYP1_200			;
+CRC_TYP1_150
+	SHLL	R0				;
+CRC_TYP1_200					;
+
+	MOV.W	#BIT7,R9			;
+	TST	R9,R2				;
+	TST_BIT_OF CRC_TYP1_150X		;
+	XOR	#BIT0,R0
+	SHLL	R2				;
+	M_BRA	CRC_TYP1_200X			;
+CRC_TYP1_150X
+	SHLL	R2				;
+CRC_TYP1_200X					;
+
+	ADD	#-1,R4				;
+	TST	R4,R4				;
+	TST_BIT_ON CRC_TYP1_LOP100		;
+
+
+	EXTU.B	R0,R0				;2014
+
+	ADD	#-1,R3
+	TST	R3,R3				;
+	TST_BIT_ON CRC_TYP1_LOP050		;
+
+	MOV.B	@R10+,R4			;
+	XOR	R2,R2
+	.arepeat	8			;繰返展開
+	ROTCR	R4				;
+	ROTCL	R2				;
+	.aendr					;R2:CRC8LOAD
+
+
+	CMP/EQ	R2,R0				;R0:CRC8演算結果
+	BT	CRC_TYP1_250			;
+	MOV.L	#_CRC_ERR_CNT,R1		;
+	MOV.W	@R1,R0				;
+	ADD	#1,R0				;
+	MOV.W	R0,@R1				;
+	
+	MOV.B	#1,R0				;ERR
+	M_BRA	CRC_TYP1_300			;
+
+CRC_TYP1_250					;一致
+	XOR	R0,R0				;OK
+CRC_TYP1_300					;
+
+	POP_REG1	R10
+	POP_REG1	R9
+	POP_REG1	R8
+	POP_REG1	R7
+	POP_REG1	R6
+	POP_REG1	R5
+	POP_REG1	R4
+	POP_REG1	R3
+	POP_REG1	R2
+	POP_REG1	R1
+
+	SUB_END
+	M_RTS
+	
+
+;	*******************************************
+;	***	Input R1,R2,R3			***
+;	***	異常ﾌﾗｸﾞ作成			***
+;	***					***
+;	*******************************************
+
+_RCV2_DATA_ERR_CHEAK:
+	SUB_START
+
+	MOV.L	#_WK_RCV_SCLSR2,R0	;//2004-04-12
+	MOV.W	@R0,R1
+
+	MOV.L	#_WK_RCV_SCFSR2,R0;//2004-04-12
+	MOV.W	@R0,R2			;
+
+	MOV.L	#_WK_RCV_SCFDR2,R0	;//2004-04-12
+	MOV.W	@R0,R3			;
+
+;	*** ｵｰﾊﾞｰﾗﾝﾁｪｯｸ ***
+	MOV.W	#BIT0,R4				;
+	AND	R4,R1					;SCLSR2 BIT0:ｵｰﾊﾞﾗﾝ
+	MOV.L	#_rcv2_err_hard_sts1,R5			;
+	MOV.W	@R5,R0					;
+	OR	R1,R0					;
+	MOV.W	R0,@R5					;
+	TST	R4,R1					;
+	TST_BIT_OF RCV2_DATA_ERRCHK_100			;
+	MOV.L	#_rcv2_err_OverRunCnt,R5		;ｵｰﾊﾞﾗﾝｴﾗｰｶｳﾝﾄ+1
+	MOV.W	@R5,R0					;
+	ADD	#1,R0					;
+	MOV.W	R0,@R5					;
+RCV2_DATA_ERRCHK_100:
+
+;	*** ﾌﾚｰﾑ・ﾊﾟﾘﾃｨ ****
+	MOV.W	#(BIT7+BIT3+BIT2),R4			;
+							;BIT7:BIT3/BIT2
+							;BIT3:FER
+							;BIT2:ﾊﾟﾘﾃｨ
+	MOV	R2,R1					;
+	AND	R4,R1					;
+	MOV.L	#_rcv2_err_hard_sts2,R5			;
+	MOV.W	@R5,R0					;
+	OR	R1,R0					;
+	MOV.W	R0,@R5					;
+	TST	R4,R1					;
+	TST_BIT_OF RCV2_DATA_ERRCHK_200			;
+	MOV.L	#_rcv2_err_FRPRErrCnt,R5			;
+	MOV.W	@R5,R0					;
+	ADD	#1,R0					;
+	MOV.W	R0,@R5					;
+RCV2_DATA_ERRCHK_200:
+
+;	======== BRK/RDF/DR -->errなのか? =======
+	MOV.W	#(BIT4+BIT1+BIT0),R4			;
+							;BIT4:brk
+							;BIT1:rdf
+							;BIT0:dr
+	MOV	R2,R1					;
+	AND	R4,R1					;
+	MOV.L	#_rcv2_err_hard_sts3,R5			;
+	MOV.W	@R5,R0					;
+	OR	R1,R0					;
+	MOV.W	R0,@R5					;
+	TST	R4,R1					;
+	TST_BIT_OF RCV2_DATA_ERRCHK_300			;
+	MOV.L	#_rcv2_err_elseErrCnt,R5			;
+	MOV.W	@R5,R0					;
+	ADD	#1,R0					;
+	MOV.W	R0,@R5					;
+RCV2_DATA_ERRCHK_300:
+
+
+	XOR	R4,R4
+	MOV.L	#_WK_RCV_SCLSR2,R0;//2004-04-12
+	MOV.W	R4,@R0
+
+	MOV.L	#_WK_RCV_SCFSR2,R0;//2004-04-12
+	MOV.W	R4,@R0
+
+	MOV.L	#_WK_RCV_SCFDR2,R0	;//2004-04-12
+	MOV.W	R4,@R0	
+
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	送信ｴﾝﾌﾟﾃｨ割込み	***
+;	***	使用しない		***
+;	***********************************
+_INT_FIFO_TXI:
+	SUB_START
+
+	FAR_JSR	#_SEND2_DISENABLE,R0
+
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+;	*******************************************
+;	***					***
+;	*** SCIF FIFO ﾚｼﾞｽﾀ 通信時初期化  	***
+;	***					***
+;	*******************************************
+;	[1]Pφ=27MHZ
+;	ﾎﾞｰﾚｰﾄ38.4KHZ
+;	27*1000,000
+;		Pφ*1000000
+;	N=----------------------- -1
+;		64*2**(2n-1)*B
+;
+;		27000000/(64/2)/38400
+;		=21.9-1=21
+;		(n=0,B=38400)
+;	[2]Pφ=40.5    =25*3/2
+;		40500000/(64/2)/38400
+;		=32.9-1=32
+;		(n=0,B=38400)
+;
+;	[3]Pφ=81      =25*3
+;		81000000/(64/2)/38400
+;		=65.9-1=65
+;		(n=0,B=38400)
+;
+;
+
+	.IMPORT	_dio_top1
+
+_SCIF_REG_INIT:
+	SUB_START				;
+
+	MOV.L	#_SCSPTR2,R1			;
+	MOV.W	@R1,R0				;
+	MOV.W	#LWORD ~(BIT7+BIT6),R2		;
+	AND	R2,R0				;
+	MOV.W	#(BIT1+BIT0),R2			; TXD端子Hﾚﾍﾞﾙ出力 2004-06-30
+	OR	R2,R0				; 2004-06-30
+	MOV.W	R0,@R1				; RTS BIT ON
+
+	MOV.W	#0,R0				;
+	MOV.L	#_SCSCR2,R1			; ｺﾝﾄﾛｰﾙﾚｼﾞｽﾀ CLEAR
+	MOV.W	R0,@R1				; TE,TIE,RE,RIE BIT CLEAR
+
+	MOV.L	#_SCFCR2,R2			;
+	MOV.W	@R2,R0				;
+	MOV.W	#0+0+0+0,R3			;BIT7=BIT6=0(RTRG1,RTRG0 1byte) BIT5=BIT4=0(送信8byte 以下)
+	MOV.W	R3,@R2				; TFRST RFRST BIT ON ﾘｾｯﾄ動作を許可
+;---------8BIT CHRACTOR
+;---------PATRY-NONE
+;---------STOP1
+	MOV.L	#_SCSMR2,R2			; ﾓｰﾄﾞﾚｼﾞｽﾀ SET
+	MOV.W	#0,R3				;
+	MOV.W	R3,@R2				;
+
+	MOV.L	#_SCBRR2,R2			;
+;	======= CASE1 160M:40M:40M==========
+	MOV.B	#0,R3				;0:1.25M
+	MOV.B	R3,@R2				; BBR SET
+
+	_MC_SCIENL_ON_WK1 R0,R1,R2		; SCI ENL ON
+	_MC_GA1PF_OUT1	R0,R1,R2		;
+
+	SUB_END					;
+	M_RTS
+
+
+
+
+
+
+
+
+
+
+
+
+;	***********************************
+;	***	送信ｲﾈｰﾌﾞﾙ		***
+;	***********************************
+_SEND2_ENABLE:
+	SUB_START
+	MOV.L	#_SCFSR2,R1			; 
+	MOV.W	@R1,R0				; STS LOAD
+	MOV.W	#LWORD ~(BIT6+BIT5),R2	;
+	AND	R2,R0				;
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_SCSPTR2,R1			;
+	MOV.W	@R1,R0				;
+	MOV.W	#(BIT7+BIT6),R2			;
+	OR	R2,R0				;
+	MOV.W	R0,@R1				; RTS BIT ON
+
+	MOV.L	#_SCSCR2,R1			; ｺﾝﾄﾛｰﾙﾚｼﾞｽﾀ 
+	MOV.W	@R1,R0				;
+;;;;;	MOV.W	#(BIT7+BIT5),R2			;TIE,TE BIT ON
+	MOV.W	#(BIT5),R2			;割込を使用しない
+	OR	R2,R0				;
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	送信禁止		***
+;	***********************************
+_SEND2_DISENABLE:
+	SUB_START
+	MOV.L	#_SCSPTR2,R1			;
+	MOV.W	@R1,R0				;
+	MOV.W	#LWORD ~(BIT7+BIT6),R2			;
+	AND	R2,R0				;
+	MOV.W	R0,@R1				; RTS BIT ON
+
+
+	MOV.L	#_SCSCR2,R1			; ｺﾝﾄﾛｰﾙﾚｼﾞｽﾀ 
+	MOV.W	@R1,R0				;
+	MOV.W	#LWORD ~(BIT7+BIT5),R2	;TIE,TE BIT OFF
+	AND	R2,R0				;
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_SCFSR2,R1			; 
+	MOV.W	@R1,R0				; STS LOAD
+	MOV.W	#LWORD ~(BIT6+BIT5),R2	;
+	AND	R2,R0				;
+	MOV.W	R0,@R1				;
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	受信ｲﾈｰﾌﾞﾙ		***
+;	***********************************
+_RCV2_ENABLE:
+	SUB_START
+	MOV.L	#_SCSCR2,R1			; ｺﾝﾄﾛｰﾙﾚｼﾞｽﾀ 
+	MOV.W	@R1,R0				;
+	MOV.W	#(BIT4+BIT3),R2			;
+	OR	R2,R0				;
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	受信禁止		***
+;	***********************************
+_RCV2_DISENABLE:
+	SUB_START
+	MOV.L	#_SCSCR2,R1			; ｺﾝﾄﾛｰﾙﾚｼﾞｽﾀ 
+	MOV.W	@R1,R0				;
+	MOV.W	#LWORD ~(BIT4+BIT3),R2	;
+	AND	R2,R0				;
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+
+	.EXPORT	_RCIVE2_READ	;2msec(受信ﾃﾞｰﾀ)
+	.EXPORT	_SEND2_SEND	;2msec(送信)
+
+_RCIVE2_READ:	;2msec(受信ﾃﾞｰﾀ)
+	SUB_START
+	MOV.L	#_rcv2_event_flg,R5	;//main-->bit0=1  2ms:bit1(処理開始),bit7(完了)
+	MOV.W	@R5,R0			;(受信数8)
+	TST	#BIT7,R0		;
+	TST_BIT_ON RCIVE2_RD_EXIT	;完了
+
+	TST	#BIT0,R0		;
+	TST_BIT_OF RCIVE2_RD_EXIT	;
+
+	TST	#BIT1,R0		;開始中?
+	TST_BIT_ON RCIVE2_RD_200	;YES:処理開始中
+	OR	#BIT1,R0		;
+	MOV.W	R0,@R5			;FLAG SET
+	FAR_JSR	#_RCV2_ENABLE,R0	;
+	M_BRA	RCIVE2_RD_EXIT		;
+
+RCIVE2_RD_200:				;
+;	------------------20060930---------
+	MOV.L	#_RNA_CMD_RD_CNT,R1	;//ｺﾏﾝﾄﾞ受信回数ｶｳﾝﾀ
+	MOV.W	@R1,R0			;
+	ADD	#1,R0			;
+	MOV.W	R0,@R1			;
+
+	FAR_JSR	#_RCV2_DATA_ERR_READ_CLR,R0		;
+	FAR_JSR	#_RCV2_DATA_ERR_CHEAK,R0		;
+	FAR_JSR	#_RNA_COM_DATA_CHK,R0			;2004-04-14
+	FAR_JSR	#_RNA_DATA_REF,R0			;2004-04-14
+
+	MOV.L	#_rcv2_event_flg,R5	;//main-->bit0=1  2ms:bit1(処理開始),bit7(完了)
+	MOV.W	@R5,R0			;
+	OR	#BIT7,R0		;
+	MOV.W	R0,@R5			;FLAG SET
+
+
+
+RCIVE2_RD_EXIT:
+
+
+	SUB_END
+	M_RTS
+
+_SEND2_SEND:	;2msec(送信)
+	SUB_START
+
+
+	FAR_JSR	#_RENEA_ERR_RESET_CTRL,R0	;2006-09-30
+
+	MOV.L	#_send2_event_flg,R5	;//main-->bit0=1  2ms:bit1(処理開始),bit7(完了)
+	MOV.W	@R5,R0			;
+	TST	#BIT7,R0		;
+	TST_BIT_ON SEND2_SD_EXIT	;完了
+
+	TST	#BIT0,R0		;開始条件成立?
+	TST_BIT_OF SEND2_SD_EXIT	;NO
+
+	TST	#BIT1,R0		;開始中?
+	TST_BIT_ON SEND2_SD_200		;YES:処理開始中
+	OR	#BIT1,R0		;
+	MOV.W	R0,@R5			;FLAG SET
+
+
+;	================== ﾊﾞﾌｧｾｯﾄ ========
+	MOV.L	#_send2_data_buf+0*1,R1		;
+	MOV.B	@R1,R0				;
+	MOV.L	#_SCFTDR2,R10			;
+	MOV.B	R0,@R10				;
+	FAR_JSR	#_SEND2_ENABLE,R0		;
+	M_BRA	SEND2_SD_EXIT			;
+
+
+;	===================================
+SEND2_SD_200:
+	MOV.L	#_SCFSR2,R1			;TDFE BIT CHECK
+	MOV.W	@R1,R0				;
+	TST	#BIT5,R0			;
+	TST_BIT_OF SEND2_SD_EXIT		;
+	FAR_JSR	#_SEND2_DISENABLE,R0		;(不要だと思うが。)
+	MOV.L	#_send2_event_flg,R5		;//main-->bit0=1  2ms:bit1(処理開始),bit7(完了)
+	MOV.W	@R5,R0				;
+	OR	#BIT7,R0			;
+	MOV.W	R0,@R5				;
+
+SEND2_SD_EXIT:					;
+
+	SUB_END
+	M_RTS
+
+
+
+;	*********************************************
+;	*****	リニアセンサメイン処理		*****
+;	*********************************************
+	.IMPORT	_X_PROTMP_CALC
+
+_RENIA_SENCER:
+	SUB_START
+
+	MOV.L	#_send2_event_flg,R5	;//main-->bit0=1  2ms:bit1(処理開始),bit7(完了)
+	MOV.W	@R5,R0			;
+	MOV.L	#_rcv2_event_flg,R6	;//main-->bit0=1  2ms:bit1(処理開始),bit7(完了)
+	MOV.W	@R6,R1			;
+	OR	R1,R0			;
+	TST	R0,R0			;
+	TST_BIT_OF _RENI_SENCER_100	;
+
+	MOV.L	#_send2_event_flg,R5	;//main-->bit0=1  2ms:bit1(処理開始),bit7(完了)
+	MOV.W	@R5,R0			;
+	TST	#BIT7,R0		;
+	TST_BIT_OF _RENI_SENCER_500	;
+
+	MOV.L	#_rcv2_event_flg,R6	;//main-->bit0=1  2ms:bit1(処理開始),bit7(完了)
+	MOV.W	@R6,R0			;(受信数８)
+	TST	#BIT7,R0		;
+	TST_BIT_OF _RENI_SENCER_500	;
+	NOP
+
+_RENI_SENCER_100:
+;	---20060930------
+	MOV.L	#_ENC_SYSRST_CMD,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_OF RENI_SENCER_NMLCMD150	;
+
+;	-------- SYS RESETREQｺﾏﾝﾄﾞﾌｨｰﾙﾄﾞ-------- 100010,10 10は固定
+;;2015-10-14	MOV.B	#_RNA_CMD_RST,R0		;
+	MOV.L	#_SND_RCV_CMDR,R0		;2015-10-14
+	MOV.W	@R0,R0				;
+	M_BRA	RENI_SENCER_NMLCMD180		;
+
+
+;	-------- 位置REQｺﾏﾝﾄﾞﾌｨｰﾙﾄﾞ-------- 000000,10 10は固定
+RENI_SENCER_NMLCMD150
+;	----------------- 2015-10-15 XPROTOL TMP-------
+	MOV.L	#_X_PROTCOL_TMP_EVENTCNT,R1	;	//REQ:1:START
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF RENI_SENCER_NMLCMD155	;
+
+	FAR_JSR	#_X_PRO_SEND_INIT2,R0
+	MOV.W	#_RNA_CMD_TMPX,R0		;.EQU	B'00100011,TMP(001000+  11固定)
+	M_BRA	RENI_SENCER_NMLCMD180		;
+
+
+
+RENI_SENCER_NMLCMD155
+;;;2015-10-14	MOV.B	#_RNA_CMD_ID0,R0		;0000,0001
+	MOV.L	#_SND_RCV_CMD0,R0		;2015-10-14
+	MOV.W	@R0,R0				;
+
+RENI_SENCER_NMLCMD180
+	MOV.L	#_send2_data_buf+0*1,R1
+	MOV.B	R0,@R1
+	MOV.L	#_RNA_CMD_SND_CNT,R1		;送信回数ﾁｪｯｸ(ﾘｾｯﾄ用)
+	MOV.W	@R1,R0				;
+	ADD	#1,R0				;
+	MOV.W	R0,@R1				;
+	M_BRA	_RENI_SENCER_200
+
+
+
+;	========= SEND START ========
+;;;未使用のはず	MOV.B	#B'10000101,R0			;
+;;;		MOV.L	#_send2_data_buf+2*1,R1		;
+;;;		MOV.B	R0,@R1
+;;;
+;;;		MOV.B	#B'10000001,R0			;
+;;;		MOV.L	#_send2_data_buf+1*1,R1		;
+;;;		MOV.B	R0,@R1
+;;;
+;;;	-------- 位置REQｺﾏﾝﾄﾞﾌｨｰﾙﾄﾞ-------- 000000,10 10は固定
+;;;	MOV.B	#B'00000001,R0			;
+;;;	MOV.L	#_send2_data_buf+0*1,R1
+;;;	MOV.B	R0,@R1
+;;;	M_BRA	_RENI_SENCER_200
+
+
+_RENI_SENCER_200:
+	MOV	#BIT0,R0		;START
+	MOV.W	R0,@R6			;
+	MOV.W	R0,@R5			;
+
+_RENI_SENCER_500:			;
+
+
+
+;	-------- 2015-10-15 ------------
+	FAR_JSR	#_X_PROTMP_CALC,R0
+
+	SUB_END
+	M_RTS
+
+
+
+
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+_RNA_COM_DATA_CHK:
+	SUB_START
+;	================== HARD-ERR =============
+	MOV.W	#BIT0,R4				;
+	MOV.L	#_rcv2_err_hard_sts1,R5			;
+	MOV.W	@R5,R0					;
+	TST	R4,R0					;
+	TST_BIT_OF RNA_COM_DATCHK_100			;
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_IN_RNA_REF_ERR_FLG1,LG=W,BIT=BIT0,WKREG=R1	;
+
+	MOV.L	#_rcv2_err_hard_sts1,R5			;
+	XOR	R0,R0					;
+	MOV.W	R0,@R5					;
+
+RNA_COM_DATCHK_100:
+
+;	================== HARD-ERR =============
+	MOV.L	#_rcv2_err_hard_sts2,R5			;
+	MOV.W	@R5,R0					;
+	MOV.W	#(BIT7+BIT3+BIT2),R4			;
+							;BIT7:BIT3/BIT2
+							;BIT3:FER
+							;BIT2:ﾊﾟﾘﾃｨ
+	TST	R4,R0					;
+	TST_BIT_OF RNA_COM_DATCHK_200			;
+;;;	MEM1_BIT0_TO_BIT7_ORSET MEM=_IN_RNA_REF_ERR_FLG1,LG=W,BIT=BIT1,WKREG=R1	;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_IN_RNA_REF_ERR_FLG1,LG=W,BIT=BIT0,WKREG=R1	;
+
+	MOV.L	#_rcv2_err_hard_sts2,R5			;
+	XOR	R0,R0					;
+	MOV.W	R0,@R5					;
+RNA_COM_DATCHK_200:
+;	================== RENEA CENCER ERR(CMD)  =============
+;;2006-09-30	MOV.L	#_rcv2_data_buf+0,R1			;
+;;		MOV.B	@R1,R0					;CMD
+;;		CMP/EQ	#00,R0					;??
+;;		BT	RNA_COM_DATCHK_300			;NOMAL
+;;		CMP/EQ	#01,R0					;
+;;		BT	RNA_COM_DATCHK_300			;NOMAL
+
+	MOV.L	#_rcv2_data_buf+0,R1			;
+	MOV.B	@R1,R0					;CMD
+	EXTU.B	R0,R0					;
+
+;	--------- 温度読み出し 2015-10-15-----
+	MOV.L	#_RNA_PROTOCOL_X,R4		;//"1"X社製ﾌﾟﾛﾄｺﾙ
+	MOV.W	@R4,R4				;
+	TST	R4,R4				;
+	TST_BIT_OF RNA_COM_DATCHK_220		;
+	CMP/EQ	#_RNA_CMD_TMPX,R0		;
+	BF	RNA_COM_DATCHK_220		;温度ｺﾏﾝﾄﾞ? NO
+	M_BRA	RNA_COM_DATCHK_900		;EXIT
+
+RNA_COM_DATCHK_220:
+
+
+;;2015-10-14	MOV.W	#_RNA_CMD_ID0,R4			;
+	MOV.L	#_SND_RCV_CMD0,R4			;2015-10-14
+	MOV.W	@R4,R4					;2015-10-14
+	EXTU.B	R4,R4
+
+	CMP/EQ	R4,R0
+	BT	RNA_COM_DATCHK_300			;NOMAL-POS
+
+;;2015-10-14	MOV.W	#_RNA_CMD_ID1,R4			;
+	MOV.L	#_SND_RCV_CMD1,R4			;2015-10-14
+	MOV.W	@R4,R4					;2015-10-14
+	EXTU.B	R4,R4
+
+	CMP/EQ	R4,R0
+	BT	RNA_COM_DATCHK_300			;NOMAL-POS
+
+;;2015-10-14	MOV.W	#_RNA_CMD_RST,R4			;
+	MOV.L	#_SND_RCV_CMDR,R4			;2015-10-14
+	MOV.W	@R4,R4					;2015-10-14
+	EXTU.B	R4,R4
+
+	CMP/EQ	R4,R0					;
+	BT	RNA_COM_DATCHK_250			;
+	CMP/EQ	#0,R0					;(ﾀｲﾑｱｳﾄか?)
+	BT	RNA_COM_DATCHK_250			;
+	M_BRA	RNA_COM_DATCHK_290			;ERR
+RNA_COM_DATCHK_250:
+	M_BRA	RNA_COM_DATCHK_900			;
+
+RNA_COM_DATCHK_290:
+	MOV.L	#_RNA_CMD_VERIFY_DAT,R1		;//異常時の最新ﾃﾞｰﾀ
+	MOV.W	R0,@R1				;
+
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_RNA_CMD_VERIFY_CNT,WKREG1=R1,WKREG2=R2,LATE=1	;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_IN_RNA_REF_ERR_FLG1,LG=W,BIT=BIT3,WKREG=R1		;CMD/RESPONS ERR
+
+RNA_COM_DATCHK_300:
+;	<<<<<<<<<<<<<<<<<<<<<<<<<<2015-10-14>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+	MOV.L	#_RNA_PROTOCOL_X,R0		;//"1"X社製ﾌﾟﾛﾄｺﾙ
+	MOV.W	@R0,R0				;
+	CMP/EQ	#1,R0				;
+	BF	RNA_COM_DATCHK_330		;
+
+	MOV.L	#_rcv2_data_buf+1,R1		;ALMFILED:BUF+1
+	MOV.B	@R1,R0				;
+	CMP/EQ	#00,R0				;
+	BT	RNA_COM_DATCHK_310		;NOMAL
+
+	PUSH_REG1 R0									;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_IN_RNA_REF_ERR_FLG1,LG=W,BIT=BIT4,WKREG=R1		;SYSTEM-ERR
+	POP_REG1 R0									;
+	M_BRA	RNA_COM_DATCHK_500							;
+
+RNA_COM_DATCHK_310:
+	M_BRA	RNA_COM_DATCHK_900	;
+
+
+;	----------------------------- ミツトヨの処理------------------------
+RNA_COM_DATCHK_330:
+;	================== RENEA CENCER ERR(STS)  =============
+	MOV.L	#_rcv2_data_buf+1,R1				;
+	MOV.B	@R1,R0						;ES 0010,0000 or 0010,0100 NOMAL
+	CMP/EQ	#B'00010000,R0					;BIT0=1 ENC-ERR
+	BT	RNA_COM_DATCHK_400				;NOMAL
+
+	MOV.L	#_RNA_STS_ERR_DAT,R1				;
+	MOV.W	R0,@R1						;
+
+;	===(これは必要 2004-060-29)=====
+	CMP/EQ	#B'00010100,R0					;
+	BT	RNA_COM_DATCHK_400				;NOMAL(送信ｺﾏﾝﾄﾞが変だが位置は返す)
+;	===============================
+
+	TST	#BIT0,R0					;(SYS_ERR)
+	TST_BIT_OF RNA_COM_DATCHK_350
+
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_RNA_STS_SYSERR_CNT,WKREG1=R1,WKREG2=R2,LATE=1	;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_IN_RNA_REF_ERR_FLG1,LG=W,BIT=BIT4,WKREG=R1		;SYSTEM-ERR
+	M_BRA	RNA_COM_DATCHK_400							;
+
+RNA_COM_DATCHK_350
+
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_RNA_STS_REQERR_CNT,WKREG1=R1,WKREG2=R2,LATE=1	;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_IN_RNA_REF_ERR_FLG1,LG=W,BIT=BIT5,WKREG=R1		;REQ ERR
+
+RNA_COM_DATCHK_400:
+
+;	================== RENEA CENCER ERR(ALM)  =============
+	MOV.L	#_rcv2_data_buf+2,R1				;
+	MOV.B	@R1,R0						;ALMFILED
+	CMP/EQ	#00,R0						;
+	BF	RNA_COM_DATCHK_500				;ABNOMAL
+	M_BRA	RNA_COM_DATCHK_900				;
+RNA_COM_DATCHK_500:
+	MOV.L	#_RNA_STS_ERR_DAT,R1				;//異常時の最新ﾃﾞｰﾀ
+	MOV.W	R0,@R1						;
+
+	MOV.L	#_IN_RNA_REF_ERR_FLG2,R1			;
+	MOV.W	R0,@R1
+
+	TST	#BIT0,R0							;
+	TST_BIT_OF RNA_COM_DATCHK_600						;
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_RNA_ALM_BIT0_CNT,WKREG1=R1,WKREG2=R2,LATE=1	;
+RNA_COM_DATCHK_600:
+	TST	#BIT1,R0							;
+	TST_BIT_OF RNA_COM_DATCHK_610						;
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_RNA_ALM_BIT1_CNT,WKREG1=R1,WKREG2=R2,LATE=1	;
+RNA_COM_DATCHK_610:
+	TST	#BIT2,R0							;
+	TST_BIT_OF RNA_COM_DATCHK_620						;
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_RNA_ALM_BIT2_CNT,WKREG1=R1,WKREG2=R2,LATE=1	;
+RNA_COM_DATCHK_620:
+	TST	#BIT3,R0							;
+	TST_BIT_OF RNA_COM_DATCHK_630						;
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_RNA_ALM_BIT3_CNT,WKREG1=R1,WKREG2=R2,LATE=1	;
+RNA_COM_DATCHK_630:
+	TST	#BIT4,R0							;
+	TST_BIT_OF RNA_COM_DATCHK_640						;
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_RNA_ALM_BIT4_CNT,WKREG1=R1,WKREG2=R2,LATE=1	;
+RNA_COM_DATCHK_640:
+	TST	#BIT5,R0							;
+	TST_BIT_OF RNA_COM_DATCHK_650						;
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_RNA_ALM_BIT5_CNT,WKREG1=R1,WKREG2=R2,LATE=1	;
+RNA_COM_DATCHK_650:
+	TST	#BIT6,R0							;
+	TST_BIT_OF RNA_COM_DATCHK_660						;
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_RNA_ALM_BIT6_CNT,WKREG1=R1,WKREG2=R2,LATE=1	;
+RNA_COM_DATCHK_660:
+	TST	#BIT7,R0							;
+	TST_BIT_OF RNA_COM_DATCHK_670						;
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_RNA_ALM_BIT7_CNT,WKREG1=R1,WKREG2=R2,LATE=1	;
+RNA_COM_DATCHK_670:
+
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_RNA_ALM_CNT,WKREG1=R1,WKREG2=R2,LATE=1		;ALM TOTAL
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_IN_RNA_REF_ERR_FLG1,LG=W,BIT=BIT6,WKREG=R1		;ALM
+
+
+RNA_COM_DATCHK_900:
+
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***		2015-10-14		***
+;	***		X社			***
+;	*******************************************
+	.EXPORT	_SND_CMD_CHECK_INIT1
+_SND_CMD_CHECK_INIT1
+	SUB_START
+
+	MOV.L	#_RNA_PROTOCOL_X,R1		;//"1"X社製ﾌﾟﾛﾄｺﾙ
+	MOV.W	@R1,R0				;
+	CMP/EQ	#1,R0				;
+	BF	SND_CMD_CK_INIT1_100		;
+
+	MOV.L	#_SND_RCV_CMD0,R1		;
+	MOV.W	#_RNA_CMD_ID0X,R0		;
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_SND_RCV_CMD1,R1		;
+	MOV.W	#_RNA_CMD_ID1X,R0		;
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_SND_RCV_CMDR,R1		;
+	MOV.W	#_RNA_CMD_RSTX,R0		;
+	MOV.W	R0,@R1				;
+
+
+	MOV.L	#_SND_RCV_INBUFCNT,R1		;
+	MOV.W	#_RNA_BUF_NUMX,R0		;8->6
+	MOV.W	R0,@R1				;
+
+	M_BRA	SND_CMD_CK_INIT1_200		;
+;	---------------今まで-------------
+SND_CMD_CK_INIT1_100
+	MOV.L	#_SND_RCV_CMD0,R1	;
+	MOV.W	#_RNA_CMD_ID0,R0	;POS(000000 + 01固定)
+	MOV.W	R0,@R1			;
+
+	MOV.L	#_SND_RCV_CMD1,R1
+	MOV.W	#_RNA_CMD_ID1,R0	;POS(100001 + 01固定)
+	MOV.W	R0,@R1			;
+
+	MOV.L	#_SND_RCV_CMDR,R1
+	MOV.W	#_RNA_CMD_RST,R0	;RST(100010 + 01固定)　H'89
+	MOV.W	R0,@R1			;
+
+	MOV.L	#_SND_RCV_INBUFCNT,R1	;
+	MOV.W	#_RNA_BUF_NUM,R0	;
+	MOV.W	R0,@R1			;
+
+SND_CMD_CK_INIT1_200
+
+
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+_RNA_DATA_REF:
+	SUB_START
+
+	MOV.L	#_IN_RNA_REF_ERR_FLG1,R1
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON RNA_DATAREF_100		;
+
+	MOV.L	#_IN_RNA_REF_ERR_FLG2,R1
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON RNA_DATAREF_100		;
+
+;	------------ 2006-09-30-----
+	MOV.L	#_ENC_SYSRST_CMD,R1		;//位置ﾃﾞｰﾀに入れないFLG
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0				;
+	TST_BIT_ON RNA_DATAREF_100		;
+
+	MOV.L	#_PV0_SCRW_POS,R7				
+	MOV.L	@R7,R0
+	MOV.L	#_PV1_SCRW_POS,R7				
+	MOV.L	R0,@R7							;
+
+	UP_DN_LATE_CNT LG=W,MEM_ADR=_RNA_REF2_CNT,WKREG1=R1,WKREG2=R2,LATE=1	;
+
+RNA_DATAREF_100:
+
+
+
+	MOV.L	#_IN_RNA_REF_ERR_FLG1,R1			;
+	MOV.W	@R1,R0						;
+	MOV.L	#_RNA_REF_ERR_FLG1,R1				;
+	MOV.W	R0,@R1						;
+
+	MOV.L	#_LT_RNA_REF_ERR_FLG1,R1			;
+	MOV.W	@R1,R2
+	OR	R0,R2
+	MOV.W	R2,@R1						;
+
+	MOV.L	#_IN_RNA_REF_ERR_FLG2,R1			;
+	MOV.W	@R1,R0						;
+	MOV.L	#_RNA_REF_ERR_FLG2,R1				;
+	MOV.W	R0,@R1						;
+
+	MOV.L	#_LT_RNA_REF_ERR_FLG2,R1			;
+	MOV.W	@R1,R2
+	OR	R0,R2
+	MOV.W	R2,@R1						;
+
+RNA_DATAREF_EXT:
+	XOR	R0,R0						;
+	MOV.L	#_IN_RNA_REF_ERR_FLG1,R1			;
+	MOV.W	R0,@R1						;
+
+	XOR	R0,R0						;
+	MOV.L	#_IN_RNA_REF_ERR_FLG2,R1			;
+	MOV.W	R0,@R1						;
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***		RNA			***
+;	***		2006-09-30		***
+;	***					***
+;	*******************************************
+;	RESET-BUTTOMでCALL
+
+
+_RENEA_ERR_RESET_INI:
+	SUB_START
+
+	XOR	R0,R0			;
+	MOV.L	#_RNA_CMD_SND_CNT,R1	;//ｺﾏﾝﾄﾞ送信回数ｶｳﾝﾀ
+	MOV.W	R0,@R1			;
+	MOV.L	#_RNA_CMD_RD_CNT,R1	;//ｺﾏﾝﾄﾞ受信回数ｶｳﾝﾀ
+	MOV.W	R0,@R1			;
+
+	MOV.W	#BIT0,R0		;
+	MOV.L	#_RNA_RESET_FLG,R1	;
+	MOV.W	R0,@R1			;
+
+	MOV.W	#D'1500,R0		;1.5sec
+	MOV.L	#_RNA_RESET_TIM,R1	;
+	MOV.W	R0,@R1			;
+
+	MOV.W	#BIT0,R0			;
+	MOV.L	#_ENC_SYSRST_CMD,R1		;
+	MOV.W	R0,@R1				;
+	MOV.L	#_ENC_TIMEXT_FLG,R1		;
+	MOV.W	R0,@R1				;
+
+	FAR_JSR	#_SETSQ206_BIT11,R0
+
+	SUB_END
+	M_RTS
+
+
+_RENEA_ERR_RESET_CTRL:
+	SUB_START
+	MOV.L	#_RNA_RESET_FLG,R1		;(TIME-OUTを見ないだけ)
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF RENEA_ERR_RST_CTLEND		;
+
+	MOV.L	#_RNA_RESET_TIM,R5		;
+	MOV.W	@R5,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON RENEA_ERR_RST_CTL100		;
+	XOR	R0,R0
+	MOV.L	#_RNA_RESET_FLG,R1		;
+	MOV.W	R0,@R1				;
+
+	XOR	R0,R0
+	MOV.L	#_ENC_SYSRST_CMD,R1		;
+	MOV.W	R0,@R1				;
+	MOV.L	#_ENC_TIMEXT_FLG,R1		;
+	MOV.W	R0,@R1				;
+	FAR_JSR	#_RNA_SCIF_ERR_CLR2,R0		;
+	FAR_JSR	#_CLRSQ206_BIT11,R0
+	M_BRA	RENEA_ERR_RST_CTLEND		;
+
+
+RENEA_ERR_RST_CTL100				;
+	ADD	#-1,R0				;
+	MOV.W	R0,@R5				;
+
+	MOV.L	#_ENC_SYSRST_CMD,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF RENEA_ERR_RST_CTL200		;
+
+	MOV.L	#_RNA_CMD_SND_CNT,R1		;//ｺﾏﾝﾄﾞ送信回数ｶｳﾝﾀ
+	MOV.W	@R1,R0				;
+	MOV.W	#D'9,R4				;
+	CMP/HS	R4,R0				;
+	BF	RENEA_ERR_RST_CTLEND		;
+
+	XOR	R0,R0
+	MOV.L	#_ENC_SYSRST_CMD,R1		;
+	MOV.W	R0,@R1				;
+
+;	--------- 正常位置ﾚｽﾎﾟﾝｽが帰ってくれば終了だが-------
+RENEA_ERR_RST_CTL200:
+	NOP
+
+
+RENEA_ERR_RST_CTLEND
+	SUB_END
+	M_RTS
+
+
+
+_RNA_SCIF_ERR_CLR2:
+	SUB_START
+	XOR	R0,R0
+	REG_MOV_TO_MEM	DST_ADR=_IN_RNA_REF_ERR_FLG1,L1=W,DT_REG=R0,WKREG1=R1	;LSI異常
+	REG_MOV_TO_MEM	DST_ADR=_IN_RNA_REF_ERR_FLG2,L1=W,DT_REG=R0,WKREG1=R1	;LSI異常
+	REG_MOV_TO_MEM	DST_ADR=_LT_RNA_REF_ERR_FLG1,L1=W,DT_REG=R0,WKREG1=R1	;LSI異常
+	REG_MOV_TO_MEM	DST_ADR=_LT_RNA_REF_ERR_FLG2,L1=W,DT_REG=R0,WKREG1=R1	;LSI異常
+
+	REG_MOV_TO_MEM	DST_ADR=_RNA_COM_ERR_CNT,L1=W,DT_REG=R0,WKREG1=R1	;LSI異常
+	REG_MOV_TO_MEM	DST_ADR=_rcv2_err_hard_INTflg1,L1=W,DT_REG=R0,WKREG1=R1	;LSI異常
+	REG_MOV_TO_MEM	DST_ADR=_rcv2_err_hard_INTflg2,L1=W,DT_REG=R0,WKREG1=R1	;LSI異常
+	REG_MOV_TO_MEM	DST_ADR=_rcv2_err_hard_INTflg3,L1=W,DT_REG=R0,WKREG1=R1	;LSI異常
+
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+	.END
+

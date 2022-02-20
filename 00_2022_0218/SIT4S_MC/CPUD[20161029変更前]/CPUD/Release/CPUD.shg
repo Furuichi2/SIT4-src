@@ -1,0 +1,4 @@
+-cpu=sh3dsp
+-output="D:\SIT4S_MC\CPUD\CPUD\Release\CPUD.lib"
+-gbr=auto
+-head=runtime,new,stdio,stdlib,string

@@ -1,0 +1,238 @@
+;	*******************************************
+;	***					***
+;	***		CPUB側の送信ソフト	***
+;	***					***
+;	*******************************************
+	.GLOBAL		_CPUBTOA_DAT1_REQADR	;TOP-ADR 2013-12[MC]
+	.GLOBAL		_CPUBTOA_DAT1_REQKND	;種別	2013-12[MC]
+	.GLOBAL		_CPUBTOA_DAT1_REQCNT	;個数	2013-12[MC]
+	.GLOBAL		_CPUBTOA_DAT1_REQCOD	;WR	2013-12[MC]
+	.GLOBAL		_CPUBTOA_DAT1_ACKCOD	;ACK	2013-12[MC]
+	.GLOBAL		_CPUBTOA_DAT1_DATTOP	;256BYTE(128W)	2013-12[MC]
+
+;	*******************************************
+;	***					***
+;	***	とりあえずROMﾊﾟﾗﾒｰﾀ送信,受信	***
+;	***	CPUB==>CPUA			***
+;	*******************************************
+_SND_BTOA_CPUBMEMX_KND1REQ:
+	SUB_START
+
+	MOV.W	#BIT0,R0
+	MOV.L	#_CPUBX_MEM1_SNDEVN,R1;		//EVNT BIT0:KIND
+	MOV.W	R0,@R1				;
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***		CPUB側のﾒｲﾝ		***
+;	***					***
+;	*******************************************
+_SND_BTOA_CPUBMEMX:
+	SUB_START
+	MOV.L	#_CPUBX_MEM1_SNDFLG,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON SND_BTOA_BMEMX100		;
+
+	MOV.L	#_CPUBX_MEM1_SNDEVN,R4		;//EVNT BIT0:KIND
+	MOV.W	@R4,R2				;
+	TST	R2,R2				;
+	TST_BIT_ON SND_BTOA_BMEMX050		;
+	M_BRA	SND_BTOA_BMEMXEXT		;
+
+SND_BTOA_BMEMX050
+
+	MOV.L	#_CPUBX_MEM1_SNDEVN,R1		;//EVNT BIT0:KIND
+	MOV.W	@R1,R0				;
+	MOV.L	#_CPUBX_MEM1_SNDKND,R1		;//KIND
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_W_PARAM_TOP,R0		;
+	MOV.L	#_CPUBX_SEND_TOPADR,R1		;
+	MOV.L	R0,@R1				;
+
+	MOV.W	#D'512,R0			;
+	MOV.L	#_CPUBX_SEND_MAXCNT,R1		;
+	MOV.L	R0,@R1				;
+
+	XOR	R0,R0
+	MOV.L	#_CPUBX_SEND_NOWCNT,R1		;
+	MOV.L	R0,@R1				;
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_CPUBX_MEM1_SNDFLG,LG=W,BIT=BIT0,WKREG=R1	;
+SND_BTOA_BMEMX100
+
+
+	MOV.L	#_CPUBX_MEM1_SNDFLG,R1		;
+	MOV.W	@R1,R0				;BIT0:ACTIVE BIT1:OF->ON(ﾃﾞｰﾀｾｯﾄ) BIT2:ON->OF BIT6:
+
+	TST	#BIT2,R0			;
+	TST_BIT_ON SND_BTOA_BMEMX400		;OFF待ち
+
+	TST	#BIT1,R0			;
+	TST_BIT_ON SND_BTOA_BMEMX300		;ON待ち
+
+;	------- ﾃﾞｰﾀｾｯﾄ----------
+
+	FAR_JSR	#_SND_BTOA_BMEM_DSET,R0
+
+	MOV.W	#BIT15,R4		;
+	TST	R4,R7			;
+	TST_BIT_OF SND_BTOA_BMEMX150	;
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_CPUBX_MEM1_SNDFLG,LG=W,BIT=BIT6,WKREG=R1	;
+
+SND_BTOA_BMEMX150
+
+;	--------------------------
+	MOV.W	#_START_REQ_COD,R0		;
+	MOV.L	#_CPUBTOA_DAT1_REQCOD,R6	;ﾊﾝﾄﾞｼｪｲｸON
+	MOV.W	R0,@R6				;
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_CPUBX_MEM1_SNDFLG,LG=W,BIT=BIT1,WKREG=R1	;
+	M_BRA	SND_BTOA_BMEMXEXT						;
+
+SND_BTOA_BMEMX300
+;	------- 相手側のON待ち-----
+	MOV.L	#_CPUBTOA_DAT1_ACKCOD,R6	;
+	MOV.W	@R6,R0				;
+	MOV.W	#_START_ACK_COD,R4		;
+	CMP/EQ	R4,R0				;
+	BF	SND_BTOA_BMEMXEXT		;相手側ｺｰﾄﾞON? NO
+
+	XOR	R0,R0				;
+	MOV.L	#_CPUBTOA_DAT1_REQCOD,R6	;ﾊﾝﾄﾞｼｪｲｸ自分OFF
+	MOV.W	R0,@R6				;
+
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_CPUBX_MEM1_SNDFLG,LG=W,BIT=BIT2,WKREG=R1	;
+	M_BRA	SND_BTOA_BMEMXEXT						;
+SND_BTOA_BMEMX400
+
+;	------- 相手側のOFF待ち------
+	MOV.L	#_CPUBTOA_DAT1_ACKCOD,R6	;
+	MOV.W	@R6,R0				;
+	TST	R0,R0
+	TST_BIT_ON SND_BTOA_BMEMXEXT		;相手側ｺｰﾄﾞOFF?  NO
+
+;	-----------------------------
+	MOV.L	#_CPUBX_MEM1_SNDFLG,R1		;
+	MOV.W	@R1,R0				;BIT0:ACTIVE BIT1:OF->ON(ﾃﾞｰﾀｾｯﾄ) BIT2:ON->OF BIT6:
+	TST	#BIT6,R0			;最後のﾃﾞｰﾀだったか?
+	TST_BIT_ON SND_BTOA_BMEMX500		;YES
+
+	AND	#BIT0,R0			;BIT0以外:OFF
+	MOV.W	R0,@R1				;NEXT
+	M_BRA	SND_BTOA_BMEMXEXT		;
+
+
+;	------------- 終了------------
+SND_BTOA_BMEMX500
+	XOR	R0,R0
+	MOV.L	#_CPUBX_MEM1_SNDFLG,R1		;
+	MOV.W	R0,@R1				;
+
+	MOV.L	#_CPUBTOA_DAT1_REQCNT,R6	;
+	MOV.W	R0,@R6				;
+
+	MOV.L	#_CPUBTOA_DAT1_REQKND,R6	;
+	MOV.W	R0,@R6
+
+	MOV.L	#_CPUBTOA_DAT1_REQADR,R6	;
+	MOV.L	R0,@R6				;
+
+	MOV.L	#_CPUBTOA_DAT1_REQCOD,R6	;ﾊﾝﾄﾞｼｪｲｸ
+	MOV.W	R0,@R6				;
+
+	XOR	R0,R0
+	MOV.L	#_CPUBX_MEM1_SNDEVN,R1		;//EVNT BIT0:KIND
+	MOV.W	R0,@R1				;
+
+SND_BTOA_BMEMXEXT
+	SUB_END
+	M_RTS
+
+
+
+;
+;
+;
+;
+;	ANS R7
+_SND_BTOA_BMEM_DSET:
+	SUB_START
+
+	XOR	R7,R7
+
+	MOV.L	#_CPUBX_SEND_MAXCNT,R1		;
+	MOV.L	@R1,R2				;
+
+	MOV.L	#_CPUBX_SEND_NOWCNT,R1		;ﾜｰﾄﾞ個数
+	MOV.L	@R1,R3				;
+	SUB	R3,R2				;
+	CMP/PL	R2				;
+	BT	SND_BTOA_BMEMDSET_100		;
+	XOR	R2,R2				;DATA 無し[0]個でﾊﾝﾄﾞｼｪｲｸ
+	MOV.W	#BIT15,R7			;END
+	M_BRA	SND_BTOA_BMEMDSET_150		;
+
+
+SND_BTOA_BMEMDSET_100:
+	MOV.L	#_CPUBTOA_DAT1_REQADR,R6	;
+	MOV.L	R3,@R6				;前回のﾃﾞｰﾀがTOP+ﾜｰﾄﾞｱﾄﾞﾚｽ
+
+
+	MOV.W	#BIT15,R7			;END
+	MOV.W	#D'128,R4			;BUFF-128WORD
+	CMP/HS	R2,R4				;R4 >= R2
+	BT	SND_BTOA_BMEMDSET_150		;
+	MOV	R4,R2				;LIMIT
+	XOR	R7,R7				;まだ残りがあるよ!
+SND_BTOA_BMEMDSET_150:
+
+	MOV.L	#_CPUBTOA_DAT1_REQCNT,R6	;送信個数
+	MOV.W	R2,@R6				;MAX 128WORD
+
+	MOV.L	#_CPUBX_SEND_NOWCNT,R1		;ﾜｰﾄﾞ個数+送信個数
+	MOV.L	@R1,R3				;
+	ADD	R2,R3				;
+	MOV.L	R3,@R1				;
+
+	MOV.L	#_CPUBX_MEM1_SNDKND,R1		;//KIND
+	MOV.W	@R1,R0				;
+	OR	R7,R0				;
+	MOV.L	#_CPUBTOA_DAT1_REQKND,R6	;種別[BIT15=1:END <-//-> BIT7~BIT0 KIND]
+	MOV.W	R0,@R6				;
+
+
+
+;	---------------------------------------
+	MOV.L	#_CPUBX_SEND_TOPADR,R8		;
+	MOV.L	@R8,R5
+	MOV.L	#_CPUBTOA_DAT1_DATTOP,R6	;
+
+SND_BTOA_BMEMDSET_200LOP:
+
+	TST	R2,R2				;個数=0
+	TST_BIT_OF SND_BTOA_BMEMDSET_300	;終了
+
+	MOV.W	@R5+,R0				;
+	MOV.W	R0,@R6				;
+	ADD	#2,R6				;
+	ADD	#-1,R2				;
+	M_BRA	SND_BTOA_BMEMDSET_200LOP	;
+
+SND_BTOA_BMEMDSET_300:				;
+	MOV.L	R5,@R8				;NEXT-ADRｾｯﾄ
+
+
+
+	SUB_END
+	M_RTS
+
+
+
+

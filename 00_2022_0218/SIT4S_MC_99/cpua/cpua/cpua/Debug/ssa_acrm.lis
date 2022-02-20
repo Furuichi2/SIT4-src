@@ -1,0 +1,572 @@
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:51                                                  PAGE     1
+PROGRAM NAME =
+
+    1                               1     ;//     *******************************************
+    2                               2     ;//     ***             振り子加速              ***
+    3                               3     ;//     *******************************************
+    4                               4     ;//     .SECTION        B,data          ;0C1E0000~
+    5                               5     
+    6                               6             .INCLUDE        "ssa_acrm.ext"          ; //
+    7                               1 I1  ;//     *******************************************
+    8                               2 I1  ;//     ***             振り子加速              ***
+    9                               3 I1  ;//     *******************************************
+   10                               4 I1  
+   11                               5 I1  
+   12                               6 I1  
+   13                               7 I1          .GLOBAL         _ACC_LAST_SPD           ;最大速度から求まる
+   14                               8 I1          .GLOBAL         _ACC_STOP_SPD           ;ステップ速度停止の中で求まる（停止予定の
+                                          行程）
+   15                               9 I1          .GLOBAL         _ACC_STEP_SPD           ;ステップ
+   16                              10 I1  
+   17                              11 I1          .GLOBAL         _ACC_LAST_POINT         ;最大速度から求まる
+   18                              12 I1          .GLOBAL         _ACC_STOP_POINT         ;ステップ速度停止の中で求まる（停止予定の
+                                          行程）
+   19                              13 I1          .GLOBAL         _ACC_STEP_POINT         ;ステップ
+   20                              14 I1  
+   21                              15 I1          .GLOBAL         _ACC_STEP_FLG           ;BIT0:START BIT1:CALC BIT2:LIMIT
+   22                              16 I1          .GLOBAL         _ACC_CTRL_STS1          ;
+   23                              17 I1          .GLOBAL         _ACC_CTRL_STS2          ;
+   24                              18 I1  
+   25                              19 I1          .GLOBAL         _ACC_POS_STEP           ;
+   26                              20 I1          .GLOBAL         _ACC_STR_STEP           ;
+   27                              21 I1  
+   28                              22 I1          .GLOBAL         _ACC_STOP_NUMBER        ;停止に使用するデータ番号=停止ステップ
+   29                              23 I1          .GLOBAL         _ACC_STEP_NUMBER        ;加減速に使用するデータ番号=動作ステップ
+   30                              24 I1          .GLOBAL         _ACC_ANS_ACCDAT         ;(加速または減速すべき　加速度):0変化するﾃ
+                                          ﾞｰﾀがない
+   31                              25 I1  
+   32                              26 I1  
+   33                              27 I1  
+   34                              28 I1  ;       ------------------------------------------
+   35                              29 I1          .GLOBAL         _ACCB_ACCLAT_TIM1       ;最大加減速時間 設定
+   36                              30 I1  
+   37                              31 I1  
+   38                              32 I1  ;
+   39                              33 I1  ;       ・各段に変速テーブル（加速または減速）と停止テーブルが存在する
+   40                              34 I1  ;       ・変速状態（加速中または減速）での停止は、そのテーブルの停止テーブルに従う
+   41                              35 I1  ;       ・停止テーブルは常に増加方向:パルスが必要(パルスでサーチする)
+   42                              36 I1  ;       ・加速テーブルも常に増加方向:パルスは不要(速度でサーチする)
+   43                              37 I1  ;       ・減速テーブルは常に増加方向:パルスは不要(速度でサーチする)
+   44                              38 I1  ;
+   45                              39 I1  
+   46                              40 I1  
+   47                              41 I1  
+   48                              42 I1          .GLOBAL         _ACC_INF1_STEPSP01      ;000%[前状態],050%[設定]
+   49                              43 I1          .GLOBAL         _ACC_INF1_STEPSP02      ;050%[前状態],100%[設定]
+   50                              44 I1          .GLOBAL         _ACC_INF1_STEPSP03      ;100%[前状態],100%[設定](この場合は前の状
+                                          態の加減速をCOPY)
+   51                              45 I1          .GLOBAL         _ACC_INF1_STEPSP04      ;
+   52                              46 I1          .GLOBAL         _ACC_INF1_STEPSP05      ;
+   53                              47 I1          .GLOBAL         _ACC_INF1_STEPSP06      ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:51                                                  PAGE     2
+PROGRAM NAME =
+
+   54                              48 I1          .GLOBAL         _ACC_INF1_STEPSP07      ;
+   55                              49 I1          .GLOBAL         _ACC_INF1_STEPSP08      ;
+   56                              50 I1          .GLOBAL         _ACC_INF1_STEPSP09      ;
+   57                              51 I1          .GLOBAL         _ACC_INF1_STEPSP10      ;
+   58                              52 I1          .GLOBAL         _ACC_INF1_STEPSP11      ;
+   59                              53 I1  
+   60                              54 I1  
+   61                              55 I1                                          ;INFOMAINTION
+   62                              56 I1          .GLOBAL         _ACC_INF1_STEP001       ;//(加速:0/減速:1)
+   63                              57 I1          .GLOBAL         _ACC_INF1_STEP002       ;//
+   64                              58 I1          .GLOBAL         _ACC_INF1_STEP003       ;
+   65                              59 I1          .GLOBAL         _ACC_INF1_STEP004       ;
+   66                              60 I1          .GLOBAL         _ACC_INF1_STEP005       ;
+   67                              61 I1          .GLOBAL         _ACC_INF1_STEP006       ;
+   68                              62 I1          .GLOBAL         _ACC_INF1_STEP007       ;
+   69                              63 I1          .GLOBAL         _ACC_INF1_STEP008       ;
+   70                              64 I1          .GLOBAL         _ACC_INF1_STEP009       ;
+   71                              65 I1          .GLOBAL         _ACC_INF1_STEP010       ;
+   72                              66 I1          .GLOBAL         _ACC_INF1_STEP011       ;
+   73                              67 I1  
+   74                              68 I1  
+   75                              69 I1  
+   76                              70 I1  
+   77                              71 I1  ;       ----------------------------------------------
+   78                              72 I1  ;;;[2013-05-20 前から未使用];   最大速度時の加減速時間(設定値と同じもの：上下限チェック済
+                                          み)
+   79                              73 I1  ;;;[2013-05-20 前から未使用]    .GLOBAL         _ACC_BASEDAT_ACCTM      ;加減速時間
+   80                              74 I1  ;;;[2013-05-20 前から未使用]
+   81                              75 I1  ;;;[2013-05-20 前から未使用];   最大速度時の減速速度
+   82                              76 I1  ;;;[2013-05-20 前から未使用]    .GLOBAL         _ACC_BASEDAT_STPVTBL    ;//
+   83                              77 I1  ;;;[2013-05-20 前から未使用]
+   84                              78 I1  ;;;[2013-05-20 前から未使用];   最大速度時の減速パルス
+   85                              79 I1  ;;;[2013-05-20 前から未使用]    .GLOBAL         _ACC_BASEDAT_STPPTBL    ;//
+   86                              80 I1  
+   87                              81 I1  
+   88                              82 I1  ;
+   89                              83 I1  ;       ---------------------------------------------------
+   90                              84 I1  ;各段可変速用の加減速速度
+   91                              85 I1  
+   92                              86 I1          .GLOBAL         _ACC_STEP001_VTBL       ;//
+   93                              87 I1          .GLOBAL         _ACC_STEP002_VTBL       ;//
+   94                              88 I1          .GLOBAL         _ACC_STEP003_VTBL       ;//
+   95                              89 I1          .GLOBAL         _ACC_STEP004_VTBL       ;//
+   96                              90 I1          .GLOBAL         _ACC_STEP005_VTBL       ;//
+   97                              91 I1          .GLOBAL         _ACC_STEP006_VTBL       ;//
+   98                              92 I1          .GLOBAL         _ACC_STEP007_VTBL       ;//
+   99                              93 I1          .GLOBAL         _ACC_STEP008_VTBL       ;//
+  100                              94 I1          .GLOBAL         _ACC_STEP009_VTBL       ;//
+  101                              95 I1          .GLOBAL         _ACC_STEP010_VTBL       ;//
+  102                              96 I1          .GLOBAL         _ACC_STEP011_VTBL       ;//
+  103                              97 I1  
+  104                              98 I1  
+  105                              99 I1  ;       ---------------------------------------------------
+  106                             100 I1  ;各段可変速用の加減速時間
+  107                             101 I1  
+  108                             102 I1          .GLOBAL         _ACC_STEP001_ACTM       ;
+  109                             103 I1          .GLOBAL         _ACC_STEP002_ACTM       ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:51                                                  PAGE     3
+PROGRAM NAME =
+
+  110                             104 I1          .GLOBAL         _ACC_STEP003_ACTM       ;
+  111                             105 I1          .GLOBAL         _ACC_STEP004_ACTM       ;
+  112                             106 I1          .GLOBAL         _ACC_STEP005_ACTM       ;
+  113                             107 I1          .GLOBAL         _ACC_STEP006_ACTM       ;
+  114                             108 I1          .GLOBAL         _ACC_STEP007_ACTM       ;
+  115                             109 I1          .GLOBAL         _ACC_STEP008_ACTM       ;
+  116                             110 I1          .GLOBAL         _ACC_STEP009_ACTM       ;
+  117                             111 I1          .GLOBAL         _ACC_STEP010_ACTM       ;
+  118                             112 I1          .GLOBAL         _ACC_STEP011_ACTM       ;
+  119                             113 I1  
+  120                             114 I1  ;       ================================================
+  121                             115 I1  ;
+  122                             116 I1  ;各段停止用の減速速度
+  123                             117 I1  ;                                       格段の停止時
+  124                             118 I1  
+  125                             119 I1          .GLOBAL         _ACC_STOP001_VTBL       ;//
+  126                             120 I1          .GLOBAL         _ACC_STOP002_VTBL       ;//
+  127                             121 I1          .GLOBAL         _ACC_STOP003_VTBL       ;//
+  128                             122 I1          .GLOBAL         _ACC_STOP004_VTBL       ;//
+  129                             123 I1          .GLOBAL         _ACC_STOP005_VTBL       ;//
+  130                             124 I1          .GLOBAL         _ACC_STOP006_VTBL       ;//
+  131                             125 I1          .GLOBAL         _ACC_STOP007_VTBL       ;//
+  132                             126 I1          .GLOBAL         _ACC_STOP008_VTBL       ;//
+  133                             127 I1          .GLOBAL         _ACC_STOP009_VTBL       ;//
+  134                             128 I1          .GLOBAL         _ACC_STOP010_VTBL       ;//
+  135                             129 I1          .GLOBAL         _ACC_STOP011_VTBL       ;//
+  136                             130 I1  
+  137                             131 I1  ;各段停止用の減速パルス
+  138                             132 I1  
+  139                             133 I1          .GLOBAL         _ACC_STOP001_PTBL       ;//
+  140                             134 I1          .GLOBAL         _ACC_STOP002_PTBL       ;//
+  141                             135 I1          .GLOBAL         _ACC_STOP003_PTBL       ;//
+  142                             136 I1          .GLOBAL         _ACC_STOP004_PTBL       ;//
+  143                             137 I1          .GLOBAL         _ACC_STOP005_PTBL       ;//
+  144                             138 I1          .GLOBAL         _ACC_STOP006_PTBL       ;//
+  145                             139 I1          .GLOBAL         _ACC_STOP007_PTBL       ;//
+  146                             140 I1          .GLOBAL         _ACC_STOP008_PTBL       ;//
+  147                             141 I1          .GLOBAL         _ACC_STOP009_PTBL       ;//
+  148                             142 I1          .GLOBAL         _ACC_STOP010_PTBL       ;//
+  149                             143 I1          .GLOBAL         _ACC_STOP011_PTBL       ;//
+  150                             144 I1  
+  151                             145 I1  
+  152                             146 I1          .GLOBAL         _ACC_STOP001_ACTM       ;
+  153                             147 I1          .GLOBAL         _ACC_STOP002_ACTM       ;
+  154                             148 I1          .GLOBAL         _ACC_STOP003_ACTM       ;
+  155                             149 I1          .GLOBAL         _ACC_STOP004_ACTM       ;
+  156                             150 I1          .GLOBAL         _ACC_STOP005_ACTM       ;
+  157                             151 I1          .GLOBAL         _ACC_STOP006_ACTM       ;
+  158                             152 I1          .GLOBAL         _ACC_STOP007_ACTM       ;
+  159                             153 I1          .GLOBAL         _ACC_STOP008_ACTM       ;
+  160                             154 I1          .GLOBAL         _ACC_STOP009_ACTM       ;
+  161                             155 I1          .GLOBAL         _ACC_STOP010_ACTM       ;
+  162                             156 I1          .GLOBAL         _ACC_STOP011_ACTM       ;
+  163                             157 I1  
+  164                             158 I1  ;       *******************************************
+  165                             159 I1  ;       ***                                     ***
+  166                             160 I1  ;       ***     加速度パターン入れ替え          ***
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:51                                                  PAGE     4
+PROGRAM NAME =
+
+  167                             161 I1  ;       ***                                     ***
+  168                             162 I1  ;       *******************************************
+  169                             163 I1          .GLOBAL         _ACC_IN_TBL_TIM         ;255msec時間 ループ数は256
+  170                             164 I1          .GLOBAL         _ACC_IN_TBLUSE          ;
+  171                             165 I1  
+  172                             166 I1  
+  173                             167 I1  ;       -----------------------------------
+  174                             168 I1  ;       ---                             ---
+  175                             169 I1  ;       ---     ｵｰﾊﾞﾗｲﾄﾞ対策            ---
+  176                             170 I1  ;       ---                             ---
+  177                             171 I1  ;       -----------------------------------
+  178                             172 I1          .GLOBAL         _ACC_REST_ABS_PLSX      ;//比率倍(CPUAのみ使用)
+  179                             173 I1          .GLOBAL         _ACC_CALC_SPDX          ;
+  180                             174 I1          .GLOBAL         _ACC_CALC_SPD           ;
+  181                             175 I1          .GLOBAL         _ACC_POSCTL_SV_SPDX             ;                               ;･
+                                          ････
+  182                             176 I1          .GLOBAL         _ACC_POSCTL_RL_SPDX             ;
+  183                             177 I1          .GLOBAL         _ACC_POSCTL_SV_UP_ACCX          ;
+  184                             178 I1          .GLOBAL         _ACC_POSCTL_SV_DN_ACCX          ;
+  185                             179 I1  
+  186                             180 I1  
+  187                             181 I1  ;//     -----------------------------------
+  188                             182 I1  ;//     ---     2013-02-05              ---
+  189                             183 I1  ;//     -----------------------------------
+  190                             184 I1          .GLOBAL _SVX_OBJ_SPD_OLDTOP;
+  191                             185 I1          .GLOBAL _SVX_UPAREA_SPD0OLD;
+  192                             186 I1  
+  193                               7     
+  194 00000000                      8             .SECTION        Bwkram1,data            ;0C1E0000~
+  195                               9     
+  196 00000000                     10             .ALIGN  4                                               ;
+  197 00000000 00000004            11     _ACC_LAST_SPD           .SRES   4       ;最大速度から求まる
+  198 00000004 00000004            12     _ACC_STOP_SPD           .SRES   4       ;ステップ速度停止の中で求まる（停止予定の行程）
+  199 00000008 00000004            13     _ACC_STEP_SPD           .SRES   4       ;ステップ
+  200                              14     
+  201                              15     
+  202 0000000C 00000002            16     _ACC_LAST_POINT         .SRES   2       ;最大速度から求まる
+  203 0000000E 00000002            17     _ACC_STOP_POINT         .SRES   2       ;ステップ速度停止の中で求まる（停止予定の行程）
+  204 00000010 00000002            18     _ACC_STEP_POINT         .SRES   2       ;ステップ
+  205 00000012 00000002            19     _ACC_STEP_FLG           .SRES   2       ;BIT0:START BIT1:CALC BIT2:LIMIT
+  206 00000014 00000002            20     _ACC_CTRL_STS1          .SRES   2       ;
+  207 00000016 00000002            21     _ACC_CTRL_STS2          .SRES   2       ;
+  208                              22     
+  209 00000018 00000002            23     _ACC_STOP_NUMBER        .SRES   2       ;停止に使用するデータ番号=停止ステップ
+  210 0000001A 00000002            24     _ACC_STEP_NUMBER        .SRES   2       ;加減速に使用するデータ番号=動作ステップ
+  211                              25     
+  212 0000001C 00000002            26     _ACC_POS_STEP           .SRES   2       ;
+  213 0000001E 00000002            27     _ACC_STR_STEP           .SRES   2       ;
+  214                              28     
+  215 00000020                     29             .ALIGN  4                       ;
+  216 00000020 00000004            30     _ACC_ANS_ACCDAT         .SRES   4       ;(加速または減速すべき　加速度):0変化するﾃﾞｰﾀがな
+                                          い
+  217                              31     
+  218                              32     
+  219                              33     ;       ----------------------------------------------------
+  220 00000024 00000002            34     _ACCB_ACCLAT_TIM1       .SRES   2       ;ふりこで使用する最大加減速時間 設定
+  221                              35     
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:51                                                  PAGE     5
+PROGRAM NAME =
+
+  222                              36     ;       ---------------------------------------------------
+  223                              37     ;
+  224                              38     ;       ・各段に変速テーブル（加速または減速）と停止テーブルが存在する
+  225                              39     ;       ・変速状態（加速中または減速）での停止は、そのテーブルの停止テーブルに従う
+  226                              40     ;       ・停止テーブルは常に増加方向:パルスが必要(パルスでサーチする)
+  227                              41     ;       ・加速テーブルも常に増加方向:パルスは不要(速度でサーチする)
+  228                              42     ;       ・減速テーブルは常に増加方向:パルスは不要(速度でサーチする)
+  229                              43     ;
+  230                              44     
+  231                              45     
+  232 00000028                     46             .ALIGN  4                                               ;
+  233                              47                                             ;INFOMAINTION
+  234 00000028 00000002            48     _ACC_INF1_STEP001       .SRES   2       ;//BIT2=[加速:0/減速:1] BIT1=[]   BIT0=0(停止) =1(
+                                          連続)
+  235 0000002A 00000002            49     _ACC_INF1_STEP002       .SRES   2       ;//
+  236 0000002C 00000002            50     _ACC_INF1_STEP003       .SRES   2       ;
+  237 0000002E 00000002            51     _ACC_INF1_STEP004       .SRES   2       ;
+  238 00000030 00000002            52     _ACC_INF1_STEP005       .SRES   2       ;
+  239 00000032 00000002            53     _ACC_INF1_STEP006       .SRES   2       ;
+  240 00000034 00000002            54     _ACC_INF1_STEP007       .SRES   2       ;
+  241 00000036 00000002            55     _ACC_INF1_STEP008       .SRES   2       ;
+  242 00000038 00000002            56     _ACC_INF1_STEP009       .SRES   2       ;
+  243 0000003A 00000002            57     _ACC_INF1_STEP010       .SRES   2       ;
+  244 0000003C 00000002            58     _ACC_INF1_STEP011       .SRES   2       ;
+  245                              59     
+  246                              60     
+  247 00000040                     61             .ALIGN  4                                               ;
+  248 00000040 00000004            62     _ACC_INF1_STEPSP01      .SRES   2*2     ;000%[前状態],050%[設定]
+  249 00000044 00000004            63     _ACC_INF1_STEPSP02      .SRES   2*2     ;050%[前状態],100%[設定]
+  250 00000048 00000004            64     _ACC_INF1_STEPSP03      .SRES   2*2     ;100%[前状態],100%[設定](この場合は前の状態の加減
+                                          速をCOPY)
+  251 0000004C 00000004            65     _ACC_INF1_STEPSP04      .SRES   2*2     ;
+  252 00000050 00000004            66     _ACC_INF1_STEPSP05      .SRES   2*2     ;
+  253 00000054 00000004            67     _ACC_INF1_STEPSP06      .SRES   2*2     ;
+  254 00000058 00000004            68     _ACC_INF1_STEPSP07      .SRES   2*2     ;
+  255 0000005C 00000004            69     _ACC_INF1_STEPSP08      .SRES   2*2     ;
+  256 00000060 00000004            70     _ACC_INF1_STEPSP09      .SRES   2*2     ;
+  257 00000064 00000004            71     _ACC_INF1_STEPSP10      .SRES   2*2     ;
+  258 00000068 00000004            72     _ACC_INF1_STEPSP11      .SRES   2*2     ;
+  259                              73     
+  260                              74     
+  261                              75     
+  262                              76     
+  263                              77     
+  264                              78     
+  265                              79     ;       ----------------------------------------------
+  266                              80     ;       最大速度時の加減速時間(設定値と同じもの：上下限チェック済み)
+  267                              81     ;;;[2013-05-20 前から未使用]_ACC_BASEDAT_ACCTM  .SRES   2       ;加減速時間
+  268                              82     ;;;[2013-05-20 前から未使用];最大速度時の減速速度
+  269                              83     ;;;[2013-05-20 前から未使用]
+  270                              84     ;;;[2013-05-20 前から未使用]_ACC_BASEDAT_STPVTBL        .SRES   2*1024  ;//
+  271                              85     ;;;[2013-05-20 前から未使用];最大速度時の減速パルス
+  272                              86     ;;;[2013-05-20 前から未使用]    .ALIGN  4                                               ;
+  273                              87     ;;;[2013-05-20 前から未使用]_ACC_BASEDAT_STPPTBL        .SRES   4*1024  ;//
+  274                              88     
+  275                              89     
+  276                              90     ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:51                                                  PAGE     6
+PROGRAM NAME =
+
+  277                              91     ;       ---------------------------------------------------
+  278                              92     ;各段可変速用の加減速速度
+  279 0000006C                     93             .ALIGN  4                                               ;
+  280 0000006C 00000800            94     _ACC_STEP001_VTBL       .SRES   2*1024  ;//
+  281 0000086C 00000800            95     _ACC_STEP002_VTBL       .SRES   2*1024  ;//
+  282 0000106C 00000800            96     _ACC_STEP003_VTBL       .SRES   2*1024  ;//
+  283 0000186C 00000800            97     _ACC_STEP004_VTBL       .SRES   2*1024  ;//
+  284 0000206C 00000800            98     _ACC_STEP005_VTBL       .SRES   2*1024  ;//
+  285 0000286C 00000800            99     _ACC_STEP006_VTBL       .SRES   2*1024  ;//
+  286 0000306C 00000800           100     _ACC_STEP007_VTBL       .SRES   2*1024  ;//
+  287 0000386C 00000800           101     _ACC_STEP008_VTBL       .SRES   2*1024  ;//
+  288 0000406C 00000800           102     _ACC_STEP009_VTBL       .SRES   2*1024  ;//
+  289 0000486C 00000800           103     _ACC_STEP010_VTBL       .SRES   2*1024  ;//
+  290 0000506C 00000800           104     _ACC_STEP011_VTBL       .SRES   2*1024  ;//
+  291                             105     
+  292                             106     
+  293                             107     ;       ---------------------------------------------------
+  294                             108     ;各段可変速用の加減速時間
+  295 0000586C                    109             .ALIGN  4       ;
+  296 0000586C 00000002           110     _ACC_STEPDUM_ACTM       .SRES   2       ;2013-05-20 (V1=0の設定ができないので参照されるこ
+                                          とはない)
+  297                             111                                             ;
+  298 0000586E 00000002           112     _ACC_STEP001_ACTM       .SRES   2       ;
+  299 00005870 00000002           113     _ACC_STEP002_ACTM       .SRES   2       ;
+  300 00005872 00000002           114     _ACC_STEP003_ACTM       .SRES   2       ;
+  301 00005874 00000002           115     _ACC_STEP004_ACTM       .SRES   2       ;
+  302 00005876 00000002           116     _ACC_STEP005_ACTM       .SRES   2       ;
+  303 00005878 00000002           117     _ACC_STEP006_ACTM       .SRES   2       ;
+  304 0000587A 00000002           118     _ACC_STEP007_ACTM       .SRES   2       ;
+  305 0000587C 00000002           119     _ACC_STEP008_ACTM       .SRES   2       ;
+  306 0000587E 00000002           120     _ACC_STEP009_ACTM       .SRES   2       ;
+  307 00005880 00000002           121     _ACC_STEP010_ACTM       .SRES   2       ;
+  308 00005882 00000002           122     _ACC_STEP011_ACTM       .SRES   2       ;
+  309                             123     
+  310                             124     ;       ================================================
+  311                             125     ;
+  312                             126     ;各段停止用の減速速度
+  313                             127     ;                                       格段の停止時
+  314 00005884                    128             .ALIGN  4                                               ;
+  315 00005884 00000800           129     _ACC_STOP001_VTBL       .SRES   2*1024  ;//
+  316 00006084 00000800           130     _ACC_STOP002_VTBL       .SRES   2*1024  ;//
+  317 00006884 00000800           131     _ACC_STOP003_VTBL       .SRES   2*1024  ;//
+  318 00007084 00000800           132     _ACC_STOP004_VTBL       .SRES   2*1024  ;//
+  319 00007884 00000800           133     _ACC_STOP005_VTBL       .SRES   2*1024  ;//
+  320 00008084 00000800           134     _ACC_STOP006_VTBL       .SRES   2*1024  ;//
+  321 00008884 00000800           135     _ACC_STOP007_VTBL       .SRES   2*1024  ;//
+  322 00009084 00000800           136     _ACC_STOP008_VTBL       .SRES   2*1024  ;//
+  323 00009884 00000800           137     _ACC_STOP009_VTBL       .SRES   2*1024  ;//
+  324 0000A084 00000800           138     _ACC_STOP010_VTBL       .SRES   2*1024  ;//
+  325 0000A884 00000800           139     _ACC_STOP011_VTBL       .SRES   2*1024  ;//
+  326                             140     
+  327                             141     ;各段停止用の減速パルス
+  328 0000B084                    142             .ALIGN  4                                               ;
+  329 0000B084 00001000           143     _ACC_STOP001_PTBL       .SRES   4*1024  ;//
+  330 0000C084 00001000           144     _ACC_STOP002_PTBL       .SRES   4*1024  ;//
+  331 0000D084 00001000           145     _ACC_STOP003_PTBL       .SRES   4*1024  ;//
+  332 0000E084 00001000           146     _ACC_STOP004_PTBL       .SRES   4*1024  ;//
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:51                                                  PAGE     7
+PROGRAM NAME =
+
+  333 0000F084 00001000           147     _ACC_STOP005_PTBL       .SRES   4*1024  ;//
+  334 00010084 00001000           148     _ACC_STOP006_PTBL       .SRES   4*1024  ;//
+  335 00011084 00001000           149     _ACC_STOP007_PTBL       .SRES   4*1024  ;//
+  336 00012084 00001000           150     _ACC_STOP008_PTBL       .SRES   4*1024  ;//
+  337 00013084 00001000           151     _ACC_STOP009_PTBL       .SRES   4*1024  ;//
+  338 00014084 00001000           152     _ACC_STOP010_PTBL       .SRES   4*1024  ;//
+  339 00015084 00001000           153     _ACC_STOP011_PTBL       .SRES   4*1024  ;//
+  340                             154     
+  341 00016084                    155             .ALIGN  4       ;
+  342 00016084 00000002           156     _ACC_STOP001_ACTM       .SRES   2       ;
+  343 00016086 00000002           157     _ACC_STOP002_ACTM       .SRES   2       ;
+  344 00016088 00000002           158     _ACC_STOP003_ACTM       .SRES   2       ;
+  345 0001608A 00000002           159     _ACC_STOP004_ACTM       .SRES   2       ;
+  346 0001608C 00000002           160     _ACC_STOP005_ACTM       .SRES   2       ;
+  347 0001608E 00000002           161     _ACC_STOP006_ACTM       .SRES   2       ;
+  348 00016090 00000002           162     _ACC_STOP007_ACTM       .SRES   2       ;
+  349 00016092 00000002           163     _ACC_STOP008_ACTM       .SRES   2       ;
+  350 00016094 00000002           164     _ACC_STOP009_ACTM       .SRES   2       ;
+  351 00016096 00000002           165     _ACC_STOP010_ACTM       .SRES   2       ;
+  352 00016098 00000002           166     _ACC_STOP011_ACTM       .SRES   2       ;
+  353                             167     
+  354                             168     
+  355                             169     
+  356                             170     ;       *******************************************
+  357                             171     ;       ***                                     ***
+  358                             172     ;       ***     加速度パターン入れ替え          ***
+  359                             173     ;       ***                                     ***
+  360                             174     ;       *******************************************
+  361 0001609C                    175             .ALIGN  4
+  362 0001609C 00000002           176     _ACC_IN_TBL_TIM         .SRES   2               ;255msec時間 ループ数は256
+  363 0001609E 00000800           177     _ACC_IN_TBLUSE          .SRES   2*1024          ;
+  364                             178     
+  365                             179     ;       *******************************************
+  366                             180     ;       ***                                     ***
+  367                             181     ;       ***     最大速度入れ替え                ***
+  368                             182     ;       ***                                     ***
+  369                             183     ;       *******************************************
+  370 000168A0                    184             .ALIGN  4
+  371 000168A0 00000004           185     _TBLCALC_ACC_MAXRPM     .SRES   4               ;ﾃｰﾌﾞﾙから算出される最大回転数
+  372 000168A4 00000004           186     _TBLCALC_ACC_MAXTIM     .SRES   4               ;ﾃｰﾌﾞﾙから算出される最大加速時間
+  373                             187     
+  374                             188     ;       -------------------------------------------
+  375                             189     ;       ---                                     ---
+  376                             190     ;       ---     ｵｰﾊﾞﾗｲﾄﾞ対策                    ---
+  377                             191     ;       ---                                     ---
+  378                             192     ;       -------------------------------------------
+  379 000168A8                    193             .ALIGN  4                                               ;
+  380 000168A8 00000008           194     _ACC_REST_ABS_PLSX              .SRES   8       ;//比率倍(CPUAのみ使用)
+  381 000168B0 00000004           195     _ACC_CALC_SPDX                  .SRES   4       ;
+  382 000168B4 00000004           196     _ACC_CALC_SPD                   .SRES   4       ;
+  383 000168B8 00000004           197     _ACC_POSCTL_SV_SPDX             .SRES   4       ;                               ;･････
+  384 000168BC 00000004           198     _ACC_POSCTL_RL_SPDX             .SRES   4       ;
+  385 000168C0 00000004           199     _ACC_POSCTL_SV_UP_ACCX          .SRES   4       ;
+  386 000168C4 00000004           200     _ACC_POSCTL_SV_DN_ACCX          .SRES   4       ;
+  387                             201     
+  388                             202     
+  389                             203     
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:51                                                  PAGE     8
+PROGRAM NAME =
+
+  390                             204     
+  391                             205     
+  392                             206     
+  393                             207     
+  394                             208     
+  395                             209     
+  396                             210     
+  397                             211     
+  398                             212     ;//     -----------------------------------
+  399                             213     ;//     ---     2013-02-05              ---
+  400                             214     ;//     -----------------------------------
+  401 000168C8 00000028           215     _SVX_OBJ_SPD_OLDTOP             .SRES   2*20    ;
+  402 000168F0 00000002           216     _SVX_UPAREA_SPD0OLD             .SRES   2       ;
+  403                             217     
+  404                             218     
+  405                             219     
+  406                             220     
+  407                             221     
+  408                             222     
+  409                             223     
+  410                             224             .END
+  *****TOTAL ERRORS       0
+  *****TOTAL WARNINGS     0
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:51                                                  PAGE     9
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+Bwkram1                          Bwkram1  SCT  00000000    194*
+_ACCB_ACCLAT_TIM1                Bwkram1  EXPT 00000024     35   220*
+_ACC_ANS_ACCDAT                  Bwkram1  EXPT 00000020     30   216*
+_ACC_CALC_SPD                    Bwkram1  EXPT 000168B4    180   382*
+_ACC_CALC_SPDX                   Bwkram1  EXPT 000168B0    179   381*
+_ACC_CTRL_STS1                   Bwkram1  EXPT 00000014     22   206*
+_ACC_CTRL_STS2                   Bwkram1  EXPT 00000016     23   207*
+_ACC_INF1_STEP001                Bwkram1  EXPT 00000028     62   234*
+_ACC_INF1_STEP002                Bwkram1  EXPT 0000002A     63   235*
+_ACC_INF1_STEP003                Bwkram1  EXPT 0000002C     64   236*
+_ACC_INF1_STEP004                Bwkram1  EXPT 0000002E     65   237*
+_ACC_INF1_STEP005                Bwkram1  EXPT 00000030     66   238*
+_ACC_INF1_STEP006                Bwkram1  EXPT 00000032     67   239*
+_ACC_INF1_STEP007                Bwkram1  EXPT 00000034     68   240*
+_ACC_INF1_STEP008                Bwkram1  EXPT 00000036     69   241*
+_ACC_INF1_STEP009                Bwkram1  EXPT 00000038     70   242*
+_ACC_INF1_STEP010                Bwkram1  EXPT 0000003A     71   243*
+_ACC_INF1_STEP011                Bwkram1  EXPT 0000003C     72   244*
+_ACC_INF1_STEPSP01               Bwkram1  EXPT 00000040     48   248*
+_ACC_INF1_STEPSP02               Bwkram1  EXPT 00000044     49   249*
+_ACC_INF1_STEPSP03               Bwkram1  EXPT 00000048     50   250*
+_ACC_INF1_STEPSP04               Bwkram1  EXPT 0000004C     51   251*
+_ACC_INF1_STEPSP05               Bwkram1  EXPT 00000050     52   252*
+_ACC_INF1_STEPSP06               Bwkram1  EXPT 00000054     53   253*
+_ACC_INF1_STEPSP07               Bwkram1  EXPT 00000058     54   254*
+_ACC_INF1_STEPSP08               Bwkram1  EXPT 0000005C     55   255*
+_ACC_INF1_STEPSP09               Bwkram1  EXPT 00000060     56   256*
+_ACC_INF1_STEPSP10               Bwkram1  EXPT 00000064     57   257*
+_ACC_INF1_STEPSP11               Bwkram1  EXPT 00000068     58   258*
+_ACC_IN_TBLUSE                   Bwkram1  EXPT 0001609E    170   363*
+_ACC_IN_TBL_TIM                  Bwkram1  EXPT 0001609C    169   362*
+_ACC_LAST_POINT                  Bwkram1  EXPT 0000000C     17   202*
+_ACC_LAST_SPD                    Bwkram1  EXPT 00000000     13   197*
+_ACC_POSCTL_RL_SPDX              Bwkram1  EXPT 000168BC    182   384*
+_ACC_POSCTL_SV_DN_ACCX           Bwkram1  EXPT 000168C4    184   386*
+_ACC_POSCTL_SV_SPDX              Bwkram1  EXPT 000168B8    181   383*
+_ACC_POSCTL_SV_UP_ACCX           Bwkram1  EXPT 000168C0    183   385*
+_ACC_POS_STEP                    Bwkram1  EXPT 0000001C     25   212*
+_ACC_REST_ABS_PLSX               Bwkram1  EXPT 000168A8    178   380*
+_ACC_STEP001_ACTM                Bwkram1  EXPT 0000586E    108   298*
+_ACC_STEP001_VTBL                Bwkram1  EXPT 0000006C     92   280*
+_ACC_STEP002_ACTM                Bwkram1  EXPT 00005870    109   299*
+_ACC_STEP002_VTBL                Bwkram1  EXPT 0000086C     93   281*
+_ACC_STEP003_ACTM                Bwkram1  EXPT 00005872    110   300*
+_ACC_STEP003_VTBL                Bwkram1  EXPT 0000106C     94   282*
+_ACC_STEP004_ACTM                Bwkram1  EXPT 00005874    111   301*
+_ACC_STEP004_VTBL                Bwkram1  EXPT 0000186C     95   283*
+_ACC_STEP005_ACTM                Bwkram1  EXPT 00005876    112   302*
+_ACC_STEP005_VTBL                Bwkram1  EXPT 0000206C     96   284*
+_ACC_STEP006_ACTM                Bwkram1  EXPT 00005878    113   303*
+_ACC_STEP006_VTBL                Bwkram1  EXPT 0000286C     97   285*
+_ACC_STEP007_ACTM                Bwkram1  EXPT 0000587A    114   304*
+_ACC_STEP007_VTBL                Bwkram1  EXPT 0000306C     98   286*
+_ACC_STEP008_ACTM                Bwkram1  EXPT 0000587C    115   305*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:51                                                  PAGE    10
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_ACC_STEP008_VTBL                Bwkram1  EXPT 0000386C     99   287*
+_ACC_STEP009_ACTM                Bwkram1  EXPT 0000587E    116   306*
+_ACC_STEP009_VTBL                Bwkram1  EXPT 0000406C    100   288*
+_ACC_STEP010_ACTM                Bwkram1  EXPT 00005880    117   307*
+_ACC_STEP010_VTBL                Bwkram1  EXPT 0000486C    101   289*
+_ACC_STEP011_ACTM                Bwkram1  EXPT 00005882    118   308*
+_ACC_STEP011_VTBL                Bwkram1  EXPT 0000506C    102   290*
+_ACC_STEPDUM_ACTM                Bwkram1       0000586C    296*
+_ACC_STEP_FLG                    Bwkram1  EXPT 00000012     21   205*
+_ACC_STEP_NUMBER                 Bwkram1  EXPT 0000001A     29   210*
+_ACC_STEP_POINT                  Bwkram1  EXPT 00000010     19   204*
+_ACC_STEP_SPD                    Bwkram1  EXPT 00000008     15   199*
+_ACC_STOP001_ACTM                Bwkram1  EXPT 00016084    152   342*
+_ACC_STOP001_PTBL                Bwkram1  EXPT 0000B084    139   329*
+_ACC_STOP001_VTBL                Bwkram1  EXPT 00005884    125   315*
+_ACC_STOP002_ACTM                Bwkram1  EXPT 00016086    153   343*
+_ACC_STOP002_PTBL                Bwkram1  EXPT 0000C084    140   330*
+_ACC_STOP002_VTBL                Bwkram1  EXPT 00006084    126   316*
+_ACC_STOP003_ACTM                Bwkram1  EXPT 00016088    154   344*
+_ACC_STOP003_PTBL                Bwkram1  EXPT 0000D084    141   331*
+_ACC_STOP003_VTBL                Bwkram1  EXPT 00006884    127   317*
+_ACC_STOP004_ACTM                Bwkram1  EXPT 0001608A    155   345*
+_ACC_STOP004_PTBL                Bwkram1  EXPT 0000E084    142   332*
+_ACC_STOP004_VTBL                Bwkram1  EXPT 00007084    128   318*
+_ACC_STOP005_ACTM                Bwkram1  EXPT 0001608C    156   346*
+_ACC_STOP005_PTBL                Bwkram1  EXPT 0000F084    143   333*
+_ACC_STOP005_VTBL                Bwkram1  EXPT 00007884    129   319*
+_ACC_STOP006_ACTM                Bwkram1  EXPT 0001608E    157   347*
+_ACC_STOP006_PTBL                Bwkram1  EXPT 00010084    144   334*
+_ACC_STOP006_VTBL                Bwkram1  EXPT 00008084    130   320*
+_ACC_STOP007_ACTM                Bwkram1  EXPT 00016090    158   348*
+_ACC_STOP007_PTBL                Bwkram1  EXPT 00011084    145   335*
+_ACC_STOP007_VTBL                Bwkram1  EXPT 00008884    131   321*
+_ACC_STOP008_ACTM                Bwkram1  EXPT 00016092    159   349*
+_ACC_STOP008_PTBL                Bwkram1  EXPT 00012084    146   336*
+_ACC_STOP008_VTBL                Bwkram1  EXPT 00009084    132   322*
+_ACC_STOP009_ACTM                Bwkram1  EXPT 00016094    160   350*
+_ACC_STOP009_PTBL                Bwkram1  EXPT 00013084    147   337*
+_ACC_STOP009_VTBL                Bwkram1  EXPT 00009884    133   323*
+_ACC_STOP010_ACTM                Bwkram1  EXPT 00016096    161   351*
+_ACC_STOP010_PTBL                Bwkram1  EXPT 00014084    148   338*
+_ACC_STOP010_VTBL                Bwkram1  EXPT 0000A084    134   324*
+_ACC_STOP011_ACTM                Bwkram1  EXPT 00016098    162   352*
+_ACC_STOP011_PTBL                Bwkram1  EXPT 00015084    149   339*
+_ACC_STOP011_VTBL                Bwkram1  EXPT 0000A884    135   325*
+_ACC_STOP_NUMBER                 Bwkram1  EXPT 00000018     28   209*
+_ACC_STOP_POINT                  Bwkram1  EXPT 0000000E     18   203*
+_ACC_STOP_SPD                    Bwkram1  EXPT 00000004     14   198*
+_ACC_STR_STEP                    Bwkram1  EXPT 0000001E     26   213*
+_SVX_OBJ_SPD_OLDTOP              Bwkram1  EXPT 000168C8    190   401*
+_SVX_UPAREA_SPD0OLD              Bwkram1  EXPT 000168F0    191   402*
+_TBLCALC_ACC_MAXRPM              Bwkram1       000168A0    371*
+_TBLCALC_ACC_MAXTIM              Bwkram1       000168A4    372*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:51                                                  PAGE    11
+
+*** SECTION DATA LIST
+
+SECTION                          ATTRIBUTE    SIZE             START
+
+Bwkram1                          REL-DATA    0000168F2        

@@ -1,0 +1,677 @@
+;	***************************************************
+;	***						***
+;	***						***
+;	***	シーケンスコード変換ソフト		***
+;	***						***
+;	***						***
+;	***************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"		; EQU
+	.include	"ssa_ver1.equ"
+	.INCLUDE	"sh7750rg.ext"		; 
+	.INCLUDE	"ssa_swrm.ext"		; 
+	.INCLUDE	"shn_cmd1.mac"		; 
+	.INCLUDE	"ssa_wram.ext"		; 
+	.INCLUDE	"ssa_seq1.ext"		; 
+;;	.INCLUDE	"ssa_seq1.equ"		; 
+	.INCLUDE	"dp_cpuab.ext"		; 
+	.INCLUDE	"dp_cpud.ext"		; //[2013-11-29 MC]
+
+	.LIST	ON
+	.INCLUDE	"ssa_seq1.equ"		; 
+
+
+	.SECTION	P,CODE			;
+
+;	-----------------------------------------------
+_GAMN_SEQ_TOP	.DEFINE		"_SEQ_DP_TOP"	;
+_REAL_SEQ_TOP	.DEFINE		"_SEQAB_DP_TOP"	;実I/O領域
+;	-----------------------------------------------
+
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 PROGRAM	***
+;	//	***********************************
+	.IMPORT	_REMOTE_INDT_READ		; リモート入力読み込み
+	.IMPORT	_REMOTE_OUTDT_STORE		; りモート出力書き込み
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 MEMORY,HARD	***
+;	//	***********************************
+
+;	//	***********************************
+;	//	***	PUBLIC 宣言 PROGRAM	***
+;	//	***********************************
+
+	.EXPORT	_SEQ_INIT
+	.EXPORT	_SEQ_RUN_MAIN
+
+	.EXPORT	_REMOTE_INIT_OUTDT_SET
+
+	.EXPORT	_KEEP_RY_MOVE_HOJMEM	;KEEP(SQ544)-->HOJO MEMORY SQ544
+	.EXPORT	_SQ_CARD_KEEP_RY_OUT	;HOJMEM-->DP-->KEEP
+
+
+
+;	*******************************************
+;	***					***
+;	***		ﾌﾞﾛｯｸ転送		***
+;	***					***
+;	*******************************************
+;	IN(DPRAM1)-->SEQ-WORK,DPRAM2
+;	SEQ-ROWK  -->DPRAM1,DPRAM2
+;;	MEM_WORD_BLOCK_MOV1	SRC_ADR=_SEQ_DP_TOP+_SQI_SQA1_TOP*2,	;
+;;+				DST_ADR=_SEQ_CARD_RAM+_SQI_SQA1_TOP*2,	;
+;;+				CNT_DAT=_SQI_SQA1_CNT,			;
+;;+				DT_REG=R2,CNT_REG=R5			;
+
+;	1つのﾜｰﾄﾞSRCを２のﾜｰﾄﾞDST1,DST2へ転送する
+
+	.MACRO	SEQIN1_OUT2_BLKMOV	SRC_ADR,DST_ADR,DSTADR2,CNT_DAT
+	MOV.L	#\SRC_ADR,R10			;
+	MOV.L	#\DST_ADR,R11			;
+	MOV.L	#\DSTADR2,R1			;
+	MOV.L	#\CNT_DAT,R3			;
+
+JMP0\@:					;
+	TST	R3,R3
+	TST_BIT_OF JMP1\@		;
+	MOV.W	@R10+,R0		;
+	MOV.W	R0,@R11			;
+	MOV.W	R0,@R1			;
+	ADD	#2,R11			;
+	ADD	#2,R1			;
+	ADD	#-1,R3			;
+	M_BRA	JMP0\@			;
+JMP1\@:					;
+	.ENDM
+
+
+
+;	*****************************************************
+;	*****		シーケンス処理			*****
+;	*****************************************************
+;	*********************
+;	***   INITIAL時   ***
+;	*********************
+
+_SEQ_INIT:
+	SUB_START
+	PUSH_ALL
+
+	FAR_JSR	#_REMOTE_INDT_READ,R0		; リモート入力読み込み
+	FAR_JSR	#_SQ_CARD_IN_REF1,R0		;2008-08-01(各ｶｰﾄﾞ入力DPRAMをｼｰｹﾝｽﾒﾓﾘへ)
+
+	FAR_JSR	#_REMOTE_INIT_OUTDT_SET,R0	; リモート出力ｲﾆｼｬﾙOFF
+	FAR_JSR	#_SQ_CARD_OUT_REF1,R0		;2008-08-01
+
+;	*** ｼｰｹﾝｽﾌﾗｸﾞﾚｼﾞｽﾀｲﾆｼｬﾙｾｯﾄ ***
+	MOV.W	#BIT0,R5			;
+	MOV.L	#_SEQ_SR_FLG,R6			;
+	MOV.B	#_SEQ_CARD_MAX,R0		;96WORD 転送
+	MOV.W	#2,R1				;
+
+_SEQ_SR_FLG_INIT_LOOP:
+	TST	R0,R0				;
+	BT	_SEQ_SR_FLG_INIT_EXIT		;
+	MOV.W	R5,@R6				; DATA SET
+	ADD	R1,R6				;
+	ADD	#-1,R0				;
+	M_BRA	_SEQ_SR_FLG_INIT_LOOP		;
+_SEQ_SR_FLG_INIT_EXIT:
+
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+
+
+;
+;	********************
+;	*** MAIN ROUTINE ***
+;	********************
+_SEQ_RUN_MAIN:
+	SUB_START
+	PUSH_ALL
+
+;;;;;	FAR_JSR	#_REMOTE_INDT_READ,R0		; リモート入力読み込み
+
+
+	MOV.L	#_SEQ_CMP_ERR,R1		; CMP OK = BX:0000 , CMP NG = BX:FFFF
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	BF	_SEQ_RUN_MAIN_1000		;
+
+	MOV.L	#_SEQ_ARG1_DATA,R5		; ARG data load
+	MOV.W	@R5,R5				;
+	MOV.L	#_SEQ_MRG1_DATA,R7		; MRG data load
+	MOV.W	@R7,R7				;
+	MOV.L	#_SEQ_NRG1_DATA,R6		; NRG data load
+	MOV.W	@R6,R6				;
+;;;;;	MOV.L	#_SEQ_DRG1_DATA,R4		; DATA REG data load
+;;;;;	LDC.L	R4,GBR				; GBR <- DATA REG ADDRESS SET
+	MOV.L	#_SEQ_GBR_TBL,R4		; DATA REG data load
+	LDC.L	R4,GBR				; GBR <- DATA REG ADDRESS SET
+
+
+;	========== DPRAM -> SDRAM 変更 2008-07-30 SAITO =================================
+
+;;	*** ｼｰｹﾝｽのｵﾌｾｯﾄｱﾄﾞﾚｽをﾚｼﾞｽﾀにｾｯﾄ この中では壊さないこと ***
+;	MOV.L	#(_SEQ_CARD_RAM_TOP+_SEQ_OFFSET_ADR1),R8		;
+;	MOV.L	#(_SEQ_CARD_RAM_TOP+_SEQ_OFFSET_ADR2),R9		;
+;	MOV.L	#(_SEQ_CARD_RAM_TOP+_SEQ_OFFSET_ADR3),R10		;
+;	MOV.L	#(_SEQ_CARD_RAM_TOP+_SEQ_OFFSET_ADR4),R11		;
+;	MOV.L	#(_SEQ_CARD_RAM_TOP+_SEQ_OFFSET_ADR5),R12		;
+;	MOV.L	#(_SEQ_CARD_RAM_TOP+_SEQ_OFFSET_ADR6),R13		;
+;	MOV.L	#(_SEQ_CARD_RAM_TOP+_SEQ_OFFSET_ADR7),R14		;
+
+;	_SEQ_CARD_RAM_TOP → _SEQ_CARD_RAMにラベル変更（意味合いは同じ）2008-07-30 SAITO
+
+;	*** ｼｰｹﾝｽのｵﾌｾｯﾄｱﾄﾞﾚｽをﾚｼﾞｽﾀにｾｯﾄ この中では壊さないこと ***
+	MOV.L	#(_SEQ_CARD_RAM + _SEQ_OFFSET_ADR1),R8		;
+	MOV.L	#(_SEQ_CARD_RAM + _SEQ_OFFSET_ADR2),R9		;
+	MOV.L	#(_SEQ_CARD_RAM + _SEQ_OFFSET_ADR3),R10		;
+	MOV.L	#(_SEQ_CARD_RAM + _SEQ_OFFSET_ADR4),R11		;
+	MOV.L	#(_SEQ_CARD_RAM + _SEQ_OFFSET_ADR5),R12		;
+	MOV.L	#(_SEQ_CARD_RAM + _SEQ_OFFSET_ADR6),R13		;
+	MOV.L	#(_SEQ_CARD_RAM + _SEQ_OFFSET_ADR7),R14		;
+
+;	=================================================================================
+
+	FAR_JSR	#_SEQ_RUN1_TOP,R0		;
+
+	MOV.L	#_SEQ_ARG1_DATA,R1		;
+	MOV.W	R5,@R1				; ARG data save
+	MOV.L	#_SEQ_MRG1_DATA,R1		;
+	MOV.W	R7,@R1				; MRG data save
+	MOV.L	#_SEQ_NRG1_DATA,R1		;
+	MOV.W	R6,@R1				; NRG data save
+
+
+;;;;;	FAR_JSR	#_REMOTE_OUTDT_STORE,R0		; リモート出力書き込み
+
+
+_SEQ_RUN_MAIN_1000:
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	========== DPRAM -> SDRAM 変更 2008-07-30 SAITO =================================
+;	***********************************
+;	***	リモート出力ｲﾆｼｬﾙOFF	***
+;	***********************************
+_REMOTE_INIT_OUTDT_SET:
+	SUB_START
+
+;	------ 2008-08-01 --------
+;	MOV.W	#0,R0				;
+;	MOV.L	#(_SEQ_CARD_RAM+_SQ008),R1	;
+;	MOV.W	R0,@R1				; ｼｰｹﾝｽｶｰﾄﾞRAMのリモート出力領域
+;	MOV.L	#(_SEQ_CARD_RAM+_SQ009),R1	;
+;	MOV.W	R0,@R1				; ｼｰｹﾝｽｶｰﾄﾞRAMのリモート出力領域
+;;	======= なにをやっているの ===
+;	MOV.L	#(_SEQ_CARD_RAM+_SQ010),R1	;
+;	MOV.W	R0,@R1				; ｼｰｹﾝｽｶｰﾄﾞRAMのリモート出力領域
+;	MOV.L	#(_SEQ_CARD_RAM+_SQ011),R1	;
+;	MOV.W	R0,@R1				; ｼｰｹﾝｽｶｰﾄﾞRAMのリモート出力領域
+;	FAR_JSR	#_REMOTE_OUTDT_STORE,R0		; リモート出力CLEAR
+
+
+	MOV.W	#0,R0				;
+	MOV.L	#(_SEQ_CARD_RAM+_SQ008),R1	;
+	MOV.W	R0,@R1				; ｼｰｹﾝｽｶｰﾄﾞRAMのリモート出力領域
+	MOV.L	#(_SEQ_CARD_RAM+_SQ009),R1	;
+	MOV.W	R0,@R1				; ｼｰｹﾝｽｶｰﾄﾞRAMのリモート出力領域
+	MOV.L	#(_SEQ_CARD_RAM+_SQ010),R1	;
+	MOV.W	R0,@R1				; ｼｰｹﾝｽｶｰﾄﾞRAMのリモート出力領域
+	MOV.L	#(_SEQ_CARD_RAM+_SQ011),R1	;
+	MOV.W	R0,@R1				; ｼｰｹﾝｽｶｰﾄﾞRAMのリモート出力領域
+
+	MOV.W	#0,R0				;
+	MOV.L	#(_REAL_SEQ_TOP+_SQ008),R1	;
+	MOV.W	R0,@R1				; ｼｰｹﾝｽｶｰﾄﾞRAMのリモート出力領域
+	MOV.L	#(_REAL_SEQ_TOP+_SQ009),R1	;
+	MOV.W	R0,@R1				; ｼｰｹﾝｽｶｰﾄﾞRAMのリモート出力領域
+	MOV.L	#(_REAL_SEQ_TOP+_SQ010),R1	;
+	MOV.W	R0,@R1				; ｼｰｹﾝｽｶｰﾄﾞRAMのリモート出力領域
+	MOV.L	#(_REAL_SEQ_TOP+_SQ011),R1	;
+	MOV.W	R0,@R1				; ｼｰｹﾝｽｶｰﾄﾞRAMのリモート出力領域
+
+	FAR_JSR	#_SQ_CARD_OUT_REF1,R0		;2008-08-01　SEQ-->DPRAM
+
+	FAR_JSR	#_REMOTE_OUTDT_STORE,R0		; リモート出力CLEAR
+
+;	=================================================================================
+
+	SUB_END
+	M_RTS
+
+
+
+
+
+;	***********************************
+;	***				***
+;	***	SEQ CPUA,B ﾚﾌﾚｯｼｭ	***
+;	***	2008-07-31		***
+;	***				***
+;	***********************************
+;	-----------------------------------------------
+	.EXPORT	_SQ_CARD_IN_REF1		;
+	.EXPORT	_SQ_CARD_OUT_REF1		;
+	.EXPORT	_SQ_CARD_MONITOR_REF1		;
+
+	.ALIGN	4				;
+;	***************************************************
+;	***						***
+;	***						***
+;	***	シーケンスリフレッシュ			***
+;	***						***
+;	***						***
+;	***************************************************
+;_SEQ_IN クラッチ
+
+;	---------------------- <0 IN>
+_SQI_SQA1_TOP	.EQU	0					;CARD0 RM-->SQ
+_SQI_SQA1_END	.EQU	7					;CARD7
+_SQI_SQA1_CNT	.EQU	(_SQI_SQA1_END - _SQI_SQA1_TOP)+1	;7-0+1=8
+
+;	---------------------- <0 OUT>
+_SQO_SQA1_TOP	.EQU	8					;CARD8 RM-->SQ
+_SQO_SQA1_END	.EQU	15					;CARD15
+_SQO_SQA1_CNT	.EQU	(_SQO_SQA1_END - _SQO_SQA1_TOP)+1	;15-8+1=8
+
+;	-------------------------<1 in>--------------
+_SQI_GMB1_TOP	.EQU	16					;CARD016 GAMEN.SW-->SQ
+_SQI_GMB1_END	.EQU	99					;CARD99
+_SQI_GMB1_CNT	.EQU	(_SQI_GMB1_END - _SQI_GMB1_TOP)+1	;99-16+1=84
+
+;	-------------------------<2 out>--------------
+_SQO_GMB1_TOP	.EQU	100					;CARD100
+_SQO_GMB1_END	.EQU	199					;CARD199
+_SQO_GMB1_CNT	.EQU	(_SQO_GMB1_END - _SQO_GMB1_TOP)+1	;
+
+;	-------------------------<3 in>--------------
+_SQI_CBA1_TOP	.EQU	200					;CARD200 CB.CPUA-->SQ
+_SQI_CBA1_END	.EQU	269					;CARD269
+_SQI_CBA1_CNT	.EQU	(_SQI_CBA1_END - _SQI_CBA1_TOP)+1	;
+
+;	-------------------------<4 in>--------------
+_SQI_CBB1_TOP	.EQU	270					;CARD270 CB.CPUB-->SQ
+_SQI_CBB1_END	.EQU	339					;CARD339
+_SQI_CBB1_CNT	.EQU	(_SQI_CBB1_END - _SQI_CBB1_TOP)+1	;
+
+;	-------------------------<5 out>--------------
+_SQO_CBX1_TOP	.EQU	340					;CARD340 SQ-->CB.CPUA,CB.CPUB
+_SQO_CBX1_END	.EQU	359					;CARD359
+_SQO_CBX1_CNT	.EQU	(_SQO_CBX1_END - _SQO_CBX1_TOP)+1	;
+
+;	-------------------------<6 in>--------------
+_SQI_CBA2_TOP	.EQU	360					;CARD360 CB.CPUA(CAM)-->SQ
+_SQI_CBA2_END	.EQU	379					;CARD379
+_SQI_CBA2_CNT	.EQU	(_SQI_CBA2_END - _SQI_CBA2_TOP)+1	;
+
+;	-------------------------<7 in>--------------
+;;2008-09-25　領域変更　
+;;_SQI_OPB1_TOP	.EQU	380					;CARD380 COP1/COP2->CPUB-->SQ
+;;_SQI_OPB1_END	.EQU	449					;CARD449(実際は427まで)
+;;_SQI_OPB1_CNT	.EQU	(_SQI_OPB1_END - _SQI_OPB1_TOP)+1	;
+
+;;;MC;	-------------------------<7 in　74Word>--------------
+;;;MC _SQI_OPB1_TOP	.EQU	380					;CARD380 COP1/COP2->CPUB-->SQ
+;;;MC _SQI_OPB1_END	.EQU	453					;CARD453
+;;;MC _SQI_OPB1_CNT	.EQU	(_SQI_OPB1_END - _SQI_OPB1_TOP)+1	;
+
+
+;	-------------------------<7 in　70Word>--------------
+_SQI_OPB1_TOP	.EQU	380					;CARD380 COP1/COP2->CPUB-->SQ
+_SQI_OPB1_END	.EQU	449					;CARD449
+_SQI_OPB1_CNT	.EQU	(_SQI_OPB1_END - _SQI_OPB1_TOP)+1	;
+
+
+
+;	-------------------------<8 in　4Word>--------------
+_SQI_GMD3_TOP	.EQU	450					;CPUD->SEQ->(COP1)
+_SQI_GMD3_END	.EQU	453					;
+_SQI_GMD3_CNT	.EQU	(_SQI_GMD3_END - _SQI_GMD3_TOP)+1	;
+
+
+
+
+
+;	-------------------------<8 out>--------------
+;;2008-09-25 領域変更
+;;_SQO_OPB1_TOP	.EQU	450					;CARD450 SQ-->CPUB->COP1/COP2
+;;_SQO_OPB1_END	.EQU	529					;CARD529(実際は527まで)
+;;_SQO_OPB1_CNT	.EQU	(_SQO_OPB1_END - _SQO_OPB1_TOP)+1	;
+
+;;2009-03-11
+;;_SQO_OPB1_TOP	.EQU	454					;CARD450 SQ-->CPUB->COP1/COP2
+;;_SQO_OPB1_END	.EQU	529					;CARD529
+;;_SQO_OPB1_CNT	.EQU	(_SQO_OPB1_END - _SQO_OPB1_TOP)+1	;
+
+
+
+;	-------<8:SEQ ->T 2009-03-25:仕様選択77=0の時は全てｼｰｹﾝｽからTﾘﾝｸ----
+_SQO_OPB0_TOP	.EQU	454					;CARD481 SQ-->CPUB->COP1/COP2
+_SQO_OPB0_END	.EQU	497					;CARD497
+_SQO_OPB0_CNT	.EQU	(_SQO_OPB0_END - _SQO_OPB0_TOP)+1	;
+
+
+;	----------------- SEQ -> OP,T 2009-03-11----------
+_SQO_OPB1_TOP	.EQU	454					;CARD454 SQ-->CPUB->COP1/COP2
+_SQO_OPB1_END	.EQU	480					;CARD480
+_SQO_OPB1_CNT	.EQU	(_SQO_OPB1_END - _SQO_OPB1_TOP)+1	;
+
+;	-------<8:HMI ->T 2009-03-11(2009-02-23):仕様選択77=1の時 一部ﾊﾞﾝｸとして使用----
+_SQI_OPB2_TOP	.EQU	481					;CARD481 SQ-->CPUB->COP1/COP2
+_SQI_OPB2_END	.EQU	497					;CARD497
+_SQI_OPB2_CNT	.EQU	(_SQI_OPB2_END - _SQI_OPB2_TOP)+1	;
+
+
+
+
+
+
+;	-------------------------<9 内部ﾒﾓﾘ>--------------
+_SQM_SEQ1_TOP	.EQU	530					;
+_SQM_SEQ1_END	.EQU	543					;
+_SQM_SEQ1_CNT	.EQU	(_SQM_SEQ1_END - _SQM_SEQ1_TOP)+1		;
+
+
+;	-------------------------<10 KEEPﾒﾓﾘ>--------------
+_SQM_SEQK_TOP	.EQU	544					;
+_SQM_SEQK_END	.EQU	549					;
+_SQM_SEQK_CNT	.EQU	(_SQM_SEQK_END - _SQM_SEQK_TOP)+1	;
+
+
+;	-------------------------<11 内部ﾒﾓﾘ>--------------
+_SQM_SEQ2_TOP	.EQU	550					;
+_SQM_SEQ2_END	.EQU	799					;
+_SQM_SEQ2_CNT	.EQU	(_SQM_SEQ2_END - _SQM_SEQ2_TOP)+1	;
+
+
+;	------------- 2009-03-25-----
+_IOBNKSEL_SQ_ADR	.EQU	20		;
+_IOBNKSEL_SQ_BIT	.EQU	BIT12		;20.12
+
+;	***********************************
+;	***				***
+;	***	3.3msec REF		***
+;	***	入力			***
+;	***				***
+;	***********************************
+_SQ_CARD_IN_REF1
+	SUB_START
+	PUSH_ALL
+
+;	--------------<0 in SEQ 実入力>-------------
+	SEQIN1_OUT2_BLKMOV	SRC_ADR=_REAL_SEQ_TOP+_SQI_SQA1_TOP*2,		;CPUAﾘﾓｰﾄ,汎用入力[SQ005だけCPUB]
++				DST_ADR=_SEQ_CARD_RAM+_SQI_SQA1_TOP*2,		;ｼｰｹﾝｽ
++				DSTADR2=_GAMN_SEQ_TOP+_SQI_SQA1_TOP*2,		;写像
++				CNT_DAT=_SQI_SQA1_CNT				;
+
+;	--------------<1 in GAMEN>-------------
+	SEQIN1_OUT2_BLKMOV	SRC_ADR=_GAMN_SEQ_TOP+_SQI_GMB1_TOP*2,		;画面
++				DST_ADR=_SEQ_CARD_RAM+_SQI_GMB1_TOP*2,		;ｼｰｹﾝｽ
++				DSTADR2=_REAL_SEQ_TOP+_SQI_GMB1_TOP*2,		;写像
++				CNT_DAT=_SQI_GMB1_CNT				;
+
+;	--------------<3 in CB CPUA>-------------
+	SEQIN1_OUT2_BLKMOV	SRC_ADR=_REAL_SEQ_TOP+_SQI_CBA1_TOP*2,		;CPUA
++				DST_ADR=_SEQ_CARD_RAM+_SQI_CBA1_TOP*2,		;ｼｰｹﾝｽ
++				DSTADR2=_GAMN_SEQ_TOP+_SQI_CBA1_TOP*2,		;写像
++				CNT_DAT=_SQI_CBA1_CNT				;
+
+
+;	--------------<4 in CB CPUB>-------------
+	SEQIN1_OUT2_BLKMOV	SRC_ADR=_REAL_SEQ_TOP+_SQI_CBB1_TOP*2,		;CPUB
++				DST_ADR=_SEQ_CARD_RAM+_SQI_CBB1_TOP*2,		;
++				DSTADR2=_GAMN_SEQ_TOP+_SQI_CBB1_TOP*2,		;
++				CNT_DAT=_SQI_CBB1_CNT				;
+
+
+
+;	--------------<6 in CB CPUA CAM>-------------
+	SEQIN1_OUT2_BLKMOV	SRC_ADR=_REAL_SEQ_TOP+_SQI_CBA2_TOP*2,		;CPUA-CAM
++				DST_ADR=_SEQ_CARD_RAM+_SQI_CBA2_TOP*2,		;
++				DSTADR2=_GAMN_SEQ_TOP+_SQI_CBA2_TOP*2,		;
++				CNT_DAT=_SQI_CBA2_CNT				;
+
+
+
+;	-----------  <7 in COP1>------------------------
+;	380~395(cop1の荷重関連) COP1->CPUB->SEQ(->CPUD)
+;	396~427(cop1のTﾘﾝｸ)     COP1->CPUB->SEQ(->CPUD)
+;	428~449(未使用･予備)    COP1->CPUB->SEQ(->CPUD)
+	SEQIN1_OUT2_BLKMOV	SRC_ADR=_REAL_SEQ_TOP+_SQI_OPB1_TOP*2,	;380~448
++				DST_ADR=_SEQ_CARD_RAM+_SQI_OPB1_TOP*2,	;
++				DSTADR2=_GAMN_SEQ_TOP+_SQI_OPB1_TOP*2,	;
++				CNT_DAT=_SQI_OPB1_CNT			;
+
+
+;	-------------------------<8 in　4Word>--------------
+;	450~453(画面から荷重への指令)(CPUD->SEQ(->CPUB->COP1))
+	SEQIN1_OUT2_BLKMOV	SRC_ADR=_GAMN_SEQ_TOP+_SQI_GMD3_TOP*2,	;
++				DST_ADR=_SEQ_CARD_RAM+_SQI_GMD3_TOP*2,	;
++				DSTADR2=_REAL_SEQ_TOP+_SQI_GMD3_TOP*2,	;
++				CNT_DAT=_SQI_GMD3_CNT			;
+
+
+
+;	======== 仕様設定77(20.12)=0:I/O方式 仕様設定77(20.12)=1:IO+ﾊﾞﾝｸ==
+;	
+	MOV.L	#_SEQ_CARD_RAM+_IOBNKSEL_SQ_ADR*2,R1	;本来はｼｰｹﾝｽを参照でしょう
+	MOV.W	@R1,R0					;
+	MOV.W	#_IOBNKSEL_SQ_BIT,R4			;
+	TST	R4,R0					;
+	TST_BIT_ON SQ_IN_IOBANK100
+	M_BRA	SQ_IN_IOBANK200				;
+
+SQ_IN_IOBANK100
+;	この領域は通常はシーケンスからの出力領域
+;	ＩＯバンクにした場合、シーケンスはＣＰＵＤからの入力になる
+;	ＣＯＰ１から見ればどちらも入力領域で、この結果をＴリンクに出力する
+;	--------------<8 in CPUD COP1/COP2 481~497> 2009-02-23 ------------
+;	HMI-->DP-->SEQ (->CPUB->Tﾘﾝｸ)
+	SEQIN1_OUT2_BLKMOV	SRC_ADR=_GAMN_SEQ_TOP+_SQI_OPB2_TOP*2,	;
++				DST_ADR=_SEQ_CARD_RAM+_SQI_OPB2_TOP*2,	;
++				DSTADR2=_REAL_SEQ_TOP+_SQI_OPB2_TOP*2,	;
++				CNT_DAT=_SQI_OPB2_CNT			;
+
+SQ_IN_IOBANK200:
+
+
+;;;MC;	======== 2009-03-25 I/O(SQ)+ﾊﾞﾝｸ方式(HMI) と　I/O(SQ)のみは切替===
+;;;MC	======== 仕様設定77(20.12)=0:I/O方式 仕様設定77(20.12)=1:IO+ﾊﾞﾝｸ==
+;;;MC	MOV.L	#_SEQ_CARD_RAM+_IOBNKSEL_SQ_ADR*2,R1	;本来はｼｰｹﾝｽを参照でしょう
+;;;MC	MOV.W	@R1,R0					;
+;;;MC	MOV.W	#_IOBNKSEL_SQ_BIT,R4			;
+;;;MC	TST	R4,R0					;
+;;;MC	TST_BIT_ON SQ_IN_IOBANK100
+;;;MC
+;;;MC;	--------------<7 in CPUB COP1/COP2 380~453>-------------
+;;;MC	SEQIN1_OUT2_BLKMOV	SRC_ADR=_REAL_SEQ_TOP+_SQI_OPB1_TOP*2,	;
+;;;MC+				DST_ADR=_SEQ_CARD_RAM+_SQI_OPB1_TOP*2,	;
+;;;MC+				DSTADR2=_GAMN_SEQ_TOP+_SQI_OPB1_TOP*2,	;
+;;;MC+				CNT_DAT=_SQI_OPB1_CNT			;
+;;;MC
+;;;MC	M_BRA	SQ_IN_IOBANK200						;
+;;;MC
+;;;MC
+;;;MCSQ_IN_IOBANK100
+;;;MC;	======== 2009-03-25 I/O(SQ)+ﾊﾞﾝｸ方式(HMI)===
+;;;MC;	--------------<7 in CPUB COP1/COP2 380~453>-------------????????????MC 方向,CPU確認
+;;;MC	SEQIN1_OUT2_BLKMOV	SRC_ADR=_REAL_SEQ_TOP+_SQI_OPB1_TOP*2,	;(OP--->DP-->SEQ)
+;;;MC+				DST_ADR=_SEQ_CARD_RAM+_SQI_OPB1_TOP*2,	;
+;;;MC+				DSTADR2=_GAMN_SEQ_TOP+_SQI_OPB1_TOP*2,	;
+;;;MC+				CNT_DAT=_SQI_OPB1_CNT			;
+;;;MC
+;;;MC
+;;;MC;	--------------<8 in CPUB COP1/COP2 481~497> 2009-02-23 -------------????????????????
+;;;MC	SEQIN1_OUT2_BLKMOV	SRC_ADR=_GAMN_SEQ_TOP+_SQI_OPB2_TOP*2,	;(HMI-->DP-->SEQ,Tﾘﾝｸ)
+;;;MC+				DST_ADR=_SEQ_CARD_RAM+_SQI_OPB2_TOP*2,	;
+;;;MC+				DSTADR2=_REAL_SEQ_TOP+_SQI_OPB2_TOP*2,	;
+;;;MC+				CNT_DAT=_SQI_OPB2_CNT			;
+;;;MCSQ_IN_IOBANK200:
+
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	3.3msec REF		***
+;	***	出力			***
+;	***				***
+;	***********************************
+	.ALIGN	4				;
+_SQ_CARD_OUT_REF1
+	SUB_START
+	PUSH_ALL
+
+
+;	--------------<0 out ﾘﾓｰﾄ,汎用出力>-------------
+	SEQIN1_OUT2_BLKMOV	SRC_ADR=_SEQ_CARD_RAM+_SQO_SQA1_TOP*2,	;
++				DST_ADR=_REAL_SEQ_TOP+_SQO_SQA1_TOP*2,	;
++				DSTADR2=_GAMN_SEQ_TOP+_SQO_SQA1_TOP*2,	;
++				CNT_DAT=_SQO_SQA1_CNT			;
+
+
+;	--------------<2 out GAMEN>-------------
+	SEQIN1_OUT2_BLKMOV	SRC_ADR=_SEQ_CARD_RAM+_SQO_GMB1_TOP*2,	;
++				DST_ADR=_GAMN_SEQ_TOP+_SQO_GMB1_TOP*2,	;
++				DSTADR2=_REAL_SEQ_TOP+_SQO_GMB1_TOP*2,	;
++				CNT_DAT=_SQO_GMB1_CNT			;
+
+
+
+
+;	--------------<5 out CB>-------------
+	SEQIN1_OUT2_BLKMOV	SRC_ADR=_SEQ_CARD_RAM+_SQO_CBX1_TOP*2,	;
++				DST_ADR=_REAL_SEQ_TOP+_SQO_CBX1_TOP*2,	;
++				DSTADR2=_GAMN_SEQ_TOP+_SQO_CBX1_TOP*2,	;
++				CNT_DAT=_SQO_CBX1_CNT			;
+
+
+
+
+;	======== 仕様設定77(20.12)=0:I/O方式 仕様設定77(20.12)=1:IO+ﾊﾞﾝｸ==
+;;;	MOV.L	#_SEQ_DP_TOP+_IOBNKSEL_SQ_ADR*2,R1			;
+	MOV.L	#_SEQ_CARD_RAM+_IOBNKSEL_SQ_ADR*2,R1			;本来はｼｰｹﾝｽを参照でしょう
+	MOV.W	@R1,R0							;
+	MOV.W	#_IOBNKSEL_SQ_BIT,R4					;
+	TST	R4,R0							;
+	TST_BIT_ON SQ_OUT_IOBANK100					;ﾊﾞﾝｸ方式の場合はこの領域は入力になる
+
+;	-------<8:out SEQ ->T 2009-03-25:仕様選択77=0の時は全てｼｰｹﾝｽからTﾘﾝｸ----
+	SEQIN1_OUT2_BLKMOV	SRC_ADR=_SEQ_CARD_RAM+_SQO_OPB0_TOP*2,	;454~481~497
++				DST_ADR=_REAL_SEQ_TOP+_SQO_OPB0_TOP*2,	;
++				DSTADR2=_GAMN_SEQ_TOP+_SQO_OPB0_TOP*2,	;
++				CNT_DAT=_SQO_OPB0_CNT			;
+
+	M_BRA	SQ_OUT_IOBANK200					;
+
+
+SQ_OUT_IOBANK100:
+;	--------------<8 out COP1Z/COP2　454~480>-------------
+	SEQIN1_OUT2_BLKMOV	SRC_ADR=_SEQ_CARD_RAM+_SQO_OPB1_TOP*2,	;
++				DST_ADR=_REAL_SEQ_TOP+_SQO_OPB1_TOP*2,	;
++				DSTADR2=_GAMN_SEQ_TOP+_SQO_OPB1_TOP*2,	;
++				CNT_DAT=_SQO_OPB1_CNT			;
+
+
+SQ_OUT_IOBANK200:
+
+
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	REF			***
+;	***	モニタ			***
+;	***	(補助メモリ)		***
+;	***********************************
+;	SQ(補助ﾒﾓﾘ)-->モニタ領域：出力となる
+	.ALIGN	4				;
+_SQ_CARD_MONITOR_REF1
+	SUB_START
+	PUSH_ALL
+
+;	--------------<補助ﾒﾓﾘ,ﾀｲﾏ>-------------
+	SEQIN1_OUT2_BLKMOV	SRC_ADR=_SEQ_CARD_RAM+_SQM_SEQ1_TOP*2,	;
++				DST_ADR=_REAL_SEQ_TOP+_SQM_SEQ1_TOP*2,	;
++				DSTADR2=_GAMN_SEQ_TOP+_SQM_SEQ1_TOP*2,	;
++				CNT_DAT=_SQM_SEQ1_CNT			;
+
+;	--------------<補助ﾒﾓﾘ,ﾀｲﾏ>-------------
+	SEQIN1_OUT2_BLKMOV	SRC_ADR=_SEQ_CARD_RAM+_SQM_SEQ2_TOP*2,	;
++				DST_ADR=_REAL_SEQ_TOP+_SQM_SEQ2_TOP*2,	;
++				DSTADR2=_GAMN_SEQ_TOP+_SQM_SEQ2_TOP*2,	;
++				CNT_DAT=_SQM_SEQ2_CNT			;
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+
+;	***********************************
+;	***				***
+;	***	REF			***
+;	***	ＫＥＥＰメモリ		***
+;	***	2008-08-06		***
+;	***********************************
+_SQ_CARD_KEEP_RY_OUT
+	SUB_START
+;	--------------<>-------------
+	SEQIN1_OUT2_BLKMOV	SRC_ADR=_SEQ_CARD_RAM+_SQM_SEQK_TOP*2,	;
++				DST_ADR=_GAMN_SEQ_TOP+_SQM_SEQK_TOP*2,	;ﾊﾞｯｸｱｯﾌﾟ
++				DSTADR2=_REAL_SEQ_TOP+_SQM_SEQK_TOP*2,	;
++				CNT_DAT=_SQM_SEQK_CNT			;
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	REF				***
+;	***	ﾊﾞｯｸｱｯﾌﾟ領域SQ544		***
+;	***	-->SQ領域			***
+;	***	電源投入時１回のみ入力領域	***
+;	*******************************************
+_KEEP_RY_MOVE_HOJMEM:	;KEEP(SQ544)-->HOJO MEMORY SQ544
+	SUB_START
+	PUSH_ALL
+
+;	--------------<>-------------
+	SEQIN1_OUT2_BLKMOV	SRC_ADR=_GAMN_SEQ_TOP+_SQM_SEQK_TOP*2,	;
++				DST_ADR=_SEQ_CARD_RAM+_SQM_SEQK_TOP*2,	;
++				DSTADR2=_REAL_SEQ_TOP+_SQM_SEQK_TOP*2,	;
++				CNT_DAT=_SQM_SEQK_CNT			;
+
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+
+
+	.END

@@ -1,0 +1,1816 @@
+;	*******************************************
+;	***					***
+;	***	ã§í ââéZÅ^ñΩóﬂ			***
+;	***					***
+;	*******************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"		; //ã§í íËã`:ïKÇ∏é¿çsÃﬂ€∏ﬁ◊—Ç…≤›∏Ÿ∞ƒﬁÇ∑ÇÈéñ
+	.INCLUDE	"ssa_ver1.equ"		; //
+	.INCLUDE	"shn_cmd1.mac"		; //
+	.INCLUDE	"ssa_khad.equ"		; //equíËã`
+	.INCLUDE	"ssa_kmc1.mac"		; //
+	.LIST	ON
+
+
+	.AIF	_SIT_CPU_SEL EQ _SIT4_CPUB
+;//2010/12/08	.SECTION	P,CODE			;
+	.SECTION	PHiROM,CODE			;
+
+	.AELSE
+	.SECTION	P,CODE				;CPUA,SIT3
+
+	.AENDI
+
+;	***********************************
+;	***				***
+;	***	BIT0~BIT7->1~8,0	***
+;	***				***
+;	***********************************
+;	Input 	R0
+;	Output	R2
+;
+
+
+	.ALIGN	4				;
+	.EXPORT	_LONG_BIT_TBL0	
+	.EXPORT	_LONG_BIT_TBL1
+	.EXPORT	_LONG_BIT_TBL2
+
+	.EXPORT	
+	_WORD_BIT_TBL0
+	.EXPORT	_WORD_BIT_TBL1
+	.EXPORT	_WORD_BIT_TBL2
+	.EXPORT	_WORD_BIT_TBL3
+	.EXPORT	_WORD_BIT_TBL4
+	.EXPORT	_WORD_BIT_TBL5
+	.EXPORT	_WORD_BIT_TBL6
+	.EXPORT	_WORD_BIT_TBL7
+	.EXPORT	_WORD_BIT_TBL8
+	.EXPORT	_WORD_BIT_TBL9
+	.EXPORT	_WORD_BIT_TBL10
+
+_LONG_BIT_TBL0:		.DATA.L		0
+_LONG_BIT_TBL1:		.DATA.L		BIT0
+_LONG_BIT_TBL2:		.DATA.L		BIT1
+			.DATA.L		BIT2
+			.DATA.L		BIT3
+			.DATA.L		BIT4
+			.DATA.L		BIT5
+			.DATA.L		BIT6
+			.DATA.L		BIT7
+			.DATA.L		BIT8
+			.DATA.L		BIT9
+			.DATA.L		BIT10
+			.DATA.L		BIT11
+			.DATA.L		BIT12
+			.DATA.L		BIT13
+			.DATA.L		BIT14
+			.DATA.L		BIT15
+			.DATA.L		BIT16
+			.DATA.L		BIT17
+			.DATA.L		BIT18
+			.DATA.L		BIT19
+			.DATA.L		BIT20
+			.DATA.L		BIT21
+			.DATA.L		BIT22
+			.DATA.L		BIT23
+			.DATA.L		BIT24
+			.DATA.L		BIT25
+			.DATA.L		BIT26
+			.DATA.L		BIT27
+			.DATA.L		BIT28
+			.DATA.L		BIT29
+			.DATA.L		BIT30
+			.DATA.L		BIT31
+
+	.EXPORT		_DWORD_BIT0_TBL1
+	.EXPORT		_DWORD_BIT1_TBL1
+
+_DWORD_BIT0_TBL1		.DATA.L		0
+_DWORD_BIT1_TBL1		.DATA.L		B'00000001
+				.DATA.L		B'00000011
+				.DATA.L		B'00000111
+				.DATA.L		B'00001111
+				.DATA.L		B'00011111
+				.DATA.L		B'00111111
+				.DATA.L		B'01111111
+				.DATA.L		B'11111111
+				.DATA.L		H'000001FF
+				.DATA.L		H'000003FF
+				.DATA.L		H'000007FF
+				.DATA.L		H'00000FFF
+				.DATA.L		H'00001FFF
+				.DATA.L		H'00003FFF
+				.DATA.L		H'00007FFF
+				.DATA.L		H'0000FFFF
+				.DATA.L		H'0001FFFF
+				.DATA.L		H'0003FFFF
+				.DATA.L		H'0007FFFF
+				.DATA.L		H'000FFFFF
+				.DATA.L		H'001FFFFF
+				.DATA.L		H'003FFFFF
+				.DATA.L		H'007FFFFF
+				.DATA.L		H'00FFFFFF
+				.DATA.L		H'01FFFFFF
+				.DATA.L		H'03FFFFFF
+				.DATA.L		H'07FFFFFF
+				.DATA.L		H'0FFFFFFF
+				.DATA.L		H'1FFFFFFF
+				.DATA.L		H'3FFFFFFF
+				.DATA.L		H'7FFFFFFF
+				.DATA.L		H'FFFFFFFF
+				.DATA.L		H'FFFFFFFF
+
+	.ALIGN	4				;
+_WORD_BIT_TBL0:		.DATA.W		0
+_WORD_BIT_TBL1:		.DATA.W		BIT0
+_WORD_BIT_TBL2:		.DATA.W		BIT1
+_WORD_BIT_TBL3:		.DATA.W		BIT2
+_WORD_BIT_TBL4:		.DATA.W		BIT3
+_WORD_BIT_TBL5:		.DATA.W		BIT4
+_WORD_BIT_TBL6:		.DATA.W		BIT5
+_WORD_BIT_TBL7:		.DATA.W		BIT6
+_WORD_BIT_TBL8:		.DATA.W		BIT7
+_WORD_BIT_TBL9:		.DATA.W		BIT8
+_WORD_BIT_TBL10:	.DATA.W		BIT9
+			.DATA.W		BIT10
+			.DATA.W		BIT11
+			.DATA.W		BIT12
+			.DATA.W		BIT13
+			.DATA.W		BIT14
+			.DATA.W		BIT15
+
+
+
+
+
+;	*******************************************
+;	***					***
+;	***	çÇë¨èàóùÉTÉuÉãÅ[É`ÉìåQ		***
+;	***					***
+;	*******************************************
+;	*äÓñ{ìIÇ…å≈óLÇÃèàóùÇÕÉCÉìÉNÉãÅ[ÉhÇ≈ì«Ç›çûÇﬁ
+;	*ââéZÉãÅ[É`ÉìÇÃÇ›Ç±Ç±Ç…ãLèqÇ∑ÇÈ
+;	*FPUÇÃï€èÿÇÇ∑ÇÈéñ
+;
+;	***************************************************
+;	***						***
+;	***		ÉAÉZÉìÉuÉâÇÃÉÅÉCÉìÉãÅ[Év	***
+;	***						***
+;	***						***
+;	***************************************************
+;	Åhñ{ìñÇÕçÇë¨ÉZÉNÉVÉáÉì"
+;;;;;;;;;;2013-03-15	.SECTION	P,CODE			;
+;	/*	extern	 êÈåæ		*/
+;	/*	public êÈåæ		*/
+	.EXPORT		_DIVS_32REG2_32REG1_R4_32REG2_R2	;(R2/R4-->R2)
+	.EXPORT		_DIVS_64R1R2_32R4_32R2			;(R1,R2/R4-->R2)
+	.EXPORT		_DIVU_64R1R2_32R4_32R2;shn_high.src
+	.EXPORT		_HIGH_DIVS_32REG2_16REG1_R4_16REG2_R2	;(R2/R4-->R2)
+	.EXPORT		_HIGH_S32R2_MUL_S32R1_DIV_S32R4_S32R2	;(R2*R1/R4-->R2)
+
+	.EXPORT		_FPU_R2_MUL_R1_DIV_R4;
+;;	.EXPORT		_FPU_R2_MUL_R1_DIV_R4_MOD_R1		;
+	
+	.EXPORT		_FPU_R2_MUL_R1_R3_DIV_R4
+	.EXPORT		_FPU_DIVS_32REG2_32REG1_R4_32REG2_R2;
+	.EXPORT		_FPU_DIVS_32REG2_DIV_32REG4_R2_MOD_R1;
+
+	.EXPORT		_MULDIV_R2S32mR1S32dR4S32aR1R2S64	;
+	.EXPORT		_MULDIV_R1R2S64mR3S32dR4S32aR1R2S64	;
+	.EXPORT		_MUL_R1R2S64mR3S32aR1R2S64		;
+	
+	.EXPORT		_DIVS_64R1R2_32R4_64R1R2	;
+	.EXPORT		_DIVU_64R1R2_32R4_64R1R2	;
+	.EXPORT		_X_R2_MUL_R1_DIV_R4
+
+;	*******************************************************************
+;	***								***
+;	***	ââéZ	ïÑçÜïtÇ´ 32bit(R2)/32bit(R4)->32bit(R2)		***
+;	***		0äÑÇËéZ¡™Ø∏ïtÇ´					***
+;	***								***
+;	*******************************************************************
+;	WKREGÇÕï€éù
+;	R2:åãâ ÇªÇÍà»äOÇÕï€éù
+	.ALIGN	4
+_DIVS_32REG2_32REG1_R4_32REG2_R2:
+	SUB_START
+	PUSH_REG1	R0
+	PUSH_REG1	R1
+	MAC_DIVS_32REG2_32REG1_32REG2 REG1=R4,REG2=R2,WKREG1=R0,WKREG2=R1
+	POP_REG1	R1
+	POP_REG1	R0
+	SUB_END
+	M_RTS
+
+;	*******************************************************************
+;	***								***
+;	***	ââéZ	ïÑçÜïtÇ´ 32bit(R2)/32bit(R4)->32bit(R2)		***
+;	***		0äÑÇËéZ¡™Ø∏ïtÇ´					***
+;	***								***
+;	*******************************************************************
+;	WKREGÇÕï€éù
+;	R2:åãâ ÇªÇÍà»äOÇÕï€éù
+_DIVS_32REG2_32REG1_R4_32REG2_R2_MOD_R1:
+	SUB_START
+	PUSH_REG1	R2
+	PUSH_REG1	R4
+	MAC_DIVS_32REG2_32REG1_32REG2 REG1=R4,REG2=R2,WKREG1=R0,WKREG2=R1
+
+	MOV	R2,R0					;R0 SAVE
+	POP_REG1 R4
+	DMULS.L	R2,R4					;R2*R1()
+	STS	MACL,R4					;
+	POP_REG1 R1					;
+	SUB	R4,R1					;ó]ÇË
+	MOV	R0,R2					;è§
+	SUB_END
+	M_RTS
+
+
+;	*******************************************************************
+;	***								***
+;	***	ââéZ	ïÑçÜïtÇ´ 32bit(R2)/16bit(R4)->16bit(R2)		***
+;	***	ââéZ	ïÑçÜïtÇ´ 32bit(R2)/32bit(R4)->32bit(R2)		***
+;	***		0äÑÇËéZ¡™Ø∏ïtÇ´					***
+;	***								***
+;	*******************************************************************
+;	used r2,r4
+_HIGH_DIVS_32REG2_16REG1_R4_16REG2_R2:
+	SUB_START
+	NEAR_BSR _FPU_DIVS_32REG2_32REG1_R4_32REG2_R2	;
+	SUB_END
+	M_RTS
+
+;	*******************************************************************
+;	***								***
+;	***	ââéZ	ïÑçÜïtÇ´ 64bit(R1,R2)/32bit(R4)->32bit(R2)	***
+;	***		0äÑÇËéZ¡™Ø∏ïtÇ´					***
+;	***								***
+;	*******************************************************************
+;	***************************************************
+;	***	SHIN R1,R2[64]/R4[32]-->R2[32]		***
+;	***************************************************
+;	R1~R4 îjâÛ
+	.ALIGN	4				;
+_DIVS_64R1R2_32R4_32R2:				;
+	SUB_START
+	PUSH_REG1		R4		;
+	PUSH_REG1		R1		;
+	CMP/PZ	R4				;
+	BT	DIVS6_020			;
+	NEG	R4,R4				;
+DIVS6_020:
+	CMP/PZ	R1				;
+	BT	DIVS6_040			;
+
+	NEG1_64	H_REG=R1,L_REG=R2,WKREG=R3
+
+DIVS6_040:
+	NEAR_BSR _DIVU_64R1R2_32R4_32R2		;
+
+	MOV.L	#H'7FFFFFFF,R4			;
+	CMP/HS	R2,R4				;7FFFFFFF >= data
+	BT	DIVS6_060			;
+	MOV	R4,R2				;7FFFFFFF >= data
+DIVS6_060:					;
+
+	POP_REG1	R1				;
+	POP_REG1	R4
+	XOR	R4,R1				;"BIT32=0" THEN +
+	CMP/PZ	R1				;
+	BT	DIVS6_100			;"+"
+	NEG1_64	H_REG=R1,L_REG=R2,WKREG=R3	;
+DIVS6_100:					;
+	SUB_END
+	M_RTS
+
+
+;	*******************************************************************
+;	***								***
+;	***	ââéZ	ïÑçÜÇ»Çµ 64bit(R1,R2)/32bit(R4)->32bit(R2)	***
+;	***		0äÑÇËéZ¡™Ø∏ïtÇ´					***
+;	***								***
+;	*******************************************************************
+;	***********************************************************
+;	***	UNSHIN	R1,R2[64]/R4[32]-->R2[32]		***
+;	***********************************************************
+;	USED REG
+;	ó]ÇËÇ»ÇµââéZ
+;	R1~R4îjâÛ
+	.ALIGN	4				;
+_DIVU_64R1R2_32R4_32R2:			;
+	SUB_START
+	TST	R4,R4			;
+	TST_BIT_OF DIVU4_ZERO_DIV		;ZERO DIV        ANS.MAX
+	CMP/HS	R4,R1			;UNSHIN R0 >= R1 ANS.0...R0
+	BT	DIVU4_ZERO_DIV		;OVER FLOW
+;	============================================
+	DIV0U				;FLAG M=Q=T=0
+
+	.arepeat	32		;åJï‘ìWäJ
+	ROTCL	R2			;T bit -->
+	DIV1	R4,R1			;SHIFT 1 R0-R1 -->Q,T
+	.aendr				;
+
+	ROTCL	R2			;T<--R1<--T
+	M_BRA	DIVU4_EXT		;
+
+;	============================================
+DIVU4_ZERO_DIV:
+	XOR	R2,R2			;
+	ADD	#H'FF,R2		;H'FFFFFFFF,R2		;MAX SET
+DIVU4_EXT:				;
+	SUB_END
+	M_RTS
+	
+;	*******************************************
+;	***					***
+;	***	R1*R3 * R2/R4			***
+;	***	R1(8192)*R3(65535)< 4byte	***
+;	***					***
+;	*******************************************
+_MULDIV_R2_MUL_R1_R3_DIV_R4:
+	SUB_START
+	DMULS.L	R1,R3				;
+	STS	MACL,R1				;
+	FAR_JSR	#_X_R2_MUL_R1_DIV_R4,R0		;R2*R1/R4= R1,R2/R4 2006-07-31
+	SUB_END
+	M_RTS
+
+
+;	***************************************************************************
+;	***									***
+;	***	ââéZ	ïÑçÜïtÇ´ 32bit(R2)*32bit(R1)/16bit(R4)->16bit(R2)	***
+;	***		0äÑÇËéZ¡™Ø∏ïtÇ´						***
+;	***									***
+;	***************************************************************************
+;	used R1,r2,r4
+_HIGH_S32R2_MUL_S32R1_DIV_S32R4_S32R2:
+	SUB_START
+	NEAR_BSR _FPU_R2_MUL_R1_DIV_R4
+	SUB_END
+	M_RTS
+
+
+
+
+;	*******************************************************************
+;	***								***
+;	***	ââéZ	ïÑçÜïtÇ´ 32bit(R2)/32bit(R4)->32bit(R2)		***
+;	***		0äÑÇËéZ¡™Ø∏ïtÇ´					***
+;	***		FPUââéZ						***
+;	*******************************************************************
+;	WKREGÇÕï€éù
+;	R2:åãâ ÇªÇÍà»äOÇÕï€éù
+;	FPU,FR4,FR2 USED
+;	***************************************************
+;	***						***
+;	***	R2(S32)*R1(S32)/R4(S32)-->R2		***
+;	***		ó]ÇËèàóùÇ»Çµ			***
+;	***		R2Ç∆FPUîjâÛ			***
+;	***************************************************
+;	R2*R1/R4-->R2
+_FPU_R2_MUL_R1_DIV_R4:
+	SUB_START
+
+	.AIF	_SIT_CPU_SEL EQ _SIT4_CPUB
+
+;	=========ÇVÇVÇQÇVópââéZ===========
+	TST	R4,R4
+	TST_BIT_OF FPU_R2_MUL_R1DIVR4_EXT
+	PUSH_REG1 R0				;
+	FAR_JSR	#_X_R2_MUL_R1_DIV_R4,R0		;R2*R1/R4= R1,R2/R4 2006-07-31
+	POP_REG1 R0				;
+FPU_R2_MUL_R1DIVR4_EXT:
+
+	.AELSE
+
+	TST	R4,R4
+	TST_BIT_OF FPU_R2_MUL_R1DIVR4_EXT
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	.AIF	_FPU_RESET	EQ	_COMPILE_YES
+	PUSH_REG1 R2
+	PUSH_REG1 R4
+	STS	FPSCR,R2	;
+	MOV.L	#H'00040001,R4	;
+	AND	R4,R2		;
+	LDS	R2,FPSCR	;
+	POP_REG1 R4
+	POP_REG1 R2
+	.AENDI
+	.AENDI
+
+	LDS	R2,FPUL					;
+	FLOAT	FPUL,FR2				;
+	LDS	R1,FPUL					;
+	FLOAT	FPUL,FR1				;
+	LDS	R4,FPUL					;
+	FLOAT	FPUL,FR4				;
+	FMUL	FR1,FR2					;
+	FDIV	FR4,FR2					;
+	FTRC	FR2,FPUL				;
+	STS	FPUL,R2					;
+FPU_R2_MUL_R1DIVR4_EXT:
+
+	.AENDI
+
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***	R2(S32)*R1(S32)*R3(S32)/R4(S32)-->R2(S32)	***
+;	***		ó]ÇËèàóùÇ»Çµ				***
+;	***		R2Ç∆FPUîjâÛ				***
+;	***********************************************************
+;	R2*R1*R3/R4-->R2
+_FPU_R2_MUL_R1_R3_DIV_R4:
+	SUB_START
+
+	.AIF	_SIT_CPU_SEL EQ _SIT4_CPUB
+
+;	ÇVÇVÇQÇVópââéZÇÕÇ±Ç±
+	PUSH_REG1 R0					;
+	FAR_JSR	#_MULDIV_R2_MUL_R1_R3_DIV_R4,R0		;
+	POP_REG1 R0					;
+
+	.AELSE
+
+	TST	R4,R4
+	TST_BIT_OF FPU_R2_MUL_R1_R3DIVR4_EXT
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	.AIF	_FPU_RESET	EQ	_COMPILE_YES
+	PUSH_REG1 R2
+	PUSH_REG1 R4
+	STS	FPSCR,R2	;
+	MOV.L	#H'00040001,R4	;
+	AND	R4,R2		;
+	LDS	R2,FPSCR	;
+	POP_REG1 R4
+	POP_REG1 R2
+	.AENDI
+	.AENDI
+	
+	LDS	R2,FPUL					;
+	FLOAT	FPUL,FR2				;
+
+	LDS	R1,FPUL					;
+	FLOAT	FPUL,FR1				;
+
+	LDS	R4,FPUL					;
+	FLOAT	FPUL,FR4				;
+
+	FMUL	FR1,FR2					;FR2
+
+	LDS	R3,FPUL					;
+	FLOAT	FPUL,FR1				;
+
+	FMUL	FR1,FR2					;FR2
+
+	FDIV	FR4,FR2					;
+	FTRC	FR2,FPUL				;
+	STS	FPUL,R2					;
+FPU_R2_MUL_R1_R3DIVR4_EXT:
+
+	.AENDI
+
+	SUB_END
+	M_RTS
+
+;	***************************************************
+;	***						***
+;	***		R2(S32)/R4(S32)-->R2		***
+;	***		ó]ÇËèàóùÇ»Çµ			***
+;	***		R2Ç∆FPUîjâÛ			***
+;	***************************************************
+;	R2/R4-->R2
+_FPU_DIVS_32REG2_32REG1_R4_32REG2_R2:
+	SUB_START
+
+	.AIF	_SIT_CPU_SEL EQ _SIT4_CPUB
+
+;	ÇVÇVÇQÇVópââéZÇÕÇ±Ç±
+	PUSH_REG1 R0
+	FAR_JSR	#_DIVS_32REG2_32REG1_R4_32REG2_R2,R0
+	POP_REG1 R0
+	.AELSE
+
+	TST	R4,R4					;0Div
+	TST_BIT_OF FPU_DIVS_32R2_32R1_R4_32R2_R2_EXIT	;
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	.AIF	_FPU_RESET	EQ	_COMPILE_YES
+	PUSH_REG1 R2
+	PUSH_REG1 R4
+	STS	FPSCR,R2	;
+	MOV.L	#H'00040001,R4	;
+	AND	R4,R2		;
+	LDS	R2,FPSCR	;
+	POP_REG1 R4
+	POP_REG1 R2
+	.AENDI
+	.AENDI
+	
+	LDS	R2,FPUL					;
+	FLOAT	FPUL,FR2				;
+	LDS	R4,FPUL					;
+	FLOAT	FPUL,FR4				;
+	FDIV	FR4,FR2					;FR2/FR4
+	FTRC	FR2,FPUL				;
+	STS	FPUL,R2					;
+FPU_DIVS_32R2_32R1_R4_32R2_R2_EXIT:			;
+
+	.AENDI
+
+	SUB_END
+	M_RTS
+
+;	***************************************************
+;	***						***
+;	***	R2(S32)/R4(S32)-->R2...R1		***
+;	***		ó]ÇËèàóùóLÇË			***
+;	***		R1,R2,R4,MACH,MACLÇ∆FPUîjâÛ	***
+;	***************************************************
+_FPU_DIVS_32REG2_DIV_32REG4_R2_MOD_R1:
+	SUB_START
+
+	.AIF	_SIT_CPU_SEL EQ _SIT4_CPUB
+
+;	ÇVÇVÇQÇVópââéZÇÕÇ±Ç±
+	PUSH_REG1 R0						;
+	FAR_JSR	#_DIVS_32REG2_32REG1_R4_32REG2_R2_MOD_R1,R0	;
+	POP_REG1 R0						;
+	.AELSE
+
+	TST	R4,R4						;0Div
+	TST_BIT_OF FPU_DIVS_32R2_DIV32_R4_R2_MOD_R1_EXIT	;
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	.AIF	_FPU_RESET	EQ	_COMPILE_YES
+	PUSH_REG1 R2
+	PUSH_REG1 R4
+	STS	FPSCR,R2	;
+	MOV.L	#H'00040001,R4	;
+	AND	R4,R2		;
+	LDS	R2,FPSCR	;
+	POP_REG1 R4
+	POP_REG1 R2
+	.AENDI
+	.AENDI
+	
+	MOV	R2,R1						;
+	LDS	R2,FPUL						;
+	FLOAT	FPUL,FR2					;
+	LDS	R4,FPUL						;
+	FLOAT	FPUL,FR4					;
+	FDIV	FR4,FR2						;FR2/FR4
+	FTRC	FR2,FPUL					;
+	STS	FPUL,R2						;
+	DMULS.L	R2,R4						;
+	STS	MACL,R4						;
+	SUB	R4,R1						;
+FPU_DIVS_32R2_DIV32_R4_R2_MOD_R1_EXIT:				;
+
+	.AENDI
+
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;	***************************************************
+;	***						***
+;	***	R2(S32)*R1(S32)/R4(S32)=R1,R2(S64)	***
+;	***						***
+;	***************************************************
+;	Used Reg R1,R2,R3,R4
+_MULDIV_R2S32mR1S32dR4S32aR1R2S64:
+	SUB_START
+	DMULS.L	R1,R2				;
+	STS	MACL,R2				;
+	STS	MACH,R1				;
+	FAR_JSR	#_DIVS_64R1R2_32R4_64R1R2,R3	;
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***	R1,R2(S64)*R3(S32)/R4(S32)=R1,R2(S64)...R3(S32)	***
+;	***							***
+;	***********************************************************
+;	Used Reg R1,R2,R3,R4
+;		 R0,R5
+;		 (R1,R2*R3)/R4
+;	é¿ÇÕó]ÇËÇ™R3Ç…ì¸ÇÈ
+;
+_MULDIV_R1R2S64mR3S32dR4S32aR1R2S64:
+	SUB_START
+	MOV	R1,R0
+	XOR	R3,R0
+	XOR	R4,R0		;ââéZåãâ ÇÃïÑçáBIT31 SAVE
+	PUSH_REG1 R0		;ïÑçÜSAVE
+
+	CMP/PZ	R1
+	BT	MULDIV41_050			;
+	NEG1_64	H_REG=R1,L_REG=R2,WKREG=R0	;
+MULDIV41_050:					;
+
+	CMP/PZ	R3
+	BT	MULDIV41_100			;
+	NEG	R3,R3				;
+MULDIV41_100:					;
+
+	CMP/PZ	R4
+	BT	MULDIV41_150			;
+	NEG	R4,R4				;
+MULDIV41_150:					;
+
+	DMULU.L	R3,R2				;R1,R2*R3
+	STS	MACL,R2				;
+	STS	MACH,R5				;
+	DMULU.L	R3,R1				;
+	STS	MACL,R1				;
+	STS	MACH,R0				;
+;	=== H(R0),M(R1)       ===
+;	===       M(R5),L(R2) ===
+	XOR	R3,R3
+	CLRT
+	ADDC	R5,R1				;
+	ADDC	R3,R0				;R0,R1,R2
+	TST	R0,R0				;
+	TST_BIT_OF MULDIV41_200			;
+	MOV	#-1,R1				;
+	MOV	#-1,R2				;FFFF,FFFF,FFFF,FFFF
+MULDIV41_200:					;
+
+;	-- R1,R2/R4 --
+	PUSH_REG1	R1			;
+	PUSH_REG1	R2			;
+	PUSH_REG1	R4			;
+	FAR_JSR	#_DIVU_64R1R2_32R4_64R1R2,R0	;(R1,R2)
+	POP_REG1	R4			;
+
+	DMULU.L	R4,R2				;R1,R2*R4
+	STS	MACL,R6				;
+	STS	MACH,R5				;
+	DMULU.L	R4,R1				;
+	STS	MACL,R4				;MACHÇÕë∂ç›ÇµÇ»Ç¢
+
+	ADD	R4,R5				;R5,R6
+
+	POP_REG1	R3			;
+	POP_REG1	R0			;Input(R1,R2)-(R1*R2)*R4=MOD R3
+						;=R0,R3-R5,R6
+	CLRT
+	SUBC	R6,R3				;
+	SUBC	R5,R0				;R0,R3(R0=0ÇÕÇ»Ç¢ÇÕÇ∏)
+
+	POP_REG1	R0				;
+	CMP/PZ	R0				;
+	BT	MULDIV41_300			;
+	NEG1_64	H_REG=R1,L_REG=R2,WKREG=R0	;
+	NEG	R3,R3				;
+MULDIV41_300:					;
+
+	SUB_END
+	M_RTS
+
+
+;	***********************************************************
+;	***							***
+;	***	R1,R2(S64)*R3(S32)=R1,R2(S64)			***
+;	***							***
+;	***********************************************************
+;	Used Reg R1,R2,R3
+;		 R0,R5
+;		 R1,R2*R3
+;
+_MUL_R1R2S64mR3S32aR1R2S64:
+	SUB_START
+	MOV	R1,R0
+	XOR	R3,R0
+	PUSH_REG1 R0		;ïÑçÜSAVE
+
+	CMP/PZ	R1
+	BT	MUL41_050			;
+	NEG1_64	H_REG=R1,L_REG=R2,WKREG=R0	;
+MUL41_050:					;
+
+	CMP/PZ	R3
+	BT	MUL41_100			;
+	NEG	R3,R3				;
+MUL41_100:					;
+
+	DMULU.L	R3,R2				;R1,R2*R3
+	STS	MACL,R2				;
+	STS	MACH,R5				;
+	DMULU.L	R3,R1				;
+	STS	MACL,R1				;
+	STS	MACH,R0				;
+;	=== H(R0),M(R1)       ===
+;	===       M(R5),L(R2) ===
+	XOR	R3,R3
+	CLRT
+	ADDC	R5,R1				;
+	ADDC	R3,R0				;R0,R1,R2
+	TST	R0,R0				;
+	TST_BIT_OF MUL41_200			;
+	MOV	#-1,R1				;
+	MOV	#-1,R2				;FFFF,FFFF,FFFF,FFFF
+MUL41_200:					;
+
+	POP_REG1	R0			;
+	CMP/PZ	R0				;
+	BT	MUL41_300			;
+	NEG1_64	H_REG=R1,L_REG=R2,WKREG=R0	;
+	NEG	R3,R3				;
+MUL41_300:					;
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************************************
+;	***								***
+;	***	ââéZ	ïÑçÜïtÇ´ 64bit(R1,R2)/32bit(R4)->64bit(R1,R2)	***
+;	***		0äÑÇËéZ¡™Ø∏ïtÇ´					***
+;	***								***
+;	*******************************************************************
+;	***************************************************
+;	***	SHIN R1,R2[64]/R4[32]-->R1,R2[64]	***
+;	***************************************************
+;	R1~R4 îjâÛ
+	.ALIGN	4				;
+_DIVS_64R1R2_32R4_64R1R2:			;
+	SUB_START
+	PUSH_REG1		R4		;
+	PUSH_REG1		R1		;
+	CMP/PZ	R4				;
+	BT	DIVS16_020			;
+	NEG	R4,R4				;
+DIVS16_020:
+	CMP/PZ	R1				;
+	BT	DIVS16_040			;
+
+	NEG1_64	H_REG=R1,L_REG=R2,WKREG=R3
+
+DIVS16_040:
+	FAR_JSR #_DIVU_64R1R2_32R4_64R1R2,R3	;
+
+	MOV.L	#H'7FFFFFFF,R4			;
+	CMP/HS	R1,R4				;7FFFFFFF >= data
+	BT	DIVS16_060			;
+	MOV	R4,R1				;7FFFFFFF >= data
+	MOV	#H'FFFFFFFF,R2			;7FFF,FFFF,FFFF,FFFF max
+DIVS16_060:					;
+
+	POP_REG1	R3			;R3=R1:ïÑçÜ
+	POP_REG1	R4			;
+	XOR	R4,R3				;"BIT63=0" THEN +
+	CMP/PZ	R3				;
+	BT	DIVS16_100			;"+"
+	NEG1_64	H_REG=R1,L_REG=R2,WKREG=R3	;
+DIVS16_100:					;
+	SUB_END
+	M_RTS
+
+
+;	*******************************************************************
+;	***								***
+;	***	ââéZ	ïÑçÜÇ»Çµ 64bit(R1,R2)/32bit(R4)->32bit(R1,R2)	***
+;	***		0äÑÇËéZ¡™Ø∏ïtÇ´					***
+;	***								***
+;	*******************************************************************
+;	***********************************************************
+;	***	UNSHIN	R1,R2[64]/R4[32]-->R1,R2[64]		***
+;	***********************************************************
+;	USED REG
+;	ó]ÇËÇ»ÇµââéZ
+;	R1~R4îjâÛ
+	.ALIGN	4				;
+_DIVU_64R1R2_32R4_64R1R2:			;
+	SUB_START			
+	
+	TST	R4,R4					;
+	TST_BIT_ON DIVU14_050		;
+	M_BRA	DIVU14_ZERO_DIV		;ZERO DIV        ANS.MAX
+
+DIVU14_050:
+
+	MOV	R1,R3		;PUSH_R1
+;	====R1,R2=============
+	XOR	R0,R0		;R0,R1
+
+	DIV0U				;FLAG M=Q=T=0
+	.arepeat	32		;åJï‘ìWäJ
+	ROTCL	R1			;T bit -->
+	DIV1	R4,R0			;SHIFT 1 R0-R1 -->Q,T
+	.aendr				;
+	ROTCL	R1			;T<--R1<--T
+					;(R0,R1)/R4-->R1
+	DMULS.L	R1,R4			;(R1)
+	STS	MACL,R6			;
+	STS	MACH,R5			;(0),R1/R4-->R1 R1*R4=R5,R6
+	XOR	R0,R0			;
+	CLRT
+	SUBC	R6,R3			;
+	SUBC	R5,R0			;
+
+					;R3,R2/R4
+	DIV0U				;FLAG M=Q=T=0
+	.arepeat	32		;åJï‘ìWäJ
+	ROTCL	R2			;T bit -->
+	DIV1	R4,R3			;SHIFT 1 R0-R1 -->Q,T
+	.aendr				;
+	ROTCL	R2			;T<--R1<--T
+					;R1,R2
+	M_BRA	DIVU14_EXT		;
+
+;	============================================
+DIVU14_ZERO_DIV:
+	XOR	R2,R2				;
+	ADD	#H'FF,R2			;H'FFFFFFFF,R2		;MAX SET
+	MOV	R2,R1				;R1,R2=
+DIVU14_EXT:					;
+	SUB_END
+	M_RTS
+
+
+
+
+;	***********************************
+;	***				***
+;	***	äpìxââéZ		***
+;	***				***
+;	***	0.1ìx/1ìxíPà 		***
+;	***				***
+;	***********************************
+;	Input 	R2(PV)
+;		R1(SV1)START
+;		R3(SV2)END
+;	ANS R0=1 îÕàÕì‡
+;		R0=0
+
+;	=== R1 =< R2 =< R3 THEN R0=1 ELSE R0=0
+	.EXPORT	_DIG_AREA_CHK0
+_DIG_AREA_CHK0:
+	SUB_START
+	CMP/GE	R1,R3			;
+	BF	DIG_AREA_CK0_100	;0ìxÇÇÕÇ≥Çﬁ
+;	=== 0ìxÇÇÕÇ≥Ç»Ç‹Ç¢===
+	XOR	R0,R0
+	CMP/GE	R1,R2			;
+	BF	DIG_AREA_CK0_200	; PV<SV1
+	CMP/GE	R2,R3			;
+	BF	DIG_AREA_CK0_200	; SV2<PV2 (-1)
+	MOV	#1,R0			;
+	M_BRA	DIG_AREA_CK0_200	;
+
+;	==== ÇOìxÇÇÕÇ≥Çﬁ====
+DIG_AREA_CK0_100:
+	MOV	#1,R0
+	CMP/GE	R1,R2
+	BT	DIG_AREA_CK0_200	;SV1=<PV=<360
+	CMP/GE	R2,R3			;
+	BT	DIG_AREA_CK0_200	;
+	XOR	R0,R0
+DIG_AREA_CK0_200:
+	SUB_END
+	M_RTS
+
+;
+;	***********************************
+;	***				***
+;	***	äpìxââéZ		***
+;	***				***
+;	***	0.1ìx/1ìxíPà 		***
+;	***				***
+;	***********************************
+;	Input 	R2(PV)
+;		R1(SV1)HOLD
+;		R3(SV2)OBJ
+;	SV1=<~~<SV2 	R5=1
+;	SV2==PV2	R5=0
+;	SV2<~~=<SV1	R5=-1
+;	ANS R5
+;
+	.EXPORT	_DIG_AREA_CHK1
+_DIG_AREA_CHK1:
+	SUB_START
+	XOR	R5,R5
+	CMP/EQ	R2,R3			;
+	BT	DIG_AREA_CK1_200	;
+	CMP/GE	R1,R3			;
+	BF	DIG_AREA_CK1_100	;0ìxÇÇÕÇ≥Çﬁ
+;	=== 0ìxÇÇÕÇ≥Ç»Ç‹Ç¢===
+	MOV	#-1,R5			;
+	CMP/GE	R1,R2			;
+	BF	DIG_AREA_CK1_200	; PV<SV1 (-1)
+	CMP/GE	R2,R3			;
+	BF	DIG_AREA_CK1_200	; SV2<PV2 (-1)
+	MOV	#1,R5
+	M_BRA	DIG_AREA_CK1_200	;
+
+;	==== ÇOìxÇÇÕÇ≥Çﬁ====
+DIG_AREA_CK1_100:
+	MOV	#1,R5
+	CMP/GE	R1,R2
+	BT	DIG_AREA_CK1_200	;SV1=<PV=<360
+	CMP/GE	R2,R3			;
+	BT	DIG_AREA_CK1_200	;
+	MOV	#-1,R5			;
+DIG_AREA_CK1_200:
+	SUB_END
+	M_RTS
+
+
+
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***		ï‚ä‘ÇP			***
+;	***					***
+;	***					***
+;	*******************************************
+;	ëùâ¡éûóp  Sn > Sn_1èåè(å∏è≠ï˚å¸Ç≈égópÇ∑ÇÈèÍçáÇÕì¸ÇÍë÷Ç¶Çƒégópâ¬î\:R6Ç…íçà”)
+;	Input
+;	R3:Yn_1		R5:Xn_1
+;	R2:Yn		R4:Xn
+;	ANS:R2=y	R1:x
+;	limit R6(Yn)
+;
+;
+;
+	.EXPORT	_FPU_POS_HOKAN1
+	.EXPORT	_FPU_TIM_HOKAN1
+
+_FPU_POS_HOKAN1:
+	SUB_START
+	SUB	R5,R4			;Sn-Sn_1
+	SUB	R5,R1			;Sx-Sn_1
+	M_BRA	FPU_COM_HOKAN1		;
+
+;	*******************************************
+;	***		TIMï‚ä‘			***
+;	*******************************************
+;	R3:Yn_1		
+;	R2:Yn		R4:Xn - Xn_1
+;	ANS:R2=y	R1:x  - Xn_1
+;	limit R6(Yn)
+;
+_FPU_TIM_HOKAN1:
+	SUB_START
+FPU_COM_HOKAN1:
+	TST	R4,R4				;
+	TST_BIT_OF COM_HOK_DT_ER_LMT		;R4=0 ERR
+
+	CMP/PL	R4				;R4
+	BF	COM_HOK_DT_DN_LMT		;Sn < Sn_1 data err
+
+	CMP/PZ	R1				;R1<0 err
+	BF	COM_HOK_DT_DN_LMT		;Yn_1 SET
+
+	CMP/GE	R1,R4				;R1 =< R4 NOMAL
+	BF	COM_HOK_END			;R4<R1 THEN Ωπ∞Ÿµ∞ ﬁ Yn(R2)
+
+	SUB	R3,R2				;Yn-Yn_1
+
+;	----------- R2*R1/R4 ==> R2 -------
+;;;	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0	;
+	FAR_JSR	#_X_R2_MUL_R1_DIV_R4,R0
+
+	ADD	R3,R2				;
+	M_BRA	COM_HOK_END
+COM_HOK_DT_ER_LMT:				;Sn=Sn_1
+	MOV	R6,R2				;
+	M_BRA	COM_HOK_END			;
+
+COM_HOK_DT_DN_LMT:				;Sx<Sn_1
+	MOV	R3,R2				;
+COM_HOK_END:
+	SUB_END
+	M_RTS
+
+_X_R2_MUL_R1_DIV_R4:	;
+	SUB_START
+	PUSH_REG1	R1
+	PUSH_REG1	R3
+	PUSH_REG1	R4
+	PUSH_REG1	R5
+	PUSH_REG1	R6
+	FAR_JSR	#_MULDIV_R2S32mR1S32dR4S32aR1R2S64,R0	;
+	POP_REG1	R6
+	POP_REG1	R5
+	POP_REG1	R4
+	POP_REG1	R3
+	POP_REG1	R1
+	SUB_END
+	M_RTS
+
+
+
+;	***************************************************
+;	***						***
+;	***		2010-08-23			***
+;	***						***
+;	***************************************************
+	.EXPORT	_IDO_BUF_SRC2B_TOTAL_4B_CAL
+
+
+;	***************************************************
+;	***						***
+;	***	à⁄ìÆïΩãœÇÃ ﬁØÃßÇ…ó≠ÇﬂçûÇﬁÇ∆Ç±ÇÎ		***
+;	***						***
+;	***************************************************
+;	Input R2: NEW DATA
+;	Input R5:TOTAL .ADR
+;	Input R0:IDO BAF
+;	Input R8:OFFSET POINTER*4
+;	DESTORY ;R0,R1,R2,R3,R4,R5
+;	ANS r1,r2(total)
+_IDO_BUF_SRC4B_TOTAL_8B
+	SUB_START
+	add	r8,r0							;
+	mov.l	@r0,r3							;old load
+	mov.l	r2,@r0							;
+	sub	r3,r2							;
+
+	mov.l	@r5,r3							;total_h LONG
+	mov.l	@(4,r5),r4						;total_l LONG
+	xor	r1,r1							;
+	cmp/pz	r2							;
+	bt	IDO_BUF_SRC4B_T8B_100					;
+	not	r1,r1							;ffff,ffff,bit15,,
+IDO_BUF_SRC4B_T8B_100:								;
+	ADD8B DT_REGH=r3,DT_REGL=r4,DT_ANS_REGH=r1,DT_ANS_REGL=r2	;r3,r4(total)+r1,r2(new-old)  =r1,r2
+	mov.l	r1,@r5							;total_h LONG
+	mov.l	r2,@(4,r5)						;total_l LONG
+	SUB_END
+	M_RTS
+
+
+_IDO_BUF_SRC4B_TOTAL_4B
+	SUB_START
+	add	r8,r0							;
+	mov.l	@r0,r3							;old load
+	mov.l	r2,@r0							;
+	sub	r3,r2							;
+
+	mov.l	@r5,r3							;total_h LONG
+	add	r3,r2							;
+	mov.l	r2,@r5							;total_h LONG
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***	à⁄ìÆïΩãœÇÃââéZÇ‹Ç≈ä‹ÇﬂÇΩÇ∆Ç±ÇÎ		***
+;	***						***
+;	***************************************************
+;	Input R2: NEW DATA
+;	Input R5:TOTAL.ADR
+;	Input R0:IDO BAF ADR
+;	      R3:POINTER ADR
+;	      R4:BUF CNT MAX
+;	DESTORY ;R0,R1,R2,R3,R4,R5
+;
+;	OUT R8:OFFSET POINTER*2
+;	ANS r2(total)/BUF-CNT-MAX(R4)
+_IDO_BUF_SRC2B_TOTAL_4B_CAL:
+	SUB_START
+
+	MOV.W	@R3,R1				;
+	MOV	R1,R8				;
+	ADD	#1,R1				;
+	CMP/HI	R1,R4				;R1<R4
+	BT	IDO_BUF_SRC2BT4B_CL_100		;
+	XOR	R1,R1				;
+IDO_BUF_SRC2BT4B_CL_100:			;
+	MOV.W	R1,@R3				;POINTER+1 IF LIMIT THEN 0
+
+	ADD	R8,R8					;POINTER*2 2byte√ﬁ∞¿ÇÃ ﬁÃß
+	FAR_JSR	#_IDO_BUF_SRC2B_TOTAL_4B,R1		;
+
+	FAR_JSR	#_HIGH_DIVS_32REG2_16REG1_R4_16REG2_R2,R1	;
+
+
+
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***	à⁄ìÆïΩãœÇÃ ﬁØÃßÇ…ó≠ÇﬂçûÇﬁÇ∆Ç±ÇÎ		***
+;	***						***
+;	***************************************************
+;	Input R2: NEW DATA
+;	Input R5:TOTAL.ADR
+;	Input R0:IDO BAF
+;	Input R8:OFFSET POINTER*2
+;
+;	ANS r2(total)
+_IDO_BUF_SRC2B_TOTAL_4B
+	SUB_START
+	add	r8,r0							;baf + pointer
+	mov.w	@r0,r3							;old load
+	mov.w	r2,@r0							;new save
+	sub	r3,r2							;
+
+	mov.l	@r5,r3							;total LONG
+	add	r3,r2							;total + (new-old)
+	mov.l	r2,@r5							;total_l LONG
+	SUB_END
+	M_RTS
+
+
+
+
+
+;	***************************************************
+;	***		2011-03-23			***
+;	***						***
+;	***		éOäpä÷êî			***
+;	***						***
+;	***		COS				***
+;	***		input 0.001ìx~360.000ìx		***
+;	***		output 0.0000~1.0000		***
+;	***						***
+;	***************************************************
+;	H'24000(147456)=360 360/200000=0.0018ìx
+;				       0.001ìx
+;	input 0.001ìx 0~359.999
+__COS_DIG_MAX	.EQU	360000		;360000ÇÕ√ﬁ∞¿
+__COS_DIG_ARA1	.EQU	90000		;ëÊàÍè€å¿
+__COS_DIG_ARA2	.EQU	180000		;
+__COS_DIG_ARA3	.EQU	270000		;
+
+;0~90	     COS(deg)
+;90~180   -1*COS(180-deg)
+;180~270  -1*COS(deg-180)
+;270~360     COS(360-deg)
+;
+;	input  R2(0~359.999)
+;	output R2(+/- 1.000000)
+	.ALIGN	4
+	.EXPORT	_COS_IN_DEG		;
+	.EXPORT	_COS_DIG1_UNIT_COEF	;1.000000=1000000
+	
+_COS_IN_DEG
+	SUB_START
+
+
+	MOV.L	#__COS_DIG_MAX,R1		;
+	CMP/HS	R1,R2				;
+	BF	COS_INDG_CAL100			;
+	XOR	R3,R3				;SHIN="+"
+	XOR	R2,R2				;36000à»è„
+	M_BRA	COS_INDG_CAL500			;
+COS_INDG_CAL100:
+
+	MOV.L	#__COS_DIG_ARA1,R1		;ëÊ1è€å¿90
+	CMP/HS	R2,R1				;
+	BF	COS_INDG_CAL200			;
+						;R2 =< R1
+	XOR	R3,R3				;SHIN="+"
+	M_BRA	COS_INDG_CAL500			;
+COS_INDG_CAL200:
+
+	MOV.L	#__COS_DIG_ARA2,R1		;ëÊ2è€å¿180
+	CMP/HS	R2,R1				;R1 =< R2
+	BF	COS_INDG_CAL300			;
+	MOV	#-1,R3				;-1
+	SUB	R2,R1				;180-deg
+	MOV	R1,R2				;
+	M_BRA	COS_INDG_CAL500			;
+
+COS_INDG_CAL300:
+	MOV.L	#__COS_DIG_ARA3,R1		;ëÊ3è€å¿270
+	CMP/HS	R2,R1				;R1 =< R2
+	BF	COS_INDG_CAL400			;
+	MOV	#-1,R3				;-1
+	MOV.L	#__COS_DIG_ARA2,R1		;ëÊ2è€å¿180
+	SUB	R1,R2				;deg-180
+	M_BRA	COS_INDG_CAL500			;
+
+;	---------ëÊ4è€å¿--
+COS_INDG_CAL400:
+	XOR	R3,R3				;
+	MOV.L	#__COS_DIG_MAX,R1		;
+	SUB	R2,R1				;
+	MOV	R1,R2				;
+
+COS_INDG_CAL500
+	PUSH_REG1 R3
+;	---------(0~90ìx)-------------------
+	MOV.L	#_COS_DIG1_TOP,R10				;
+	MOV.L	#_COS_DIG1_INFO_CNT,R9				;
+	MOV.L	#_COS_DIG1_INFO_UNIT,R12			;
+
+	MOV.L	@R12,R4						;R2(32)/R4(16) R2...R1
+	PUSH_REG1 R4						;
+	FAR_JSR	#_DIVS_32REG2_32REG1_R4_32REG2_R2_MOD_R1,R0	;
+	POP_REG1 R4						;R2...R1 div data=R4
+	FAR_JSR	#_TBL_HOKAN_TYPE1,R0				;
+;	-------------------------------------
+	POP_REG1 R3
+	TST	R3,R3						;
+	TST_BIT_OF COS_INDG_CAL900				;
+	NEG	R2,R2						;
+COS_INDG_CAL900:						;
+
+
+	SUB_END
+	M_RTS
+
+;
+;
+;
+;
+;
+;	input data R2...R1 DIV=R4
+;	input R9
+;	input R10
+;	input R12
+
+
+_TBL_HOKAN_TYPE1
+	SUB_START
+	MOV.L	@R9,R3						;è§ÇÃMAX R3=90
+	CMP/HS	R3,R2						;
+	BF	TBL_HOKAN_TYP1_100				;
+;	-----ç≈ëÂ------------
+	SHLL2	R3						;*4byte
+	ADD	R3,R10						;
+	MOV.L	@R10,R2						;ANS R2
+	M_BRA	TBL_HOKAN_TYP1_900				;
+
+TBL_HOKAN_TYP1_100
+	SHLL2	R2						;
+	ADD	R2,R10						;
+
+;	R3:Yn_1		R5:Xn_1
+;	R2:Yn		R4:Xn[ì¸óÕéûì_Ç≈R4=10000Å@Xn]
+;	ANS:R2=y	R1:x[ì¸óÕéûì_Ç≈R1ÇÕMOD=x]
+	MOV.L	@R10+,R3					;Yn_1
+	MOV.L	@R10,R2						;Yn
+	XOR	R5,R5						;Xn_1=0
+								;Xn=1000=R4
+	FAR_JSR	#_FPU_POS_HOKAN1,R0				;
+TBL_HOKAN_TYP1_900
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***		ÉãÅ[Ég32		***
+;	***		Å„R1(32)->ANSÅ@R3	***
+;	***					***
+;	*******************************************
+	.ALIGN	4
+;;_ROOT1_32R1:
+;;	SUB_START
+;;	XOR	R3,R3				;ANS.
+;;	XOR	R5,R5				;ìríÜà¯éZ√ﬁ∞¿ WORK
+;;	XOR	R6,R6				;R1-->è„à 2ÀﬁØƒéÊèo-->R6â∫à 2ÀﬁØƒ WORK
+;;	MOV.L	#1,R10				;≤›∏ÿ“›ƒãyÇ—ÀﬁØƒ0æØƒéûÇ…égóp
+;;	MOV.L	#D'16,R11			;∂≥›¿
+;;
+;	--------------------------------
+;;ROOT1_020:
+;;
+;;	SHLL	R1				;
+;;	ROTCL	R6				;
+;;	SHLL	R1				;
+;;	ROTCL	R6				;2ÀﬁØƒéÊèo
+;;
+;;	SHLL	R5				;ìríÜ√ﬁ∞¿ç∂1ºÃƒ
+;;	MOV	R5,R4				;
+;;	OR	R10,R4				;BIT0 SET à¯ÇØÇÈÇ©√ﬁ∞¿
+;;
+;;	CMP/HS	R4,R6				;R6 >= R4 THEN R4Çà¯ÇØÇÈ 
+;;	BT	ROOT1_050			;YES JUMP
+;	----- à¯ÇØÇ»Ç¢éû ------
+;	R5:ÇªÇÃÇ‹Ç‹ + 0
+;;
+;;	SHLL	R3				;ïΩï˚ç™åãâ =0
+;;	M_BRA	ROOT1_100			;
+;;
+;;
+;;ROOT1_050:
+;	----- à¯ÇØÇÈéû ------
+;;	SUB	R4,R6				;R6-R4=R6
+;;	MOV	R4,R5				;ìríÜââéZ√ﬁ∞¿
+;;	ADD	R10,R5				;+1
+;;
+;;	SHLL	R3				;
+;;	OR	R10,R3				;ïΩï˚ç™åãâ =1æØƒ
+;;ROOT1_100:
+;;
+;;	DT	R11
+;;	BT	ROOT1_EXIT			;∂≥›¿-1=0 END
+;;	M_BRA	ROOT1_020			;
+;;
+;;ROOT1_EXIT:
+;;	SUB_END
+;;	M_RTS					;
+
+
+;	*******************************************
+;	***					***
+;	***		ÉãÅ[Ég64		***
+;	***		Å„R1R2(64)->ANSÅ@R2(32)	***
+;	***	2011-03-23			***
+;	*******************************************
+	.ALIGN	4
+	.EXPORT	_ROOT2_64R1R2_ANS_R2
+_ROOT2_64R1R2_ANS_R2:
+	SUB_START
+	XOR	R3,R3				;ANS.
+
+	XOR	R8,R8				;ìríÜà¯éZ√ﬁ∞¿ WORK
+	XOR	R9,R9				;ìríÜà¯éZ√ﬁ∞¿ WORK
+
+	XOR	R6,R6				;R1-->è„à 2ÀﬁØƒéÊèo-->R6â∫à 2ÀﬁØƒ WORK
+	XOR	R7,R7				;R1-->è„à 2ÀﬁØƒéÊèo-->R6â∫à 2ÀﬁØƒ WORK
+
+	MOV.L	#1,R10				;≤›∏ÿ“›ƒãyÇ—ÀﬁØƒ0æØƒéûÇ…égóp
+	MOV.L	#D'32,R11			;∂≥›¿
+
+;	--------------------------------
+ROOT2_020:
+
+	SHLL	R2				;â∫à 
+	ROTCL	R1				;è„à 
+	ROTCL	R7				;
+	ROTCL	R6				;
+
+	SHLL	R2				;â∫à 
+	ROTCL	R1				;è„à 
+	ROTCL	R7				;
+	ROTCL	R6				;2ÀﬁØƒéÊèo
+
+
+	SHLL	R9				;ìríÜ√ﬁ∞¿ç∂1ºÃƒ
+	ROTCL	R8				;R8,R9
+
+	MOV	R8,R4				;
+	MOV	R9,R5				;
+
+	OR	R10,R5				;BIT0 SET à¯ÇØÇÈÇ©√ﬁ∞¿
+
+	PUSH_REG1 R6
+	PUSH_REG1 R7
+	SUB8B DT_REGH=R4,DT_REGL=R5,DT_ANS_REGH=R6,DT_ANS_REGL=R7	;
+
+	CMP/PZ	R6							;R6,R7 >= R4,R5 THEN R4,R5Çà¯ÇØÇÈ 
+	BT	ROOT2_050			;YES JUMP
+;	----- à¯ÇØÇ»Ç¢éû ------
+;	R8:ÇªÇÃÇ‹Ç‹ + 0
+	POP_REG1 R7				;
+	POP_REG1 R6				;
+	SHLL	R3				;ïΩï˚ç™åãâ =0
+	M_BRA	ROOT2_100			;
+
+
+ROOT2_050:
+;	----- à¯ÇØÇÈéû[R6,R7=R6,R7-R4,R5] ------
+	POP_REG1 R0				;
+	POP_REG1 R0				;¿ﬁ–∞Ç≈Ω¿Ø∏ÇñﬂÇ∑
+
+	MOV	R4,R8				;ìríÜââéZ√ﬁ∞¿
+	MOV	R5,R9				;
+
+	XOR	R0,R0				;
+	CLRT					;
+	ADDC	R10,R9				;
+	ADDC	R0,R8				;+1
+
+	SHLL	R3				;
+	OR	R10,R3				;ïΩï˚ç™åãâ =1æØƒ
+ROOT2_100:
+
+	DT	R11
+	BT	ROOT2_EXIT			;∂≥›¿-1=0 END
+	M_BRA	ROOT2_020			;
+
+ROOT2_EXIT:
+	MOV	R3,R2				;
+	SUB_END
+	M_RTS					;
+
+
+;	----------ämîFÉvÉçÉOÉâÉÄ------------
+;;	MOV.L	#_root_chk_work,R1		;
+;;	MOV.L	@R1,R2				;
+;;	CMP/PZ	R2				;
+;;	BF	TST_SUB_START100		;
+;;	SHLL	R2				;
+;;	ADD	#1,R2				;
+;;	MOV.L	R2,@R1				;
+;;
+;;	DMULU.L	R2,R2				;
+;;	STS	MACH,R1				;
+;;	STS	MACL,R2				;
+;;
+;;	FAR_JSR	#_ROOT2_64R1R2_ANS_R3,R0	;
+;;	MOV	R3,R4				;ANS R3
+;;
+;;
+;;	MOV.L	#_root_chk_work,R1		;
+;;	MOV.L	@R1,R2				;
+;;	CMP/EQ	R2,R3				;
+;;	BT	TST_SUB_START050		;
+;;	NOP					;ERR
+;;	M_BRA	TST_SUB_START100		;
+;;TST_SUB_START050:
+;;	NOP
+;;TST_SUB_START100:
+;
+
+
+;	*******************************************
+;	***					***
+;	***		à»â∫ÇÕí èÌæ∏ºÆ›		***
+;	***		2013-03-15		***
+;	*******************************************
+	.ALIGN	4
+	.AIF	_SIT_CPU_SEL EQ _SIT4_CPUB
+	.SECTION	P,CODE				;
+	.AENDI
+
+;	*******************************************
+;	***					***
+;	***		éOäpä÷êîÉeÅ[ÉuÉã	***
+;	***					***
+;	*******************************************
+;	0~90ìxÇ‹Ç≈[]
+	.ALIGN	4
+_COS_DIG1_INFO_CNT	.DATA.L		90		;ç≈ëÂÇÃè§
+_COS_DIG1_INFO_UNIT	.DATA.L		1000		;1.000ìxíPà [ì‡ïî0.001ìxÇ…ëŒÇµÇƒ√∞ÃﬁŸ1ìxÇæÇ©ÇÁ1000]
+_COS_DIG1_UNIT_COEF	.DATA.L		1000000		;1.000000=1000000
+
+	.ALIGN	4
+_COS_DIG1_TOP
+		.DATA.L		1000000 	;0~0.999 1.00000
+		.DATA.L		0999848 	;1~1.999
+		.DATA.L		0999391 	;2
+		.DATA.L		0998630 	;3
+		.DATA.L		0997564 	;4
+		.DATA.L		0996195 	;5
+		.DATA.L		0994522 	;6
+		.DATA.L		0992546 	;7
+		.DATA.L		0990268 	;8
+		.DATA.L		0987688 	;9
+		.DATA.L		0984808 	;10
+		.DATA.L		0981627 	;11
+		.DATA.L		0978148 	;12
+		.DATA.L		0974370 	;13
+		.DATA.L		0970296 	;14
+		.DATA.L		0965926 	;15
+		.DATA.L		0961262 	;16
+		.DATA.L		0956305 	;17
+		.DATA.L		0951057 	;18
+		.DATA.L		0945519 	;19
+		.DATA.L		0939693 	;20
+		.DATA.L		0933580 	;21
+		.DATA.L		0927184 	;22
+		.DATA.L		0920505 	;23
+		.DATA.L		0913545 	;24
+		.DATA.L		0906308 	;25
+		.DATA.L		0898794 	;26
+		.DATA.L		0891007 	;27
+		.DATA.L		0882948 	;28
+		.DATA.L		0874620 	;29
+		.DATA.L		0866025 	;30
+		.DATA.L		0857167 	;31
+		.DATA.L		0848048 	;32
+		.DATA.L		0838671 	;33
+		.DATA.L		0829038 	;34
+		.DATA.L		0819152 	;35
+		.DATA.L		0809017 	;36
+		.DATA.L		0798636 	;37
+		.DATA.L		0788011 	;38
+		.DATA.L		0777146 	;39
+		.DATA.L		0766044 	;40
+		.DATA.L		0754710 	;41
+		.DATA.L		0743145 	;42
+		.DATA.L		0731354 	;43
+		.DATA.L		0719340 	;44
+		.DATA.L		0707107 	;45
+		.DATA.L		0694658 	;46
+		.DATA.L		0681998 	;47
+		.DATA.L		0669131 	;48
+		.DATA.L		0656059 	;49
+		.DATA.L		0642788 	;50
+		.DATA.L		0629320 	;51
+		.DATA.L		0615661 	;52
+		.DATA.L		0601815 	;53
+		.DATA.L		0587785 	;54
+		.DATA.L		0573576 	;55
+		.DATA.L		0559193 	;56
+		.DATA.L		0544639 	;57
+		.DATA.L		0529919 	;58
+		.DATA.L		0515038 	;59
+		.DATA.L		0500000 	;60
+		.DATA.L		0484810 	;61
+		.DATA.L		0469472 	;62
+		.DATA.L		0453990 	;63
+		.DATA.L		0438371 	;64
+		.DATA.L		0422618 	;65
+		.DATA.L		0406737 	;66
+		.DATA.L		0390731 	;67
+		.DATA.L		0374607 	;68
+		.DATA.L		0358368 	;69
+		.DATA.L		0342020 	;70
+		.DATA.L		0325568 	;71
+		.DATA.L		0309017 	;72
+		.DATA.L		0292372 	;73
+		.DATA.L		0275637 	;74
+		.DATA.L		0258819 	;75
+		.DATA.L		0241922 	;76
+		.DATA.L		0224951 	;77
+		.DATA.L		0207912 	;78
+		.DATA.L		0190809 	;79
+		.DATA.L		0173648 	;80
+		.DATA.L		0156434 	;81
+		.DATA.L		0139173 	;82
+		.DATA.L		0121869 	;83
+		.DATA.L		0104528 	;84
+		.DATA.L		0087156 	;85
+		.DATA.L		0069756 	;86
+		.DATA.L		0052336 	;87
+		.DATA.L		0034899 	;88
+		.DATA.L		0017452 	;89~89.999
+		.DATA.L		0000000 	;90
+
+
+
+;	***********************************************************
+;	***							***
+;	***	[16byte]R5,R6,R1,R2/R3,R4[8byte]=R1,R2[8byte]	***
+;	***							***
+;	***********************************************************
+;	input R5,R6,R1,R2/R3,R4
+
+	.MACRO	NEG128_R5R6R1R2_WKR8
+
+	XOR	R8,R8	;
+
+	NOT	R5,R5
+	NOT	R6,R6
+	NOT	R1,R1
+	NOT	R2,R2
+
+
+	SETT	
+	ADDC	R8,R2
+	ADDC	R8,R1
+	ADDC	R8,R6
+	ADDC	R8,R5
+
+	.ENDM
+
+
+
+
+	.ALIGN	4
+	.EXPORT	_DIVS1_16B_DIV_8B_ANS_8B		;
+_DIVS1_16B_DIV_8B_ANS_8B
+	SUB_START
+	PUSH_REG1 R7		;LOOP
+	PUSH_REG1 R8		;
+	PUSH_REG1 R9		;
+	PUSH_REG1 R10		;ANS
+	PUSH_REG1 R11		;ANS
+	PUSH_REG1 R12		;
+	PUSH_REG1 R13		;
+	PUSH_REG1 R14		;SHIN
+
+	MOV.W	#D'64,R7	;
+
+	XOR	R14,R14		;
+	CMP/PZ	R5		;
+	BT	DIVS1_16B_DIV_8BANS8B_100
+	NOT	R14,R14		;ïÑçÜÅ@"-1"
+
+	NEG128_R5R6R1R2_WKR8	;R5R6R1R2=>R5R6R1R2
+
+DIVS1_16B_DIV_8BANS8B_100
+
+	CMP/PZ	R3
+	BT	DIVS1_16B_DIV_8BANS8B_200
+	NOT	R14,R14		;ïÑçÜÅ@"-1"
+
+	NEG1_64	H_REG=R1,L_REG=R2,WKREG=R8
+
+
+
+DIVS1_16B_DIV_8BANS8B_200
+	NOP
+
+	XOR	R10,R10		;"H"
+	XOR	R0,R0		;"L"
+
+;	------------- µ∞ ﬁÃ€¡™Ø∏---------
+	MOV	R5,R12
+	MOV	R6,R13
+	CLRT
+	SUBC	R4,R13				;
+	SUBC	R3,R12				;ââéZåãâ  "CY=0 à¯ÇØÇΩ"
+	BT	DIVS1_16B_DIV_8BANS8B_LOP	;à¯ÇØÇ»Ç¡ÇΩOK
+	NOP
+
+	M_BRA	DIVS1_16B_DIV_8BANS8B_500	;µ∞ ﬁÃ€
+
+
+DIVS1_16B_DIV_8BANS8B_LOP
+	SHLL	R2	;
+	ROTCL	R1	;
+	ROTCL	R6	;
+	ROTCL	R5	;R5,R6,R1,R2
+
+	MOV	R5,R12
+	MOV	R6,R13
+
+	CLRT
+	SUBC	R4,R13				;
+	SUBC	R3,R12				;ââéZåãâ  "CY=0 à¯ÇØÇΩ"
+						;CY=0:à¯ÇØÇΩÅ@åãâ ÇàÍíUÇªÇÃÇ‹Ç‹ì¸ÇÍÇÈ
+	ROTCL	R0				;
+	ROTCL	R10				;[R10,R0]
+	TST	#BIT0,R0			;
+	TST_BIT_ON DIVS1_16B_DIV_8BANS8B_300	;CY=1:à¯ÇØÇ»Ç©Ç¡ÇΩ
+
+	MOV	R12,R5				;CY=0:à¯ÇØÇΩ
+	MOV	R13,R6				;à¯Ç¢ÇΩåãâ ÇîΩâf
+
+DIVS1_16B_DIV_8BANS8B_300
+
+	ADD	#-1,R7				;
+	TST	R7,R7				;
+	TST_BIT_ON DIVS1_16B_DIV_8BANS8B_LOP	;
+
+
+	NOT	R10,R10				;CYÇÃîΩì]
+	NOT	R0,R0				;
+
+
+	MOV	R10,R1				;â∫à 8BYTE SAVE
+	MOV	R0,R2				;
+
+
+	TST	R14,R14				;
+	TST_BIT_OF DIVS1_16B_DIV_8BANS8B_500
+
+	NEG1_64	H_REG=R1,L_REG=R2,WKREG=R8
+
+
+DIVS1_16B_DIV_8BANS8B_500
+
+
+	POP_REG1 R14
+	POP_REG1 R13
+	POP_REG1 R12
+	POP_REG1 R11
+	POP_REG1 R10
+	POP_REG1 R9
+	POP_REG1 R8
+	POP_REG1 R7
+
+	SUB_END
+	M_RTS
+
+
+
+;	*******************************************************************
+;	***								***
+;	***	[8byteR1,R2]*[8byte R5,R6]=[16byte R5,R6,R1,R2]		***
+;	***								***
+;	*******************************************************************
+;	R0,R1,R2,R3,R4,R5,R6 DESTORY
+	.EXPORT	_SMUL1_R1R2_MUL_R5R6_ANS
+_SMUL1_R1R2_MUL_R5R6_ANS
+	SUB_START
+	
+	PUSH_REG1 R8		;
+	PUSH_REG1 R9		;
+	PUSH_REG1 R10		;
+	PUSH_REG1 R11		;
+	PUSH_REG1 R12		;
+	PUSH_REG1 R13		;
+	PUSH_REG1 R14		;SHIN
+
+	XOR	R14,R14			;
+	CMP/PZ	R1			;
+	BT	SMUL1_8B_M_8B100	
+	NOT	R14,R14			;ïÑçÜÅ@"-1"
+
+	NEG1_64	H_REG=R1,L_REG=R2,WKREG=R0
+
+SMUL1_8B_M_8B100
+
+	CMP/PZ	R5			;
+	BT	SMUL1_8B_M_8B200	;
+	NOT	R14,R14			;ïÑçÜÅ@"-1"
+
+	NEG1_64	H_REG=R5,L_REG=R6,WKREG=R0
+
+
+SMUL1_8B_M_8B200
+
+	DMULU.L	R2,R6			;
+	STS	MACH,R10		;
+	STS	MACL,R11		;
+
+	DMULU.L	R2,R5			;
+	STS	MACH,R12		;
+	STS	MACL,R13		;
+
+	DMULU.L	R1,R6			;
+	STS	MACH,R3			;
+	STS	MACL,R0			;
+
+	DMULU.L	R1,R5			;
+	STS	MACH,R5			;
+	STS	MACL,R6			;
+
+	MOV	R0,R1			;
+
+;	[R5 ,R6 ]
+;	    [R3 ,R1]
+;	    [R12,R13]
+;	        [R10,R11]
+;----------------------------
+;	[R5 ,R6 ,R1 ,R2 ]
+	MOV	R11,R2			;
+	XOR	R0,R0			;CY
+	XOR	R4,R4			;CY
+	CLRT
+	ADDC	R10,R13			;
+	ADDC	R0,R0			;
+	ADDC	R13,R1			;[R1,R2]
+	ADDC	R4,R4			;
+	ADD	R4,R0			;R0=CY+CY
+
+	XOR	R10,R10			;CY
+	XOR	R11,R11			;CY
+	XOR	R13,R13			;CY
+	CLRT
+	ADDC	R3,R6			;
+	ADDC	R10,R10			;
+	ADDC	R12,R6			;
+	ADDC	R11,R11			;
+	ADDC	R0,R6			;
+	ADDC	R13,R13			;
+
+	ADD	R10,R5
+	ADD	R11,R5
+	ADD	R13,R5
+
+
+	TST	R14,R14			;ïÑçÜÅ@"-1"
+	TST_BIT_OF SMUL1_8B_M_8B300	;
+
+	NEG128_R5R6R1R2_WKR8	;R5R6R1R2=>R5R6R1R2
+
+
+SMUL1_8B_M_8B300
+
+	POP_REG1 R14		;SHIN
+	POP_REG1 R13
+	POP_REG1 R12
+	POP_REG1 R11
+	POP_REG1 R10
+	POP_REG1 R9
+	POP_REG1 R8
+
+	SUB_END
+	M_RTS
+
+
+
+	.END
+
+
+
+

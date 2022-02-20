@@ -1,0 +1,438 @@
+;	***************************************************
+;	***						***
+;	***						***
+;	***	各インターフェイスソフト		***
+;	***						***
+;	***						***
+;	***************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"		; EQU
+	.include	"ssa_ver1.equ"
+	.INCLUDE	"CPU_REG.EXT"		; 
+	.INCLUDE	"shn_cmd1.mac"		; 
+	.AIF	_CB_CPU_SEL EQ _CB_CPUA
+	.INCLUDE	"ssa_out1.mac"		; 
+	.INCLUDE	"ssa_had1.equ"		; 
+	.include	"ssa_seq1.equ"
+	.AELSE
+	.INCLUDE	"ssa_pfom.equ"		; //equ定義
+	.INCLUDE	"ssa_khad.equ"		; //equ定義
+	.AENDI
+	.INCLUDE	"ssa_wram.ext"		; 
+	.INCLUDE	"ssa_wrmy.ext"		; 
+
+	.LIST	ON
+
+
+	.SECTION	P,CODE			;
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 PROGRAM	***
+;	//	***********************************
+
+	.IMPORT		_SEQ_INT_TIM10MS
+	.IMPORT		_SEQ_RUN_CHG_MAIN		; ｼｰｹﾝｽFROM->SDRAM命令変換
+	.IMPORT		_IOGA_DI_LOAD			;
+
+	.IMPORT		_DSET_FLG_MAKE			; 画面切り替えに使うDSET信号をフラグにする
+
+	.IMPORT		_SEQ_CB_WKINRAM_SET		;
+	.IMPORT		_REMOTE_INDT_READ		;
+	.IMPORT		_REMOTE_OUTDT_STORE		;
+;;;;;	.IMPORT		_CTRL_OUTPUT	;
+
+	.IMPORT		_AD_LOAD			;
+	.IMPORT		_DA_CNVOUT			;
+	.IMPORT		_HANYOU_IN_SEQ_SET		; 汎用入力ｼｰｹﾝｽｾｯﾄ
+	.IMPORT		_HANYOU_OUT_SEQ_SET		; 汎用出力ｼｰｹﾝｽｾｯﾄ
+	.IMPORT		_SEQ_RUN_MAIN			; ｼｰｹﾝｽ処理
+
+	.IMPORT		_RENIA_SENCER			; ﾘﾆｱｾﾝｻ処理
+	.IMPORT		_RCIVE2_READ			;2msec(受信ﾃﾞｰﾀ)
+	.IMPORT		_SEND2_SEND			;2msec(送信)
+
+	.IMPORT		_SEQ203_OUT_CHG			;
+
+	.IMPORT		_EMG_INPUT_FLG_MAKE		;
+
+	.IMPORT		_FSFTY_INDT_MAKE		; 前安全装置生データ作成
+	.IMPORT		_RSFTY_INDT_MAKE		; 後安全装置生データ作成
+
+	.IMPORT		_SEQ_CB_DP_WR			;//クラッチで使用しているデータをDPRAMへ転送
+
+	.IMPORT		_POWER_DOWN_ACT			; パワーダウンの処理
+
+;	======================================== SAITO INS 2002-09-12
+;	==== ｾﾙﾌﾁｪｯｸ実処理 ====
+	.IMPORT	_SLF_HNDFLG_LOAD			; CPUA,B FLG入れ替えLOAD
+	.IMPORT	_SELF_CHECK_ACT				; セルフチェック実処理
+	.IMPORT	_SLF_HNDFLG_STORE			; CPUA,B FLG入れ替えSTORE
+;	========================================
+
+	.IMPORT	_SYUKKA_HANDPLS_SMP_START		; 位置決めＬＳＩから位置取込 手パ カウント開始
+	.IMPORT	_SYUKKA_HANDPLS_SMP			; 位置決めＬＳＩから位置取込 手パ
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 MEMORY,HARD	***
+;	//	***********************************
+
+	.IMPORT		_dio_top1			; IOGA PF ADDRESS
+
+	.IMPORT		_SEQ_CARD_RAM			;
+
+;	==== コマツ追加 ===
+	.IMPORT		_ENC360_BITFLW_CNT			;
+	.IMPORT		_ENC360_BITERR_CNT			;
+	.IMPORT		_CB_SEQ_SW_SEL028			;
+	.IMPORT		_CB_SEQ_SW_SEL029			;
+
+	.IMPORT		_ENC360_INOLD				;
+	.IMPORT		_ENC360_INDT				;
+
+;	//	***********************************
+;	//	***	PUBLIC 宣言 PROGRAM	***
+;	//	***********************************
+	.EXPORT		_ASM_DMY1_SOFT_INIT		;
+	.EXPORT		_ASM_DMY1_DATA_INIT		;isa-->SH4または SH4(ﾏｽﾀ→ｽﾚｰﾌﾞ)
+	.EXPORT		_ASM_DMY1_DATA_MAIN		;//ﾃﾞｰﾀ受信後毎スキャン
+	.EXPORT		_ASM_Y1_CTRL_MAIN		;//メインスキャン
+
+	.EXPORT		_ASM_Y1_CTRL_INT1		;200us
+	.EXPORT		_ASM_Y1_CTRL_INT2		;1ms
+	.EXPORT		_ASM_Y1_CTRL_INT3		;2ms
+
+	.IMPORT		_SCIF_REG_INIT			; 通信ﾚｼﾞｽﾀ初期化
+	.IMPORT		_TMP_INT_INIT			;
+
+	.IMPORT		_INIT_ERR_SYSP_SET		; ｲﾆｼｬﾙ時にｼｽﾊﾟﾗ→WORKRAM
+	.IMPORT		_CMP2_ERR_DATA_MAKE		; 二重回路異常検知で参照する相手信号データ作成
+
+	.IMPORT		_FROM_PRG_DATA_CHK		; フラッシュＲＯＭ内プログラムチェック
+	.IMPORT		_CPUAB_ERR_SEQOFF		; CPUAER,CPUBER THEN シーケンス実出力領域ALLOFF(SEQ8～12)
+
+;	==== コマツ追加 ===
+	.IMPORT		_ENC_BUSY_INT				;dioy
+
+
+;	==== 共通化 2006-07-25 SAITO ====
+
+	.AIF	_CB_CPU_SEL EQ _CB_CPUA
+
+	.AELSE
+
+	.IMPORT		_DI_CPUPORT_DATA_RD		; CPU-PORT入力３度読み
+	.IMPORT		_REAL_INP1_DATA_RD		; HC541入力３度読み
+	.IMPORT		_AD_CNV_INIT			; ＡＤコンバータ初期化
+	.IMPORT		_KEEPRY_DATA_BAKUP	;
+	.IMPORT		_ENC360_INT
+
+	.AENDI
+
+
+;	***********************************************************
+;	***							***
+;	***		ｲﾆｼｬﾙﾃﾞｰﾀ受信前１回			***
+;	***							***
+;	***********************************************************
+_ASM_DMY1_SOFT_INIT:	;
+	SUB_START
+	PUSH_ALL
+
+	.AIF	_CB_CPU_SEL EQ _CB_CPUA
+
+	FAR_JSR	#_SEQ_RUN_CHG_MAIN,R0				; ｼｰｹﾝｽFROM->SDRAM命令変換
+
+;	====== ﾎﾞｰﾚｰﾄ・送信・受信ﾓｰﾄﾞ設定==========
+	FAR_JSR	#_SCIF_REG_INIT,R0		; 通信ﾚｼﾞｽﾀ初期化
+
+	FAR_JSR	#_INIT_ERR_SYSP_SET,R0		; ｲﾆｼｬﾙ時にｼｽﾊﾟﾗ→WORKRAM
+
+;	==== コマツ追加 ===
+	FAR_JSR	#_ENC_BUSY_INT,R0
+;;	.AIF	_PRG_CHG20030127 EQ _COMPILE_YES	;ﾌﾟﾛｸﾞﾗﾑ変更箇所(反転仕様以外の標準に入れる変更)
+;;	.AENDI
+;	====== 2003-01-27 ==============
+	MOV.L	#_ENC360_INOLD,R1	;
+	MOV.W	@R1,R0			;
+	MOV.L	#_ENC360_INDT,R1	;
+	MOV.W	R0,@R1			;
+;	================================
+
+	FAR_JSR	#_ENC_BUSY_INT,R0
+	FAR_JSR	#_ENC_BUSY_INT,R0
+	FAR_JSR	#_ENC_BUSY_INT,R0
+
+
+	XOR	R0,R0
+	MOV.L	#_ENC360_BITERR_CNT,R1	;
+	MOV.W	R0,@R1			;
+	MOV.L	#_ENC360_BITFLW_CNT,R1	;
+	MOV.W	R0,@R1			;
+
+	.AELSE
+
+	FAR_JSR	#_INIT_ERR_SYSP_SET,R0		; ｲﾆｼｬﾙ時にｼｽﾊﾟﾗ→WORKRAM
+
+	FAR_JSR	#_AD_CNV_INIT,R0		; ＡＤコンバータ初期化
+
+;	==== コマツ追加 ===
+	FAR_JSR	#_ENC360_INT,R0
+;;	.AIF	_PRG_CHG20030127 EQ _COMPILE_YES	;ﾌﾟﾛｸﾞﾗﾑ変更箇所(反転仕様以外の標準に入れる変更)
+;;	.AENDI
+;	====== 2003-01-27 ==============
+	MOV.L	#_ENC360_INOLD,R1	;
+	MOV.W	@R1,R0			;
+	MOV.L	#_ENC360_INDT,R1	;
+	MOV.W	R0,@R1			;
+;	================================
+	FAR_JSR	#_ENC360_INT,R0
+	FAR_JSR	#_ENC360_INT,R0
+	FAR_JSR	#_ENC360_INT,R0
+	XOR	R0,R0
+	MOV.L	#_ENC360_BITERR_CNT,R1	;
+	MOV.W	R0,@R1			;
+	MOV.L	#_ENC360_BITFLW_CNT,R1	;
+	MOV.W	R0,@R1			;
+
+
+;	===== 2003-02-04 SAITO =====
+	FAR_JSR	#_SYUKKA_HANDPLS_SMP_START,R0		; 位置決めＬＳＩから位置取込 手パ カウント開始
+;	============================
+
+	.AENDI
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***			ｲﾆｼｬﾙ処理	１回		***
+;	***							***
+;	***********************************************************
+_ASM_DMY1_DATA_INIT:		;isa-->SH4または SH4(ﾏｽﾀ→ｽﾚｰﾌﾞ)
+	SUB_START
+	PUSH_ALL
+
+	.AIF	_CB_CPU_SEL EQ _CB_CPUA
+
+;	===== 2003-02-04 SAITO =====
+	FAR_JSR	#_SYUKKA_HANDPLS_SMP_START,R0		; 位置決めＬＳＩから位置取込 手パ カウント開始
+;	============================
+
+	FAR_JSR	#_AD_LOAD,R0				;
+	FAR_JSR	#_AD_LOAD,R0				;
+	FAR_JSR	#_AD_LOAD,R0				;
+	FAR_JSR	#_AD_LOAD,R0				;
+	FAR_JSR	#_AD_LOAD,R0				;
+	FAR_JSR	#_AD_LOAD,R0				;
+	FAR_JSR	#_AD_LOAD,R0				;
+	FAR_JSR	#_AD_LOAD,R0				;
+	FAR_JSR	#_AD_LOAD,R0				;
+
+	FAR_JSR	#_FROM_PRG_DATA_CHK,R0			; フラッシュＲＯＭ内プログラムチェック
+	TST	R0,R0					;
+	TST_BIT_OF _FROM_SUM_NORMAL			; 正常 THEN JUMP
+
+	MOV.L	#(_SQ_CBWK_TOP+_SQCB241),R1		;
+	MOV.W	#BIT0,R0				;
+	MOV.W	R0,@R1					; FROMサムチェック異常をシーケンスに出す 消さない
+
+_FROM_SUM_NORMAL:
+
+	.AELSE
+
+	FAR_JSR	#_AD_LOAD,R0				;
+	FAR_JSR	#_AD_LOAD,R0				;
+	FAR_JSR	#_AD_LOAD,R0				;
+	FAR_JSR	#_AD_LOAD,R0				;
+	FAR_JSR	#_AD_LOAD,R0				;
+	FAR_JSR	#_AD_LOAD,R0				;
+	FAR_JSR	#_AD_LOAD,R0				;
+	FAR_JSR	#_AD_LOAD,R0				;
+	FAR_JSR	#_AD_LOAD,R0				;
+
+	.AENDI
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***		ﾃﾞｰﾀ受信後毎スキャン			***
+;	***							***
+;	***********************************************************
+;	PUSH_ALL不要
+;	ｱｾﾝﾌﾞﾗから呼ばれる
+;
+_ASM_DMY1_DATA_MAIN:	;//ﾃﾞｰﾀ受信後毎スキャン
+	SUB_START
+
+
+	SUB_END
+	M_RTS
+
+
+
+;	***********************************************************
+;	***							***
+;	***		制御用メインスキャン			***
+;	***							***
+;	***********************************************************
+	.IMPORT	_MAIN_START_OK
+	.IMPORT	_DA_OUT_DATA_SET		; ＤＡ出力データセット 2003-01-23 SAITO
+
+_ASM_Y1_CTRL_MAIN:	;//メインスキャン
+	SUB_START
+	PUSH_ALL
+
+	.AIF	_CB_CPU_SEL EQ _CB_CPUA
+
+;	========================================
+	MOV.L	#_MAIN_START_OK,R1		;
+	MOV.W	#BIT0,R0			;
+	MOV.W	R0,@R1				;
+;	=========================================
+
+;;;;;	FAR_JSR	#_AD_LOAD,R0				;-->K_src
+
+;;;;;<<<>>>>	FAR_JSR	#_SEQ_RUN_MAIN,R0			; ｼｰｹﾝｽ処理
+;;;;;	FAR_JSR	#_SEQ_RUN_MAIN,R0			; ｼｰｹﾝｽ処理
+
+	FAR_JSR	#_DA_OUT_DATA_SET,R0			; ＤＡ出力データセット 2003-01-23 SAITO
+	FAR_JSR	#_DA_CNVOUT,R0				;
+
+	.AELSE
+
+	.IMPORT	_AD_LDX_CALC
+	FAR_JSR	#_AD_LDX_CALC,R0			;2011-03-18
+
+;;;;2011-03-18	FAR_JSR	#_AD_LOAD,R0				;
+
+
+	.AENDI
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***		定周期200usec(100usec)			***
+;	***							***
+;	***********************************************************
+_ASM_Y1_CTRL_INT1:	;//200usec割込(100usec)使わないと思う
+	SUB_START
+
+
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***		定周期1msec(1msec)			***
+;	***							***
+;	***********************************************************
+_ASM_Y1_CTRL_INT2:	;//1msec割込
+	SUB_START
+
+	.AIF	_CB_CPU_SEL EQ _CB_CPUA
+
+	.AELSE
+
+
+;	----	- 2011-03-18 -	-----------
+	.IMPORT	_AD_LOADX
+	FAR_JSR	#_AD_LOADX,R0				;AD-DATA LOAD 1msec
+
+
+
+	FAR_JSR	#_IOGA_DI_LOAD,R0			;
+	FAR_JSR	#_IOGA_DI_LOAD,R0			;2012-10-19 3度読みでしょ koma add
+	FAR_JSR	#_IOGA_DI_LOAD,R0			;2012-10-19 3度読みでしょ koma add
+	FAR_JSR	#_IOGA_DI_LOAD,R0			;2012-10-19 3度読みでしょ koma add
+
+	FAR_JSR	#_DI_CPUPORT_DATA_RD,R0			; CPU-PORT入力３度読み
+	FAR_JSR	#_DI_CPUPORT_DATA_RD,R0			;2012-10-19 3度読みでしょ koma add
+	FAR_JSR	#_DI_CPUPORT_DATA_RD,R0			;2012-10-19 3度読みでしょ koma add
+	FAR_JSR	#_DI_CPUPORT_DATA_RD,R0			;2012-10-19 3度読みでしょ koma add
+
+	FAR_JSR	#_DSET_FLG_MAKE,R0			; 画面切り替えに使うDSET信号をフラグにする
+
+	FAR_JSR	#_EMG_INPUT_FLG_MAKE,R0			;
+
+	FAR_JSR	#_FSFTY_INDT_MAKE,R0			;
+	FAR_JSR	#_RSFTY_INDT_MAKE,R0			;
+
+	FAR_JSR	#_CMP2_ERR_DATA_MAKE,R0			; 二重回路異常検知で参照する相手信号データ作成
+
+	FAR_JSR	#_REAL_INP1_DATA_RD,R0			; HC541入力３度読み
+	FAR_JSR	#_REAL_INP1_DATA_RD,R0			; 2012-10-19 3度読みでしょ koma add
+	FAR_JSR	#_REAL_INP1_DATA_RD,R0			; 2012-10-19 3度読みでしょ koma add
+	FAR_JSR	#_REAL_INP1_DATA_RD,R0			; 2012-10-19 3度読みでしょ koma add
+
+;	======================================== SAITO INS 2002-09-12
+;;;;;;2006-04-26	MOV.L	#_CB_SEQ_SW_SEL028,R1		;//SEQ 28.0<前光電管>
+;;;;;;2006-04-26	MOV.W	@R1,R0				;
+;;;;;;2006-04-26	TST	#BIT0,R0			;
+;;;;;;2006-04-26	TST_BIT_OF DBG_SELF_EXT
+;	==== ｾﾙﾌﾁｪｯｸ実処理 ====
+	FAR_JSR	#_SLF_HNDFLG_LOAD,R0	; CPUA,B FLG入れ替えLOAD
+	FAR_JSR	#_SELF_CHECK_ACT,R0	; セルフチェック実処理
+	FAR_JSR	#_SLF_HNDFLG_STORE,R0	; CPUA,B FLG入れ替えSTORE
+;	========================================
+;;;;;;2006-04-26DBG_SELF_EXT:
+
+	FAR_JSR	#_POWER_DOWN_ACT,R0		; パワーダウンの処理 2003-01-24
+
+	FAR_JSR	#_KEEPRY_DATA_BAKUP,R0		; ｷｰﾌﾟﾘﾚｰﾊﾞｯｸｱｯﾌﾟ
+
+;	===== 2003-02-04 SAITO =====
+	FAR_JSR	#_SYUKKA_HANDPLS_SMP,R0		; 位置決めＬＳＩから位置取込 手パ
+;	============================
+
+	FAR_JSR	#_SEQ_CB_WKINRAM_SET,R0			;
+	FAR_JSR	#_SEQ203_OUT_CHG,R0			; SEQ203出力並び替え
+	FAR_JSR	#_SEQ_CB_DP_WR,R0			;//クラッチで使用しているデータをDPRAMへ転送
+
+
+	.AENDI
+
+	SUB_END
+	M_RTS
+
+
+
+;;;;_TINT10MS	.EQU	2			; 5ms*2=10mS
+_TINT10MS	.EQU	4			; 2.5ms*4=10mS
+
+;	***********************************************************
+;	***							***
+;	***		定周期2msec				***
+;	***		==>2.5msec				***
+;	***********************************************************
+	.IMPORT	_CAM_CTRL		;
+	.IMPORT	_CB_INT_START_OK	;
+
+	.IMPORT	_KEEPRY_BKUP_FLG	;
+
+_ASM_Y1_CTRL_INT3:	;//2msec
+	SUB_START
+
+	.AIF	_CB_CPU_SEL EQ _CB_CPUA
+	.AELSE
+
+;;;;	2015-03-15 1msecへ移動
+;;;;	FAR_JSR	#_SEQ_CB_WKINRAM_SET,R0			;
+;;;;	FAR_JSR	#_SEQ203_OUT_CHG,R0			; SEQ203出力並び替え
+;;;;	FAR_JSR	#_SEQ_CB_DP_WR,R0			;//クラッチで使用しているデータをDPRAMへ転送
+
+	.AENDI
+
+	SUB_END
+	M_RTS
+
+
+
+	.END

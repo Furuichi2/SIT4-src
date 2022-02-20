@@ -1,0 +1,164 @@
+[1]ｽﾗｲﾄﾞ調整の設定が2回選択しないと反映しない
+(1)ｿｰｽ：ssc_dandor.c
+(2)関数:DAN_select_ent(UNs k_code)
+(3)変更箇所
+//2014-08-08koma 試し	SVSW_CHG_FLG |= 0x000c;					//データチェンジフラグセット
+			SVSW_CHG_FLG |= 0x0008;					//データチェンジフラグセット 2014-08-08koma 試し
+
+[2]反転時に上限を位置で設定した場合　角度が左半球になる。
+SVP_UPAREA_POS0
+(1)ssc_saisa.c
+(2)mmon_sv_chg()
+(3)
+???????CASE 91は待機位置設定だけか?????????????????
+	case 91:				//ﾓｰｼｮﾝ画面　待機位置
+	long_bf = cnv_inch_mm(SV_TAIKIPOS_SRV, 0);						//単位切替(mm/INCH→mm)
+//koma 2014-08-11			/* V00m */
+//koma 2014-08-11			if(SEQ_050_SV & BIT_1) {		//反転　？
+//koma 2014-08-11				long_bf = long_bf + SV_NEG_OFS_LNG;
+//koma 2014-08-11			}
+//koma 2014-08-11			SV_TAIKIKAKU_SRV = RnaDigChange1(SV_TAIKIKAKU_SRV, long_bf);	//mm変換→角度
+
+		/* V00m */
+		if(SEQ_050_SV & BIT_1) {		//反転　？
+			long_bf = long_bf + SV_NEG_OFS_LNG;
+			SV_TAIKIKAKU_SRV = RnaDigChange1(SV_DNAREA_JUDG, long_bf);	//mm変換→角度 SV_DNAREA_JUDG=1600
+																	//1600はどんな時でも下降領域(右半球の設定)
+																//
+		}else{
+			SV_TAIKIKAKU_SRV = RnaDigChange1(SV_TAIKIKAKU_SRV, long_bf);	//mm変換→角度
+		}
+
+
+[3]反転の上限角,上限位置設定に下限リミットを設ける(０＋待機範囲  ≦設定)
+(1)ssc_key.c
+(2)void	Key_sv_limt_chk(UNs t_no, UNl *wk_p)
+(3)case 54	//上限角度
+???????CASE 54は上限角度設定だけか?????????????????
+	//2014-08-11 koma 反転時の上限の最小値リミット追加 ｻｰﾎﾞﾊﾟﾗ40上死点範囲
+	if(bf<SV_UPAREA_JUDG+10){	//最小+1.0度
+		bf=SV_UPAREA_JUDG+10;	//最小+1.0度
+	}
+(4)case 56	//上限位置
+???????CASE 56は上限位置設定だけか?????????????????
+	if( SEQ_050_SV & BIT_1 ) {					//反転時の上限位置の最大値		V05 (INS)
+		wl0 = DigRnaChange1(GMN_PAR015);		//角度→mm変換
+		wl0 = wl0-SV_NEG_OFS_LNG;				//2014-08-11 koma add不具合
+		if( bf < wl0 ) {
+			*Dst_p = wl0;
+			bf = wl0;
+		}
+
+		//2014-08-11 koma 反転時の上限の最小値リミット追加 ｻｰﾎﾞﾊﾟﾗ40上死点範囲
+		wl0 = DigRnaChange1(SV_UPAREA_JUDG+10);//最小+1.0度
+		wl0 = wl0-SV_NEG_OFS_LNG;				//
+		if( bf > wl0 ) {
+			*Dst_p = wl0;
+			bf = wl0;
+		}
+	}
+
+[4]ｽﾗｲﾄﾞ調整の目標値（生産、段取１、段取２）の上限、下限を
+オフセット値を加算、減算したもので扱う。
+????case20は生産、段取１、段取２設定だけか????
+????SV0_RNAPOS_MINO,SV0_RNAPOS_MAXOは電源投入時からｼｰｹﾝｽonでも大丈夫か???
+
+	case 20:				//設定値データ(上限≧設定値≧下限)
+	//2014-08-11 koma if ( (bf * wl0) > SV_RNAPOS_MAXP ) {
+	//2014-08-11 koma 	*Dst_p = SV_RNAPOS_MAXP / wl0;
+	//2014-08-11 koma }
+	//2014-08-11 koma if ( (bf * wl0) < SV_RNAPOS_MINP ) {
+	//2014-08-11 koma 	*Dst_p = SV_RNAPOS_MINP / wl0;
+	//2014-08-11 koma }
+
+	//2014-08-11 生産、段取１、段取２の上下限をオフセット指令込みで行う
+	if ( (bf * wl0) > SV0_RNAPOS_MAXO ) {//機械上限
+		*Dst_p = SV0_RNAPOS_MAXO / wl0;
+	}
+	if ( (bf * wl0) < SV0_RNAPOS_MINO ) {//機械下限
+		*Dst_p = SV0_RNAPOS_MINO / wl0;
+	}
+
+
+
+
+
+
+
+[5]ｽﾗｲﾄﾞ調整　型読出時ﾁｪｯｸ
+(1)ssc_dataset.c
+(2)KAT_read_sura_chk
+(3)ﾘﾆｱｽｹ-ﾙ時のｽﾗｲﾄﾞ調整での上下限ﾁｪｯｸ変更
+?????
+U4b	wl0,bf;//2014-08-11 koma
+
+	if(SLDTUN_RNA_SEL != 0x5a){//2014-08-11 koma ﾘﾆｱｽﾗｲﾄﾞ調整では使用しない
+
+		if(SEQ_024_SV & BIT_6){						//ｽﾗｲﾄﾞ自動調節が無かったらやらない
+
+			//下限≦設定値(スライド自動調節　生産設定)≦上限
+			if( SV_ATUOS0_D9 > SV_UPDATA_A21 ||		//設定値 > 上限 ？
+				SV_ATUOS0_D9 < SV_DNDATA_A21 ) {	//設定値 < 下限 ？
+
+				SV_ATUOS0_D9 = SV_UPDATA_A21;		//設定値 = 上限
+			}
+
+			//下限≦設定値(スライド自動調節　段取り１設定)≦上限
+			if( SV_ATUOS1_D9 > SV_UPDATA_A21 ||		//設定値 > 上限 ？
+				SV_ATUOS1_D9 < SV_DNDATA_A21 ) {	//設定値 < 下限 ？
+
+				SV_ATUOS1_D9 = SV_UPDATA_A21;		//設定値 = 上限
+			}
+
+			//下限≦設定値(スライド自動調節　段取り２設定)≦上限
+			if( SV_ATUOS2_D9 > SV_UPDATA_A21 ||		//設定値 > 上限 ？
+				SV_ATUOS2_D9 < SV_DNDATA_A21 ) {	//設定値 < 下限 ？	
+
+				SV_ATUOS2_D9 = SV_UPDATA_A21;		//設定値 = 上限
+			}
+		}
+	}else{
+		//2014-08-11 ﾘﾆｱｽﾗｲﾄﾞ調整ではﾁｪｯｸは......
+			if (SV_POINT_A1 == 0) {//設定ﾃﾞｰﾀ小数点無し *1000 =>小数点３桁
+				wl0 = 1000;
+			}
+			else if (SV_POINT_A1 == 1) {//設定ﾃﾞｰﾀ小数点1桁 *100 =>小数点３桁
+				wl0 = 100;
+			}
+			else if (SV_POINT_A1 == 2) {//設定ﾃﾞｰﾀ小数点2桁 *10  =>小数点３桁
+				wl0 = 10;
+			}
+			else {
+				wl0 = 1;//小数点３桁設定
+			}
+
+			bf=SV_ATUOS0_D9*wl0;
+			if ( (bf > SV0_RNAPOS_MAXO) || (bf < SV0_RNAPOS_MINO) ) {//機械上限,機械下限以外
+				SV_ATUOS0_D9 = SV0_RNAPOS_MAXO / wl0;
+			}
+			bf=SV_ATUOS1_D9*wl0;
+			if ( (bf > SV0_RNAPOS_MAXO) || (bf < SV0_RNAPOS_MINO) ) {//機械上限,機械下限以外
+				SV_ATUOS1_D9 = SV0_RNAPOS_MAXO / wl0;
+			}
+			bf=SV_ATUOS2_D9*wl0;
+			if ( (bf > SV0_RNAPOS_MAXO) || (bf < SV0_RNAPOS_MINO) ) {//機械上限,機械下限以外
+				SV_ATUOS2_D9 = SV0_RNAPOS_MAXO / wl0;
+			}
+
+	}
+}
+
+[6]見える化ﾛﾝｸﾞﾀﾞｲﾊｲﾄ対応
+(1)ssc_key.c
+(2)void	Key_sv_limt_chk(UNs t_no, UNl *wk_p)
+(3)下限、上限
+
+	case 98:		//波形スライド位置スケール最大	//V05o(INS)
+//2014-08-11 koma	wl0 = SV_RNAPOS_MAXP;						//機械上限(小数点 3桁)
+			wl0 = SV0_RNAPOS_MAXO;						//機械上限(小数点 3桁)
+
+	case 99:	//波形スライド位置スケール最小	//V05o(INS)
+//2014-08-11 KOMA	wl0 = SV_RNAPOS_MINP;		//機械上限(小数点 3桁)
+			wl0 = SV0_RNAPOS_MINO;						//ｽｹｰﾙ下限 koma
+			wl1 = SV_WAVE_SCL1U;						//ｽｹｰﾙ上限
+

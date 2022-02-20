@@ -1,0 +1,265 @@
+;	***************************************************
+;	***						***
+;	***	SCI ﾛｰﾀﾞｺﾏﾝﾄﾞ				***
+;	***						***
+;	***************************************************
+_LOD_CMND_WR		.EQU	H'01			; ﾗｲﾄｺﾏﾝﾄﾞ
+_LOD_CMND_RD		.EQU	H'00			; ﾘｰﾄﾞｺﾏﾝﾄﾞ
+_LOD_AREA0		.EQU	H'00			; ﾊﾝﾄﾞｼｪｲｸ領域選択
+_LOD_AREA1		.EQU	H'01			; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀ領域選択
+_LOD_AREA_FROM		.EQU	H'02			; FROM領域選択
+_LOD_AREA_FRAM		.EQU	H'03			; FRAM領域選択
+_LOD_AREA_DPRAM		.EQU	H'04			; DPRAM領域選択
+_LOD_AREA_SRAM		.EQU	H'05			; SRAM領域選択
+_LOD_AREA_FRAMX		.EQU	H'13			; FRAM領域選択		V05 (ins)
+_LOD_AREA_SAMP		.EQU	H'15			; ｻﾝﾌﾟﾘﾝｸﾞ領域選択
+
+;	***************************************************
+;	***						***
+;	***	SCI ﾛｰﾀﾞｺﾏﾝﾄﾞ受信ﾊﾞｯﾌｧ構造		***
+;	***						***
+;	***************************************************
+_STR_CODE		.EQU	H'00			; ｽﾀｰﾄﾞｺｰﾄﾞ
+_DATA_CNTL		.EQU	H'01			; ﾃﾞｰﾀ数ｶｳﾝﾄ(L)
+_DATA_CNTH		.EQU	H'02			; ﾃﾞｰﾀ数ｶｳﾝﾄ(H)
+_SYORI_STS		.EQU	H'03			; 処理ｽﾃｰﾀｽ
+_SETUZOKU_PRO		.EQU	H'04			; 接続方式
+_SETUZOKU_IDL		.EQU	H'05			; 接続ID(L)
+_SETUZOKU_IDH		.EQU	H'06			; 接続ID(H)
+_KISYU_GOKAN_CD		.EQU	H'07			; 機種互換ｺｰﾄﾞ
+_DENSOU_LOCK_CD		.EQU	H'08			; 伝送ｲﾝﾀｰﾛｯｸｺｰﾄﾞ
+_PASSWARD_LL		.EQU	H'09			; ﾊﾟｽﾜｰﾄﾞ(LL)
+_PASSWARD_LH		.EQU	H'0A			; ﾊﾟｽﾜｰﾄﾞ(LH)
+_PASSWARD_HL		.EQU	H'0B			; ﾊﾟｽﾜｰﾄﾞ(HL)
+_PASSWARD_HH		.EQU	H'0C			; ﾊﾟｽﾜｰﾄﾞ(HH)
+_CMND			.EQU	H'0D			; CMND
+_MODE			.EQU	H'0E			; MODE
+_END_STS		.EQU	H'0F			; 終了情報
+_SEQ_NO			.EQU	H'10			; ｼｰｹﾝｽ番号
+_BYTENL			.EQU	H'11			; BYTEN(L)
+_BYTENH			.EQU	H'12			; BYTEN(H)
+_AREA_SEL		.EQU	H'13			; 
+_ADRL			.EQU	H'14			; 
+_ADRM			.EQU	H'15			; 
+_ADRH			.EQU	H'16			; 
+_WORD_SUUL		.EQU	H'17			; 
+_WORD_SUUH		.EQU	H'18			; 
+_DATA			.EQU	H'19			; 
+
+;	***************************************************
+;	***						***
+;	***		VUP ﾊﾝﾄﾞｼｪｲｸ領域		***
+;	***						***
+;	***************************************************
+;//
+VUP_SEL_PC		.EQU	H'00			; ﾊﾞｰｼﾞｮﾝUP種別		(PC WRITE)
+VUP_STR_PC		.EQU	H'02			; ﾊﾞｰｼﾞｮﾝUP開始		(PC WRITE)
+VUP_END_PC		.EQU	H'04			; ﾊﾞｰｼﾞｮﾝUP完了		(PC WRITE)
+VUP_DATA_WR_PC		.EQU	H'06			; ﾃﾞｰﾀWRITE		(PC WRITE)
+VUP_REV1_PC		.EQU	H'08			; 予備			(PC WRITE)
+VUP_REV2_PC		.EQU	H'0A			; 予備			(PC WRITE)
+VUP_REV3_PC		.EQU	H'0C			; 予備			(PC WRITE)
+VUP_REV4_PC		.EQU	H'0E			; 予備			(PC WRITE)
+VUP_SEL_SH		.EQU	H'10			; ﾊﾞｰｼﾞｮﾝUP種別		(SH WRITE)
+VUP_STR_SH		.EQU	H'12			; ﾊﾞｰｼﾞｮﾝUP開始		(SH WRITE)
+VUP_END_SH		.EQU	H'14			; ﾊﾞｰｼﾞｮﾝUP完了		(SH WRITE)
+VUP_DATA_WR_SH		.EQU	H'16			; ﾃﾞｰﾀWRITE		(SH WRITE)
+VUP_REV1_SH		.EQU	H'18			; 予備			(SH WRITE)
+VUP_REV2_SH		.EQU	H'1A			; 予備			(SH WRITE)
+VUP_REV3_SH		.EQU	H'1C			; 予備			(SH WRITE)
+VUP_REV4_SH		.EQU	H'1E			; 予備			(SH WRITE)
+VUP_REV5_SH		.EQU	H'20			; 予備			(SH WRITE) 2004/04/20(INS)
+VUP_REV6_SH		.EQU	H'22			; 予備			(SH WRITE) 2004/04/20(INS)
+VUP_REV7_SH		.EQU	H'24			; 予備			(SH WRITE) 2004/04/20(INS)
+VUP_REV8_SH		.EQU	H'26			; 予備			(SH WRITE) 2004/04/20(INS)
+VUP_REV9_SH		.EQU	H'28			; 予備			(SH WRITE) 2004/04/20(INS)
+VUP_REV10_SH		.EQU	H'2A			; 予備			(SH WRITE) 2004/04/20(INS)
+VUP_REV11_SH		.EQU	H'2C			; 予備			(SH WRITE) 2004/04/20(INS)
+VUP_REV12_SH		.EQU	H'2E			; 予備			(SH WRITE) 2004/04/20(INS)
+VUP_REV13_SH		.EQU	H'30			; 予備			(SH WRITE) 2004/04/20(INS)
+VUP_REV14_SH		.EQU	H'32			; 予備			(SH WRITE) 2004/04/20(INS)
+VUP_REV15_SH		.EQU	H'34			; 予備			(SH WRITE) 2004/04/20(INS)
+VUP_REV16_SH		.EQU	H'36			; 予備			(SH WRITE) 2004/04/20(INS)
+VUP_REV17_SH		.EQU	H'38			; 予備			(SH WRITE) 2004/04/20(INS)
+VUP_REV18_SH		.EQU	H'3A			; 予備			(SH WRITE) 2004/04/20(INS)
+VUP_REV19_SH		.EQU	H'3C			; 予備			(SH WRITE) 2004/04/20(INS)
+VUP_REV20_SH		.EQU	H'3E			; 予備			(SH WRITE) 2004/04/20(INS)
+
+;//	*************************************************************
+;//	*****							*****
+;//	*****	ＳＣＩ ﾜｰｸRAMの構造				*****
+;//	*****							*****
+;//	*************************************************************
+;//_sci0_wkramの中身
+VUP_START			.EQU	H'00
+RXD_CNT				.EQU	H'02
+RXD_BUF_POI			.EQU	H'04
+TXD_CNT				.EQU	H'06
+TXD_BUF_POI			.EQU	H'08		; ﾍｯﾀﾞ部受信完了時＝0x01
+HEAD_END			.EQU	H'0A		; 全受信完了時＝0x01
+RX_END				.EQU	H'0C
+RX_ERR				.EQU	H'0E
+RX_TIMOUT_FLG			.EQU	H'10
+RX_TIMER			.EQU	H'12
+RTS_FLG				.EQU	H'14		; V01p(INS)
+ET1_LDCMND_REQ			.EQU	H'16		; V05 (INS)
+ET1_LDCMND_RES			.EQU	H'18		; V05 (INS)
+SCI0_WKRAM_RE13			.EQU	H'1A
+SCI0_WKRAM_RE14			.EQU	H'1C
+SCI0_WKRAM_RE15			.EQU	H'1E
+
+
+;//	*************************************************************
+;//	*****							*****
+;//	*****	外部フラッシュＲＯＭをコピーするため		*****
+;//	*****							*****
+;//	*************************************************************
+_VUP_DATA_AREA_CPUA	.EQU	H'AC070000
+;;;;;_VUP_DATA_AREA_CPUB	.EQU	H'00400000
+_VUP_DATA_AREA_CPUB	.EQU	H'AC400000
+_GAM_TBL_SIZE		.EQU	H'00040000		; 256kB
+_GAM_TBL_SIZE2		.EQU	H'00060000		; 384kB
+_GAM_TBL_SIZE3		.EQU	H'00080000		; 512kB
+_SEQ_PRO_SIZE		.EQU	H'00010000		; 64kB
+_CB_TBL_SIZE		.EQU	H'00040000		; 256kB
+_CPUA_PRO_SIZE		.EQU	H'00060000		; 384kB
+;;;;;_CPUB_PRO_SIZE		.EQU	H'00080000		; 512kB
+_CPUB_PRO_SIZE		.EQU	H'000A0000		; 512kB+128kB	SIT4-MC
+_CB_SYS_SIZE		.EQU	H'00010000		; 64kB
+;;;;;_GAIZI_FROM_TOP		.EQU	H'00580000		; 外字FROM先頭	V01l
+_GAIZI_FROM_TOP		.EQU	H'B9080000		; 外字FROM先頭	V05
+_GAIZI_FROM_SIZE	.EQU	H'00030000		; 192kB		V01l
+;;;;;_CHAR_ROM_TOP		.EQU	H'B9090000
+;;;;;_CHAR_ROM_SIZE		.EQU	H'00020000
+_CHAR_ROM_TOP		.EQU	H'B9100000		; V05
+_CHAR_ROM_SIZE		.EQU	H'00040000		; V05
+;;;;;_Bwkram1_top		.EQU	H'00400000
+_Bwkram1_top		.EQU	H'AC090000
+;;;;;_100_KATA_TOP		.EQU	H'00540000
+_100_KATA_TOP		.EQU	H'B9040000
+_100_KATA_SIZE		.EQU	H'00040000		; 256kb
+
+;★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+
+;//	*************************************************************
+;//	*****							*****
+;//	*****	ＦＲＯＭアクセスＥＱＵ				*****
+;//	*****							*****
+;//	*************************************************************
+FROM_DUMMY_ADR0			.EQU	H'00000
+
+FROM_ERS_CMND_ADR0		.EQU	H'555
+FROM_ERS_CMND_ADR1		.EQU	H'2AA
+FROM_ERS_CMND_ADR2		.EQU	H'555
+FROM_ERS_CMND_ADR3		.EQU	H'555
+FROM_ERS_CMND_ADR4		.EQU	H'2AA
+FROM_ERS_CMND_ADR5		.EQU	H'555		; 全消去時のｺﾏﾝﾄﾞ発行ｱﾄﾞﾚｽ
+FROM_ERS_CMND_DAT0		.EQU	H'AA
+FROM_ERS_CMND_DAT1		.EQU	H'55
+FROM_ERS_CMND_DAT2		.EQU	H'80
+FROM_ERS_CMND_DAT3		.EQU	H'AA
+FROM_ERS_CMND_DAT4		.EQU	H'55
+FROM_ERS_CMND_DAT5		.EQU	H'10		; 全消去時のｺﾏﾝﾄﾞ
+
+FROM_ERS_DAT11			.EQU	H'30
+FROM_ERS_ADR_BL0_0		.EQU	H'0000
+FROM_ERS_ADR_BL0_1		.EQU	H'4000
+FROM_ERS_ADR_BL0_2		.EQU	H'6000
+FROM_ERS_ADR_BL0_3		.EQU	H'8000
+FROM_ERS_ADR_BL1		.EQU	H'10000
+FROM_ERS_ADR_BL2		.EQU	H'20000
+FROM_ERS_ADR_BL3		.EQU	H'30000
+FROM_ERS_ADR_BL4		.EQU	H'40000
+FROM_ERS_ADR_BL5		.EQU	H'50000
+FROM_ERS_ADR_BL6		.EQU	H'60000
+FROM_ERS_ADR_BL7		.EQU	H'70000
+FROM_ERS_ADR_BL8		.EQU	H'80000
+FROM_ERS_ADR_BL9		.EQU	H'90000
+FROM_ERS_ADR_BLA		.EQU	H'A0000
+FROM_ERS_ADR_BLB		.EQU	H'B0000
+FROM_ERS_ADR_BLC		.EQU	H'C0000
+FROM_ERS_ADR_BLD		.EQU	H'D0000
+FROM_ERS_ADR_BLE		.EQU	H'E0000
+FROM_ERS_ADR_BLF		.EQU	H'F0000
+
+FROM_WR_CMND_ADR0		.EQU	H'555
+FROM_WR_CMND_ADR1		.EQU	H'2AA
+FROM_WR_CMND_ADR2		.EQU	H'555
+FROM_WR_CMND_DAT0		.EQU	H'AA
+FROM_WR_CMND_DAT1		.EQU	H'55
+FROM_WR_CMND_DAT2		.EQU	H'A0
+
+
+;//	*************************************************************
+;//	*****							*****
+;//	*****	ＳＨ２内ＦＲＯＭアクセスＥＱＵ			*****
+;//	*****							*****
+;//	*************************************************************
+_FLASH_REG_TOP		.EQU	H'FFFFE800
+_FLMCR1_FE800		.EQU	H'00
+_FLMCR2_FE800		.EQU	H'01
+_EBR1_FE800		.EQU	H'02
+_EBR2_FE800		.EQU	H'03
+
+_SH2_1STS		.EQU	(1000/40)			; 実行時間／1ｽﾃｰﾄ ＝ 1／40MHz ＝ 25(ns)
+_Wait_STS		.EQU	(_SH2_1STS*(2*2))			; WaitLoop命令は2命令(2ｽﾃｰﾄ*2) ＝ 100(ns)
+_Wait1u			.EQU	((1*1000)/_Wait_STS)+2		; 1usec
+_Wait2u			.EQU	((2*1000)/_Wait_STS)+2		; 2usec
+_Wait4u			.EQU	((4*1000)/_Wait_STS)+2		; 4usec
+_Wait5u			.EQU	((5*1000)/_Wait_STS)+2		; 5usec
+_Wait6u			.EQU	((6*1000)/_Wait_STS)+2		; 6usec
+_Wait10u		.EQU	((10*1000)/_Wait_STS)+2		; 10usec
+_Wait20u		.EQU	((20*1000)/_Wait_STS)+2		; 20usec
+_Wait30u		.EQU	((30*1000)/_Wait_STS)+2		; 30usec
+_Wait50u		.EQU	((50*1000)/_Wait_STS)+2		; 50usec
+_Wait100u		.EQU	((100*1000)/_Wait_STS)+2	; 100usec
+_Wait200u		.EQU	((200*1000)/_Wait_STS)+2	; 200usec
+_Wait5m			.EQU	((5000*1000)/_Wait_STS)+2	; 5msec
+_Wait10m		.EQU	((10000*1000)/_Wait_STS)+2	; 10msec
+_Wait50m		.EQU	((50000*1000)/_Wait_STS)+2	; 50msec
+_Wait2s			.EQU	((2000000*1000)/_Wait_STS)+2	; 2msec
+
+_WDT_TCSR		.EQU	H'FFFF8610
+_WDT_9m			.EQU	H'A57D
+_WDT_573u		.EQU	H'A579
+_PSUSET			.EQU	B'00010000
+_PSUCLEAR		.EQU	B'11101111
+_PSET			.EQU	B'00000001
+_PCLEAR			.EQU	B'11111110
+_PVSET			.EQU	B'00000100
+_PVCLEAR		.EQU	B'11111011
+_FWESET			.EQU	B'10000000
+_SWESET			.EQU	B'01000000
+_SWECLEAR		.EQU	B'10111111
+_ESUSET			.EQU	B'00100000
+_ESUCLEAR		.EQU	B'11011111
+_ESET			.EQU	B'00000010
+_ECLEAR			.EQU	B'11111101
+_EVSET			.EQU	B'00001000
+_EVCLEAR		.EQU	B'11110111
+_MAXErase		.EQU	100
+_MAXVerify		.EQU	1000
+
+
+;//	*************************************************************
+;//	*****							*****
+;//	*****	ＣＰＵＡ／Ｂ間のハンドシェイク領域の構造	*****
+;//	*****							*****
+;//	*************************************************************
+_CPUAB_HS_VUP_SEL	.EQU	H'00			; ﾊﾞｰｼﾞｮﾝUP種別
+_CPUAB_HS_VUP_STR	.EQU	H'04			; ﾊﾞｰｼﾞｮﾝUP開始
+_CPUAB_HS_VUP_BLK0	.EQU	H'08			; ﾊﾞｰｼﾞｮﾝUPﾌﾞﾛｯｸNo.（64kﾊﾞｲﾄﾊﾞｳﾝﾀﾞﾘ）0～7
+_CPUAB_HS_VUP_BLK1	.EQU	H'0C			; ﾌﾞﾛｯｸNo.のﾌﾞﾛｯｸNo.（8kﾊﾞｲﾄﾊﾞｳﾝﾀﾞﾘ）0～7
+_CPUAB_HS_VUP_8KE	.EQU	H'10			; 8kﾊﾞｲﾄ送信完
+_CPUAB_HS_VUP_64KE	.EQU	H'14			; 64kﾊﾞｲﾄ送信完（=書込み指令）
+
+;//	*************************************************************
+;//	*****							*****
+;//	*****	ＣＰＵＡ／Ｂ間のハンドシェイクコード		*****
+;//	*****							*****
+;//	*************************************************************
+_CPUAB_HS_VUP_STR_CODE	.EQU	H'12345AA5		; ﾊﾞｰｼﾞｮﾝUP開始ｺｰﾄﾞ
+_CPUAB_HS_VUP_8KE_CODE	.EQU	H'9876A55A		; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀ送信完ｺｰﾄﾞ
+_CPUAB_HS_VUP_64KE_CODE	.EQU	H'A55A6789		; ﾊﾞｰｼﾞｮﾝUP
+

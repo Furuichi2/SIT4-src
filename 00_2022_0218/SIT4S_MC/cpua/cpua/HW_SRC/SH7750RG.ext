@@ -1,0 +1,113 @@
+	.global		_PTEH		
+	.global		_PTEL		
+	.global		_TTB		
+	.global		_TEA		
+	.global		_MMUCR		
+	.global		_BASRA		
+	.global		_BASRB		
+	.global		_CCR		
+	.global		_TRA		
+	.global		_EXPEVT		
+	.global		_INTEVT		
+	.global		_PTEA		
+	.global		_QACR0		
+	.global		_QACR1		
+
+;UBC
+	.global		_BARA		
+	.global		_BAMRA		
+	.global		_BBRA		
+	.global		_BARB		
+	.global		_BAMRB		
+	.global		_BBRB		
+	.global		_BDRB		
+	.global		_BDMRB		
+	.global		_BRCR		
+
+;BSC
+	.global		_BCR1		
+	.global		_BCR2		
+	.global		_WCR1		
+	.global		_WCR2		
+	.global		_WCR3		
+	.global		_MCR		
+	.global		_PCR		
+	.global		_RTCSR		
+	.global		_RTCNT		
+	.global		_RTCOR		
+	.global		_RFCR		
+	.global		_PCTRA		
+	.global		_PDTRA		
+	.global		_PCTRB		
+	.global		_PDTRB		
+	.global		_GPIOIC		
+
+;DMAC
+	.global		_SAR0		
+	.global		_DAR0		
+	.global		_DMATCR0	
+	.global		_CHCR0		
+	.global		_SAR1		
+	.global		_DAR1		
+	.global		_DMATCR1	
+	.global		_CHCR1		
+	.global		_SAR2		
+	.global		_DAR2		
+	.global		_DMATCR2	
+	.global		_CHCR2		
+	.global		_SAR3		
+	.global		_DAR3		
+	.global		_DMATCR3	
+	.global		_CHCR3		
+	.global		_DMAOR		
+
+;CPG
+	.global		_FRQCR		
+	.global		_STBCR		
+	.global		_WTCNT		
+	.global		_WTCSR		
+	.global		_STBCR2		
+
+;INTC
+	.global		_ICR		
+	.global		_IPRA		
+	.global		_IPRB		
+	.global		_IPRC		
+	.global		_IPRD		
+
+;TMU
+	.global		_TOCR		
+	.global		_TSTR		
+	.global		_TCOR0		
+	.global		_TCNT0		
+	.global		_TCR0		
+	.global		_TCOR1		
+	.global		_TCNT1		
+	.global		_TCR1		
+	.global		_TCOR2		
+	.global		_TCNT2		
+	.global		_TCR2		
+	.global		_TCPR2		
+
+;SCI
+	.global		_SCSMR1		
+	.global		_SCBRR1		
+	.global		_SCSCR1		
+	.global		_SCTDR1		
+	.global		_SCSSR1		
+	.global		_SCRDR1		
+	.global		_SCSCMR1	
+	.global		_SCSPTR1	
+
+;SCIF
+	.global		_SCSMR2		
+	.global		_SCBRR2		
+	.global		_SCSCR2		
+	.global		_SCFTDR2	
+	.global		_SCFSR2		
+	.global		_SCFRDR2	
+	.global		_SCFCR2		
+	.global		_SCFDR2		
+	.global		_SCSPTR2	
+	.global		_SCLSR2		
+

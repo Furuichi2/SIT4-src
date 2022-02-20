@@ -1,0 +1,4 @@
+-cpu=sh3dsp
+-output="D:\SIT4S_MC\CPUB\CPUB\Debug\CPUB.lib"
+-gbr=auto
+-head=runtime,new,stdio,stdlib,string

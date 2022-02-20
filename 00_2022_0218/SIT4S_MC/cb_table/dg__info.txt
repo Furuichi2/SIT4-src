@@ -1,0 +1,27 @@
+;							
+;							
+;	テーブルインフォメーション						
+;							
+;	dg**info.txt						
+;							
+;							
+;							
+;							
+;	TBL1_INF						
+							
+	.DATA.L		H'5AA51234		;	0 _DG_PS_INF_CHK1	有効なデータがある事を示すコード
+	.DATA.L		7200		;	1 _DG_PS_INF_CONT	データの個数360.00/0.05=7200点
+	.DATA.L		50		;	2 _DG_PS_INF_UNIT	0.001度単位
+	.DATA.L		999999		;	3 _DG_PS_INF_STLK	999.999mm(使用しない)
+	.DATA.L		10000		;	4 _DG_PS_INF_LATE	"正規化基数(10000,50000)"
+	.DATA.L		0		;	5	予備
+	.DATA.L		0		;	6	予備
+	.DATA.L		0		;	7	予備
+	.DATA.L		0		;	8	予備
+	.DATA.L		0		;	9	予備
+	.DATA.L		0		;	10	予備
+	.DATA.L		0		;	11	予備
+	.DATA.L		0		;	12	予備
+	.DATA.L		0		;	13	予備
+	.DATA.L		0		;	14	予備
+	.DATA.L		H'4321A55A		;	15 _DG_PS_INF_CHK2	有効なデータがある事を示すコード

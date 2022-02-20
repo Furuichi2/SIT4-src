@@ -1,0 +1,793 @@
+;	***************************************************
+;	***						***
+;	***	ﾊｰﾄﾞｳｴｱｱｸｾｽｻﾌﾞﾙｰﾁﾝ			***
+;	***						***
+;	***************************************************
+	.LIST OFF
+	.include	"CPU_REG.ext"
+	.include	"cm_equ1.equ"
+	.INCLUDE	"ssa_ver1.equ"
+	.include	"shn_cmd1.mac"				; 
+	.include	"ssa_com1.mac"				; 
+	.include	"ssa_out1.mac"				; 
+	.include	"ssa_had1.equ"				; 
+	.include	"ssa_seq1.equ"				; 
+	.include	"ssa_wrms.ext"
+	.include	"ssa_wrmy.ext"
+	.LIST ON
+
+	.IMPORT		_REAL_OUT0;
+
+;★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+	.SECTION	Phwsetup1,CODE
+
+;	***************************************************
+;	***						***
+;	***		外部SRAMﾁｪｯｸ&ｸﾘｱ		***
+;	***						***
+;	***************************************************
+	.export		_WORK_MEM_CHK
+_WORK_MEM_CHK:
+	SUB_START
+	XOR	R4,R4					;
+	XOR	R9,R9					;
+
+;	********************************************
+;	****		ｲﾝｸﾘﾒﾝﾀﾙWRITE		****
+;	********************************************
+	MOV.L	#_SRAM_TOP,R6				;
+	MOV.L	#(_SRAM_SIZE+1)/4,R1			;SIZE BYTE-->LONG
+	MOV.L	#H'5AA50001,R2				;DATA
+
+WORK_MEM_CK020:						;
+	TST	R1,R1					;
+	BT	WORK_MEM_CK050				;
+
+	MOV.L	R2,@R6					;DATA -->MEM
+	ADD	#4,R6					;ADRESS +4
+	ADD	#H'FF,R1				;-1
+	ADD	#1,R2					;DATA +1
+	_WDT_CLR
+	M_BRA	WORK_MEM_CK020				;
+
+WORK_MEM_CK050:
+;	********************************************
+;	****		ｲﾝｸﾘﾒﾝﾀﾙCHEAK		****
+;	********************************************
+	MOV.L	#_SRAM_TOP,R6				;
+	MOV.L	#(_SRAM_SIZE+1)/4,R1			;SIZE BYTE-->LONG
+	MOV.L	#H'5AA50001,R2				;DATA
+
+WORK_MEM_CK120:						;
+	TST	R1,R1					;
+	BT	WORK_MEM_CK150				;
+	MOV.L	@R6,R3					;
+	CMP/EQ	R3,R2					;
+	BT	WORK_MEM_CK130				;
+	MOV.L	#H'FF,R9
+WORK_MEM_CK130:						;
+	ADD	#4,R6					;ADRESS +4
+	ADD	#H'FF,R1				;
+	ADD	#1,R2					;DATA +1
+	_WDT_CLR
+	M_BRA	WORK_MEM_CK120				;
+
+WORK_MEM_CK150:						;
+	M_BRA	WORK_MEM_CK350				;
+;	********************************************
+;	****		ﾃﾞｸﾘﾒﾝﾄWRITE		****
+;	********************************************
+	MOV.L	#_SRAM_TOP,R6				;
+	MOV.L	#(_SRAM_SIZE+1)/4,R1			;SIZE BYTE-->LONG
+	MOV.L	#H'5AA50001,R2				;DATA
+
+WORK_MEM_CK220:						;
+	TST	R1,R1					;
+	BT	WORK_MEM_CK250				;
+
+	MOV.L	R2,@R6					;DATA -->MEM
+	ADD	#4,R6					;ADRESS +4
+	ADD	#H'FF,R1				;-1
+	ADD	#H'FF,R2				;DATA -1
+	_WDT_CLR
+	M_BRA	WORK_MEM_CK220				;
+
+WORK_MEM_CK250:
+;	********************************************
+;	****		ﾃﾞｸﾘﾒﾝﾄCHEAK		****
+;	********************************************
+	MOV.L	#_SRAM_TOP,R6				;
+	MOV.L	#(_SRAM_SIZE+1)/4,R1			;SIZE BYTE-->LONG
+	MOV.L	#H'5AA50001,R2				;DATA
+
+WORK_MEM_CK320:						;
+	TST	R1,R1					;
+	BT	WORK_MEM_CK350				;
+	MOV.L	@R6,R3					;
+	CMP/EQ	R3,R2					;
+	BT	WORK_MEM_CK330				;
+	MOV.L	#H'FF,R9
+WORK_MEM_CK330:						;
+	ADD	#4,R6					;ADRESS +4
+	ADD	#H'FF,R1				;
+	ADD	#H'FF,R2				;DATA -1
+	_WDT_CLR
+	M_BRA	WORK_MEM_CK320				;
+
+WORK_MEM_CK350:
+;	********************************************
+;	****		0WRITE			****
+;	********************************************
+	MOV.L	#_SRAM_TOP,R6				;
+	MOV.L	#(_SRAM_SIZE+1)/4,R1			;SIZE BYTE-->LONG
+	MOV.L	#H'0,R2					;DATA
+
+WORK_MEM_CK420:						;
+	TST	R1,R1					;
+	BT	WORK_MEM_CK450				;
+
+	MOV.L	R2,@R6					;DATA -->MEM
+	ADD	#4,R6					;ADRESS +4
+	ADD	#H'FF,R1				;-1
+	_WDT_CLR
+	M_BRA	WORK_MEM_CK420				;
+
+WORK_MEM_CK450:
+	TST	R9,R9
+	BT	WORK_MEM_CKEND
+
+WORK_MEM_EREND:
+	.AIF	_SIT_TYPE_SEL EQ _TYPE_SIT3
+	MOV.L	#_PADR,R5
+	MOV.W	@R5,R0
+	MOV.W	#H'1000,R1				; CPUBER
+	OR	R1,R0					; ON
+	MOV.W	R0,@R5
+	.AELSE
+	MOV.L	#_IOGA1_CTRL_DAT1+_IOGAo_PF,R1		;
+	MOV.W	@R1,R0
+	OR	#BIT7,R0				; WORK SET
+	MOV.W	R0,@R1					; CPUBER SET
+	_MC_GA1PF_OUT1	R0,R1,R2			; WORK -> PORT
+	.AENDI
+
+WORK_MEM_CKEND:
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***		外部SRAMﾁｪｯｸ&ｸﾘｱ		***
+;	***						***
+;	***************************************************
+	.export		_WORK_MEM_CHK2
+_WORK_MEM_CHK2:
+	SUB_START
+	XOR	R4,R4					;
+	XOR	R9,R9					;
+
+	MOV.L	#_SRAM_TOP,R6				;
+	MOV.L	#(_SRAM_SIZE+1)/4,R1			;SIZE BYTE-->LONG
+	MOV.L	#H'5A5A5A5A,R2				;DATA
+	MOV.L	#H'A5A5A5A5,R3				;DATA
+
+WORK_MEM_CK2020:					;
+	TST	R1,R1					;
+	BT	WORK_MEM_CK2050				;
+
+	MOV.L	R2,@R6					;DATA -->MEM
+	NOP
+	MOV.L	@R6,R0					;MEM -->
+	CMP/EQ	R2,R0					;同じ？
+	BT	WORK_MEM_CK2030				;はい
+	MOV.L	#H'FF,R9				;ｴﾗｰ記憶
+WORK_MEM_CK2030:
+	MOV.L	R3,@R6					;DATA -->MEM
+	NOP
+	MOV.L	@R6,R0					;MEM -->
+	CMP/EQ	R3,R0					;同じ？
+	BT	WORK_MEM_CK2040				;はい
+	MOV.L	#H'FF,R9				;ｴﾗｰ記憶
+WORK_MEM_CK2040:
+	MOV.L	R4,@R6					;0WRITE
+	ADD	#4,R6					;ADRESS +4
+	ADD	#-1,R1					;-1
+	_WDT_CLR_MEMCHK
+	M_BRA	WORK_MEM_CK2020				;
+
+WORK_MEM_CK2050:
+	TST	R9,R9
+	BT	WORK_MEM_CK2END
+
+WORK_MEM_ER2END:
+	.AIF	_SIT_TYPE_SEL EQ _TYPE_SIT3
+	MOV.L	#_PADR,R5
+	MOV.W	@R5,R0
+	MOV.W	#H'1000,R1				; CPUBER
+	OR	R1,R0					; ON
+	MOV.W	R0,@R5
+	.AELSE
+	MOV.L	#_IOGA1_CTRL_DAT1+_IOGAo_PF,R1		;
+	MOV.W	@R1,R0
+	OR	#BIT7,R0				; WORK SET
+	MOV.W	R0,@R1					; CPUBER SET
+	_MC_GA1PF_OUT1	R0,R1,R2			; WORK -> PORT
+	.AENDI
+
+WORK_MEM_CK2END:
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***		内蔵SRAMｸﾘｱ			***
+;	***						***
+;	***************************************************
+	.export		_IRAM_CLEAR
+_IRAM_CLEAR:
+	SUB_START
+
+;///////	MOV.L	#_IRAM_TOP,R6				;
+;///////	MOV.L	#(_IRAM_SIZE+1)/4-H'40,R1		;SIZE BYTE-->LONG
+	MOV.L	#H'A5017000,R6				;V05
+	MOV.L	#(H'2000-H'40)/4,R1			;SIZE BYTE-->LONG
+	MOV.L	#H'0,R2					;DATA------17000～18FA0までやっているがSTCAKが187F0~18FEF
+							;この時点であれば大してｽﾀｯｸを使用していないから問題ないが。
+
+_IRAM_CR020:						;
+	TST	R1,R1					;
+	BT	_IRAM_CR050				;
+
+	MOV.L	R2,@R6					;DATA -->MEM
+	ADD	#4,R6					;ADRESS +4
+	ADD	#-1,R1				;-1
+	_WDT_CLR
+	M_BRA	_IRAM_CR020				;
+
+_IRAM_CR050:
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***		DPRAMﾁｪｯｸ&ｸﾘｱ			***
+;	***						***
+;	***************************************************
+	.import		_dpram_top				;
+	.export		_DP_MEM_CHK
+_DP_MEM_CHK:
+	SUB_START
+
+	MOV.L	#_dpram_top,R5				;
+	MOV.L	#(_DPRAM_SIZE+1-4)/2,R6			;SIZE BYTE-->WORD
+	MOV.W	#H'5AA5,R1
+	MOV.W	#H'A55A,R2				;
+	MOV.W	#H'0000,R3
+	XOR	R9,R9
+
+_DP_MEM_CK_LOOP:
+	TST	R6,R6
+	BT	_DP_MEM_CK400
+
+	_WDT_CLR
+
+	MOV.W	R1,@R5					;
+	nop
+	nop
+	MOV.W	@R5,R4					;
+	CMP/EQ	R1,R4					;
+	BT	_DP_MEM_CK100				;5A WR NO ERR
+	MOV.L	#H'FF,R9
+_DP_MEM_CK100:
+	MOV.W	R2,@R5					;
+	nop
+	nop
+	MOV.W	@R5,R4					;
+	CMP/EQ	R2,R4					;
+	BT	_DP_MEM_CK200				;A5 WR NO ERR
+	MOV.L	#H'FF,R9
+_DP_MEM_CK200:
+	MOV.W	R3,@R5					;
+	nop
+	nop
+	MOV.W	@R5,R4					;
+	CMP/EQ	R3,R4					;
+	BT	_DP_MEM_CK300				;00 WR NO ERR
+	MOV.L	#H'FF,R9
+_DP_MEM_CK300:
+
+	ADD	#2,R5					;
+	ADD	#H'FF,R6				;
+	M_BRA	_DP_MEM_CK_LOOP			;
+
+_DP_MEM_CK400:
+	TST	R9,R9
+	BT	_DP_MEM_CKEND
+
+_DP_MEM_EREND:
+	.AIF	_SIT_TYPE_SEL EQ _TYPE_SIT3
+	MOV.L	#_PADR,R5
+	MOV.W	@R5,R0
+	MOV.W	#H'1000,R1				; CPUBER
+	OR	R1,R0					; ON
+	MOV.W	R0,@R5
+	.AELSE
+	MOV.L	#_IOGA1_CTRL_DAT1+_IOGAo_PF,R1		;
+	MOV.W	@R1,R0
+	OR	#BIT7,R0				; WORK SET
+	MOV.W	R0,@R1					; CPUBER SET
+	_MC_GA1PF_OUT1	R0,R1,R2			; WORK -> PORT
+	.AENDI
+
+_DP_MEM_CKEND
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;	***************************************************
+;	***						***
+;	***		DPRAMﾁｪｯｸ&ｸﾘｱ			***
+;	***		mc 2013-12-02			***
+;	***************************************************
+	.import		_dpramB_top
+	.export		_DP2_MEM_CHK
+_DP2_MEM_CHK:
+	SUB_START
+
+	MOV.L	#_dpramB_top,R5				;
+	MOV.L	#(_DPRAM_SIZE+1-4)/2,R6			;SIZE BYTE-->WORD
+	MOV.W	#H'5AA5,R1
+	MOV.W	#H'A55A,R2				;
+	MOV.W	#H'0000,R3
+	XOR	R9,R9
+
+_DP2_MEM_CK_LOOP:
+	TST	R6,R6
+	BT	_DP2_MEM_CK400
+
+	_WDT_CLR
+
+	MOV.W	R1,@R5					;
+	nop
+	nop
+	MOV.W	@R5,R4					;
+	CMP/EQ	R1,R4					;
+	BT	_DP2_MEM_CK100				;5A WR NO ERR
+	MOV.L	#H'FF,R9
+_DP2_MEM_CK100:
+	MOV.W	R2,@R5					;
+	nop
+	nop
+	MOV.W	@R5,R4					;
+	CMP/EQ	R2,R4					;
+	BT	_DP2_MEM_CK200				;A5 WR NO ERR
+	MOV.L	#H'FF,R9
+_DP2_MEM_CK200:
+	MOV.W	R3,@R5					;
+	nop
+	nop
+	MOV.W	@R5,R4					;
+	CMP/EQ	R3,R4					;
+	BT	_DP2_MEM_CK300				;00 WR NO ERR
+	MOV.L	#H'FF,R9
+_DP2_MEM_CK300:
+
+	ADD	#2,R5					;
+	ADD	#H'FF,R6				;
+	M_BRA	_DP2_MEM_CK_LOOP			;
+
+_DP2_MEM_CK400:
+	TST	R9,R9
+	BT	_DP_MEM_CKEND
+
+_DP2_MEM_EREND:
+	.AIF	_SIT_TYPE_SEL EQ _TYPE_SIT3
+	MOV.L	#_PADR,R5
+	MOV.W	@R5,R0
+	MOV.W	#H'1000,R1				; CPUBER
+	OR	R1,R0					; ON
+	MOV.W	R0,@R5
+	.AELSE
+	MOV.L	#_IOGA1_CTRL_DAT1+_IOGAo_PF,R1		;
+	MOV.W	@R1,R0
+	OR	#BIT7,R0				; WORK SET
+	MOV.W	R0,@R1					; CPUBER SET
+	_MC_GA1PF_OUT1	R0,R1,R2			; WORK -> PORT
+	.AENDI
+
+_DP2_MEM_CKEND
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***	SCI ﾌﾟﾛｸﾞﾗﾑ COPY			***
+;	***	ROM -> RAM				***
+;	***						***
+;	***************************************************
+	.IMPORT		__PvupsciROM_BGN
+	.IMPORT		__PvupsciRAM_BGN
+	.IMPORT		__PvupsciROM_END
+	.EXPORT		_SCI0_PRO_ROM_TO_RAM
+_SCI0_PRO_ROM_TO_RAM:
+	SUB_START
+
+	MOV.L	#__PvupsciROM_BGN,R0
+	MOV.L	@R0,R5					;DATA SORCE
+	MOV.L	#__PvupsciRAM_BGN,R0
+	MOV.L	@R0,R6					;DATA DIST
+	MOV.L	#__PvupsciROM_END,R0
+	MOV.L	@R0,R4					;
+	SUB	R5,R4					;
+	SHLR	R4					;
+
+_VPC_LOOP:
+	CMP/PL	R4
+	BF	_VPC_LOOP_END				;ZERO or MINS THEN EXIT
+
+	MOV.W	@R5+,R0					;
+	MOV.W	R0,@R6					;
+	ADD	#2,R6					;
+	ADD	#H'FF,R4				;
+	_WDT_CLR
+	M_BRA	_VPC_LOOP	;
+
+_VPC_LOOP_END:
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***	SCI ﾌﾟﾛｸﾞﾗﾑ COPY			***
+;	***	ROM -> RAM				***
+;	***						***
+;	***************************************************
+	.IMPORT __INTHandler_BGN
+	.IMPORT __INTHdlrRAM_BGN
+	.IMPORT __INTHnadler_END
+	.EXPORT		_INTHdlr_TO_RAM
+_INTHdlr_TO_RAM:
+	SUB_START
+
+	MOV.L	#__INTHandler_BGN,R0
+	MOV.L	@R0,R5					;DATA SORCE
+	MOV.L	#__INTHdlrRAM_BGN,R0
+	MOV.L	@R0,R6					;DATA DIST
+	MOV.L	#__INTHnadler_END,R0
+	MOV.L	@R0,R4					;
+	SUB	R5,R4					;
+	SHLR	R4					;
+
+_IHC_LOOP:
+	CMP/PL	R4
+	BF	_IHC_LOOP_END				;ZERO or MINS THEN EXIT
+
+	MOV.W	@R5+,R0					;
+	MOV.W	R0,@R6					;
+	ADD	#2,R6					;
+	ADD	#H'FF,R4				;
+	_WDT_CLR
+	M_BRA	_IHC_LOOP	;
+
+_IHC_LOOP_END:
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***		ROM SUM CHECK			***
+;	***						***
+;	***************************************************
+	.IMPORT		_ROM_SUM_CODE;
+	.IMPORT		_SEQ_DP_TOP;
+	.EXPORT		_ROM_SUM_CHK
+_ROM_SUM_CHK:
+	SUB_START
+
+	XOR	R1,R1					; SUM MAKE REG CLEAR
+;;;;;;;;	MOV.L	#H'00000000,R3				; SUM MAKE TOP ADR
+	MOV.L	#H'A0000000,R3				; SUM MAKE TOP ADR		2006/12/26 V05
+	MOV.L	#_ROM_SUM_CODE,R4			; SUM_MAKE END ADR
+
+_ROM_SUMCHK_LOOP:
+	_WDT_CLR
+	MOV.L	@R3+,R2
+	NOP
+	ADD	R2,R1					; SUM MAKE
+	CMP/HS	R4,R3
+	BF	_ROM_SUMCHK_LOOP
+
+;//SHIMA	MOV.L	#_SEQ_DP_TOP+338*2,R5
+
+;;;このｽﾀﾝｽはだめ	MOV.L	#_SQ_CBWK_TOP+_SQCB268,R5		;
+;;;			MOV.L	R1,@R5					; SUM TO SEQ 上位WORD
+
+	PUSH_REG1 R1
+	SWAP.W	R1,R1					;
+	MOV.L	#_SQ_CBWK_TOP+_SQCB268,R5		;
+	MOV.W	R1,@R5					; SUM TO SEQ 上位WORD
+	SWAP.W	R1,R1					;
+	ADD	#2,R5					;
+	MOV.W	R1,@R5					; SUM TO SEQ 下位WORD
+	POP_REG1 R1					;
+
+	MOV.L	@R4,R0
+	CMP/EQ	R0,R1					; SUM OK ?
+	BT	_ROM_SUMCHK_END				; はい
+
+	MOV.L	#_DUMMY_SUM_CODE,R2
+	CMP/EQ	R0,R2					; SUMﾁｪｯｸ無し ?
+	BT	_ROM_SUMCHK_END				; はい
+
+	MOV.L	#_SQ_CBWK_TOP+_SQCB241,R5
+	MOV.W	@R5,R0
+	OR	#BIT0,R0
+	MOV.W	R0,@R5
+
+	.AIF	_SIT_TYPE_SEL EQ _TYPE_SIT3
+	MOV.L	#_PADR,R5
+	MOV.W	@R5,R0
+	MOV.W	#H'1000,R1				; CPUBER
+	OR	R1,R0					; ON
+	MOV.W	R0,@R5
+
+	.AELSE
+	MOV.L	#_IOGA1_CTRL_DAT1+_IOGAo_PF,R1		;
+	MOV.W	@R1,R0
+	OR	#BIT7,R0				; WORK SET
+	MOV.W	R0,@R1					; CPUBER SET
+	_MC_GA1PF_OUT1	R0,R1,R2			; WORK -> PORT
+	.AENDI
+
+_ROM_SUMCHK_END:
+	SUB_END
+	M_RTS
+
+
+;★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+
+	.SECTION	P,CODE
+;	***************************************************
+;	***						***
+;	***		WDTﾘﾌﾚｯｼｭ			***
+;	***						***
+;	***************************************************
+	.export		_WDT_Rifresh
+_WDT_Rifresh:
+	SUB_START
+	PUSH_ALL
+	_WDT_CLR
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***		ＤＯﾘﾌﾚｯｼｭ			***
+;	***						***
+;	***************************************************
+	.export		_DO_Rifresh
+_DO_Rifresh:
+	SUB_START
+	PUSH_ALL
+
+;;2013-12-25[MCでは不要]	MOV.L	#_cpuab_hs_out0,R1
+;;2013-12-25[MCでは不要]	MOV.W	@R1,R0
+;;2013-12-25[MCでは不要]
+;;2013-12-25[MCでは不要];	********** SIT3_CPUB PROGRAM **********
+;;2013-12-25[MCでは不要]	.AIF	_SIT_CPU_SEL	EQ	_SIT3_CPUB
+;;2013-12-25[MCでは不要]	MOV.L	#_REAL_OUT0,R1
+;;2013-12-25[MCでは不要];	********** SIT4_CPUB PROGRAM **********
+;;2013-12-25[MCでは不要]	.AELIF	_SIT_CPU_SEL	EQ	_SIT4_CPUB
+;;2013-12-25[MCでは不要]	MOV.L	#_PADR,R1
+;;2013-12-25[MCでは不要]	.AENDI
+;;2013-12-25[MCでは不要]
+;;2013-12-25[MCでは不要]	MOV.B	R0,@R1
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+	.import		_dio_top1
+	.import		_dio_top2
+
+;	***************************************************
+;	***						***
+;	***		ＫＥＹ読込み			***
+;	***						***
+;	***************************************************
+;;;	.import		_dpramB_top
+	.import		_KEY_DT_CPUB
+	.export		_KEY_READ
+_KEY_READ:
+	SUB_START
+
+;-------------------------------------------------------------------------------
+;	<< SIT4-MC >>
+
+	MOV.L	#_KEY_DT_CPUB,R1
+	MOV.L	#_Key_Data_No,R3
+	MOV.L	#4,R0
+_KEY_RDMC_020:
+	CMP/EQ	#0,R0
+	BT	_KEY_RDMC_040
+	MOV.W	@R1,R2
+	MOV.W	R2,@R3
+	ADD	#2,R1
+	ADD	#2,R3
+	ADD	#-1,R0
+	M_BRA	_KEY_RDMC_020
+_KEY_RDMC_040:
+
+	MOV.W	#H'FF,R0
+	MOV.L	#_Key_Data_Flg,R3
+	MOV.W	R0,@R3					; KEYﾃﾞｰﾀ確定
+
+	M_BRA	_KEY_READ_EXT
+
+;-------------------------------------------------------------------------------
+
+	MOV.L	#_KEY_SCAN,R2
+	MOV.L	#_Key_Data_No,R3
+	MOV.W	@R2,R4					; 0~3
+	MOV	R4,R6
+	SHLL	R6
+	ADD	R6,R3					; R3=KEYﾃﾞｰﾀ格納ｱﾄﾞﾚｽ
+
+;	********** SIT3_CPUB PROGRAM **********
+	.AIF	_SIT_CPU_SEL	EQ	_SIT3_CPUB
+
+	MOV.L	#_PBDR,R1				;
+	MOV.W	@R1,R0					; KEYﾃﾞｰﾀ読込み1回目
+	AND	#H'3F,R0				;
+	MOV	R0,R5					;
+
+;	********** SIT4_CPUB PROGRAM **********
+	.AELIF	_SIT_CPU_SEL	EQ	_SIT4_CPUB
+
+	MOV.L	#_dio_top1+_IOGA_PDR0,R1		; 今回値 １回目
+	MOV.W	@R1,R0					;
+	AND	#H'3F,R0				;
+	MOV	R0,R5					;
+
+	.AELSE
+	.AENDI
+
+	ADD	#1,R4					; KEY_SCAN +1
+	MOV.L	#D'3,R6					; KEY_SCAN最大値
+	CMP/HI	R6,R4					; 最大値超えた?
+	BF	_KEY_SCAN_020				; いいえ
+	XOR	R4,R4
+_KEY_SCAN_020:
+	MOV.W	R4,@R2					; 次のKEY_SCAN格納
+
+;	********** SIT3_CPUB PROGRAM **********
+	.AIF	_SIT_CPU_SEL	EQ	_SIT3_CPUB
+
+	MOV.L	#_PBDR,R1				;
+	MOV.W	@R1,R0					; KEYﾃﾞｰﾀ読込み1回目
+	AND	#H'3F,R0				;
+	MOV	R0,R5					;
+
+;	********** SIT4_CPUB PROGRAM **********
+	.AELIF	_SIT_CPU_SEL	EQ	_SIT4_CPUB
+
+	MOV.L	#_dio_top1+_IOGA_PDR0,R1		; 今回値 １回目
+	MOV.W	@R1,R0					;
+	AND	#H'3F,R0				;
+	MOV	R0,R5					;
+
+	.AELSE
+	.AENDI
+
+	CMP/EQ	R5,R0					; 1回目=2回目?
+	BT	_KEY_SCAN_040				; はい
+
+;	********** SIT3_CPUB PROGRAM **********
+	.AIF	_SIT_CPU_SEL	EQ	_SIT3_CPUB
+
+	MOV.L	#_PBDR,R1				;
+	MOV.W	@R1,R0					; KEYﾃﾞｰﾀ読込み1回目
+	AND	#H'3F,R0				;
+	MOV	R0,R5					;
+
+;	********** SIT4_CPUB PROGRAM **********
+	.AELIF	_SIT_CPU_SEL	EQ	_SIT4_CPUB
+
+	MOV.L	#_dio_top1+_IOGA_PDR0,R1		; 今回値 １回目
+	MOV.W	@R1,R0					;
+	AND	#H'3F,R0				;
+	MOV	R0,R5					;
+
+	.AELSE
+	.AENDI
+
+_KEY_SCAN_040:
+	NOT	R0,R0
+	AND	#H'3F,R0				;
+	MOV.W	R0,@R3					; KEYﾃﾞｰﾀ格納
+
+	MOV.W	#H'FF,R0
+	MOV.L	#_Key_Data_Flg,R3
+	MOV.W	R0,@R3					; KEYﾃﾞｰﾀ確定
+
+	SHLL	R4
+	MOV.L	#_KEY_SCAN_OUT_TBL,R2
+	ADD	R4,R2
+	MOV.W	@R2,R3					; KEY SCAN 出力bit
+
+;	********** SIT3_CPUB PROGRAM **********
+	.AIF	_SIT_CPU_SEL	EQ	_SIT3_CPUB
+	MOV.L	#_PADR,R1
+	MOV.W	@R1,R0
+	MOV.W	#H'FFF0,R4
+	AND	R4,R0
+	OR	R3,R0
+	MOV.W	R0,@R1					; 次回KEY SCAN 出力
+
+;	-------------------------------------------------
+
+;	********** SIT4_CPUB PROGRAM **********
+	.AELIF	_SIT_CPU_SEL	EQ	_SIT4_CPUB
+
+	MOV.L	#_IOGA1_CTRL_DAT1+_IOGA_P4,R1		;
+	MOV.W	@R1,R0
+	AND	#H'0F,R0
+	OR	R3,R0
+	MOV.W	R0,@R1					; SCAN SIGNAL OUT
+
+	MOV.L	#_dio_top1+_IOGA_PDR4,R1		; WORK SET
+	MOV.W	R0,@R1					; SCAN SIGNAL OUT
+
+	.AELSE
+	.AENDI
+
+_KEY_READ_EXT:
+	SUB_END
+	M_RTS
+
+
+_KEY_SCAN_OUT_TBL:
+;	********** SIT3_CPUB PROGRAM **********
+	.AIF	_SIT_CPU_SEL	EQ	_SIT3_CPUB
+	.DATA.W		B'00001110			; 0
+	.DATA.W		B'00001101			; 1
+	.DATA.W		B'00001011			; 2
+	.DATA.W		B'00000111			; 3
+
+;	********** SIT4_CPUB PROGRAM **********
+	.AELIF	_SIT_CPU_SEL	EQ	_SIT4_CPUB
+	.DATA.W		B'11100000			; 0
+	.DATA.W		B'11010000			; 1
+	.DATA.W		B'10110000			; 2
+	.DATA.W		B'01110000			; 3
+
+	.AELSE
+	.AENDI
+
+
+	.END

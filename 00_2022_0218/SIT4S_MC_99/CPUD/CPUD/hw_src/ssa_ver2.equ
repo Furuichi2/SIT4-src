@@ -1,0 +1,13 @@
+;	***********************************
+;	***				***
+;	***		HARD		***
+;	***				***
+;	***********************************
+;	SIT4‚ÌCPUA/CPUB‚Í0
+_HARD_SIT4_CPU		.DEFINE		"0"	;
+_HARD_COP2_CPU		.DEFINE		"1"	;
+_HARD_SEL_CPU	.DEFINE		"_HARD_SIT4_CPU"	;
+;;;;;;_HARD_SEL_CPU	.DEFINE		"_HARD_COP2_CPU"	;
+
+;;_SOFT_SIT4_COP2USE	.DEFINE		"0"	;0:–¢‘Î‰ž 1:‘Î‰ž
+_SOFT_SIT4_COP2USE	.DEFINE		"1"	;0:–¢‘Î‰ž 1:‘Î‰ž

@@ -1,0 +1,147 @@
+-noprelink
+-rom=D=R,P=PRAM,PvupsciROM=PvupsciRAM,Pcall=PcallRAM,INTHandler=INTHdlrRAM,INTTBL=INTTBLRAM,IntPRG=IntPRGRAM,PHiROM=PHiRAM
+-nomessage
+-list="D:\SIT4S_MC\CPUB\CPUB\Release\CPUB.map"
+-nooptimize
+-start=INTHdlrRAM, &
+INTTBLRAM, &
+IntPRGRAM/0C000800, &
+PcallRAM/0C002000, &
+PRAM/0C004000, &
+Bwkram1, &
+Blcdctrl, &
+B, &
+R/0C090000, &
+PvupsciRAM/0C180000, &
+Blcd_vram/0C200000, &
+RSTHandler/0A0000000, &
+INTHandler, &
+INTTBL, &
+IntPRG/0A0000800, &
+VECTTBL/0A0002000, &
+ResetPRG/0A0002400, &
+Phwsetup1, &
+Chwsetup1/0A0002800, &
+PvupsciROM/0A0004000, &
+Pcall/0A0008000, &
+Pstart, &
+Pstart1/0A000A000, &
+P, &
+PHiROM, &
+C, &
+D, &
+C$BSEC, &
+C$DSEC/0A000B000, &
+Pctl_TBL/0A0086000, &
+Psum_code/0A00CFF00, &
+REG1/0A4000000, &
+PHiRAM/0A5007000, &
+Bwkiram1/0A5017000, &
+Stack/0A50187F0, &
+BvupsciwkRAM/0AC104000, &
+Bkata_work/0AC1E0000, &
+Bfram/0B4000000, &
+BframSEQ/0B4007000, &
+Bopram/0B5000000, &
+Bdpram/0B8000000, &
+Bfrom/0B9000000, &
+Pall_chr_tbl/0B9010000, &
+Pgam_inf_tbl/0B9028000, &
+Pcbsys/0B90B0000, &
+Pcb_TBL1X/0B90C0000, &
+Pkanrom/0B9100000, &
+Pgam_table2/0B9140000, &
+Pall_chr_tbl2/0B9150000, &
+Pgam_inf_tbl2/0B9180000, &
+Bposlsi1/0BA000000, &
+Bdio/0BB000000, &
+REG2/0FFFFF000
+-nologo
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\CPU_REG.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\CPUB.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\dbsct.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\hwsetup.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\initsct.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\intprg.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\resetprg.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\sbrk.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_acrm.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_cblp.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_cbmn.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_com1.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_ctbl.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_ctrl.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_dio1.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_dioy.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_dtmk.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_else.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_err1.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_et1b.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_fram_data.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_frif.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_had1.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_hmi2.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_k.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_khad.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_mem1.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_opram.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_pcal.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_pos1.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_scal.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_self.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_svup.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_tbl1.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_tbl2.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_wrmk.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssa_y.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_col1.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_count.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_Csr.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_Dandor.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_Dataset.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_dif1.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_disp.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_disp1.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_dptrans_CAM.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_dptrans_GEN.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_dptrans_MOT.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_dptrans_SEQ.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_dptrans_SRV.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_dptrans_SYS.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_dptrans_write.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_graph.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_hmi1.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_if_disp.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_introck.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_k.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_key.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_main.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_option.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_ptn.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_rulet.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_rulet_data.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_rulet_deg.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_rulet_frame.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_Seisa.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_SvPv.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_Sw.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_Sysset.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_tbl.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_tbl_inf.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_Tlink.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_work.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_wrmh.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_wrmk.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_wrms.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\ssc_wrmy.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\stacksct.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\vecttbl.obj"
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\vhandler.obj"
+-library="c:\program files\renesas\hew\tools\renesas\sh\9_3_0\lib\sh3dspnb.lib"
+-library="D:\SIT4S_MC\CPUB\CPUB\Release\CPUB.lib"
+-output="D:\SIT4S_MC\CPUB\CPUB\Release\CPUB.abs"
+-end
+-input="D:\SIT4S_MC\CPUB\CPUB\Release\CPUB.abs"
+-form=stype
+-output="D:\SIT4S_MC\CPUB\CPUB\Release\CPUB.mot"
+-exit

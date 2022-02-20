@@ -1,0 +1,103 @@
+
+;//	***************************************************
+;//	***						***
+;//	***	2012-09-25				***
+;//	***	オーバヒート電流			***
+;//	***						***
+;//	***************************************************
+	.ALIGN 4
+;//	---------2012-09-25-------
+_PV_OVERH_AMP_AVL	.SRES	4	;○平均値
+_PV_ABS_OVERH_TRQ	.SRES	4	;○
+_PV_ABS_OVERH_TRQSEK	.SRES	12	;12byte長 4(I)*4(I)*4(時間)
+_CYC2_SEK_TIME		.SRES	4	;○1msec*1時間
+_CYC2_INP_STS		.SRES	2	;
+_CYC2_LTH_STS		.SRES	2	;0:ｱｲﾄﾞﾙ 1:ｻｲｸﾙ中
+
+//	--------------2012-09-25----------
+	S4b	SETX_OVERH_LNGTH	;//1mm Main->OVERH SOFT
+	S4b	SETX_OVERH_AMP		;//OVERH->AMP閾値
+	S2b	OVERH_MODE_SEL		;//0[回転]/1[反転]/2[ふりこ]/3[ふりこ]
+	S2b	SQ_OVERH_CMP		;//OVERH-> MAIN
+	S2b	OVERH_CALC_USE;//MODE,
+
+
+
+;PV_ABS_OVERH_TRQ	4B	0~500(MAX　0~32767)
+
+	.ALIGN	4			;
+_TRQ_OVERHEAT_CALC:
+	SUB_START
+
+
+	MOV.L	#_OVERH_CALC_USE,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF TRQ_OVERHEAT_CAL400		;
+
+	FAR_JSR	#_TRQ_OVERHEAT_DTMAK,R0
+
+	MOV.L	#_CYC2_INP_STS,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF TRQ_OVERHEAT_CAL500		;
+
+	TST	#BIT6,R0			;
+	TST_BIT_OF TRQ_OVERHEAT_CAL200		;前回運転中ではない[起動した]
+	MOV.L	#_CYC2_INP_STS,R1		;
+	MOV.W	@R1,R0				;
+	AND	#LOW ~BIT6,R0			;
+	MOV.W	R0,@R1				;
+
+;	---------- 最後の積算 ----------
+	FAR_JSR	#_OVERH_SEKI_ADD,R0	;
+
+;	-----------平均電流演算------------
+	FAR_JSR	#_OVERH_IAMP_DT_CALC,R0	;
+
+;	-----------オーバヒート電流演算------
+	FAR_JSR	#_OVERH_AMP_SV_CALC,R0	;
+
+
+;	-----------オーバヒート電流比較------
+	FAR_JSR	#_OVERH_AMP_CMP,R0	;
+
+	M_BRA	TRQ_OVERHEAT_CAL500	;CLR
+
+TRQ_OVERHEAT_CAL200:
+	MOV.L	#_CYC2_INP_STS,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0		;
+	TST_BIT_OF TRQ_OVERHEAT_CAL250	;非運転中
+
+;	---------- 積算 ----------
+	FAR_JSR	#_OVERH_SEKI_ADD,R0	;
+
+TRQ_OVERHEAT_CAL250:
+	M_BRA	TRQ_OVERHEAT_CAL800	;
+
+
+;	-------------演算停止クリア------------------
+TRQ_OVERHEAT_CAL400				;
+
+	XOR	R0,R0				;
+	MOV.L	#_CYC2_INP_STS,R1		;
+	MOV.W	R0,@R1				;
+
+;	------------起動した　クリア処理	-----------------
+TRQ_OVERHEAT_CAL500				;
+	XOR	R0,R0				;
+	MOV.L	#_CYC2_SEK_TIME,R1		;
+	MOV.L	R0,@R1				;
+
+	MOV.L	#_PV_ABS_OVERH_TRQSEK,R1	;
+	MOV.L	R0,@(0*4,R1)			;
+	MOV.L	R0,@(1*4,R1)			;
+	MOV.L	R0,@(2*4,R1)			;
+
+TRQ_OVERHEAT_CAL800
+
+
+
+	SUB_END
+	M_RTS

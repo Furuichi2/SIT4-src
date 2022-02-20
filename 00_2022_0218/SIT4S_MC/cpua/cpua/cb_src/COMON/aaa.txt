@@ -1,0 +1,357 @@
+;	*******************************************
+;	***					***
+;	***	2016-04-12正式に作成		***
+;	***					***
+;	*******************************************
+_MODE_CSS_STOP_CHK:	;連続一行程・連続寸動一行程
+	SUB_START
+
+	MOV.L	#_MODE_SEL,R1		;
+	MOV.W	@R1,R0			;
+	MOV.W	#BIT11,R1
+	TST	R1,R0		;連続一行程？
+	TST_BIT_ON MODE_CCC_STOPCHK	;YES
+	M_BRA	MODE_CSS_STOPCHK_START	;連続寸動一行程
+
+;	== 連続一行程==
+MODE_CCC_STOPCHK:
+	FAR_JSR	#_MODE_CNTCOM1_STOP_CHK,R0		;
+	FAR_JSR	#_MODE_CNTCNF1_STOP_CHK,R0		;
+	MOV.L	#_BTTN_FLG,R1				;
+	MOV.W	@R1,R0					;
+	TST	#BIT2,R0				;
+	TST_BIT_ON MODE_CCC_STPCMP_120			;両手ON
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_STOP_LATCH_B,LG=W,BIT=BIT0,WKREG=R1	;bit-set
+MODE_CCC_STPCMP_120:
+
+	FAR_JSR	#_MODE_CNTCOM2_STOP_CHK,R0		;STOP_LATCH_B->STOP_LATCH
+							;良いﾀｲﾐﾝｸﾞで出力する()
+
+	M_BRA	MODE_CSS_STOPCK1000	;
+
+;	===========================================
+;	===		連続寸動一行程		===
+;	===========================================
+;	== 連続寸動一行程(あした考える) ==
+MODE_CSS_STOPCHK_START:	;
+	FAR_JSR	#_CPU_AB_CST_OF_JG,R0	;
+	TST	R1,R1			;
+	TST_BIT_OF MODE_CCS_STPCMP_100	;自分のいくぞ信号ON? NO
+
+	MOV.L	#_INT_POS_CTL_STEP,R1	;//内部制御工程1~11
+	MOV.W	@R1,R0			;
+	MOV.L	#_CPOS_STEP_MAX,R2	;
+	MOV.W	@R2,R4			;
+	ADD	#1,R4			;
+	CMP/EQ	R0,R4			;
+	BT	MODE_CCS_STPCMP_100	;最終工程
+
+	MOV	R0,R5			;push
+	FAR_JSR	#_CPU_BA_STEP_LOAD,R2	;ANS R3
+	CMP/EQ	R0,R5			;
+	BF	MODE_CCS_STPCMP_100	;不一致状態
+
+	FAR_JSR	#_CPU_AB_CST_OF_OUT2,R0	;自分のいくぞ信号クリア(相手のもやったほうがいいのか？)
+
+MODE_CCS_STPCMP_100:
+
+
+;	----2007-11-21二重化対策 ﾎｰﾙﾄﾞ中でも相手が止めるなら止める-----------
+;	本来なら200:~220でやるべき話だが　ここでやったほうが安全性は高い
+	FAR_JSR	#_CPU_BA_DRVSTOP_ON_JG,R0	;_CPU_AB_DRVSTOP_ON_OUTで_SH2_HD_SFTY_AUTO=-1
+	TST	R0,R0				;_SH2_HD_SFTY_AUTO
+	TST_BIT_OF MODE_CCS_STPCMP_105						;
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_CMP_RECOVER_FLG,LG=W,BIT=BIT0,WKREG=R1	;bit-set
+	FAR_JSR	#_AUTO_OF,R0							;
+
+	FAR_JSR	#_BRK_ERR_WORK_CLR1,R0					;ERR1.SRC
+	MOD_LOW_STOP_R0_R1						;
+	FAR_JSR	#_CPU_AB_DRVSTOP_ON_OUT,R0				;
+	M_BRA	MODE_CCS_STPCMP_300					;
+
+
+
+MODE_CCS_STPCMP_105:
+;	----------------------------------------------------------------
+
+
+
+;;;;;;	----- 2005-08-26 -------
+;;;;;;	MOV.L	#_STOP_LATCH_B,R1		;//BIT0:ｽﾄｯﾌﾟ釦
+;;;;;;	MOV.W	@R1,R0				;
+;;;;;;	TST	#BIT0,R0			;STOP-LATCH-ON
+;;;;;;	TST_BIT_OF MODE_CCS_STPCMP_110		;
+;;;;;;	M_BRA	MODE_CCS_STPCMP_270
+;;;;;;MODE_CCS_STPCMP_110:
+;	------------------------
+
+	MOV.L	#_BTTN_FLG,R1			;
+	MOV.W	@R1,R0				;
+	TST	#BIT2,R0			;
+	TST_BIT_ON MODE_CCS_STPCMP_120		;両手ON
+
+	MOV.W	#BIT0,R0			;
+	MOV.L	#_CCS_BTTN_OFF,R1		;両手ON以外の状態が運転中にあった。必ずいつか止める
+	MOV.W	R0,@R1				;
+
+MODE_CCS_STPCMP_120:
+;	---------回転の論理変更----------
+	MOV.L	#_CPOS_CTL_MATH,R1		;
+	MOV.W	@R1,R0				;
+;;;2016-10-31	TST	#_DMATH_CNTROT,R0		;
+	TST	#(_DMATH_CNTROT+_DMATH_DNDRIV),R0	;回転or往復
+	TST_BIT_OF MODE_CCS_STPCMP_140		;
+
+	MOV.L	#_M_LINK_AREASIG,R4		;//BIT0/BIT4:待機点範囲
+	MOV.W	@R4,R0				;
+	TST	#(BIT1),R0			;下降(停止)
+	TST_BIT_ON MODE_CCS_STPCMP_145		;(停止)
+
+	MOV.L	#_INT_POS_CTL_STEP,R5		;
+	MOV.W	@R5,R2				;
+	MOV.L	#_UP_HOLD_STEP,R4		;//上昇ﾎｰﾙﾄﾞを監視を開始するｽﾃｯﾌﾟ
+	MOV.W	@R4,R5				;
+	CMP/HS	R5,R2				;ﾁｪｯｸすべき工程にきたか
+	BF	MODE_CCS_STPCMP_145		;NO(停止)
+
+	MOV.L	#_INC_ENC360,R4			;//360.0度(ｴﾝｺｰﾀﾞは表示と同じ)
+	MOV.W	@R4,R2				;
+	MOV.L	#_UP_HOLD_DIG,R5		;//0.1度(165.0):ﾓｰﾀ軸ｴﾝｺｰﾀﾞ角度で比較
+	MOV.W	@R5,R1				;START
+	MOV.L	#_SETX_UPAREA_DIG,R5		;
+	MOV.W	@R5,R3				;
+	FAR_JSR	#_DIG_AREA_CHK1,R0		;"ANS:R5"
+	CMP/PZ	R5				;
+	BF	MODE_CCS_STPCMP_145		;
+	M_BRA	MODE_CCS_STPCMP_200		;165~359.9　HOLD
+
+MODE_CCS_STPCMP_140:
+	MOV.L	#_LOT_CNT_FLG,R1		;//行程=1で0 最終工程で条件成立で=1()
+	MOV.W	@R1,R0				;BIT0=1 上昇ﾎｰﾙﾄﾞ～1工程または下降工程まで
+	TST	#BIT0,R0			;上昇ﾎｰﾙﾄﾞ中
+	TST_BIT_ON MODE_CCS_STPCMP_200		;
+
+
+MODE_CCS_STPCMP_145:
+	FAR_JSR	#_AUTO_OF,R0			;
+
+;	=== 上昇ﾎｰﾙﾄﾞではない===
+	MOV.L	#_CCS_BTTN_OFF,R1		;両手ON以外の状態が運転中にあった。必ずいつか止める
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_OF MODE_CCS_STPCMP_300		;一回もOFFしていない
+
+;;;;2005-08-28	MOV.L	#_STOP_LATCH,R1			;//BIT0:ｽﾄｯﾌﾟ釦
+
+;下降行程で手を離したら無条件に停止する
+;;;;2007-12-26	MOV.L	#_STOP_LATCH_B,R1		;2005-08-28
+;;;;2007-12-26	MOV.W	@R1,R0				;
+;;;;2007-12-26	TST	#BIT0,R0			;
+;;;;2007-12-26	TST_BIT_OF MODE_CCS_STPCMP_150		;通常の停止
+;;;;2007-12-26
+;;;;2007-12-26	MOV.L	#_INT_POS_CTL_STEP,R1		;//内部制御工程1~11
+;;;;2007-12-26	MOV.W	@R1,R0				;
+;;;;2007-12-26	MOV.L	#_CPOS_STEP_MAX,R2		;
+;;;;2007-12-26	MOV.W	@R2,R4				;
+;;;;2007-12-26	ADD	#1,R4				;
+;;;;2007-12-26	CMP/EQ	R0,R4				;
+;;;;2007-12-26	BF	MODE_CCS_STPCMP_150		;最終工程でないなら手動停止
+;;;;2007-12-26	M_BRA	MODE_CCS_STPCMP_300		;
+
+MODE_CCS_STPCMP_150:
+;	======== 運転釦のOFF/停止ｺﾏﾝﾄﾞ/安全位置工程の上昇ﾎｰﾙﾄﾞ/ 2003-07-01
+	FAR_JSR	#_BRK_ERR_WORK_CLR1,R0	;ERR1.SRC
+	MOD_LOW_STOP_R0_R1			;2007-03-02
+;	---2007-03-02-----
+	FAR_JSR	#_CPU_AB_DRVSTOP_ON_OUT,R0	;
+
+;	------- 2007-12-26-------
+	XOR	R0,R0
+	MOV.L	#_STOP_LATCH_B,R1		;
+	MOV.W	R0,@R1
+	MOV.L	#_STOP_LATCH,R1			;//BIT0:ｽﾄｯﾌﾟ釦
+	MOV.W	R0,@R1
+	M_BRA	MODE_CCS_STPCMP_300		;
+
+;	====== 上昇ﾎｰﾙﾄﾞ中 =====
+MODE_CCS_STPCMP_200:
+;2007-11-21 本来は200:~220:だけでいいが確認が難しいことと、不具合をださないなら上でやる
+;	----2007-11-21二重化対策 ﾎｰﾙﾄﾞ中でも相手が止めるなら止める-----------
+;	FAR_JSR	#_CPU_BA_DRVSTOP_ON_JG,R0	;_CPU_AB_DRVSTOP_ON_OUTで_SH2_HD_SFTY_AUTO=-1
+;	TST	R0,R0				;_SH2_HD_SFTY_AUTO
+;	TST_BIT_OF MODE_CCS_STPCMP_220						;
+;	MEM1_BIT0_TO_BIT7_ORSET MEM=_CMP_RECOVER_FLG,LG=W,BIT=BIT0,WKREG=R1	;bit-set
+;	FAR_JSR	#_AUTO_OF,R0							;
+;
+;	FAR_JSR	#_BRK_ERR_WORK_CLR1,R0					;ERR1.SRC
+;	MOD_LOW_STOP_R0_R1						;
+;	FAR_JSR	#_CPU_AB_DRVSTOP_ON_OUT,R0				;
+;	M_BRA	MODE_CCS_STPCMP_300					;
+;MODE_CCS_STPCMP_220:
+;	----------------------------------------------------------------
+
+	FAR_JSR	#_AUTO_ON,R0			;
+
+	MOV.L	#_CNT_STOP_CMD,R1		;連続停止釦・連続停止指令・ﾛｯﾄｶｳﾝﾄｱｯﾌﾟ
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_ON MODE_CCS_STPCMP_250		;停止すべき
+
+	MOV.L	#_CCS_BTTN_OFF,R1		;両手ON以外の状態が運転中にあった。必ずいつか止める
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_OF MODE_CCS_STPCMP_300		;一回もOFFしていない
+
+MODE_CCS_STPCMP_250:
+	MOV.L	#_STOP_LATCH_B,R1		;//BIT0:ｽﾄｯﾌﾟ釦
+	MOV.W	@R1,R0				;
+	OR	#BIT0,R0			;
+	MOV.W	R0,@R1				;
+
+MODE_CCS_STPCMP_270:
+
+;;;;;;;;;;;2007-12-26 最終工程でなくても上昇ﾎｰﾙﾄﾞで停止ｺﾏﾝﾄﾞ出力
+;;;	------------- 追加 2005-08-26 -----------
+;;;        MOV.L	#_INT_POS_CTL_STEP,R1		;//内部制御工程1~11
+;;;        MOV.W	@R1,R0				;
+;;;        MOV.L	#_CPOS_STEP_MAX,R2		;
+;;;        MOV.W	@R2,R4				;
+;;;        ADD	#1,R4				;
+;;;        CMP/EQ	R0,R4				;
+;;;        BF	MODE_CCS_STPCMP_280		;最終工程以外?
+;;;        M_BRA	MODE_CCS_STPCMP_300		;
+
+MODE_CCS_STPCMP_280:
+        MOV.L	#_CPOS_MOD_FLG1,R1					;
+        MOV.W	@R1,R0							;
+        TST	#BIT2,R0						;2004-12-20
+        TST_BIT_ON MODE_CCS_STPCMP_300					;
+
+	FAR_JSR	#_STOP_LTH_OUT,R0
+
+
+MODE_CCS_STPCMP_300:
+
+MODE_CSS_STOPCK1000:
+
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+
+
+
+
+
+
+
+;	***************************************************
+;	***						***
+;	***	2016-04-12				***
+;	***	連続一行程				***
+;	***	連続寸動一行程				***
+;	***	上記のための連続の共通部サブルーチン化	***
+;	***	但し、連続には使用しないでおく		***
+;	***						***
+;	***************************************************
+_MODE_CNTCOM1_STOP_CHK:
+	SUB_START
+
+	FAR_JSR	#_CPU_AB_CST_OF_JG,R0		;R0=_SH4_HD_CNT_STOP,R1=_SH4_HD_CNT_CNT
+	TST	R1,R1				;
+	TST_BIT_OF MODE_CNTCOM1_STPCMP_100	;自分のいくぞ信号ON? NO:
+
+	MOV.L	#_INT_POS_CTL_STEP,R1		;//内部制御工程1~11
+	MOV.W	@R1,R0				;
+	MOV.L	#_CPOS_STEP_MAX,R2		;
+	MOV.W	@R2,R4				;
+	ADD	#1,R4				;
+	CMP/EQ	R0,R4				;
+	BT	MODE_CNTCOM1_STPCMP_100		;最終工程
+
+	MOV	R0,R5				;push
+	FAR_JSR	#_CPU_BA_STEP_LOAD,R2		;ANS R0 (SH2_STEP_NO,SH4_STEP_NO)
+	CMP/EQ	R0,R5				;
+	BF	MODE_CNTCOM1_STPCMP_100		;不一致状態
+
+						;自分のいくぞ信号クリア(相手のもやったほうがいいのか？)
+	FAR_JSR	#_CPU_AB_CST_OF_OUT2,R0		;_SH4_HD_CNT_CNT=0CLR
+
+MODE_CNTCOM1_STPCMP_100:
+	SUB_END
+	M_RTS
+
+
+;	**************************************************
+;	***						***
+;	***	AUTO_ON状態(停止条件の判定		***
+;	***						***
+;	***************************************************
+_MODE_CNTCNF1_STOP_CHK:
+	SUB_START
+;	-------------AUTO ON(連続一行程)------------
+	FAR_JSR	#_AUTO_ON,R0				;
+;	-------------------------------------------
+	MOV.L	#_POSHLD1_STOPLATCH,R1			;
+	MOV.W	@R1,R0					;
+	TST	R0,R0					;
+	TST_BIT_OF MODE_CNTCNF1_STPCHK_210		;
+	XOR	R0,R0					;
+	MOV.W	R0,@R1					;
+	M_BRA	MODE_CNTCNF1_STPCHK_220			;
+MODE_CNTCNF1_STPCHK_210:				;
+
+	MOV.L	#_CNT_STOP_CMD,R1			;連続停止釦・連続停止指令・ﾛｯﾄｶｳﾝﾄｱｯﾌﾟ
+	MOV.W	@R1,R0					;
+	TST	R0,R0					;
+	TST_BIT_OF MODE_CNTCNF1_STPCHK_250		;(上死点停止指令OFF)
+MODE_CNTCNF1_STPCHK_220:				;
+
+;	//BIT0:ｽﾄｯﾌﾟ釦記憶 停止可能なタイミングで出力される
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_STOP_LATCH_B,LG=W,BIT=BIT0,WKREG=R1	;bit-set
+
+MODE_CNTCNF1_STPCHK_250:
+	SUB_END
+	M_RTS
+
+
+
+;	**************************************************
+;	***						***
+;	***	AUTO_ON状態(相手側も動作する状態)	***
+;	***						***
+;	***************************************************
+_MODE_CNTCOM2_STOP_CHK:
+	SUB_START
+
+	MOV.L	#_STOP_LATCH_B,R1			;//BIT0:ｽﾄｯﾌﾟ釦等
+	MOV.W	@R1,R0					;
+	TST	#BIT0,R0				;
+	TST_BIT_OF MODE_CNTCOM2_STPCHK_300		;
+
+	MOV.L	#_INT_POS_CTL_STEP,R1		;//内部制御工程1~11
+	MOV.W	@R1,R0				;
+	MOV.L	#_CPOS_STEP_MAX,R2		;
+	MOV.W	@R2,R4				;
+	ADD	#1,R4				;
+	CMP/EQ	R0,R4				;
+	BF	MODE_CNTCOM2_STPCHK_280		;最終工程以外?
+	M_BRA	MODE_CNTCOM2_STPCHK_300		;最終行程は別で行う
+
+MODE_CNTCOM2_STPCHK_280:
+
+	MOV.L	#_CPOS_MOD_FLG1,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT2,R0			;2004-12-20
+	TST_BIT_ON MODE_CNTCOM2_STPCHK_300	;BIT2=1 待機点停止しないﾓｰﾄﾞは別で行う
+
+	FAR_JSR	#_STOP_LTH_OUT,R0		;STOP_LATCH.BIT0=1,SH4_HD_CNT_STOP=-1
+
+MODE_CNTCOM2_STPCHK_300:			;
+
+	SUB_END
+	M_RTS

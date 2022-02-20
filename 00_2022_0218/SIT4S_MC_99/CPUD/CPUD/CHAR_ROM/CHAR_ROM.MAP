@@ -1,0 +1,50 @@
+                                        H SERIES LINKAGE EDITOR Ver. 5.3
+
+
+LINK COMMAND LINE
+
+
+LNK /SUBCOMMAND= CHARlnk.cmd 
+
+
+
+LINK SUBCOMMANDS
+
+
+	input	CHAR_ROM.obj
+
+
+	NOLIBRARY
+	ALIGN_SECTION
+	CHECK_SECTION
+	UDFCHECK
+	DEBUG
+
+	FORM A
+	start	PcharROM(00000)
+
+	OUTPUT CHAR_ROM
+
+	LIST	U
+
+	PRINT  CHAR_ROM
+
+	EXIT
+
+
+
+                                  H SERIES LINKAGE EDITOR Ver. 5.3                       PAGE :     1
+
+                                        ***     LINKAGE EDITOR LINK MAP LIST      ***
+
+
+SECTION   NAME                       START      -      END         LENGTH
+                                                              UNIT NAME                          MODULE NAME
+
+
+ATTRIBUTE  :   CODE  NOSHR
+
+PcharROM                          H'00000000    -    H'0003FFFF   H'00040000
+                                                              CHAR_ROM                           CHAR_ROM                        
+
+* TOTAL ADDRESS *                 H'00000000    -    H'0003FFFF   H'00040000

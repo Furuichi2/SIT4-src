@@ -1,0 +1,21 @@
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***		CPUD<=>CPUBêÍóp					***
+;	***								***
+;	***								***
+;	***								***
+;	*******************************************************************
+	.global	_KEY_USE_SEL	;0: ﬂ»Ÿñt 1:
+	.global	_KEY_DT_CPUB	;
+	.global	_DSET_SW_CPUB	;// cpub=>cpud sw
+	.global	_PANEL_LED_DAT	; ﬂ»ŸLED SQ->CPUB->
+	.global	_PANEL_FRQ_DAT	;í≤êﬂ    SQ->CPUB->1~249,255
+
+	.global	_OPTION_COP_ARI	;005A CPUB-->CPUD 2013-12-12
+	.global	_OPTION_ET1_ARI	;005A CPUB-->CPUD 2013-12-12
+
+	.global	_COP_SET_CLRF	;CPUD=>CPUB 2014-01-05
+;	-------------2014-09-28--------------------
+	.global	_ET2_WORD_SITM_REQ	;CPUD/Bä‘ÇÕ‹∞ƒﬁÇ≈çsÇ§
+	.global	_ET2_WORD_SITM_ACK	;CPUD/Bä‘ÇÕ‹∞ƒﬁÇ≈çsÇ§

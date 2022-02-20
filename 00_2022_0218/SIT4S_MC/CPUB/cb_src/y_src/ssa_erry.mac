@@ -1,0 +1,288 @@
+
+
+
+;	****************************************************************
+;	***  àŸèÌWORK1 MAKE1 àŸèÌ¡™Ø∏å„WKÇ…SET/CLEAR(ªÃﬁŸ∞¡›Ç≈¡™Ø∏)  ***
+;	****************************************************************
+	.MACRO	ERR_MAKE1 CHK_ERR_SUB,ERR_WK1,SET_BIT
+	FAR_JSR	#\CHK_ERR_SUB,R1	; àŸèÌÇÃ¡™Ø∏
+
+	MOV.L	#\ERR_WK1,R1		;
+	MOV.W	@R1,R3			;
+	TST	R0,R0			; ERRÇ†ÇËCHK
+	BT	JMP0001\@		; R0=0(NO ERR) THEN  JUMP
+
+	MOV.W	#\SET_BIT,R2		;
+	OR	R2,R3			;
+	MOV.W	R3,@R1			; SET
+	M_BRA	JMP0002\@		;
+JMP0001\@:				;
+	MOV.W	#LOW~\SET_BIT,R2	;
+	AND	R2,R3			;
+	MOV.W	R3,@R1			; CLEAR
+JMP0002\@:				;
+ 
+	.ENDM
+
+;	*************************************************************
+;	***  àŸèÌWORK1 MAKE_MC àŸèÌ¡™Ø∏å„WKÇ…SET/CLEAR(œ∏€Ç≈¡™Ø∏) ***
+;	*************************************************************
+	.MACRO	ERR_MAKE_MC CHK_MACRO,ERR_WK1,SET_BIT
+	\CHK_MACRO			;àŸèÌÇÃ¡™Ø∏
+
+	MOV.L	#\ERR_WK1,R1		;
+	MOV.W	@R1,R3			;
+	TST	R0,R0			; ERRÇ†ÇËCHK
+	BT	JMP0001\@		; R0=0(NO ERR) THEN  JUMP
+
+	MOV.W	#\SET_BIT,R2		;
+	OR	R2,R3			;
+	MOV.W	R3,@R1			; SET
+	M_BRA	JMP0002\@		;
+JMP0001\@:				;
+	MOV.W	#LOW~\SET_BIT,R2	;
+	AND	R2,R3			;
+	MOV.W	R3,@R1			; CLEAR
+JMP0002\@:				;
+
+	.ENDM
+
+;	**********************************************************
+;	***  àŸèÌWORK1 MAKE àŸèÌ¡™Ø∏å„WKÇ…SET/CLEAR(œ∏€Ç≈¡™Ø∏) ***
+;	**********************************************************
+	.MACRO	ERR_MAKE ERR_WK1,SET_BIT
+
+	MOV.L	#\ERR_WK1,R1		;
+	TST	R0,R0			; ERRÇ†ÇËCHK
+	BT	JMP0001\@		; R0=0(NO ERR) THEN  JUMP
+
+	MOV.W	#\SET_BIT,R2		;
+	OR	R2,R3			;
+	MOV.W	R3,@R1			; SET
+	M_BRA	JMP0002\@		;
+JMP0001\@:				;
+	MOV.W	#LOW~\SET_BIT,R2	;
+	AND	R2,R3			;
+	MOV.W	R3,@R1			; CLEAR
+JMP0002\@:				;
+
+	.ENDM
+
+;	************************
+;	***  àŸèÌWORK2 MAKE1 ***
+;	************************
+	.MACRO	ERR_MAKE2 ERR_WK1,CHK_BIT,SET_WK2,SET_BIT,TIMER,SVTIM
+
+	MOV.L	#\SET_WK2,R5		;
+	MOV.L	#\ERR_WK1,R6		;
+	MOV.W	@R6,R1			;
+	MOV.W	#\CHK_BIT,R2		;
+	TST	R2,R1			;
+	BF	JMP0001\@		; ERR THEN  JUMP[R0L !=0]
+
+	MOV.L	#\SVTIM,R1		;
+	MOV.W	@R1,R1			;
+	MOV.L	#\TIMER,R6		;
+	MOV.W	R1,@R6			; TIMER PRESET
+
+	MOV.W	@R5,R3			;
+	MOV.W	#LOW~\SET_BIT,R2	;
+	AND	R2,R3			;
+	MOV.W	R3,@R5			; CLEAR
+	M_BRA	JMP0003\@		;
+
+JMP0001\@:
+	MOV.L	#\TIMER,R6		; TIM UP CHK
+	MOV.W	@R6,R1			;
+	TST	R1,R1			;
+	BT	JMP0002\@		; TIM UP THEN JUMP
+
+	MOV.W	@R5,R3			;
+	MOV.W	#LOW~\SET_BIT,R2	;
+	AND	R2,R3			;
+	MOV.W	R3,@R5			; CLEAR
+	M_BRA	JMP0003\@		;
+
+JMP0002\@:
+	MOV.W	@R5,R3			;
+	MOV.W	#\SET_BIT,R2		;
+	OR	R2,R3			;
+	MOV.W	R3,@R5			; ERR SET
+JMP0003\@:
+
+	.ENDM
+
+
+;	************************************************************
+;	***  º∞π›ΩÇ…è„Ç∞ÇÈàŸèÌWORK SET   (SQ_OWKTOP + SH4_SQ2**) ***
+;	************************************************************
+	.MACRO	ERR_SET1 ERR_WK,ERR_BIT,SET_WK1,SET_WK2,SET_BIT,ERR_SUB,COD
+	MOV.L	#\ERR_WK,R1		;WORK2 ERR CHK
+	MOV.W	@R1,R0			;
+	MOV.W	#\ERR_BIT,R2		;
+	TST	R2,R0			;
+	BT	JMP0001\@		;NO ERR THEN JUMP
+
+	MOV.L	#\SET_WK1,R1		;SEQ
+	MOV.W	@R1,R0			;
+	MOV.L	#\SET_BIT,R2		;
+	OR	R2,R0			;
+	MOV.W	R0,@R1			;
+
+	MOV.L	#\SET_WK2,R1		; SH4 -> SH2 WORK
+	MOV.W	@R1,R0			;
+	MOV.L	#\SET_BIT,R2		;
+	OR	R2,R0			;
+	MOV.W	R0,@R1			;
+
+	MOV.W	#\COD,R4		;2010-12-21
+	FAR_JSR	#\ERR_SUB,R0		;îÒèÌí‚é~èàóù or EXQ
+
+JMP0001\@:
+
+	.ENDM
+
+
+;	************************************************
+;	***  º∞π›ΩÇ…è„Ç∞Ç»Ç¢àŸèÌWORK SET (ELSE_ERR)  ***
+;	************************************************
+	.MACRO	ERR_SET2 ERR_WK,ERR_BIT,SET_WK,SET_BIT,ERR_SUB,COD
+	MOV.L	#\ERR_WK,R1		;WORK2 ERR CHK
+	MOV.W	@R1,R0			;
+	MOV.W	#\ERR_BIT,R2		;
+	TST	R2,R0			;
+	BT	JMP0001\@:8		;NO ERR THEN JUMP
+
+	MOV.L	#\SET_WK,R1		; SEQ//ELSE_ERR
+	MOV.W	@R1,R0			;
+	MOV.L	#\SET_BIT,R2		;
+	OR	R2,R0			;
+	MOV.W	R0,@R1			;
+
+	MOV.W	#\COD,R4		;2010-12-21
+	FAR_JSR	#\ERR_SUB,R0		;îÒèÌí‚é~èàóù or EXQ
+
+JMP0001\@:
+
+	.ENDM
+
+
+
+;	**********************
+;	***  ìdà≥àŸèÌCHK   ***
+;	**********************
+;	R0L=00   NOMAL 
+;	   =ELSE ABNOMAL
+;
+	.MACRO	_MC_CHK_VSER
+	XOR	R0,R0					;
+
+	MOV.L	#_DBG_ERRCHK_NASI+_SQER214,R1		;
+	MOV.W	@R1,R1					;
+	MOV.W	#BIT0,R2				;
+	TST	R2,R1					;
+	BF	_CHK_VSER_EXT\@				;Ç‚ÇÁÇ»Ç¢BIT ON THEN EXIT
+
+	MOV.L	#_SELF_ACT_FLG,R1			;æŸÃ¡™Ø∏íÜ CHECK
+	MOV.W	@R1,R1					;
+	TST	R1,R1					;
+	BF	_CHK_VSER_EXT\@				;æŸÃ¡™Ø∏íÜ THEN JUMP
+
+;;;;;	MOV.L	#_SELF_CHK_FLG,R1			;æŸÃ¡™Ø∏íÜ CHECK
+;;;;;	MOV.W	@R1,R1					;
+;;;;;	MOV.W	#LOW~BIT7,R2				;
+;;;;;	AND	R2,R1					;
+;;;;;	BF	_CHK_VSER_EXT\@				;æŸÃ¡™Ø∏íÜ THEN JUMP
+
+;;;;;	MOV.L	#_PB_PORT_CTL_DATA,R1			; ç°ÇÃ√ﬁ∞¿	
+
+;	********** SIT3_CPUB PROGRAM **********
+	.AIF	_SIT_CPU_SEL	EQ	_SIT3_CPUB
+	MOV.L	#_PBDR,R1				; ê∂íl 2003-01-20 SAITO
+	MOV.W	@R1,R1					;
+	MOV.W	#BIT15,R2				;
+;	********** SIT4_CPUB PROGRAM **********
+	.AELIF	_SIT_CPU_SEL	EQ	_SIT4_CPUB
+	MOV.L	#_dio_top1+_IOGA_PDR1,R1		; ê∂íl 2003-01-20 SAITO
+	MOV.W	@R1,R1					;
+	MOV.W	#BIT0,R2				;
+	.AENDI
+	
+	TST	R2,R1					; VSER CHK
+	BT	_CHK_VSER_EXT\@				;NO ERR THEN JUMP
+	MOV.W	#H'FFFF,R0				;ERR CODE SET
+
+_CHK_VSER_EXT\@:
+
+	.ENDM
+
+
+
+
+
+;	*******************************************
+;	***	VALVE FEED ON àŸèÌ CHECK MACRO	***
+;	*******************************************
+	.MACRO	_MC_CHK_VF_ON	SEQBIT,VONBIT,VFBIT
+
+	XOR	R0,R0					;
+	MOV.L	#_DBG_ERRCHK_NASI+_SQER215,R1		;
+	MOV.W	@R1,R1					;
+	MOV.W	#\SEQBIT,R2				;
+	TST	R2,R1					;
+	BF	_JMP_EXT\@				; ¡™Ø∏ÇµÇ»Ç¢BIT ON THEN EXIT
+
+	MOV.L	#_dq1_cb_out1,R1			; VON1 CHECK
+	MOV.W	@R1,R1					;
+	MOV.W	#\VONBIT,R2				;
+	TST	R2,R1					;
+	BT	_JMP_EXT\@				; VON=0(VOFF) THEN EXIT
+
+	MOV.L	#_PL_PORT_CTL_DATA,R1			; VF1 LOAD
+	MOV.W	@R1,R1					;
+	MOV.W	#\VFBIT,R2				;
+	TST	R2,R1					; VF1 CHECK
+	BF	_JMP_EXT\@				; VON1=ON VF1=ON THEN NORMAL
+
+	MOV.W	#H'FFFF,R0				; ERR CODE SET
+
+_JMP_EXT\@:
+	.ENDM
+
+
+;	*******************************************
+;	***	VALVE FEED OFF àŸèÌ CHECK MACRO	***
+;	*******************************************
+	.MACRO	_MC_CHK_VF_OFF	SEQBIT,VOFFBIT,VFBIT
+
+	XOR	R0,R0					;
+	MOV.L	#_DBG_ERRCHK_NASI+_SQER215,R1		;
+	MOV.W	@R1,R1					;
+	MOV.W	#\SEQBIT,R2				;
+	TST	R2,R1					;
+	BF	_JMP_EXT\@				; ¡™Ø∏ÇµÇ»Ç¢BIT ON THEN EXIT
+
+	MOV.L	#_dq1_cb_out1,R1			; VON1 CHECK
+	MOV.W	@R1,R1					;
+	MOV.W	#\VOFFBIT,R2				;
+	TST	R2,R1					;
+	BF	_JMP_EXT\@				; VON=1(VON) THEN EXIT
+
+	MOV.L	#_PL_PORT_CTL_DATA,R1			; VF1 LOAD
+	MOV.W	@R1,R1					;
+	MOV.W	#\VFBIT,R2				;
+	TST	R2,R1					; VF1 CHECK
+	BT	_JMP_EXT\@				; VON=OFF VF=OFF THEN NORMAL
+
+	MOV.W	#H'FFFF,R0				; ERR CODE SET
+
+_JMP_EXT\@:
+	.ENDM
+
+
+
+
+
+
+
+

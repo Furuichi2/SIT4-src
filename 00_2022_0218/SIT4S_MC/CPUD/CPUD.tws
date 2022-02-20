@@ -1,0 +1,19 @@
+[HIMDBVersion]
+2.0
+[DATABASE_VERSION]
+"1.2" 
+[CURRENT_PROJECT]
+"CPUD" 
+[GENERAL_DATA]
+[BREAKPOINTS]
+[OPEN_WORKSPACE_FILES]
+"D:\SIT4S_MC\comon\dp_cpud_com.ext" 
+"D:\SIT4S_MC\comon\dp_cpud_com.inc" 
+"D:\SIT4S_MC\CPUD\cb_src\K_SRC\ssa_cbkb.inc" 
+[WORKSPACE_FILE_STATES]
+"D:\SIT4S_MC\CPUD\cb_src\K_SRC\ssa_cbkb.inc" 0 0 614 258 0 0 
+"D:\SIT4S_MC\comon\dp_cpud_com.ext" 22 29 614 258 0 1 
+"D:\SIT4S_MC\comon\dp_cpud_com.inc" 44 58 614 258 0 2 
+[LOADED_PROJECTS]
+"CPUD" 
+[END]

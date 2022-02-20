@@ -1,0 +1,39 @@
+;<1>2019-06-07
+;_CB_SYS_PARAM045					;[H1F=2004-05-24][H2W=昔]
+;_PAR_WTSEL_USE		.DATA.W		1		;通常0:型 1:待機点切替有(HMI)入力有効(C/B)/一部中型の認識
+;
+;_CB_SYS_PARAM279					;[H1F=未作or無][H2W=未作or無]
+;_PAR_MYUTING_SEL	.DATA.W		1		;9 2012-09-20 0:今まで 0: / 1:待機点2SWを参照
+;
+;_CB_SYS_PARAM195				;[H1F=未作or無][H2W=未作or無]
+;_GMN_PAR091		.DATA.W		60	;CE3:2016-02-29待機点1
+;
+;_CB_SYS_PARAM196				;[H1F=未作or無][H2W=未作or無]
+;_GMN_PAR092		.DATA.W		0	;CE3:2016-02-29待機点2(60)
+;
+;_CB_SYS_PARAM197				;[H1F=未作or無][H2W=未作or無]
+;_GMN_PAR093		.DATA.W		330	;CE3:2016-02-29待機点3(330)
+;-------------------------------------------
+;上記では待機点２が無視される　ミューテング機能優先　229.9=1
+;CPUD機能で　_CB_SYS_PARAM279参照
+;
+
+;<2>2019-06-07
+;_CB_SYS_PARAM045					;[H1F=2004-05-24][H2W=昔]
+;_PAR_WTSEL_USE		.DATA.W		1		;通常0:型 1:待機点切替有(HMI)入力有効(C/B)/一部中型の認識
+;
+;_CB_SYS_PARAM279					;[H1F=未作or無][H2W=未作or無]
+;_PAR_MYUTING_SEL	.DATA.W		0		;9 2012-09-20 0:今まで 0: / 1:待機点2SWを参照
+;
+;_CB_SYS_PARAM195				;[H1F=未作or無][H2W=未作or無]
+;_GMN_PAR091		.DATA.W		60	;CE3:2016-02-29待機点1
+;
+;_CB_SYS_PARAM196				;[H1F=未作or無][H2W=未作or無]
+;_GMN_PAR092		.DATA.W		0	;CE3:2016-02-29待機点2(60)
+;
+;_CB_SYS_PARAM197				;[H1F=未作or無][H2W=未作or無]
+;_GMN_PAR093		.DATA.W		330	;CE3:2016-02-29待機点3(330)
+;-------------------------------------------
+;上記では待機点１～３が使える　ミューテング機能優先　229.9=1
+;CPUD機能
+;

@@ -1,0 +1,16 @@
+-cpu=sh3dsp
+-include="D:\SIT4S_MC_99\comon","D:\SIT4S_MC_99\CPUD\CPUD\hw_src","D:\SIT4S_MC_99\CPUD\CPUD","D:\SIT4S_MC_99\CPUD\cb_src\COMON","D:\SIT4S_MC_99\CPUD\cb_src\K_SRC","D:\SIT4S_MC_99\CPUD\cb_src\y_src","D:\SIT4S_MC_99\CPUD\hmi_src\fit_src","D:\SIT4S_MC_99\CPUD\hmi_src\s_src","D:\SIT4S_MC_99\CPUD\cb_src\COMON\cb_table","D:\SIT4S_MC_99\CPUD\CPUD\color_src","D:\SIT4S_MC_99\comon\cpud_inc"
+-object="D:\SIT4S_MC_99\CPUD\CPUD\Debug\ssc_main.obj"
+-debug
+-optimize=0
+-gbr=auto
+-chgincpath
+-errorpath
+"D:\SIT4S_MC_99\CPUD\hmi_src\fit_src\ssc_main.c"
+-global_volatile=0
+-opt_range=all
+-infinite_loop=0
+-del_vacant_loop=0
+-struct_alloc=1
+-lang=c
+-nologo

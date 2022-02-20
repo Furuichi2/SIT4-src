@@ -1,0 +1,869 @@
+;	h2w
+;
+;
+;	----------------------------------------------------
+_CB_SYS_PARAM089					;
+_PAR_CPUAC_PLSCMP	.DATA.W		2000		;[H1F:2015-07-14][H2W:2015-02-18 PG不一致] 2000ﾊﾟﾙｽ
+
+_CB_SYS_PARAM090
+_PAR_STOPERR2_PLS	.DATA.W		1100		;[H1F:2015-07-14][H2W:2015-02-18 ﾊﾟﾙｽ停止異常2]1100ﾊﾟﾙｽ
+
+_CB_SYS_PARAM091
+_PAR_PLSSFTY_NOARA	.DATA.W		100		;[H1F:2015-07-14][H2W:2015-02-18 遮光停止3未検出範囲]10.0度
+
+_CB_SYS_PARAM092
+_PAR_PLSSFTY_LNG1	.DATA.W		20		;[H1F:2015-07-14][H2W:2015-02-18 遮光停止3異常許容幅]度→ﾊﾟﾙｽ
+
+_CB_SYS_PARAM093
+_PAR_MYU_BRK_SEL	.DATA.W		0		;H1F:2015-07-14][H2W=2015-03-16 0:　1:ﾐｭｰﾃﾝｸﾞ時=BRK:LOCK]
+
+_CB_SYS_PARAM094
+_PAR_MYUBRK_TIM1	.DATA.W		50		;[H1F:2015-07-14][H2W=2015-03-16 行程終了時　ﾐｭｰﾃﾝｸﾞ･ﾌﾞﾚｰｷ切替時間]
+
+_CB_SYS_PARAM095
+_PAR_MYUBRK_TIM2	.DATA.W		200		;[H1F:2015-07-14][H2W=2015-03-16 寸動時　ﾐｭｰﾃﾝｸﾞ・ﾌﾞﾚｰｷ切替時間]
+
+_CB_SYS_PARAM099
+_PAR_DEBUG_WDT_STOP	.DATA.W		H'5AA5		;[H1F=2015-07-14][H2W=2015-02-25]WDT異常検出禁止[0x5AA5]
+
+
+
+_CB_SYS_PARAM150				;[H1F=未作or無][H2W=未作or無]
+_GMN_PAR046		.DATA.W		30000	;R01　荷重制御 荷重の上限 2014-03-11 30000KN
+
+_CB_SYS_PARAM151				;[H1F=未作or無][H2W=未作or無]
+_GMN_PAR047		.DATA.W		10	;R01　荷重制御荷重の下限 2014-03-11 1KN[R01]
+
+_CB_SYS_PARAM152				;[H1F=未作or無][H2W=未作or無]
+_GMN_PAR048		.DATA.W		1	;R01　荷重制御データ有効(HMI)2014-05-15[R01]
+
+
+
+_CB_SYS_PARAM187				;[H1F=2015-07-07][H2W　2015-05-12]
+_PAR_MODORI_MINSPD:
+_GMN_PAR083		.DATA.W		5	;戻り行程下限速度 0:(機能なし),1~100%を下限とする
+
+_CB_SYS_PARAM188				;[H1F=　2015-07-07][H2W　2015-05-12]
+_PAR_LAST_MAXDIG:
+_GMN_PAR084		.DATA.W		195	;最終行程(戻りの行程の前)上限角度 0:(機能なし),1~359度を上限とする
+
+
+;;;;;;;;;;;;;;;;;;;??????????????????????????????????????[[[[]]]]]]]]]]]];;;;;;;;;;;;;;;;;;;
+_CB_SYS_PARAM347
+_PAR_BVLVCTL_SEL	.DATA.W		1		;7 1:停止ﾊﾞﾙﾌﾞ制御有り
+
+_CB_SYS_PARAM348
+_PAR_BVLV_DLYTM		.DATA.W		200		;8遅延 200msec
+
+_CB_SYS_PARAM349
+_PAR_BVLV_INCTM		.DATA.W		300		;9寸動 200msec
+
+
+;	--------------- 2014-05-15 R01(SIT4-CE2)で追加
+_CB_SYS_PARAM360
+_PAR_SFTY2_LNGTH	.DATA.W		200	;60　ｽﾗｲﾄﾞ下降中の遮光を見る区間 上死点~下方向20.0mmまで見る
+
+
+;	--------------------------2014-07-14 荷重制御(R01)
+_CB_SYS_PARAM361
+_PAR_KAJYU_HLDSPD	.DATA.W		10	;1　一旦停止中の荷重制御速度
+;	--------------------------2014-08-20 荷重制御(R01)----------------
+_CB_SYS_PARAM362
+_PAR_KAJYU_ARASPD	.DATA.W		50	;2[荷重制御]一旦停止中のromﾊﾟﾗ範囲外 荷重制御速度 pls7/s
+_CB_SYS_PARAM363
+_PAR_KAJYU_CHGARA	.DATA.W		20	;3[荷重制御] 20KNを設定の荷重完了範囲から引くARA->HLD
+
+
+;	----------- 2015-03-18 異常検知 H2W-----------------
+_CB_SYS_PARAM364
+_PAR_UPMASK_ERSPD	.DATA.W		1000	;4 この速度以上を検知したら異常検知を開始 10.00%=1000
+
+_CB_SYS_PARAM365
+_PAR_HLDRVER_SEL	.DATA.W		1	;5 0:見ない,1:上昇ﾎｰﾙﾄﾞ～ｲﾝﾎﾟｼﾞ,ﾌﾞﾚｰｷ区間逆転異常を検知する
+
+
+;	--------------------------2015-06-11 荷重制御(H2W)----------------
+;	--------------------------2015-06-22 荷重制御(R01)----------------
+_CB_SYS_PARAM366
+_PAR_KAJYU_STPARA	.DATA.W		10	;6;4[荷重停止範囲] 2015-06-11(H2W/H1F)
+
+_CB_SYS_PARAM367
+_PAR_KAJYU_FIRST	.DATA.W		200	;7:荷重制御開始幅 2015-06-11(H2W/H1F)
+
+_CB_SYS_PARAM368
+_PAR_KAJYU_CTIM1	.DATA.W		20	;8:荷重演算周期(範囲外) 2015-06-22(H1F)
+
+_CB_SYS_PARAM369
+_PAR_KAJYU_CTIM2	.DATA.W		50	;9:荷重演算周期(範囲内) 2015-06-22(H1F)
+
+
+_CB_SYS_PARAM370	.DATA.W		0	;70
+_CB_SYS_PARAM371	.DATA.W		0	;1
+_CB_SYS_PARAM372	.DATA.W		0	;2
+_CB_SYS_PARAM373	.DATA.W		0	;3
+_CB_SYS_PARAM374	.DATA.W		0	;4
+_CB_SYS_PARAM375	.DATA.W		0	;5
+_CB_SYS_PARAM376	.DATA.W		0	;6
+_CB_SYS_PARAM377	.DATA.W		0	;7
+_CB_SYS_PARAM378	.DATA.W		0	;8
+_CB_SYS_PARAM379	.DATA.W		0	;9
+
+_CB_SYS_PARAM380	.DATA.W		0	;80
+_CB_SYS_PARAM381	.DATA.W		0	;1
+_CB_SYS_PARAM382	.DATA.W		0	;2
+_CB_SYS_PARAM383	.DATA.W		0	;3
+_CB_SYS_PARAM384	.DATA.W		0	;4
+_CB_SYS_PARAM385	.DATA.W		0	;5
+_CB_SYS_PARAM386	.DATA.W		0	;6
+_CB_SYS_PARAM387	.DATA.W		0	;7
+_CB_SYS_PARAM388	.DATA.W		0	;8
+_CB_SYS_PARAM389	.DATA.W		0	;9
+
+_CB_SYS_PARAM390	.DATA.W		0	;90
+_CB_SYS_PARAM391	.DATA.W		0	;1
+_CB_SYS_PARAM392	.DATA.W		0	;2
+_CB_SYS_PARAM393	.DATA.W		0	;3
+_CB_SYS_PARAM394	.DATA.W		0	;4
+_CB_SYS_PARAM395	.DATA.W		0	;5
+_CB_SYS_PARAM396	.DATA.W		0	;6
+_CB_SYS_PARAM397	.DATA.W		0	;7
+_CB_SYS_PARAM398	.DATA.W		0	;8
+
+_CB_SYS_PARAM399	.DATA.W		0	;9
+
+
+;	------------- "MC2 SIT4-CE3　R02,R03"　400から使用
+_CB_SYS_PARAM400
+_PAR_PNL_REMOTE		.DATA.W		1	;00 1:分離型ﾊﾟﾈﾙ
+
+_CB_SYS_PARAM401
+_PAR_PNL_BKLIGHT	.DATA.W		150	;1 "250*60%=150" "100%=250" 0:50%
+
+_CB_SYS_PARAM402
+_PAR_EXTDRV_SEL		.DATA.W		1	;2 外部起動機能有効 2014-02-18
+
+_CB_SYS_PARAM403
+_PAR_STOPTIM_SEL	.DATA.W		1	;3 2014-05-30 ﾀｲﾏの停止後の処理 0:初めから 1:継続 2:ﾀｲﾑｱｯﾌﾟから
+
+_CB_SYS_PARAM404
+_PAR_KJ_MINSHOS		.DATA.W		10000	;4　0,1~100.00%
+
+
+;	-------------- EPｾﾝｻﾁｪｯｸ -------------
+_CB_SYS_PARAM405
+_PAR_EPCHK_SEL		.DATA.W		1	;5 0:EPｾﾝｻﾁｪｯｸしない 1:ﾁｪｯｸする
+
+_CB_SYS_PARAM406
+_PAR_EP1STR_DLYTM	.DATA.W		200	;6 開始遅延時間 ms
+
+_CB_SYS_PARAM407
+_PAR_EP2FVINOF_ERTM	.DATA.W		200	;7 片方ﾘﾚｰOF(0)確認時間兼ﾀｲﾑｱｳﾄ 3000,700
+
+_CB_SYS_PARAM408
+_PAR_EP3BRKON_DLYTM	.DATA.W		500	;8 ﾌﾞﾚｰｷON出力遅延
+
+_CB_SYS_PARAM409
+_PAR_EP4EPINOF_ERTM	.DATA.W		200	;9 EPｾﾝｻoff確認時間兼ﾀｲﾑｱｳﾄ 3500
+
+_CB_SYS_PARAM410
+_PAR_EP5RSTON_DLYTM	.DATA.W		200	;10 EPｾﾝｻﾘｾｯﾄON遅延時間
+
+_CB_SYS_PARAM411
+_PAR_EP6RSTON_JGTM	.DATA.W		200	;1 ﾘｾｯﾄON時間兼判定時間 4000
+
+_CB_SYS_PARAM412
+_PAR_EP6RSTOF_INTTM	.DATA.W		200	;2 OFFｲﾝﾀ-ﾊﾞﾙ時間       1000
+
+_CB_SYS_PARAM413
+_PAR_EP6RST_RETRY	.DATA.W		1	;3 ﾘｾｯﾄﾘﾄﾗｲ回数
+
+_CB_SYS_PARAM414
+_PAR_EP7AB_DLYTM	.DATA.W		200	;4 CPUA-->CPUBﾃｽﾄ遅延時間
+
+_CB_SYS_PARAM415
+_PAR_EP7END_DLYTM	.DATA.W		200	;5 CPUB-->終了遅延時間
+
+
+_CB_SYS_PARAM416
+_PAR_POSHLD1_BEFPLS	.DATA.W		-410	;6 自動待機時停止位置補正量 -1~-30000 410=1度
+
+_CB_SYS_PARAM417				;2014-09-16
+_PAR_POSHLD1_HENSAP	.DATA.W		1200	;7 自動待機時表示値補正[偏差分] 0~30000(内部でﾏｲﾅｽ)
+
+_CB_SYS_PARAM418
+_PAR_SPL_MONUSE		.DATA.W		0	;8 1:ｽﾌﾟｰﾙﾓﾆﾀ機能有効
+
+_CB_SYS_PARAM419
+_PAR_BRKON_SPLDLY	.DATA.W		3000	;9:ﾌﾞﾚｰｷON-ｽﾌﾟｰﾙOFFで正常:
+
+_CB_SYS_PARAM420
+_PAR_BRKOF_SPLDLY	.DATA.W		4000	;20ﾌﾞﾚｰｷOFF-ｽﾌﾟｰﾙONで正常:
+
+;	---------------2014-09-25 寸動---------
+_CB_SYS_PARAM421
+_PAR_INCMODE_SEL	.DATA.W		1	;1　寸動のその場起動
+
+_CB_SYS_PARAM422
+_PAR_INCMODE_EPLS	.DATA.W		5	;2 終了とみなせるパルス
+
+;	-------------- 2014-10-12 比較----------
+_CB_SYS_PARAM423
+_AD2_CMP1		.DATA.W		500	;3
+
+_CB_SYS_PARAM424
+_AD3_CMP1		.DATA.W		700	;4
+
+_CB_SYS_PARAM425
+_AD3_CMP2		.DATA.W		600	;5
+
+_CB_SYS_PARAM426
+_AD4_CMP1		.DATA.W		900	;6
+
+_CB_SYS_PARAM427
+_AD4_CMP2		.DATA.W		800	;7
+
+_CB_SYS_PARAM428	.DATA.W		0	;8:予約SEQ 0or1234=CPUDｼｰｹﾝｽ
+
+_CB_SYS_PARAM429	.DATA.W		0	;9:予約SEQ 0or1
+
+
+_CB_SYS_PARAM430	.DATA.W		0	;30
+_CB_SYS_PARAM431	.DATA.W		0	;1
+_CB_SYS_PARAM432	.DATA.W		0	;2
+_CB_SYS_PARAM433	.DATA.W		0	;3
+_CB_SYS_PARAM434	.DATA.W		0	;4
+_CB_SYS_PARAM435	.DATA.W		0	;5
+_CB_SYS_PARAM436	.DATA.W		0	;6
+_CB_SYS_PARAM437	.DATA.W		0	;7
+_CB_SYS_PARAM438	.DATA.W		0	;8
+_CB_SYS_PARAM439	.DATA.W		0	;9
+
+_CB_SYS_PARAM440	.DATA.W		0	;40
+_CB_SYS_PARAM441	.DATA.W		0	;1
+_CB_SYS_PARAM442	.DATA.W		0	;2
+_CB_SYS_PARAM443	.DATA.W		0	;3
+_CB_SYS_PARAM444	.DATA.W		0	;4
+_CB_SYS_PARAM445	.DATA.W		0	;5
+_CB_SYS_PARAM446	.DATA.W		0	;6
+_CB_SYS_PARAM447	.DATA.W		0	;7
+_CB_SYS_PARAM448	.DATA.W		0	;8
+_CB_SYS_PARAM449	.DATA.W		0	;9
+
+_CB_SYS_PARAM450	.DATA.W		0	;50
+_CB_SYS_PARAM451	.DATA.W		0	;1
+_CB_SYS_PARAM452	.DATA.W		0	;2
+_CB_SYS_PARAM453	.DATA.W		0	;3
+_CB_SYS_PARAM454	.DATA.W		0	;4
+_CB_SYS_PARAM455	.DATA.W		0	;5
+_CB_SYS_PARAM456	.DATA.W		0	;6
+_CB_SYS_PARAM457	.DATA.W		0	;7
+_CB_SYS_PARAM458	.DATA.W		0	;8
+_CB_SYS_PARAM459	.DATA.W		0	;9
+
+_CB_SYS_PARAM460	.DATA.W		0	;60
+_CB_SYS_PARAM461	.DATA.W		0	;1
+_CB_SYS_PARAM462	.DATA.W		0	;2
+_CB_SYS_PARAM463	.DATA.W		0	;3
+_CB_SYS_PARAM464	.DATA.W		0	;4
+_CB_SYS_PARAM465	.DATA.W		0	;5
+_CB_SYS_PARAM466	.DATA.W		0	;6
+_CB_SYS_PARAM467	.DATA.W		0	;7
+_CB_SYS_PARAM468	.DATA.W		0	;8
+_CB_SYS_PARAM469	.DATA.W		0	;9
+
+_CB_SYS_PARAM470	.DATA.W		0	;70
+_CB_SYS_PARAM471	.DATA.W		0	;1
+_CB_SYS_PARAM472	.DATA.W		0	;2
+_CB_SYS_PARAM473	.DATA.W		0	;3
+_CB_SYS_PARAM474	.DATA.W		0	;4
+_CB_SYS_PARAM475	.DATA.W		0	;5
+_CB_SYS_PARAM476	.DATA.W		0	;6
+_CB_SYS_PARAM477	.DATA.W		0	;7
+_CB_SYS_PARAM478	.DATA.W		0	;8
+_CB_SYS_PARAM479	.DATA.W		0	;9
+
+_CB_SYS_PARAM480	.DATA.W		0	;80
+_CB_SYS_PARAM481	.DATA.W		0	;1
+_CB_SYS_PARAM482	.DATA.W		0	;2
+_CB_SYS_PARAM483	.DATA.W		0	;3
+_CB_SYS_PARAM484	.DATA.W		0	;4
+_CB_SYS_PARAM485	.DATA.W		0	;5
+_CB_SYS_PARAM486	.DATA.W		0	;6
+_CB_SYS_PARAM487	.DATA.W		0	;7
+_CB_SYS_PARAM488	.DATA.W		0	;8
+_CB_SYS_PARAM489	.DATA.W		0	;9
+
+_CB_SYS_PARAM490	.DATA.W		0	;90
+_CB_SYS_PARAM491	.DATA.W		0	;1
+_CB_SYS_PARAM492	.DATA.W		0	;2
+_CB_SYS_PARAM493	.DATA.W		0	;3
+_CB_SYS_PARAM494	.DATA.W		0	;4
+_CB_SYS_PARAM495	.DATA.W		0	;5
+_CB_SYS_PARAM496	.DATA.W		0	;6
+_CB_SYS_PARAM497	.DATA.W		0	;7
+_CB_SYS_PARAM498	.DATA.W		0	;8
+_CB_SYS_PARAM499	.DATA.W		0	;9
+
+
+_CB_SYS_PARAM500	.DATA.W		0	;00
+_CB_SYS_PARAM501	.DATA.W		0	;1
+_CB_SYS_PARAM502	.DATA.W		0	;2
+_CB_SYS_PARAM503	.DATA.W		0	;3
+_CB_SYS_PARAM504	.DATA.W		0	;4
+_CB_SYS_PARAM505	.DATA.W		0	;5
+_CB_SYS_PARAM506	.DATA.W		0	;6
+_CB_SYS_PARAM507	.DATA.W		0	;7
+_CB_SYS_PARAM508	.DATA.W		0	;8
+_CB_SYS_PARAM509	.DATA.W		0	;9
+
+_CB_SYS_PARAM510
+_CB_SYS_CHKCOD3A	.DATA.W		H'5678	;10
+
+_CB_SYS_PARAM511
+_CB_SYS_CHKCOD4A	.DATA.W		H'8765	;11
+
+;	-------- [2011-09-14]まさかのために　512~2039以降も0にしておく---
+	.DATA.W	0			;512
+	.DATA.W	0			;513
+	.DATA.W	0			;514
+	.DATA.W	0			;515
+	.DATA.W	0			;516
+	.DATA.W	0			;517
+	.DATA.W	0			;518
+	.DATA.W	0			;519
+
+	.DATA.W	0			;520
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;530
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;540
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;550
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;560
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;570
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;580
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;590
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;600
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;610
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;620
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;630
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;640
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;650
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;660
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;670
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;680
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;690
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;700
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;710
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;720
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;730
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;740
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;750
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;760
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;770
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;780
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;790
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;800
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+	
+	.DATA.W	0			;810
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;820
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;830
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;840
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;850
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;860
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;870
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;880
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0			;890
+	.DATA.W	0			;1
+	.DATA.W	0			;2
+	.DATA.W	0			;3
+	.DATA.W	0			;4
+	.DATA.W	0			;5
+	.DATA.W	0			;6
+	.DATA.W	0			;7
+	.DATA.W	0			;8
+	.DATA.W	0			;9
+
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1000~1009
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1010~1019
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1020~1029
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1030~1039
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1040~1049
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1050~1059
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1060~1069
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1070~1079
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1080~1089
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1090~1099
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1100~1009
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1110~1119
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1120~1129
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1130~1139
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1140~1149
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1150~1159
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1160~1169
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1170~1179
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1180~1189
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1190~1199
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1200~1209
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1210~1219
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1220~1229
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1230~1239
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1240~1249
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1250~1259
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1260~1269
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1270~1279
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1280~1289
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1290~1299
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1300~1309
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1310~1319
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1320~1329
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1330~1339
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1340~1349
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1350~1359
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1360~1369
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1370~1379
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1380~1389
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1390~1399
+
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1400~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1410~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1420~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1430~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1440~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1450~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1460~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1470~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1480~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1490~
+
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1500~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1510~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1520~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1530~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1540~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1550~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1560~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1570~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1580~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1590~
+
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1600~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1610~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1620~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1630~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1640~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1650~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1660~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1670~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1680~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1690~
+
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1700~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1710~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1720~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1730~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1740~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1750~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1760~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1770~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1780~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1790~
+
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1800~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1810~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1820~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1830~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1840~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1850~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1860~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1870~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1880~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1890~
+
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1900~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1910~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1920~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1930~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1940~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1950~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1960~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1970~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1980~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;1990~
+
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;2000~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;2010~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;2020~
+	.DATA.W	0,0,0,0,0,0,0,0,0,0	;2030~2039
+
+
+;	------------------- 2010-10-20 ふりこ加速のﾃｰﾌﾞﾙ[ｺﾏﾂ殿作成]-----------------
+	.INCLUDE	"cb_partbl.inc"	; //H'2000[8192byte 4096個]から
+
+

@@ -1,0 +1,848 @@
+;	*******************************************************************
+;	***								***
+;	***	hmi/cop1z interface soft				***
+;	***	(荷重計・Ｔﾘﾝｸ)						***
+;	***	first 2002-12-06	orignal	koma			***
+;	***								***
+;	***	ｵﾌﾟｼｮﾝが未接続ならｵﾌﾟｼｮﾝからのﾃﾞｰﾀREADは行わない	***
+;	***	但し、DPRAMｸﾘｱ等のWRの処理は行う			***
+;	*******************************************************************
+;
+;	=== SH2 C/B DATA ===
+	.GLOBAL		_ENC360_HEX		;//HEX data
+	.GLOBAL		_ENC360_INDT		;
+;;;	.GLOBAL		_INC_ENC360		;
+
+
+	.GLOBAL		_SEQ_PAR_450
+	.GLOBAL		_SEQ_PAR_451
+	.GLOBAL		_SEQ_PAR_452
+	.GLOBAL		_SEQ_PAR_380
+	.GLOBAL		_SEQ_PAR_381
+	.GLOBAL		_SEQ_PAR_382
+	.GLOBAL		_SEQ_PAR_383
+	.GLOBAL		_SEQ_PAR_384
+	.GLOBAL		_SEQ_PAR_385
+;;;;	.GLOBAL		_SEQ_020_SV
+
+
+	.MACRO	MOT_DAT_CHG_INTEL LG,REG1
+	SWAP.\LG	\REG1,\REG1
+	.ENDM
+
+;	-------
+	.EXPORT	_COP1_START_INIT1
+	.EXPORT	_COP1_MAIN_SEQ_DAT_REF
+	.EXPORT	_COP1_INT_ENC_REF
+	.EXPORT	_COP1_INT_TIM_REF
+;;;;;;;;;;;;[MC]	.EXPORT	_COP1_INT_WR
+;;;;;;;;;;;;[MC]	.EXPORT	_COP1_ENC_WR
+
+
+;	=====================
+;	******************************************
+;	**********	PUBLIC TABLE	**********
+;	******************************************
+	.GLOBAL		OP_RAM_TOP
+	.GLOBAL		OP_STS_TOP
+;
+	.GLOBAL		_CLO_TOP
+	.GLOBAL		_CLO_TRK_L
+	.GLOBAL		_CLO_TRK_R
+	.GLOBAL		_CLO_TRK_T
+;	.GLOBAL		_CLO_GAIN_BAK1L
+;	.GLOBAL		_CLO_GAIN_BAK1R
+;	.GLOBAL		_CLO_GAIN_BAK2L
+;	.GLOBAL		_CLO_GAIN_BAK2R
+;	.GLOBAL		_CLO_GAIN_BAK3L
+;	.GLOBAL		_CLO_GAIN_BAK3R
+;	.GLOBAL		_CLO_GAIN_BAK4L
+;	.GLOBAL		_CLO_GAIN_BAK4R
+;	.GLOBAL		_CLO_GAIN_BAK5L
+;	.GLOBAL		_CLO_GAIN_BAK5R
+;	.GLOBAL		_CLO_OF_BAKL
+;	.GLOBAL		_CLO_OF_BAKR
+;	.GLOBAL		_CLO_OF_AVE_BAKL
+;	.GLOBAL		_CLO_OF_AVE_BAKR
+;	.GLOBAL		_CLO_OF_AVE_BAKT
+	.GLOBAL		_CLO_STRAIN_L
+	.GLOBAL		_CLO_STRAIN_R
+	.GLOBAL		_CLO_STRAIN_T
+	.GLOBAL		_CLO_MAXLD_L
+	.GLOBAL		_CLO_MAXLD_R
+	.GLOBAL		_CLO_MAXLD_T
+	.GLOBAL		_CLO_PROOF_L
+	.GLOBAL		_CLO_PROOF_R
+	.GLOBAL		_CLO_PROOF_T
+	.GLOBAL		_CLO_PROOF_SEI
+	.GLOBAL		_CLO_OVER_L
+	.GLOBAL		_CLO_OVER_R
+	.GLOBAL		_CLO_OVER_T
+	.GLOBAL		_CLO_LOWER_L
+	.GLOBAL		_CLO_LOWER_R
+	.GLOBAL		_CLO_LOWER_T
+	.GLOBAL		_CSET_SET
+
+	.GLOBAL		CPOS_TOP
+	.GLOBAL		_CPOS_SET_TOPL
+	.GLOBAL		_CPOS_SET_LOWL
+	.GLOBAL		_CPOS_SET_MRE
+	.GLOBAL		_CPOS_SET_POSI
+	.GLOBAL		_CPOS_SET_UNIT
+	.GLOBAL		_CPOS_SET_ALFA
+	.GLOBAL		_CPOS_SET_BETA
+	.GLOBAL		_CPOS_SET_DELTA
+	.GLOBAL		_CPOS_SET_GANMA
+	.GLOBAL		_CPOS_STD_BAK
+	.GLOBAL		_CPOS_SET_STD
+
+	.GLOBAL		CCALE_TOP
+	.GLOBAL		_CCALE_IN
+
+	.GLOBAL		SEQ_360_371_TOP
+	.GLOBAL		_CPOS_RQE
+	.GLOBAL		_CLO_RQE
+	.GLOBAL		_CLO_ZERO	;
+
+	.GLOBAL		_SEQ_384_447_TOP
+	.GLOBAL		_CTLINK_C_OP
+
+	.GLOBAL		CSTATUS_TOP
+	.GLOBAL		_CSTATUS_C
+
+	.GLOBAL		OPLO_TOP
+	.GLOBAL		_CLO_DEG_L
+	.GLOBAL		_CLO_DEG_R
+	.GLOBAL		_CLO_DEG_T
+;	.GLOBAL		_CLO_GAIN_SET1L
+;	.GLOBAL		_CLO_GAIN_SET1R
+;	.GLOBAL		_CLO_GAIN_SET2L
+;	.GLOBAL		_CLO_GAIN_SET2R
+;	.GLOBAL		_CLO_GAIN_SET3L
+;	.GLOBAL		_CLO_GAIN_SET3R
+;	.GLOBAL		_CLO_GAIN_SET4L
+;	.GLOBAL		_CLO_GAIN_SET4R
+;	.GLOBAL		_CLO_GAIN_SET5L
+;	.GLOBAL		_CLO_GAIN_SET5R
+;	.GLOBAL		_CLO_OF_SETL
+;	.GLOBAL		_CLO_OF_SETR
+;	.GLOBAL		_CLO_OF_AVE_SETL
+;	.GLOBAL		_CLO_OF_AVE_SETR
+;	.GLOBAL		_CLO_OF_AVE_SETT
+	.GLOBAL		_CLO_OFAD_L
+	.GLOBAL		_CLO_OFAD_R
+	.GLOBAL		_CLO_OFAD_T
+	.GLOBAL		_CLO_LOAD_L
+	.GLOBAL		_CLO_LOAD_R
+	.GLOBAL		_CLO_LOAD_T
+	.GLOBAL		_CPOS_NOW_MM
+	.GLOBAL		_CPOS_STD
+	.GLOBAL		_CCALE_OUT
+
+	.GLOBAL		SEQ_372_383_TOP
+	.GLOBAL		_CPOS_CONDI
+	.GLOBAL		_CPOS_ORDER
+	.GLOBAL		_CLO_CONDI
+	.GLOBAL		_CLO_LIMERR
+	.GLOBAL		_CLO_SATURATE
+	.GLOBAL		_CLO_END_FLG	;
+
+	.GLOBAL		_SEQ_448_511_TOP
+	.GLOBAL		_CTLINK_OP_C
+	.GLOBAL		_CCTRL_OP_LO
+	.GLOBAL		_CCTRL_OP_PO
+	.GLOBAL		_CCTRL_OP_CALE
+	.GLOBAL		_CCTRL_OP_GAMEN
+	.GLOBAL		_CCTRL_OP_TLINK
+	.GLOBAL		_CERROR_C
+	.GLOBAL		_CPUC_ROM_ER
+	.GLOBAL		_CPUC_RAM_ER
+	.GLOBAL		_CPUC_CB1_ER
+	.GLOBAL		_CPUC_CB2_ER
+	.GLOBAL		_CPUC_OP_ER
+	.GLOBAL		_CPUC_CMP_ER
+	.GLOBAL		_CPUC_PDN_ER
+	.GLOBAL		_CPUC_079_ER
+	.GLOBAL		_CPUC_077_ER
+	.GLOBAL		_CPUC_160_DT
+;--------------------------------------------------------------- '94-10-31 [H]
+	.GLOBAL		_V25_OP_0
+	.GLOBAL		_V25_OP_1
+	.GLOBAL		_V25_OP_2
+	.GLOBAL		_V25_OP_3
+	.GLOBAL		_V25_OP_4
+	.GLOBAL		_V25_OP_5
+	.GLOBAL		_V25_OP_6
+	.GLOBAL		_V25_OP_7
+	.GLOBAL		_V25_OP_10
+	.GLOBAL		_V25_OP_11
+	.GLOBAL		_V25_OP_12
+
+;---------------------------------------------------------------
+	.GLOBAL		_CERROR_OP
+	.GLOBAL		_OP_ERROR1
+	.GLOBAL		_OP_ERROR2
+;--------------------------------------------------------------- '94-10-31 [H]
+	.GLOBAL		_OP_VER
+	.GLOBAL		_OP_V25_0
+	.GLOBAL		_OP_V25_1
+	.GLOBAL		_OP_V25_2
+	.GLOBAL		_OP_V25_3
+	.GLOBAL		_OP_V25_4
+	.GLOBAL		_OP_V25_5
+	.GLOBAL		_OP_V25_6
+	.GLOBAL		_OP_V25_7
+;---------------------------------------------------------------
+	.GLOBAL		_CENC_DEG
+	.GLOBAL		_RAMOP_C_INT
+	.GLOBAL		_RAMC_OP_INT
+;
+	.GLOBAL		_OP_STATUS
+;
+	.GLOBAL		_CLO_DEG_MRD			;2000-09-04
+
+	.GLOBAL		_CLO_EXT_SMPSIG			;2003-01-31 koma
+
+;	------ 2006-07-14 V01v
+	.GLOBAL	_CLO_LOAD_LIVE_L;		//荷重生（TON）(1word)
+	.GLOBAL	_CLO_LOAD_LIVE_T;		//荷重生（TON）(1word)
+	.GLOBAL	_CLO_LOAD_LIVE_R;		//荷重生（TON）(1word)
+	.GLOBAL	_CLO_LOAD_L2;		//区間最大荷重
+	.GLOBAL	_CLO_LOAD_T2;		//区間最大荷重TOTALのみ使用
+	.GLOBAL	_CLO_LOAD_R2;		//区間最大荷重
+
+	.GLOBAL	_PVP_KAJLIV_LFT;
+	.GLOBAL	_PVP_KAJLIV_TTL;
+	.GLOBAL	_PVP_KAJLIV_RIH;
+	.GLOBAL	_PVP_ARA1_KAJ_R;	//区間最大荷重
+	.GLOBAL	_PVP_ARA1_KAJ_L;	//区間最大荷重
+	.GLOBAL	_PVP_ARA1_KAJ_T;	//区間最大荷重TOTALのみ使用
+
+;	***********************************
+;	***				***
+;	***	R0,R1,R4 USED		***
+;	***	ｵﾌﾟｼｮﾝｶｰﾄﾞ接続有/無	***
+;	***	T=1有り T=0無し		***
+;	***********************************
+	.MACRO	OPTION_CONECT_CHK
+	MOV.L	#_OP_STATUS,R1		;
+	MOV.B	@R1,R0			;
+	MOV.W	#H'0050,R4		;
+	AND	R4,R0			;
+	CMP/EQ	#H'50,R0		;"5*"なら接続有り
+	.ENDM
+	
+
+;	***********************************
+;	***				***
+;	***		荷重計		***
+;	***				***
+;	***********************************
+_COP1_START_INIT1:
+	SUB_START
+	PUSH_ALL
+
+;;;;;;;;;;;;[MC]	FAR_JSR	#_COP1_INT_WR,R0	;
+
+	MOV.B	#(BIT1+BIT0),R0		;
+	MOV.L	#_CSTATUS_C,R1		;DB	1	DUP(?)		; LOAD MONITOR STATUS
+	MOV.B	R0,@R1			;
+
+	MOV.B	#H'80,R0
+	MOV.L	#_CSET_SET,R1		; SYOKI SETTEITI
+	MOV.B	R0,@R1
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	ｼｰｹﾝｽ及びﾃﾞｰﾀのﾘﾌﾚｯｼｭ	***
+;	***	荷重計関連		***
+;	***				***
+;	***********************************
+	.import	_sq_to_cop_com1;//2003-01-31
+	.IMPORT	_COP_CB_LD_MONI_SIG;//荷重測定用信号(C/Bから)
+
+_COP1_MAIN_SEQ_DAT_REF
+	SUB_START
+	PUSH_ALL
+;	===========================
+;	====	2003-01-31	===
+;	===========================
+	MOV.L	#_SEQ_DP_TOP+342*2,R1	;
+	MOV.W	@R1,R0			;
+	SHLR8	R0			;bit8~bit10==>bit0~bit2
+	MOV.L	#_sq_to_cop_com1,R1	;//2003-01-31
+	MOV.W	R0,@R1			;
+
+	OPTION_CONECT_CHK
+	BF	COP1_MAIN_SEQ_DTREF_EXT	;ｵﾌﾟｼｮﾝ未接続
+
+;	==HMI==>OP======================
+	MOV.L	#_SEQ_PAR_450,R1	;2004-06-08 V01j
+	MOV.W	@R1,R0			;
+	MOV.L	#_CPOS_RQE,R1		;
+	MOV.B	R0,@R1			;
+
+	MOV.L	#_SEQ_PAR_451,R1	;
+	MOV.W	@R1,R0			;
+	MOV.L	#_CLO_RQE,R1		;
+	MOV.B	R0,@R1			;
+
+	MOV.L	#_SEQ_PAR_452,R1	;
+	MOV.W	@R1,R0			;
+	MOV.L	#_CLO_ZERO,R1		;ｾﾞﾛｻﾌﾟﾚｽ関連の指令(CLO_ZERO )
+	MOV.B	R0,@R1			;451.4=1
+
+;	====OP==>HMI ===================
+	MOV.L	#_CPOS_CONDI,R1		;旧372
+	MOV.B	@R1,R0			;
+	EXTU.B	R0,R0			;2004-06-08 V01j
+	MOV.L	#_SEQ_PAR_380,R1	;
+	MOV.W	R0,@R1			;
+
+	MOV.L	#_CPOS_ORDER,R1		;旧373
+	MOV.B	@R1,R0			;
+	EXTU.B	R0,R0			;2004-06-08 V01j
+	MOV.L	#_SEQ_PAR_381,R1	;
+	MOV.W	R0,@R1			;
+
+	MOV.L	#_CLO_CONDI,R1		;旧374
+	MOV.B	@R1,R0			;
+	EXTU.B	R0,R0			;2002-12-22
+	MOV.L	#_SEQ_PAR_382,R1	;
+	MOV.W	R0,@R1			;
+
+	MOV.L	#_CLO_LIMERR,R1		;375
+	MOV.B	@R1,R0			;
+	EXTU.B	R0,R0			;2002-12-22
+	MOV.L	#_SEQ_PAR_383,R1	;
+	MOV.W	R0,@R1			;
+
+	MOV.L	#_CLO_SATURATE,R1
+	MOV.B	@R1,R0			;376
+	EXTU.B	R0,R0			;2002-12-22
+	MOV.L	#_SEQ_PAR_384,R1	;
+	MOV.W	R0,@R1			;
+
+	MOV.L	#_CLO_END_FLG,R1
+	MOV.B	@R1,R0			;383
+	EXTU.B	R0,R0			;2002-12-22
+	MOV.L	#_SEQ_PAR_385,R1	;
+	MOV.W	R0,@R1			;
+
+;	===== HMI ==> OP DPRAM DATA ====
+	MOV.L	#_CLO_EXT_SMPSIG,R1	;
+	MOV.B	@R1,R0			;
+	EXTU.B	R0,R0			;
+;//2015/09/20
+;///	MOV.L	#_SEQ_DP_TOP+99*2,R1	;ﾃﾞﾊﾞｯｸﾓﾆﾀ機能
+;///	MOV.W	R0,@R1			;
+
+;	===== HMI ==> OP DPRAM 仕様選択 =====	V01j
+	MOV.L	#_SEQ_020_SV,R1
+	MOV.W	@R1,R0
+	SHLR	R0
+	MOV	R0,R1
+	MOV.W	#H'0E0,R2
+	AND	R2,R0
+	SHLR	R1
+	MOV.W	#H'08,R2
+	AND	R2,R1
+	OR	R1,R0
+	MOV.L	#_CSET_SET,R1
+	MOV.B	R0,@R1
+
+COP1_MAIN_SEQ_DTREF_EXT:
+	POP_ALL
+	SUB_END
+	M_RTS
+
+;	===== ｴﾝｺｰﾀﾞREAD+
+;_CLO_DEG_MRD	1BYTE 	; CPU-B LOAD DEG DATA READING FLAG 2000-09-04
+
+
+;	***********************************
+;	***				***
+;	***********************************
+;	ﾒｲﾝﾃﾞｰﾀが確定した状態で呼ばれる 2013-12-25[MC]
+_COP1_INT_TIM_REF:
+	SUB_START
+	PUSH_ALL
+
+;;	
+;;2006-07-14	MOV.L	#_sq_to_cop_com1,R1	;2003-01-31
+;;2006-07-14	MOV.W	@R1,R0			;2003-01-31
+;;2006-07-14	TST	#BIT0,R0		;2003-01-31
+;;2006-07-14	TST_BIT_OF COP1_INT_TIM_RF_EXT	;2003-01-31
+
+;;2006-07-14	MOV.L	#_cop_enc_int_enb,R1	;
+;;2006-07-14	MOV.W	@R1,R0			;
+;;2006-07-14	CMP/EQ	#1,R0			;
+;;2006-07-14	BF	COP1_INT_TIM_RF_EXT	;
+;;
+
+;	--- 2006-07-14 V01v ﾄﾚﾝﾄﾞ用生ﾃﾞｰﾀ ----
+;;		PVP_KAJLIV_LFT = swap_iw(&CLO_LOAD_LIVE_L);		//荷重生（TON）(1word)
+;;		PVP_KAJLIV_TTL = swap_iw(&CLO_LOAD_LIVE_T);		//荷重生（TON）(1word)
+;;		PVP_KAJLIV_RIH = swap_iw(&CLO_LOAD_LIVE_R);		//荷重生（TON）(1word)
+
+	MOV.L	#_CLO_LOAD_LIVE_L,R1	;		//荷重生（TON）(1word)
+	MOV.W	@R1,R0			;
+	MOT_DAT_CHG_INTEL LG=B,REG1=R0	;
+	MOV.L	#_PVP_KAJLIV_LFT,R1	;
+	MOV.W	R0,@R1			;
+
+	MOV.L	#_CLO_LOAD_LIVE_T,R1	;		//荷重生（TON）(1word)
+	MOV.W	@R1,R0			;
+	MOT_DAT_CHG_INTEL LG=B,REG1=R0	;
+	MOV.L	#_PVP_KAJLIV_TTL,R1	;
+	MOV.W	R0,@R1			;
+
+	MOV.L	#_CLO_LOAD_LIVE_R,R1	;		//荷重生（TON）(1word)
+	MOV.W	@R1,R0			;
+	MOT_DAT_CHG_INTEL LG=B,REG1=R0	;
+	MOV.L	#_PVP_KAJLIV_RIH,R1	;
+	MOV.W	R0,@R1			;
+
+	MOV.L	#_CLO_LOAD_L2,R1	;		//荷重（TON）(1word)	V01w(INS)
+	MOV.W	@R1,R0			;
+	MOT_DAT_CHG_INTEL LG=B,REG1=R0	;
+	MOV.L	#_PVP_ARA1_KAJ_L,R1	;
+	MOV.W	R0,@R1			;
+
+	MOV.L	#_CLO_LOAD_R2,R1	;		//荷重（TON）(1word)	V01w(INS)
+	MOV.W	@R1,R0			;
+	MOT_DAT_CHG_INTEL LG=B,REG1=R0	;
+	MOV.L	#_PVP_ARA1_KAJ_R,R1	;
+	MOV.W	R0,@R1			;
+
+	MOV.L	#_CLO_LOAD_T2,R1	;		//荷重（TON）(1word)	V01w(INS)
+	MOV.W	@R1,R0			;
+	MOT_DAT_CHG_INTEL LG=B,REG1=R0	;
+	MOV.L	#_PVP_ARA1_KAJ_T,R1	;
+	MOV.W	R0,@R1			;
+
+;;;;;;;;;;;;[MC]	MOV.L	#_cop_enc_int_enb,R1	;
+;;;;;;;;;;;;[MC]	MOV.W	@R1,R0			;
+;;;;;;;;;;;;[MC]	CMP/EQ	#1,R0			;
+;;;;;;;;;;;;[MC]	BF	COP1_INT_TIM_RF_EXT	;
+
+	FAR_JSR	#_COP1_MAIN_SEQ_DAT_REF,R1		; 2007/12/11 V05j SHIMA
+
+;;;;;;;;;;;;[MC]	MOV.L	#_sq_to_cop_com1,R1	;2003-01-31
+;;;;;;;;;;;;[MC]	MOV.W	@R1,R0			;2003-01-31
+;;;;;;;;;;;;[MC]	TST	#BIT0,R0		;2003-01-31
+;;;;;;;;;;;;[MC]	TST_BIT_OF COP1_INT_TIM_RF_EXT	;2003-01-31
+
+	MOV.L	#_sq_to_cop_com1,R1	;2003-01-31
+	MOV.W	@R1,R0			;
+	MOV.L	#_COP_CB_LD_MONI_SIG,R1	;//荷重測定用信号(C/Bから)
+	MOV.W	@R1,R2			;
+	OR	R2,R0			;
+	MOV.L	#_CLO_EXT_SMPSIG,R1	;
+	MOV.B	R0,@R1			;
+
+
+;;;;;;;;;;;;[MC]	FAR_JSR	#_COP1_INT_WR,R0	;
+
+
+
+;	-------- 2013-12-18 MC----------
+	FAR_JSR	#_CPU_to_DP_SET1,R0
+	FAR_JSR	#_CPU_to_DP_SET2,R0
+;;;;;CPUBが行う	FAR_JSR	#_CPU_to_DP_SET3,R0
+
+	FAR_JSR	#_CPU_from_DP_LOAD,R0
+
+COP1_INT_TIM_RF_EXT
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***	ｴﾝｺｰﾀﾞのﾘﾌﾚｯｼｭ		***
+;	***********************************
+	.import	_cop_enc_int_enb;
+_COP1_INT_ENC_REF
+	SUB_START
+	MOV.L	#_sq_to_cop_com1,R1	;2003-01-31
+	MOV.W	@R1,R0			;2003-01-31
+	TST	#BIT0,R0		;2003-01-31
+	TST_BIT_ON COP1_INT_ENC_RF_EXT	;2003-01-31
+
+	MOV.L	#_cop_enc_int_enb,R1	;
+	MOV.W	@R1,R0			;
+	CMP/EQ	#1,R0			;
+	BF	COP1_INT_ENC_RF_EXT	;
+
+	XOR	R0,R0			;2003-01-31
+	MOV.L	#_CLO_EXT_SMPSIG,R1	;SH2=>OP
+	MOV.W	R0,@R1			;
+
+;;;;;;;;;;;;[MC]	FAR_JSR	#_COP1_ENC_WR,R0	;
+;;;;;;;;;;;;[MC]	FAR_JSR	#_COP1_INT_WR,R0	;
+
+COP1_INT_ENC_RF_EXT
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***********************************
+;;;;;;;;;;;;[MC]_COP1_ENC_WR:
+;;;;;;;;;;;;[MC]	SUB_START
+;;;;;;;;;;;;[MC]	MOV.L	#_ENC360_INDT,R1	;
+;;;;;;;;;;;;[MC]	MOV.W	@R1,R0			;
+;;;;;;;;;;;;[MC]
+;;;;;;;;;;;;[MC]	MOT_DAT_CHG_INTEL LG=B,REG1=R0	;
+;;;;;;;;;;;;[MC]	MOV.L	#_CENC_DEG,R1		;角度SAVE
+;;;;;;;;;;;;[MC]	MOV.W	R0,@R1			;
+;;;;;;;;;;;;[MC]	SUB_END
+;;;;;;;;;;;;[MC]	M_RTS
+
+;	***********************************
+;	***				***
+;	***********************************
+;	==== 割り込み=====
+;;;;;;;;;;;;[MC]_COP1_INT_WR:
+;;;;;;;;;;;;[MC]	SUB_START
+;;;;;;;;;;;;[MC]	MOV.W	#H'55,R0		;DPRAM INT
+;;;;;;;;;;;;[MC]	MOV.L	#_RAMC_OP_INT,R1	;
+;;;;;;;;;;;;[MC]	MOV.B	R0,@R1			;
+;;;;;;;;;;;;[MC]	SUB_END
+;;;;;;;;;;;;[MC]	M_RTS
+
+;	***********************************
+;	***	DPRAM CLR		***
+;	***********************************
+	.MACRO	SET_DAT_OP SRC_ADR,LG,SET_DAT
+	MOV.\LG	#\SET_DAT,R0		;
+	MOV.L	#\SRC_ADR,R1		;
+	MOV.\LG	R0,@R1			;
+	.ENDM
+
+
+	.EXPORT	_COP1_DPRAM_CLR1
+_COP1_DPRAM_CLR1:
+	SUB_START
+	PUSH_ALL
+	MOV.L	#_CLO_TOP,R1		;
+	MOV.L	#_CLO_DEG_MRD,R2	;
+	FAR_JSR	#_COP_MEM_CLR_LOP,R0	;
+
+	MOV.L	#_CERROR_C,R1		;
+	MOV.L	#_CERROR_OP,R2		;
+	FAR_JSR	#_COP_MEM_CLR_LOP,R0	;
+	SET_DAT_OP	_CENC_DEG	,W,0	;.SRES	1
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	SET_DAT_OP	_CPUC_ROM_ER	,B,0;		.SRES	1	;DB	1	DUP(?)		; CPU-C ROM err       (00=OK)
+;	SET_DAT_OP	_CPUC_RAM_ER	,B,0;		.SRES	1	;DB	1	DUP(?)		; CPU-C RAM err       (00=OK)
+;	SET_DAT_OP	_CPUC_CB1_ER	,B,0;		.SRES	1	;DB	1	DUP(?)		; CPU-C DPRAM1 err    (00=OK)
+;	SET_DAT_OP	_CPUC_CB2_ER	,B,0;		.SRES	1	;DB	1	DUP(?)		; CPU-C DPRAM2 err    (00=OK)
+;	SET_DAT_OP	_CPUC_OP_ER	,B,0;		.SRES	1	;DB	1	DUP(?)		; CPU-C OP-DPRAM err  (00=OK)
+;	SET_DAT_OP	_CPUC_CMP_ER	,B,0;		.SRES	1	;DB	1	DUP(?)		; CPU-C COMPILE err   (00=OK)
+;	SET_DAT_OP	_CPUC_PDN_ER	,B,0;		.SRES	1	;DB	1	DUP(?)		; CPU-C POWER DOWN err(00=OK)
+;	SET_DAT_OP	_CPUC_079_ER	,B,0;		.SRES	1	;DB	1	DUP(?)		; CPU-C SEQ_079       (00=OK)
+;	SET_DAT_OP	_CPUC_077_ER	,B,0;		.SRES	1	;DB	1	DUP(?)		; CPU-C SEQ_077       (00=OK)
+;	SET_DAT_OP	_CPUC_160_DT	,B,0;		.SRES	1	;DB	1	DUP(?)		; CPU-C SEQ_160
+;
+;	SET_DAT_OP	_CCALE_IN	,L,0	;4
+;	SET_DAT_OP	_CCALE_IN+4	,L,0	;4
+;	SET_DAT_OP	_CCALE_IN+8	,L,0	;4
+;	SET_DAT_OP	_CCALE_IN+12	,L,0	;4
+;
+;	SET_DAT_OP	_CLO_DEG_MRD	,B,0	;.SRES	1; CPU-B LOAD DEG DATA READING FLAG 2000-09-04
+;
+;;	==================================
+;	SET_DAT_OP	_CSTATUS_C	,B,0	;.SRES	1
+;	SET_DAT_OP	_CSET_SET	,B,0	;.SRES	1
+;
+;	SET_DAT_OP	_CPOS_RQE	,B,0	;.SRES	1
+;	SET_DAT_OP	_CLO_RQE        ,B,0	;.SRES	1
+;	SET_DAT_OP	_CLO_ZERO	,B,0	;.SRES	1
+;
+;	SET_DAT_OP	_CENC_DEG	,W,0	;.SRES	1
+;
+;
+;	POP_ALL
+;	SUB_END
+;	M_RTS
+;
+;	===== TOP ADORESS ===
+;	INPUT R1:BASE
+;	INPUT R2:LAST ADRESS
+_COP_MEM_CLR_LOP
+	SUB_START
+	XOR	R0,R0			;
+COP_MEM_CLR_LP_100:
+	CMP/HS	R2,R1			;R2 =< R1 (最後のバイトはやらない)
+	BT	COP_MEM_CLR_LP_EXT	;YES END
+	MOV.B	R0,@R1			;
+	ADD	#1,R1			;
+	M_BRA	COP_MEM_CLR_LP_100	;
+
+COP_MEM_CLR_LP_EXT
+	SUB_END
+	M_RTS
+
+
+
+;	***********************************
+;	***				***
+;	***		Tﾘﾝｸ		***
+;	***				***
+;	***********************************
+	.GLOBAL		_SEQ_PAR_466	;
+	.GLOBAL		_SEQ_PAR_396	;
+
+;	if( OP_STATUS != E_OPSTS_NON ) {			//ｵﾌﾟｼｮﾝｶｰﾄﾞ有り？
+;OP_STATUS
+;#define		E_OPSTS_OK	0x55					//ｵﾌﾟｼｮﾝｶｰﾄﾞ有り
+;#define		E_OPSTS_WDT	0x54					//ｵﾌﾟｼｮﾝｶｰﾄﾞ有り(WDT-UP)
+;#define		E_OPSTS_NON	0x00					//ｵﾌﾟｼｮﾝｶｰﾄﾞなし
+
+
+	.EXPORT	_COP1_MAIN_TLINK_DAT_REF
+_COP1_MAIN_TLINK_DAT_REF
+	SUB_START
+	PUSH_ALL
+
+;;;;;;;;;;;;;;;;;;;;;;;;	OPTION_CONECT_CHK		;
+;;;;;;;;;;;;;;;;;;;;;;;;	BF	COP1_TLINK_DATREF600	;未接続
+
+
+;	_SEQ_384_447_TOP=_CTLINK_C_OP	; T LINK DATA    SIT=>OP=>T-LINK(SEQ_PAR_446~ 32WORD)466からが正解
+;;;;;;;;;;;;;;;;;;;;;;;;	MOV.W	#D'32,R3		;
+;;;;;;;;;;;;;;;;;;;;;;;;	MOV.L	#_SEQ_PAR_466,R5	;
+;;;;;;;;;;;;;;;;;;;;;;;;	MOV.L	#_CTLINK_C_OP,R6	;R5=>
+;;;;;;;;;;;;;;;;;;;;;;;;	SHLR	R6			;
+;;;;;;;;;;;;;;;;;;;;;;;;	SHLL	R6			;
+;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;COP1_TLINK_DATREF050:
+;;;;;;;;;;;;;;;;;;;;;;;;	TST	R3,R3
+;;;;;;;;;;;;;;;;;;;;;;;;	TST_BIT_OF  COP1_TLINK_DATREF100	;
+;;;;;;;;;;;;;;;;;;;;;;;;	MOV.W	@R5+,R0				;H'1234 +0=上位(12)<BIT15~BIT8> +1=下位(34)<BIT7~BIT0>
+;;;;;;;;;;;;;;;;;;;;;;;;	SWAP.B	R0,R0				;
+;;;;;;;;;;;;;;;;;;;;;;;;	MOV.W	R0,@R6				;=>
+;;;;;;;;;;;;;;;;;;;;;;;;	ADD	#2,R6				;
+;;;;;;;;;;;;;;;;;;;;;;;;	ADD	#-1,R3				;ｶｳﾝﾀ
+;;;;;;;;;;;;;;;;;;;;;;;;	M_BRA	COP1_TLINK_DATREF050		;
+;;;;;;;;;;;;;;;;;;;;;;;;COP1_TLINK_DATREF100:
+
+;;;;;;;;;;;;;;;;;;;;;;;; 2014-01-08 CPUB→SEQ→CPUD
+;;;;;;;;;;;;;;;;;;;;;;;;	_SEQ_448_511_TOP=_CTLINK_OP_C		; T LINK DATA    T-LINK=>OP=>SIT(SEQ_PAR_396~ 32WORD)
+;;;;;;;;;;;;;;;;;;;;;;;;	MOV.W	#D'32,R3			;
+;;;;;;;;;;;;;;;;;;;;;;;;	MOV.L	#_CTLINK_OP_C,R5		;
+;;;;;;;;;;;;;;;;;;;;;;;;	SHLR	R5				;
+;;;;;;;;;;;;;;;;;;;;;;;;	SHLL	R5				;
+;;;;;;;;;;;;;;;;;;;;;;;;	MOV.L	#_SEQ_PAR_396,R6		;
+;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;COP1_TLINK_DATREF550:
+;;;;;;;;;;;;;;;;;;;;;;;;	TST	R3,R3
+;;;;;;;;;;;;;;;;;;;;;;;;	TST_BIT_OF  COP1_TLINK_DATREF600	;
+;;;;;;;;;;;;;;;;;;;;;;;;	MOV.W	@R5+,R0				;H'3412 +0=上位(12)<BIT15~BIT8> +1=下位(34)<BIT7~BIT0>
+;;;;;;;;;;;;;;;;;;;;;;;;	SWAP.B	R0,R0				;
+;;;;;;;;;;;;;;;;;;;;;;;;	MOV.W	R0,@R6				;=>
+;;;;;;;;;;;;;;;;;;;;;;;;	ADD	#2,R6				;
+;;;;;;;;;;;;;;;;;;;;;;;;	ADD	#-1,R3				;ｶｳﾝﾀ
+;;;;;;;;;;;;;;;;;;;;;;;;	M_BRA	COP1_TLINK_DATREF550		;
+;;;;;;;;;;;;;;;;;;;;;;;;COP1_TLINK_DATREF600:
+
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+
+;	***************************************************
+;	***						***
+;	***						***
+;	***		2013-12-17 COP1			***
+;	***						***
+;	***						***
+;	***						***
+;	***************************************************
+;	無条件転送 CPUD==>CPUB 
+	.IMPORT	_CPUD_COP1_DP_TOP			;DPRAM
+__COP1DP	.DEFINE		"-_CLO_TOP+_CPUD_COP1_DP_TOP"
+
+	.IMPORT		_CLO_BLKMV_END01
+	
+;;;ﾍﾟｱ	.IMPORT		_SEQ_384_447_TOP
+	.IMPORT		_CLO_BLKMV_END02
+
+;;;ﾍﾟｱ	.IMPORT		_CLO_GAIN_SET1L
+	.IMPORT		_CLO_BLKMV_END03
+
+;;;ﾍﾟｱ	.IMPORT		SEQ_372_383_TOP
+	.IMPORT		_CLO_BLKMV_END04
+
+;	***************************
+;	***	CPUD=>CPUB	***
+;	***************************
+_CPU_to_DP_SET1
+	SUB_START
+
+ MEM_WORD_BLOCK_MOV1	SRC_ADR=_CLO_TOP,
++			DST_ADR=_CLO_TOP+__COP1DP,
++			CNT_DAT=(_CLO_BLKMV_END01-_CLO_TOP)/2,DT_REG=R2,CNT_REG=R3
+
+ MEM_WORD_BLOCK_MOV1	SRC_ADR=_SEQ_384_447_TOP,
++			DST_ADR=_SEQ_384_447_TOP+__COP1DP,
++			CNT_DAT=(_CLO_BLKMV_END02-_SEQ_384_447_TOP)/2,DT_REG=R2,CNT_REG=R3
+
+
+;	-------------------------------------
+ MEM_WORD_BLOCK_MOV1	SRC_ADR=_CERROR_C,
++			DST_ADR=_CERROR_C+__COP1DP,
++			CNT_DAT=(_CERROR_OP-_CERROR_C)/2,DT_REG=R2,CNT_REG=R3
+
+
+
+	SUB_END
+	M_RTS
+
+
+;	***************************
+;	***	CPUD=>CPUB	***
+;	***************************
+_CPU_to_DP_SET2
+	SUB_START
+
+;	-------- 重要アクセス READ/WRITE-----------
+ MEM_MOV_TO_MEM		SRC_ADR=_CSTATUS_C		,L1=W,
++			DST_ADR=_CSTATUS_C+__COP1DP	,L2=W,
++			WKREG1=R1,WKREG2=R2,WKREG3=R3
+
+	FAR_JSR	#_CPUD_TO_COP1_EVENT_SET,R0		;
+
+
+	SUB_END
+	M_RTS
+
+;	***************************
+;	***	CPUD=>CPUB	***
+;	***************************
+;;;;;
+;;;;;_CPU_to_DP_SET3
+;;;;;	SUB_START
+;;;;;
+;;;;;	-------- 重要アクセス READ/WRITE-----------
+;;;;; MEM_MOV_TO_MEM		SRC_ADR=_CLO_EXT_SMPSIG			,L1=W,
+;;;;;+			DST_ADR=_CLO_EXT_SMPSIG+__COP1DP	,L2=W,
+;;;;;+			WKREG1=R1,WKREG2=R2,WKREG3=R3
+;;;;;
+;;;;;	SUB_END
+;;;;;	M_RTS
+
+
+;	***************************
+;	***	CPUD<==CPUB	***
+;	***************************
+_CPU_from_DP_LOAD
+	SUB_START
+
+ MEM_WORD_BLOCK_MOV1	SRC_ADR=_CLO_GAIN_SET1L+__COP1DP,
++			DST_ADR=_CLO_GAIN_SET1L,
++			CNT_DAT=(_CLO_BLKMV_END03-_CLO_GAIN_SET1L)/2,DT_REG=R2,CNT_REG=R3
+
+ MEM_WORD_BLOCK_MOV1	SRC_ADR=SEQ_372_383_TOP+__COP1DP,
++			DST_ADR=SEQ_372_383_TOP,
++			CNT_DAT=(_CLO_BLKMV_END04-SEQ_372_383_TOP)/2,DT_REG=R2,CNT_REG=R3
+
+;	----------- ﾊﾞｰｼﾞｮﾝとか
+ MEM_WORD_BLOCK_MOV1	SRC_ADR=_CERROR_OP+__COP1DP,
++			DST_ADR=_CERROR_OP,
++			CNT_DAT=(_OP_V25_7-_CERROR_OP+1)/2,DT_REG=R2,CNT_REG=R3
+
+
+;	----------2016-01-26(2016-01-21)　ﾎﾞｼﾞｼｮﾅ位置---------------
+	MOV.L	#_CPOS_NOW_MM+__COP1DP,R5	;ﾘｱﾙﾎﾞｼﾞｼｮﾅ位置
+	MOV.L	#_CPOS_NOW_MM,R6		;
+	MOV.W	@R5+,R0				;
+	MOV.W	R0,@R6				;
+	ADD	#2,R6				;
+	MOV.W	@R5+,R0				;
+	MOV.W	R0,@R6				;
+
+	MOV.L	#_CPOS_STD+__COP1DP,R5		;現位置登録時ﾊﾞｯｸｱｯﾌﾟ用
+	MOV.L	#_CPOS_STD,R6			;
+	MOV.W	@R5+,R0				;
+	MOV.W	R0,@R6				;
+	ADD	#2,R6				;
+	MOV.W	@R5+,R0				;
+	MOV.W	R0,@R6				;
+	ADD	#2,R6				;
+
+	SUB_END
+	M_RTS
+
+
+
+
+
+;	***********************************
+;	***	CPUD=>COP1 設定		***
+;	***********************************
+;	_CSTATUS_Cの調停
+;
+	.IMPORT	_cop_set_event_flg;
+	.IMPORT	_COP_SET_CLRF	;
+
+_CPUD_TO_COP1_EVENT_SET
+	SUB_START
+
+	MOV.L	#_cop_set_event_flg,R5		;
+	MOV.W	@R5,R3				;BIT0またはBIT1またはBIT2
+	TST	R3,R3				;
+	TST_BIT_ON CPUD_TO_COP1_EVNTSET_100	;
+
+
+	MOV.L	#_CSTATUS_C,R1			;BIT0またはBIT1またはBIT2
+	MOV.B	@R1,R0				;COP1Z用ﾜｰｸ
+	TST	R0,R0				;
+	TST_BIT_OF CPUD_TO_COP1_EVNTSET_EXT	;
+
+	EXTU.B	R0,R0				;
+	MOV.L	#_COP_SET_CLRF,R1		;BIT0またはBIT1またはBIT2
+	MOV.W	R0,@R1				;DPRAMｺﾏﾝﾄﾞｾｯﾄ
+	MOV.W	R0,@R5				;FLAG SET
+	M_BRA	CPUD_TO_COP1_EVNTSET_EXT	;
+
+CPUD_TO_COP1_EVNTSET_100
+
+	MOV.L	#_COP_SET_CLRF,R1		;
+	MOV.W	@R1,R0				;DPRAMｺﾏﾝﾄ
+	TST	R0,R0				;
+	TST_BIT_ON CPUD_TO_COP1_EVNTSET_EXT	;OFF
+
+	MOV.L	#_cop_set_event_flg,R5		;
+	MOV.W	@R5,R3				;BIT0またはBIT1またはBIT2
+	XOR	R0,R0
+	MOV.W	R0,@R5				;ﾌﾗｸﾞｸﾘｱ
+
+	NOT	R3,R3				;
+	MOV.L	#_CSTATUS_C,R1			;ｲﾍﾞﾝﾄのあったBITをｸﾘｱ
+	MOV.B	@R1,R0				;
+	AND	R3,R0				;
+	MOV.B	R0,@R1				;COP1Z用ﾜｰｸCLR
+
+CPUD_TO_COP1_EVNTSET_EXT
+
+	SUB_END
+	M_RTS
+
+

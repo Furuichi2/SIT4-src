@@ -1,0 +1,1657 @@
+;	***************************************************
+;	***						***
+;	***						***
+;	***	ハード関係				***
+;	***						***
+;	***						***
+;	***************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"		; //共通定義:必ず実行ﾌﾟﾛｸﾞﾗﾑにｲﾝｸﾙｰﾄﾞする事
+	.INCLUDE	"shn_cmd1.mac"		; //
+	.INCLUDE	"ssa_kmc1.mac"		; //
+	.INCLUDE	"ssa_pfom.equ"		; //equ定義
+	.INCLUDE	"ssa_khad.equ"		; //equ定義
+	.INCLUDE	"ssa_wrmk.ext"		; //
+	.INCLUDE	"ssa_ver1.equ"		; //
+	.INCLUDE	"dp_cpuab.ext"		; //
+	.INCLUDE	"dp_cpud.ext"		; //[2013-11-29 MC]
+	.INCLUDE	"ssa_krom.ext"		; //
+	
+	.LIST	ON
+
+	.SECTION	P,CODE			;
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 PROGRAM	***
+;	//	***********************************
+
+	.IMPORT		_SEQ203_OUT_CHG		;CB_SRC\Y_SRC\ssa_dioy.src
+;	------- 2006-07-16 -----------
+	.IMPORT		_LSA_SIG_REF		;
+	.IMPORT		_PAR_SFTY_LOGIC		;
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 MEMORY,HARD	***
+;	//	***********************************
+
+
+;	//	***********************************
+;	//	***	PUBLIC 宣言 PROGRAM	***
+;	//	***********************************
+	.EXPORT		_DI_LOAD	;//
+	.EXPORT		_ENC360_LOAD
+
+
+_BTTN_ON_FLTER_LATE	.EQU	20	;20msec
+
+;		***********************************
+;		***	運転釦等の入力		***
+;		***	論理変換,フィルタ	***
+;		***********************************
+;_di1_cb_ctl1[4];//+0:DI(使用)+1　+2()　+3(生) 運転釦(200.*)
+;_di2_cb_ctl2[4];//+0:DI(使用)+1　+2()　+3(生) LSA,WT1~3(201.*)
+;_di3_cb_inp1;//+0:
+
+_DI_LOAD:
+	SUB_START
+
+	FAR_JSR	#_DEBUG_MOD_IN_CHK,R0		;2015-04-08
+
+
+	mov.l	#_di1_cb_ctl1,r1	;
+	mov.w	@r1,r2			;本当はｼｰｹﾝｽも
+
+	MOV.L	#_CB_SEQ_CB_COM340,R3		;340.15
+	MOV.W	@R3,R0				;
+	XOR	R4,R4				;
+	MOV.W	#BIT15,R3			;
+	TST	R3,R0				;
+	TST_BIT_OF DI_LD_050			;
+	MOV.W	#_W1RST,R4			;ﾘｾｯﾄ釦
+DI_LD_050:					;
+	OR	R4,R2				;
+;	======= 出荷試験ﾓｰﾄﾞ時並び替え================
+	MOV.L	#_SVP_MACINE_SEL1,R1			;
+	MOV.W	@R1,R0					;
+	MOV.W	#_MCN_FUJI_DBG1,R1			;
+	CMP/EQ	R1,R0					;D=1234 且つｼｰｹﾝｽ
+	BF	syukkasiken_CHG_EXT			;
+	MOV.L	#_SEQAB_DP_TOP+_DPSQ359,R1		;動作指令 SEQ-->C/B(2008-09-16)
+	MOV.W	@R1,R0					;
+	MOV.W	#B'11001001,R4				;[C5]
+	CMP/EQ	R4,R0					;
+	BF	syukkasiken_CHG_EXT			;
+;	>>出荷試験ﾓｰﾄﾞOK<< R2ﾚｼﾞｽﾀの並び替え
+;_W1OFF			.EQU	BIT6	;"*"なし
+;_W1INC			.EQU	BIT1	;
+;_W1SGL			.EQU	BIT2	;
+;_W1CNT			.EQU	BIT3	;
+;_W1OPT			.EQU	BIT5	;"*"なし
+;_W1DIC			.EQU	BIT0	;"*"段取=切
+;_W1DUP			.EQU	BIT4	;"*"待機点復帰=ｵﾌﾟｼｮﾝ
+
+;_W1OFF			.EQU	BIT0	;BIT5
+;_W1INC			.EQU	BIT1	;
+;_W1SGL			.EQU	BIT2	;
+;_W1CNT			.EQU	BIT3	;
+;_W1OPT			.EQU	BIT4	;BIT6
+;_W1DIC			.EQU	BIT5	;BIT4
+;_W1DUP			.EQU	BIT6	;BIT0
+;_W1END			.EQU	BIT7	;停止時1
+
+;;;;	-------- 2016-04-12 ------------
+;;;;
+;;;;	MOV	R2,R0				;
+;;;;	AND	#(BIT3+BIT2+BIT1),R0		;
+;;;;	MOV.W	#BIT0,R4			;
+;;;;	TST	R4,R2				;
+;;;;	TST_BIT_OF syukkasiken_CHG020		;
+;;;;	OR	#BIT5,R0			;BIT0(切)==>BIT5 切->段取 DIC
+;;;;syukkasiken_CHG020:				;
+;;;;
+;;;;	MOV.W	#BIT4,R4			;
+;;;;	TST	R4,R2				;
+;;;;	TST_BIT_OF syukkasiken_CHG040		;
+;;;;	OR	#BIT6,R0			;BIT4(OPT)==>BIT6 OPTを原点
+;;;;syukkasiken_CHG040:				;
+;;;;
+;;;;	MOV.W	#BIT5,R4			;
+;;;;	TST	R4,R2				;
+;;;;	TST_BIT_OF syukkasiken_CHG060		;
+;;;;	OR	#BIT4,R0			;BIT5(段取)==>BIT4(OPT)
+;;;;syukkasiken_CHG060:				;
+;;;;
+;;;;	MOV.W	#BIT6,R4			;
+;;;;	TST	R4,R2				;
+;;;;	TST_BIT_OF syukkasiken_CHG080		;
+;;;;	OR	#BIT0,R0			;BIT6(上昇復帰)==>BIT0切
+;;;;syukkasiken_CHG080:				;
+
+
+	MOV	R2,R0				;
+	AND	#(BIT3+BIT2+BIT1),R0		;(寸動,連続,安一)
+	MOV.W	#BIT0,R4			;
+	TST	R4,R2				;
+	TST_BIT_OF syukkasiken_CHG020		;
+	OR	#BIT4,R0			;BIT0(切)==>[BIT4(ｵﾌﾟｼｮﾝ)] 2016-04-12
+syukkasiken_CHG020:				;
+
+	MOV.W	#BIT4,R4			;
+	TST	R4,R2				;
+	TST_BIT_OF syukkasiken_CHG040		;
+	OR	#BIT6,R0			;BIT4(OPT)==>BIT6 OPTを原点
+syukkasiken_CHG040:				;
+
+	MOV.W	#BIT5,R4			;
+	TST	R4,R2				;
+	TST_BIT_OF syukkasiken_CHG060		;
+	OR	#BIT0,R0			;BIT5(段取)==>BIT0(切)
+syukkasiken_CHG060:				;
+
+	MOV.W	#BIT6,R4			;
+	TST	R4,R2				;
+	TST_BIT_OF syukkasiken_CHG080		;
+	OR	#BIT5,R0			;BIT6(上昇復帰)==>[BIT5段取] 2016-04-12
+syukkasiken_CHG080:				;
+
+
+	MOV.W	#H'FF80,R4			;
+	AND	R4,R2				;
+	NOT	R4,R4				;
+	AND	R4,R0				;
+	OR	R0,R2				;
+
+syukkasiken_CHG_EXT:				;
+;	==============================================
+
+
+
+
+	WD_WD_LOAD_EDGE_MKREG	SQ_ADR=_di1_cb_ctl1_dt,ON_ADR=_di1_cb_ctl1_on,OF_ADR=_di1_cb_ctl1_of;
+
+	mov.l	#_di2_cb_ctl2,r1	;
+	mov.w	@r1,r2			;本当はｼｰｹﾝｽも
+
+;	====2002-12-16(連続ｾｯﾄｱｯﾌﾟ) ===
+	MOV.L	#_CB_SEQ_CB_COM340,R3		;
+	MOV.W	@R3,R0				;連続ｾｯﾄｱｯﾌﾟ 340.4 ==>.bit7 _W2SUP
+	TST	#BIT4,R0			;
+	TST_BIT_OF DI_LD_SUP050			;
+	MOV.W	#_W2SUP,R0			;
+	OR	R0,R2				;
+DI_LD_SUP050:					;
+	WD_WD_LOAD_EDGE_MKREG	SQ_ADR=_di2_cb_ctl2_dt,ON_ADR=_di2_cb_ctl2_on,OF_ADR=_di2_cb_ctl2_of;
+
+
+	MOV.L	#_di3_cb_inp1,R1		;//+0:EMG1,EMG2 BIT1,BIT0
+	MOV.W	@R1,R2				;ｼｰｹﾝｽ
+	MOV.L	#_CB_SEQ_CB_COM340,R3		;340.0
+	MOV.W	@R3,R0
+	AND	#BIT0,R0			;EMG
+	OR	R0,R2				;
+	MOV.L	#_di3_cb_inp1_dt,R1		;//制御に使用するのは_dt(相手側の遮光も)
+	MOV.W	R2,@R1
+
+	FAR_JSR	#_BTTN_FLG_MAK,R0	;
+	FAR_JSR	#_SFTY_IN_MAK,R0	;
+
+	FAR_JSR	#_BRKTST_SEL_SW_CHK,R0	;2011-09-14
+
+;	======== 連続停止==========
+	XOR	R4,R4				;(連続停止)
+	MOV.L	#_di1_cb_ctl1_dt,R1		;
+	MOV.W	@R1,R0				;
+	MOV.W	#_W1END,R2			;
+	TST	R2,R0				;
+	TST_BIT_OF DI_LD_CNT050			;実入力
+
+;	===(2004-11-30)連続停止外部入力無視指令==
+	MOV.L	#_CB_SEQ_CB_COM340,R1		;340.10
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT10,R2			;bit10=1 外部入力受け付けない(内部340.7は有効)
+	TST	R2,R0				;
+	TST_BIT_ON DI_LD_CNT050			;340.10=1 EXIT
+;	===== 2004-11-30 END===
+
+	MOV.W	#BIT0,R4			;
+DI_LD_CNT050:					;
+
+
+	MOV.L	#_CB_SEQ_CB_COM340,R1		;340.7
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT7,R2			;
+	TST	R2,R0;
+	TST_BIT_OF DI_LD_CNT100			;ｼｰｹﾝｽからの連続停止
+	MOV.W	#BIT0,R4			;
+DI_LD_CNT100:					;
+;	========= ﾛｯﾄｶｳﾝﾄｱｯﾌﾟ ===
+	XOR	R3,R3				;(ﾛｯﾄｶｳﾝﾄｱｯﾌﾟ)
+	MOV.L	#_CB_SEQ_CB_COM340,R1		;340.8,BIT9 1:ﾛｯﾄｶｳﾝﾄｱｯﾌﾟ無視
+	MOV.W	@R1,R0				;
+	SWAP.B	R0,R2				;BIT9,8==>BIT1,0
+	NOT	R2,R2				;
+	MOV.L	#_SEQAB_DP_TOP+33*2,R1		;BIT0:ﾛｯﾄｶｳﾝﾄｱｯﾌﾟ1 BIT1:ﾛｯﾄｶｳﾝﾄｱｯﾌﾟ2
+	MOV.W	@R1,R0				;
+	AND	R2,R0				;BIT0,BIT1
+	TST	#(BIT1+BIT0),R0			;ﾛｯﾄｶｳﾝﾄｱｯﾌﾟ?
+	TST_BIT_OF DI_LD_CNT200			;NO
+	MOV.W	#BIT2,R3			;
+DI_LD_CNT200:					;
+	MOV.L	#_CNT_STOP_CMD,R5		;BIT0:連続停止釦+340.7,BIT1設定異常,BIT2ﾛｯﾄｶｳﾝﾄｱｯﾌﾟ
+	MOV.W	@R5,R0				;
+	AND	#LOW ~(BIT2+BIT0),R0		;(BIT0連続停止釦) (BIT2ﾛｯﾄｶｳﾝﾄｱｯﾌﾟ)
+	OR	R4,R0				;
+	OR	R3,R0				;
+	MOV.W	R0,@R5				;
+
+
+
+;	-----------------------------------------------------------------
+;	---2011-05-05 ﾛｯﾄｶｳﾝﾄ1回前信号 減速できないような運転での参照----
+	XOR	R3,R3				;(ﾛｯﾄｶｳﾝﾄｱｯﾌﾟ)
+	MOV.L	#_CB_SEQ_CB_COM340,R1		;340.8,BIT9 1:ﾛｯﾄｶｳﾝﾄｱｯﾌﾟ無視
+	MOV.W	@R1,R0				;
+						;BIT9,8==>BIT5,4
+	SHLR2	R0				;
+	SHLR2	R0				;
+	MOV	R0,R2				;
+
+	NOT	R2,R2				;
+	MOV.L	#_SEQAB_DP_TOP+33*2,R1		;BIT4:ﾛｯﾄｶｳﾝﾄｱｯﾌﾟ1 1回前信号 BIT5:ﾛｯﾄｶｳﾝﾄｱｯﾌﾟ2　1回前信号 
+	MOV.W	@R1,R0				;
+	AND	R2,R0				;BIT4,BIT5
+	TST	#(BIT5+BIT4),R0			;ﾛｯﾄｶｳﾝﾄｱｯﾌﾟ?
+	TST_BIT_OF DI_LD_CNT300			;NO
+	MOV.W	#BIT2,R3			;
+DI_LD_CNT300:					;
+	MOV.L	#_CNT_STOP_CMD_BEF1,R5		;[減速が長い時のロットカウントのオーバ１回転を防ぐ]
+	MOV.W	@R5,R0				;[停止しない回転の連続運転が対象］
+	AND	#LOW ~(BIT2),R0			;(BIT2ﾛｯﾄｶｳﾝﾄｱｯﾌﾟ)
+	OR	R3,R0				;
+	MOV.W	R0,@R5				;
+;	-----------------------------------------------------------------
+
+	SUB_END
+	M_RTS
+
+;	***************************
+;	***	釦ﾌﾗｸﾞ作成	***
+;	***************************
+;	U2b	BTTN_FLG;	//BIT0:両手ﾌﾘ- BIT1:片手ON　BIT2:両手ON
+	.ALIGN	4				;
+_BTTN_FLG_MAK:
+	SUB_START
+;	======= ﾃﾞﾊﾞｯｸ ========
+;;	MOV.L	#_di1_cb_ctl1_dt,R1			;// ﾚﾍﾞﾙﾃﾞ-ﾀ
+;;	MOV.W	@R1,R0					;
+;;	MOV.W	#(_W1LNC+_W1RNC),R1			;BIT10,BIT8
+;;	AND	R1,R0					;
+;;	MOV	R0,R2					;
+;;	XOR	R1,R2					;
+;;	SHLL	R2					;BIT11,BIT9
+;;	OR	R2,R0					;
+;;	M_BRA	BTTN_FLG_MK050				;
+;	=============================
+
+	MOV.L	#_di1_cb_ctl1_dt,R1			;// ﾚﾍﾞﾙﾃﾞ-ﾀ
+	MOV.W	@R1,R0					;
+BTTN_FLG_MK050:
+	MOV.W	#(_W1LNO+_W1LNC+_W1RNO+_W1RNC),R2	;N.O=1 起動 N.C=0起動
+	AND	R2,R0					;
+	MOV.W	#(_W1LNO+_W1RNO),R2			;N.O=1 起動 N.C=0起動
+	CMP/EQ	R2,R0					;
+	BF	BTTN_FLG_MK100
+	MOV.W	#BIT2,R3				;両手ON
+	M_BRA	BTTN_FLG_MK400				;
+BTTN_FLG_MK100:
+
+	MOV.W	#(_W1LNC+_W1RNC),R2			;N.C=1 手放 N.O=0手放し
+	CMP/EQ	R2,R0					;
+	BF	BTTN_FLG_MK200
+	MOV.W	#BIT0,R3				;両手フリｰ
+	M_BRA	BTTN_FLG_MK400				;
+BTTN_FLG_MK200:
+	MOV.W	#BIT1,R3				;片手ON状態
+BTTN_FLG_MK400:
+
+;	========== 2014-02-20 BTTN差し替え ============
+;	------------ INPUT R3--------
+	MOV.L	#_EXTDRV_BTTN_USE,R1		;//SYSPARAM+各条件
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF BTTN_FLG_MK450
+
+	MOV.L	#_EXT_BTTN_FLG,R1		;
+	MOV.W	@R1,R3				;差替
+
+BTTN_FLG_MK450:
+
+
+
+;	----------2005-10-03---------------------
+	FAR_JSR	#_BTTN_IN_FILTER,R0		;Input R3/Output R3 USED R0,R1,R2
+;	-----------------------------------------
+
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 chg 二重回路対策
+	 .AENDI
+
+;;;2016-10-31;	--------- 2006-07-28---------------------
+;;;2016-10-31;	位置決めキャンセル機能１
+;;;2016-10-31	MOV.L	#_CB_SEQ_CB_COM340,R1		;340.11 位置決めキャンセル
+;;;2016-10-31	MOV.W	@R1,R0				;
+;;;2016-10-31	MOV.W	#BIT11,R4			;
+;;;2016-10-31	TST	R4,R0				;
+;;;2016-10-31	TST_BIT_OF BTTN_FLG_MK500		;
+;;;2016-10-31	MOV.W	#BIT1,R3			;
+;;;2016-10-31BTTN_FLG_MK500:					;(準備未完了にしたいため)
+
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+;	-------- 2016-10-31(2016-05-11) ﾗｯﾁﾃﾞｰﾀに変更-----------
+	MOV.L	#_CB_SEQ_CB_COM340,R1		;340.11 位置決めキャンセル
+	MOV.W	@R1,R0				;
+	MOV.W	#BIT11,R4			;
+	TST	R4,R0
+	TST_BIT_OF BTTN_FLG_MK500		;
+
+	MOV.L	#_POSCANSEL_CMD,R1		;ﾗｯﾁ　　BIT11をｾｯﾄ
+	MOV.W	R4,@R1				;(これだけで準備完了にならないから他のインターロック不要)
+
+BTTN_FLG_MK500:
+
+;	--------- 2016-10-31(2016-05-11)---------------------
+;	位置決めキャンセル機能１
+	MOV.L	#_POSCANSEL_CMD,R1		;340.11 位置決めキャンセル
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF BTTN_FLG_MK510		;
+	MOV.W	#BIT1,R3			;
+BTTN_FLG_MK510:					;(準備未完了にしたいため)
+
+	MOV.L	#_CB_SEQ_CB_COM348,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_OF BTTN_FLG_MK550		;
+	MOV.W	#BIT1,R3			;
+BTTN_FLG_MK550:					;
+	MOV.L	#_BTTN_FLG,R1			;//BIT0:両手ﾌﾘ- BIT1:片手ON　BIT2:両手ON
+	MOV.W	R3,@R1				;
+	M_BRA	DEBUG_USEFUL_STR		;2011-09-14 LABEL ADD
+
+DEBUG_USEFUL_STR:					;2011-09-14 LABEL ADD
+
+
+;;	XOR	R0,R0				;
+;;	MOV.L	#_DBG_ENC_USE,R1		;//005A
+;;	MOV.W	R0,@R1				;
+	
+
+;	============== 20060919ﾃﾞﾊﾞｯｸ機能================
+;	機種1234
+;	待機点2=123.0
+;	待機点3=210
+;	SQ367=**5A
+
+;	---------- 2015-04-08 ------------
+	MOV.L	#_DEBUG_MOD_CODE,R1			;
+	MOV.W	@R1,R0					;
+	MOV.W	#H'5AA5,R1				;
+	CMP/EQ	R1,R0					;D=1234 且つｼｰｹﾝｽ
+	BF	BTTN_FLG_DBG_END			;待機点２が123、待機点３が210
+
+	MOV.L	#_SEQAB_DP_TOP+_DPSQ358,R1		;動作指令 SEQ-->C/B
+	MOV.W	@R1,R0					;**5A
+	CMP/EQ	#H'5A,R0				;
+	BF	BTTN_FLG_DBG_100			;2011-09-14
+
+
+;	-------------今回だけ2015-04-08----------
+	MOV.L	#_DP_DBG_CPUAB_DRV_START,R1		;2015-03-31:運転TEST用[]出荷時はﾌﾟﾛｸﾞﾗﾑ側をはずす
+	MOV.W	@R1,R0					;
+	TST	#BIT0,R0				;
+	TST_BIT_OF BTTN_FLG_DBG_100			;360ｴﾝｺ-ﾀﾞにﾃﾞｰﾀを加算する
+
+	MOV.W	#BIT2,R3				;
+	MOV.L	#_BTTN_FLG,R1				;//BIT0:両手ﾌﾘ- BIT1:片手ON　BIT2:両手ON
+	MOV.W	R3,@R1					;
+
+BTTN_FLG_DBG_100:					;360ｴﾝｺ-ﾀﾞにﾃﾞｰﾀを加算する
+BTTN_FLG_DBG_END:					;
+
+
+
+;	------- 2006-07-16 -----------
+	FAR_JSR	#_LSA_SIG_REF,R0
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	2015-04-08		***
+;	***				***
+;	***********************************
+
+_DEBUG_MOD_IN_CHK:
+	SUB_START
+
+	XOR	R2,R2
+
+	MOV.L	#_SVP_MACINE_SEL1,R1			;
+	MOV.W	@R1,R0					;
+	MOV.W	#_MCN_FUJI_DBG1,R1			;
+	CMP/EQ	R1,R0					;D=1234 且つｼｰｹﾝｽ
+	BF	DEBUG_MOD_INCHKEND			;待機点２が123、待機点３が210
+	MOV.L	#_SVP_WT_DIG2,R1			;待機点選択2 123
+	MOV.W	@R1,R0					;
+	MOV.W	#D'123*10,R1				;
+	CMP/EQ	R1,R0					;
+	BF	DEBUG_MOD_INCHKEND				;
+	MOV.L	#_SVP_WT_DIG3,R1			;待機点選択3 210
+	MOV.W	@R1,R0					;
+	MOV.W	#D'210*10,R1				;
+	CMP/EQ	R1,R0					;
+	BT	DEBUG_MOD_INCHK100			;
+	M_BRA	DEBUG_MOD_INCHKEND			;
+
+DEBUG_MOD_INCHK100:
+	MOV.W	#H'5AA5,R2
+DEBUG_MOD_INCHKEND:
+	MOV.L	#_DEBUG_MOD_CODE,R1			;
+	MOV.W	R2,@R1					;
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***		2005-10-03		***
+;	***					***
+;	*******************************************
+;	R3=BIT0:両手ﾌﾘｰ
+;	R3=BIT1:片手ON
+;	R3=BIT2:両手ON
+;	BIT0:生/BIT1:生
+;	BIT2:20msec連続して経過したらBIT2 それまではBIT1状態にする
+
+	.ALIGN	4				;
+_BTTN_IN_FILTER:
+	SUB_START
+	MOV	R3,R0			;
+	TST	#BIT2,R0		;
+	TST_BIT_OF BTTN_IN_FILT_300	;両手ONではない
+	
+	MOV.L	#_BTTN_ON_TIME,R1	;
+	MOV.W	@R1,R2			;
+	TST	R2,R2			;
+	TST_BIT_OF BTTN_IN_FILT_100	;ﾀｲﾑｱｯﾌﾟ
+	ADD	#-1,R2			;
+	MOV.W	R2,@R1			;ﾀﾞｳﾝﾀｲﾏ
+
+	MOV	#BIT1,R3		;片手ONに強制変更
+	M_BRA	BTTN_IN_FILT_END	;
+
+;	---- R3=BIT2:OK
+BTTN_IN_FILT_100:
+	M_BRA	BTTN_IN_FILT_END	
+
+;	------ R3 KEEP --------
+BTTN_IN_FILT_300:
+	MOV.W	#_BTTN_ON_FLTER_LATE,R2	;20msec
+	MOV.L	#_BTTN_ON_TIME,R1	;
+	MOV.W	R2,@R1
+
+BTTN_IN_FILT_END:
+	SUB_END
+	M_RTS
+
+
+
+;	*******************************************
+;	***					***
+;	***	2013-09-30			***
+;	***					***
+;	*******************************************
+;	R0=BIT2:両手ON
+;	R0=BIT1:
+;
+	.EXPORT	_API_BTTN_ON_SIG
+_API_BTTN_ON_SIG
+	SUB_START
+
+;	------------2014-02-20------------------
+	MOV.L	#_EXTDRV_BTTN_USE,R1			;//SYSPARAM+各条件
+	MOV.W	@R1,R0					;
+	TST	R0,R0					;
+	TST_BIT_ON API_BTTN_ONSIG_500			;
+
+	XOR	R3,R3
+	MOV.L	#_di1_cb_ctl1_dt,R1			;// ﾚﾍﾞﾙﾃﾞ-ﾀ
+	MOV.W	@R1,R0					;
+	MOV.W	#(_W1LNO+_W1LNC+_W1RNO+_W1RNC),R2	;N.O=1 起動 N.C=0起動
+	AND	R2,R0					;
+	MOV.W	#(_W1LNO+_W1RNO),R2			;N.O=1 起動 N.C=0起動
+	CMP/EQ	R2,R0					;
+	BF	API_BTTN_ONSIG_100
+	MOV.W	#BIT2,R3				;両手ON
+	M_BRA	API_BTTN_ONSIG_400
+
+API_BTTN_ONSIG_100:
+	MOV.W	#(_W1LNC+_W1RNC),R2			;N.C=1 手放 N.O=0手放し
+	CMP/EQ	R2,R0					;
+	BF	API_BTTN_ONSIG_200
+	XOR	R3,R3					;両手ﾌﾘｰ
+	M_BRA	API_BTTN_ONSIG_400
+
+API_BTTN_ONSIG_200
+	MOV.B	#BIT1,R3				;片手ON
+API_BTTN_ONSIG_400
+	MOV	R3,R0
+	M_BRA	API_BTTN_ONSIG_END			;
+
+;	------------------ 外部起動-------------
+API_BTTN_ONSIG_500
+	MOV.L	#_EXT_BTTN_FLG,R1			;
+	MOV.W	@R1,R3					;フィルタ前信号
+	MOV.W	#BIT1,R4				;
+	TST	R4,R3					;両手OFF
+	TST_BIT_OF API_BTTN_ONSIG_900			;
+	XOR	R3,R3					;
+API_BTTN_ONSIG_900					;
+	MOV	R3,R0
+
+
+API_BTTN_ONSIG_END
+	SUB_END
+	M_RTS
+	
+
+;	*******************************************
+;	***					***
+;	***	安全装置選択SW			***
+;	***	安全装置入力FACTA/B,RACTA/B	***
+;	***					***
+;	*******************************************
+	.IMPORT		_CB_SYS_PARAM000
+	.IMPORT		_PAR_FSWFUN_SEL
+	.IMPORT		_PAR_FSWSEL_MASK
+
+	.ALIGN	4				;
+_SFTY_IN_MAK:
+	SUB_START
+
+;	2011-09-14 安全装置有効・無効の切り替えＳＷを制動試験に使用するか今までどおりか
+	MOV.L	#(_PAR_FSWFUN_SEL-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;SW:_di1_cb_ctl1安全装置有効・無効SWとして使用するか
+	MOV.W	@R1,R0							;
+	CMP/EQ	#1,R0							;1以外は今までの動作
+	BF	SFTY_IN_MK000						;
+
+	MOV.W	#(BIT1+BIT0),R2						;bitn=1:有効
+	MOV.L	#(_PAR_FSWSEL_MASK-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;2011-09-14 1以外:安全装置有効固定/1:安全装置無効
+	MOV.W	@R1,R0							;
+	CMP/EQ	#1,R0							;
+	BF	SFTY_IN_MK050						;
+	XOR	R2,R2							;安全装置無効固定 SYS=1
+	M_BRA	SFTY_IN_MK050						;
+
+
+
+;	====== 安全装置選択ＳＷ ===============
+SFTY_IN_MK000:
+	XOR	R2,R2					;
+	MOV.L	#_di1_cb_ctl1,R1			;
+	MOV.W	@R1,R0					;BIT13=1,BIT12=0(有効)
+	SHLR8	R0					;BIT5=1,BIT4=0
+	AND	#(BIT5+BIT4),R0				;無効以外は全て有効
+	CMP/EQ	#(0+BIT4),R0				;無効?
+	BT	SFTY_IN_MK050				;
+	MOV.W	#(BIT1+BIT0),R2				;bitn=1:有効
+SFTY_IN_MK050:
+	MOV.L	#_SW_DEV_MASK_FLG,R1			;//BIT1=BIT0=0 安全装置無効  BIT1=BIT0=1 安全装置有効
+	MOV.W	R2,@R1					;
+
+
+
+
+
+;	=====	安全装置遮光・通光入力	===============
+	MOV.L	#_di4_cb_inp2,R1			;(追加) 安全装置入力
+	MOV.W	@R1,R0					;
+	SHLR8	R0					;BIT10,11,12,13-->BIT2,3,4,5
+	XOR	R1,R1					;
+	XOR	R2,R2					;
+	TST	#(BIT3+BIT2),R0				;
+	TST_BIT_OF SFTY_IN_MK100			;
+	MOV	#BIT0,R1
+SFTY_IN_MK100:
+
+	TST	#(BIT5+BIT4),R0				;
+	TST_BIT_OF SFTY_IN_MK200			;
+	MOV	#BIT1,R2
+SFTY_IN_MK200:
+	OR	R1,R2				;
+	MOV.L	#_SW_DEV_MASK_FLG,R1		;//BIT1=BIT0=0 安全装置無効  BIT1=BIT0=1 安全装置有効
+	MOV.W	@R1,R0				;
+	AND	R0,R2				;
+
+;	==== 安全装置選択SW処理付(停止状態~準備完了条件等に使用) ====
+	MOV.L	#_SFTY_IN_DAT,R1			;swによるﾏｽｸ結果
+	MOV.W	R2,@R1					;"BIT0+BIT1"
+
+;	==== 上昇無効選択 （運転状態から停止条件に使用）====
+	MOV.L	#_FR_CYL_MASK_FLG,R1			;//上昇無効中"1"　準備完了時は1
+	MOV.W	@R1,R0					;
+	NOT	R0,R0					;
+	AND	R0,R2					;
+	MOV.L	#_SFTY_CTL_IN_DAT,R1			;上昇無効によるﾏｽｸ結果
+	MOV.W	R2,@R1					;"BIT0+BIT1"
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***	ブレーキテストのＳＷ状態作成	***
+;	***	2011-09-14			***
+;	*******************************************
+	.ALIGN	4				;
+_BRKTST_SEL_SW_CHK
+	SUB_START
+
+	XOR	R2,R2							;
+	MOV.L	#(_PAR_FSWFUN_SEL-_CB_SYS_PARAM000+_W_PARAM_TOP),R1	;SW:_di1_cb_ctl1安全装置有効・無効SWとして使用するか
+	MOV.W	@R1,R0							;
+	CMP/EQ	#1,R0							;1以外は今までの動作
+	BF	BRKTST_SELSWCK100					;ﾌﾞﾚｰｷﾃｽﾄﾓｰﾄﾞはなし
+
+	XOR	R2,R2						;
+	MOV.L	#_di1_cb_ctl1,R1				;
+	MOV.W	@R1,R0						;BIT13=1,BIT12=0(有効)
+	SHLR8	R0						;BIT5=1,BIT4=0
+	AND	#(BIT5+BIT4),R0					;無効以外は全て有効
+	CMP/EQ	#(0+BIT4),R0					;無効?
+	BT	BRKTST_SELSWCK050				;
+	MOV.W	#(BIT1+BIT0),R2					;bitn=1:有効[BIT0を参照する]
+BRKTST_SELSWCK050						;
+;	--------- もし変更があればここに入れる
+
+BRKTST_SELSWCK100						;
+	MOV.L	#_BRKTST_SW_IN,R1				;
+	MOV.W	R2,@R1						;
+								;変更になった異常でもいいがとりあえず不要
+
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	360ｴﾝｺｰﾀﾞLOAD			***
+;	***					***
+;	*******************************************
+_ENC360_LOAD:
+	SUB_START
+
+;;;2002-10-03	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+;;;	MOV.L	#_ENC360_INDT,R1	;
+;;;	.AELSE
+;;;	MOV.L	#_PVP_NOW_ANGLE00,R1	;
+;;;	.AENDI
+	MOV.L	#_ENC360_INDT,R1	;2002-10-03統一
+
+
+	MOV.W	@R1,R2			;
+	MOV.L	#_ENC360_HEX,R0		;//HEX data
+	MOV.W	R2,@R0			;
+	MOV	#D'10,R1		;
+	DMULU.L	R1,R2			;
+	STS	MACL,R2			;
+
+;;;;	MOV.L	#_SET1_ENC360_HOS1,R1	;
+;;;;	MOV.W	@R1,R3			;
+;;;;	SUB	R3,R2			;
+;;;;	CMP/PZ	R2			;
+;;;;	BT	ENC360_LD_050		;
+;;;;	MOV.W	#D'3600,R3		;
+;;;;	ADD	R3,R2			;
+;;;;ENC360_LD_050:
+
+	MOV.L	#_CTL_ENC360,R1		;//360.0度
+	MOV.W	R2,@R1			;
+
+;;;;;;	MOV.L	#_RNA_ENC360,R1		;//360.0度
+;;;;;;	MOV.W	R2,@R1			;
+
+
+
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	制御状態出力		***
+;	***				***
+;	***********************************
+;
+;
+;_WOQST			.EQU	BIT0
+;_WOVN1			.EQU	BIT1
+;_WOVN2			.EQU	BIT2
+;_WOVN3			.EQU	BIT3
+;_WOANT			.EQU	BIT4
+;_WORDY			.EQU	BIT5
+;_WOATO			.EQU	BIT6
+;_WOFCY			.EQU	BIT7
+;_WORCY			.EQU	BIT8
+;_WORST			.EQU	BIT9
+
+_EMG_OUT:
+	SUB_START
+	MOV.W	#_WOQST,R0		;QST-ON
+					;ﾊﾞﾙﾌﾞOFF,上昇無効
+	M_BRA	CTRL_OUT_START		;
+
+_EXQ_OUT:
+	SUB_START
+	MOV.L	#_dq1_cb_out1,R1	;//+0:制御出力(203)
+	MOV.W	@R1,R0			;
+	MOV.W	#_WOANT,R2		;ANTI-KEEP
+	AND	R2,R0			;
+	MOV.W	#_WOQST,R2		;QST-ON
+	OR	R2,R0			;
+	M_BRA	CTRL_OUT_START		;
+
+_RESET_OUT:
+	SUB_START
+	MOV.L	#_dq1_cb_out1,R1	;//+0:制御出力(203)
+	MOV.W	@R1,R0			;
+	MOV.W	#_WOANT,R2		;ANTI-KEEP
+	AND	R2,R0			;
+	MOV.W	#_WORST,R2		;RST-ON
+	OR	R2,R0			;
+	M_BRA	CTRL_OUT_START		;
+
+_RESET_END_OUT:
+	SUB_START
+	MOV.L	#_dq1_cb_out1,R1	;//+0:制御出力(203)
+	MOV.W	@R1,R0			;
+	MOV.W	#_WOANT,R2		;ANTI-KEEP
+	AND	R2,R0			;
+	M_BRA	CTRL_OUT_START		;
+
+_VON1_ON:
+	SUB_START
+	MOV.L	#_dq1_cb_out1,R1	;//+0:制御出力(203)
+	MOV.W	@R1,R0			;
+	MOV.W	#_WOVN1,R2		;VON1
+	OR	R2,R0			;
+	M_BRA	CTRL_OUT_START		;
+
+_VON1_OF:
+	SUB_START
+	MOV.L	#_dq1_cb_out1,R1	;//+0:制御出力(203)
+	MOV.W	@R1,R0			;
+	MOV.W	#LWORD ~_WOVN1,R2	;
+	AND	R2,R0			;
+	M_BRA	CTRL_OUT_START		;
+
+_VON2_ON:
+	SUB_START
+	MOV.L	#_dq1_cb_out1,R1	;//+0:制御出力(203)
+	MOV.W	@R1,R0			;
+	MOV.W	#_WOVN2,R2		;VON2
+	OR	R2,R0			;
+	M_BRA	CTRL_OUT_START		;
+_VON2_OF:
+	SUB_START
+	MOV.L	#_dq1_cb_out1,R1	;//+0:制御出力(203)
+	MOV.W	@R1,R0			;
+	MOV.W	#LWORD ~_WOVN2,R2	;
+	AND	R2,R0			;
+	M_BRA	CTRL_OUT_START		;
+
+_VON3_ON:
+	SUB_START
+	MOV.L	#_dq1_cb_out1,R1	;//+0:制御出力(203)
+	MOV.W	@R1,R0			;
+	MOV.W	#_WOVN3,R2		;VON3
+	OR	R2,R0			;
+	M_BRA	CTRL_OUT_START		;
+
+_VON3_OF:
+	SUB_START
+	MOV.L	#_dq1_cb_out1,R1	;//+0:制御出力(203)
+	MOV.W	@R1,R0			;
+	MOV.W	#LWORD ~_WOVN3,R2	;
+	AND	R2,R0			;
+	M_BRA	CTRL_OUT_START		;
+
+_RDY_ON:
+	SUB_START
+	MOV.L	#_dq1_cb_out1,R1	;//+0:制御出力(203)
+	MOV.W	@R1,R0			;
+	MOV.W	#_WORDY,R2		;RDY
+	OR	R2,R0			;
+	M_BRA	CTRL_OUT_START		;
+
+_RDY_OF:
+	SUB_START
+	MOV.L	#_dq1_cb_out1,R1	;//+0:制御出力(203)
+	MOV.W	@R1,R0			;
+	MOV.W	#LWORD ~_WORDY,R2	;
+	AND	R2,R0			;
+	M_BRA	CTRL_OUT_START		;
+
+_ANTI_ON:
+	SUB_START
+	MOV.L	#_dq1_cb_out1,R1	;//+0:制御出力(203)
+	MOV.W	@R1,R0			;
+	MOV.W	#_WOANT,R2		;ANTI
+	OR	R2,R0			;
+	M_BRA	CTRL_OUT_START		;
+
+_ANTI_OF:
+	SUB_START
+	MOV.L	#_dq1_cb_out1,R1	;//+0:制御出力(203)
+	MOV.W	@R1,R0			;
+	MOV.W	#LWORD ~_WOANT,R2	;
+	AND	R2,R0			;
+	M_BRA	CTRL_OUT_START		;
+
+_AUTO_ON:
+	SUB_START
+	MOV.L	#_dq1_cb_out1,R1	;//+0:制御出力(203)
+	MOV.W	@R1,R0			;
+	MOV.W	#_WOATO,R2		;AUTO
+	OR	R2,R0			;
+	M_BRA	CTRL_OUT_START		;
+
+_AUTO_OF:
+	SUB_START
+	MOV.L	#_dq1_cb_out1,R1	;//+0:制御出力(203)
+	MOV.W	@R1,R0			;
+	MOV.W	#LWORD ~_WOATO,R2	;AUTO
+	AND	R2,R0			;
+	M_BRA	CTRL_OUT_START		;
+
+;	***	上昇無効	***
+_FRCYCL_OF:
+	SUB_START
+	MOV.L	#_dq1_cb_out1,R1		;//+0:制御出力(203)
+	MOV.W	@R1,R0				;
+	MOV.W	#LWORD ~(_WOFCY+_WORCY),R2	;無効
+	AND	R2,R0				;
+;;;;	MOV.W	#_WOFCY+_WORCY,R2		;上昇無効
+;;;;	OR	R2,R0				;
+	M_BRA	CTRL_OUT_START			;
+
+;	***	上昇有効	***
+_FRCYCL_ON:
+	SUB_START
+	MOV.L	#_dq1_cb_out1,R1		;//+0:制御出力(203)
+	MOV.W	@R1,R0				;
+	MOV.W	#_WOFCY+_WORCY,R2		;上昇有効
+	OR	R2,R0				;
+;;;;	MOV.W	#LWORD ~(_WOFCY+_WORCY),R2	;有効
+;;;;	AND	R2,R0				;
+	M_BRA	CTRL_OUT_START			;
+
+;	***************************
+;	***			***
+;	***************************
+	.EXPORT	_CTRL_OUTPUT
+_CTRL_OUTPUT:
+	SUB_START
+CTRL_OUT_START:
+	MOV.L	#_dq1_cb_out1,R1	;//+0:制御出力(203)
+	MOV.W	R0,@R1			;
+	FAR_JSR	#_SEQ203_OUT_CHG,R0	
+	SUB_END
+	M_RTS
+
+_SFT_MASK_LOGIC_CHG:
+	SUB_START
+;	---------- 2006-11-21 LOGIC CHANGE--------
+	MOV.L	#_PAR_SFTY_LOGIC,R1	;
+	MOV.W	@R1,R2			;
+	MOV.W	#1,R1			;
+	CMP/EQ	R1,R2			;
+	BF	SFT_MASK_LOGICCHG50
+	MOV.L	#(_WOFCY+_WORCY),R1	;前・後上昇無効
+	XOR	R1,R0			;LOGIC CAHNGE
+SFT_MASK_LOGICCHG50:			;
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***	各状態ハンドシェイクと処理	***
+;	***					***
+;	*******************************************
+;_SH4_HD_CTRL_REDY	.SRES	2	;準備完了にしたい
+;_SH2_HD_CTRL_REDY	.SRES	2	;準備完了にしたい
+;_SH4_HD_CTRL_BUSY	.SRES	2	;準備未完了にしたい
+;_SH2_HD_CTRL_BUSY	.SRES	2	;準備未完了にしたい
+;_SH4_HD_POS_START	.SRES	2	;起動したい
+;_SH2_HD_POS_START	.SRES	2	;起動したい
+;_SH4_HD_SFTY_AUTO	.SRES	2	;AUTOにしたい/安全一工程,連続ｶｳﾝﾀ
+;_SH2_HD_SFTY_AUTO	.SRES	2	;AUTOにしたい/安全一工程,連続ｶｳﾝﾀ
+;_SH4_HD_NEAR_ZERO	.SRES	2	;ﾆｱｾﾞﾛ処理を行いたい
+;_SH2_HD_NEAR_ZERO	.SRES	2	;ﾆｱｾﾞﾛ処理を行いたい
+;_SH4_HD_CNT_STOP	.SRES	2	;連続停止
+;_SH2_HD_CNT_STOP	.SRES	2	;連続停止
+;_SH4_HD_STEP_END	.SRES	2	;位置決め完了としたい
+;_SH2_HD_STEP_END	.SRES	2	;位置決め完了としたい
+
+
+
+;	***********************************
+;	***				***
+;	***	READY 準備完了		***
+;	***				***
+;	***********************************
+_CPU_AB_RDY_OF_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_CTRL_REDY,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_CTRL_REDY,R1		;
+	.AENDI
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;自分のCPUのRDY_OF
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	相手CPUのRDY-OF:ACK	***
+;	***********************************
+_CPU_BA_RDY_OF_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_HD_CTRL_REDY,R1		;
+	.AELSE
+	MOV.L	#_SH4_HD_CTRL_REDY,R1		;
+	.AENDI
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;相手CPUのRDY_OF
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	自分CPUのRDY-ON出力	***
+;	***********************************
+_CPU_AB_RDY_ON_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_CTRL_REDY,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_CTRL_REDY,R1		;
+	.AENDI
+	MOV	#-1,R0
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	ANS R0=-1 準備完了OK	***
+;	***********************************
+;	相手CPUの状態検知
+_CPU_BA_RDY_ON_JG:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_HD_CTRL_REDY,R1		;
+	.AELSE
+	MOV.L	#_SH4_HD_CTRL_REDY,R1		;
+	.AENDI
+	MOV.W	@R1,R0
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	ANS R0=0 準備完了OK	***
+;	***********************************
+;	自分CPUの状態検知 出力結果OFF:ACK OK!
+_CPU_AB_RDY_OF_JG:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_CTRL_REDY,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_CTRL_REDY,R1		;
+	.AENDI
+	MOV.W	@R1,R0
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	BUSY 準備未完了		***
+;	***				***
+;	***********************************
+_CPU_AB_BSY_OF_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_CTRL_BUSY,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_CTRL_BUSY,R1		;
+	.AENDI
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;自分のCPUのRDY_OF
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	相手CPUの準備未完了ACK	***
+;	***********************************
+_CPU_BA_BSY_OF_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_HD_CTRL_BUSY,R1		;
+	.AELSE
+	MOV.L	#_SH4_HD_CTRL_BUSY,R1		;
+	.AENDI
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;相手CPUのRDY_OF
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	自分CPUの準備未完了	***
+;	***********************************
+_CPU_AB_BSY_ON_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_CTRL_BUSY,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_CTRL_BUSY,R1		;
+	.AENDI
+	MOV	#-1,R0
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	ANS R0=-1 準備未完了OK	***
+;	***********************************
+;	相手CPUの状態検知
+_CPU_BA_BSY_ON_JG:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_HD_CTRL_BUSY,R1		;
+	.AELSE
+	MOV.L	#_SH4_HD_CTRL_BUSY,R1		;
+	.AENDI
+	MOV.W	@R1,R0
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	ANS R0=0 準備未完了OK	***
+;	***********************************
+;	自分CPUの状態検知 出力結果OFF:ACK OK!
+_CPU_AB_BSY_OF_JG:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_CTRL_BUSY,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_CTRL_BUSY,R1		;
+	.AENDI
+	MOV.W	@R1,R0
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	STR 運転開始		***
+;	***				***
+;	***********************************
+_CPU_AB_STR_OF_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_POS_START,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_POS_START,R1		;
+	.AENDI
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;自分のCPUのRDY_OF
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	相手CPUの運転開始ACK	***
+;	***********************************
+_CPU_BA_STR_OF_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_HD_POS_START,R1		;
+	.AELSE
+	MOV.L	#_SH4_HD_POS_START,R1		;
+	.AENDI
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;相手CPUのRDY_OF
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	自分CPUの運転開始出力	***
+;	***********************************
+_CPU_AB_STR_ON_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_POS_START,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_POS_START,R1		;
+	.AENDI
+	MOV	#-1,R0
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	ANS R0=-1 運転開始OK	***
+;	***********************************
+;	相手CPUの状態検知
+_CPU_BA_STR_ON_JG:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_HD_POS_START,R1		;
+	.AELSE
+	MOV.L	#_SH4_HD_POS_START,R1		;
+	.AENDI
+	MOV.W	@R1,R0
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	ANS R0=0 運転開始OK	***
+;	***********************************
+;	自分CPUの状態検知 出力結果OFF:ACK OK!
+_CPU_AB_STR_OF_JG:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_POS_START,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_POS_START,R1		;
+	.AENDI
+	MOV.W	@R1,R0
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	AUTO	開始		***
+;	***				***
+;	***********************************
+_CPU_AB_DRVSTOP_OF_OUT:
+;;;;2007-03-02 _CPU_AB_ATO_OF_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_SFTY_AUTO,R1		;[AUTOを含めた停止]
+	.AELSE
+	MOV.L	#_SH2_HD_SFTY_AUTO,R1		;
+	.AENDI
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;自分のCPUのRDY_OF
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	相手CPUのAUTO ACK	***
+;	***********************************
+_CPU_BA_DRVSTOP_OF_OUT:
+;;2007-03-02 _CPU_BA_ATO_OF_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_HD_SFTY_AUTO,R1		;
+	.AELSE
+	MOV.L	#_SH4_HD_SFTY_AUTO,R1		;
+	.AENDI
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;相手CPUのRDY_OF
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***	自分CPUのAUTO:OFF停止 出力	***
+;	*******************************************
+;	2007-03-02 名称変更
+_CPU_AB_DRVSTOP_ON_OUT:
+;;2007-03-02 _CPU_AB_ATO_ON_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_SFTY_AUTO,R1		;-1:STOP [AUTOを含めた停止]
+	.AELSE
+	MOV.L	#_SH2_HD_SFTY_AUTO,R1		;
+	.AENDI
+	MOV	#-1,R0
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	ANS R0=-1 AUTO OK	***
+;	***********************************
+;	相手CPUの状態検知
+_CPU_BA_DRVSTOP_ON_JG:
+;;;2007-03-02 _CPU_BA_ON_JG:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_HD_SFTY_AUTO,R1		;
+	.AELSE
+	MOV.L	#_SH4_HD_SFTY_AUTO,R1		;
+	.AENDI
+	MOV.W	@R1,R0
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	ANS R0=0 AUTO OK	***
+;	***********************************
+;	自分CPUの状態検知 出力結果OFF:ACK OK!
+_CPU_AB_ATO_OF_JG:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_SFTY_AUTO,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_SFTY_AUTO,R1		;
+	.AENDI
+	MOV.W	@R1,R0
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	ニアゼロ開始		***
+;	***				***
+;	***********************************
+_CPU_AB_NZR_OF_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_NEAR_ZERO,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_NEAR_ZERO,R1		;
+	.AENDI
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;自分のCPUのRDY_OF
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	相手CPUのニアゼロ ACK	***
+;	***********************************
+_CPU_BA_NZR_OF_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_HD_NEAR_ZERO,R1		;
+	.AELSE
+	MOV.L	#_SH4_HD_NEAR_ZERO,R1		;
+	.AENDI
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;相手CPUのRDY_OF
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	自分CPUのNEAR ZERO 出力	***
+;	***********************************
+_CPU_AB_NZR_ON_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_NEAR_ZERO,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_NEAR_ZERO,R1		;
+	.AENDI
+	MOV	#-1,R0
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	ANS R0=-1 NEAR ZERO OK	***
+;	***********************************
+;	相手CPUの状態検知
+_CPU_BA_NZR_ON_JG:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_HD_NEAR_ZERO,R1		;
+	.AELSE
+	MOV.L	#_SH4_HD_NEAR_ZERO,R1		;
+	.AENDI
+	MOV.W	@R1,R0
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	ANS R0=0 NEAR ZERO OK	***
+;	***********************************
+;	自分CPUの状態検知 出力結果OFF:ACK OK!
+_CPU_AB_NZR_OF_JG:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_NEAR_ZERO,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_NEAR_ZERO,R1		;
+	.AENDI
+	MOV.W	@R1,R0
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	連続停止		***
+;	***				***
+;	***********************************
+_CPU_AB_CST_OF_OUT1:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_CNT_STOP,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_CNT_STOP,R1		;
+	.AENDI
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;自分のCPUの
+	SUB_END
+	M_RTS
+
+_CPU_AB_CST_OF_OUT2:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_CNT_CNT,R1		;連続停止しないで次へいくぞ
+	.AELSE
+	MOV.L	#_SH2_HD_CNT_CNT,R1		;
+	.AENDI
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;自分のCPUの
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	相手CPUの連続停止 ACK	***
+;	***********************************
+_CPU_BA_CST_OF_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_HD_CNT_STOP,R1		;
+	.AELSE
+	MOV.L	#_SH4_HD_CNT_STOP,R1		;
+	.AENDI
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;相手CPUのRDY_OF
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_HD_CNT_CNT,R1		;連続停止しないで次へいくぞ
+	.AELSE
+	MOV.L	#_SH4_HD_CNT_CNT,R1		;連続停止しないで次へいくぞ
+	.AENDI
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;相手CPUのRDY_OF
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	自分CPUの連続停止 出力	***
+;	***********************************
+_CPU_AB_CST_ON_OUT1:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_CNT_STOP,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_CNT_STOP,R1		;
+	.AENDI
+	MOV	#-1,R0
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+
+_CPU_AB_CST_ON_OUT2:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_CNT_CNT,R1		;連続停止しないで次へいくぞ
+	.AELSE
+	MOV.L	#_SH2_HD_CNT_CNT,R1		;連続停止しないで次へいくぞ
+	.AENDI
+	MOV	#-1,R0
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+
+
+
+;	***********************************
+;	***	ANS R0=-1 連続停止 OK	***
+;	***********************************
+;	相手CPUの状態検知
+_CPU_BA_CST_ON_JG:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_HD_CNT_STOP,R1		;
+	.AELSE
+	MOV.L	#_SH4_HD_CNT_STOP,R1		;
+	.AENDI
+	MOV.W	@R1,R0				;連続停止R0
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_HD_CNT_CNT,R1		;
+	.AELSE
+	MOV.L	#_SH4_HD_CNT_CNT,R1		;
+	.AENDI
+	MOV.W	@R1,R1				;次へいくぞR1
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	ANS R0=0 連続停止 OK	***
+;	***********************************
+;	自分CPUの状態検知 出力結果OFF:ACK OK!
+_CPU_AB_CST_OF_JG:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_CNT_STOP,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_CNT_STOP,R1		;
+	.AENDI
+	MOV.W	@R1,R0
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_CNT_CNT,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_CNT_CNT,R1		;
+	.AENDI
+	MOV.W	@R1,R1
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	ステップ停止		***
+;	***				***
+;	***********************************
+_CPU_AB_CED_OF_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_STEP_END,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_STEP_END,R1		;
+	.AENDI
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;自分のCPUのRDY_OF
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***	相手CPUのステップ停止 ACK	***
+;	*******************************************
+_CPU_BA_CED_OF_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_HD_STEP_END,R1		;
+	.AELSE
+	MOV.L	#_SH4_HD_STEP_END,R1		;
+	.AENDI
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;相手CPUのRDY_OF
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***	自分CPUのステップ停止 出力	***
+;	*******************************************
+_CPU_AB_CED_ON_OUT:
+	SUB_START
+	 .AIF	_PROC_CMPERR_CHG2016 EQ _CMPILE_YES	;
+;	-------- 2016-10-31 ADD 二重回路対策
+	 .AENDI
+;	-------------- デバック用カウンタ-----------
+	MOV.L	#_CNT_STOP_DBG_CNT,R1;//2016-10-31(2016-08-22) CHECK
+	MOV.W	@R1,R0
+	ADD	#1,R0
+	MOV.W	R0,@R1
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_STEP_END,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_STEP_END,R1		;
+	.AENDI
+	MOV	#-1,R0
+	MOV.W	R0,@R1				;
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***	ANS R0=-1 ステップ停止 OK	***
+;	*******************************************
+;	相手CPUの状態検知
+_CPU_BA_CED_ON_JG:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_HD_STEP_END,R1		;
+	.AELSE
+	MOV.L	#_SH4_HD_STEP_END,R1		;
+	.AENDI
+	MOV.W	@R1,R0
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***	ANS R0=0 ステップ停止 OK	***
+;	*******************************************
+;	自分CPUの状態検知 出力結果OFF:ACK OK!
+_CPU_AB_CED_OF_JG:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_STEP_END,R1		;
+	.AELSE
+	MOV.L	#_SH2_HD_STEP_END,R1		;
+	.AENDI
+	MOV.W	@R1,R0
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	相手CPUの工程をROへ	***
+;	***				***
+;	***********************************
+_CPU_BA_STEP_LOAD
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_STEP_NO,R1		;
+	.AELSE
+	MOV.L	#_SH4_STEP_NO,R1		;
+	.AENDI
+	MOV.L	@R1,R0				;相手CPU工程LOAD
+	SUB_END
+	M_RTS
+
+
+
+
+
+;	***********************************
+;	***				***
+;	***	位置決めﾎｰﾙﾄﾞ停止	***
+;	***	ｽﾗｲﾄﾞ自動待機		***
+;	***	2014-08-30		***
+;	***********************************
+;	R0=0以外(FFFF)で停止 R0=0で動作復帰
+
+
+_CPU_AB_DRVHLDSTOP_ON_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_HLDSTOP1,R1		;[AUTOを含めた停止]
+	.AELSE					;
+	MOV.L	#_SH2_HD_HLDSTOP1,R1		;
+	.AENDI					;
+	MOV.B	#-1,R0				;
+	MOV.W	R0,@R1				;自分のCPUのRDY_OF
+	SUB_END
+	M_RTS
+
+_CPU_AB_DRVHLDSTOP_OF_OUT:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH4_HD_HLDSTOP1,R1		;[AUTOを含めた停止]
+	.AELSE
+	MOV.L	#_SH2_HD_HLDSTOP1,R1		;
+	.AENDI
+	XOR	R0,R0				;
+	MOV.W	R0,@R1				;自分のCPUのRDY_OF
+	SUB_END
+	M_RTS
+
+
+_CPU_BA_DRVHLDSTOP_ON_JG:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_HD_HLDSTOP1,R1		;
+	.AELSE
+	MOV.L	#_SH4_HD_HLDSTOP1,R1		;
+	.AENDI
+	MOV.W	@R1,R0
+	SUB_END
+	M_RTS
+
+
+_CPU_BA_DRVHLDSTOP_OF_JG:
+	SUB_START
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+	MOV.L	#_SH2_HD_HLDSTOP1,R1		;
+	.AELSE
+	MOV.L	#_SH4_HD_HLDSTOP1,R1		;
+	.AENDI
+	MOV.W	@R1,R0
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+;	***********************************
+;	***				***
+;	***				***
+;	***				***
+;	***********************************
+
+	.EXPORT	_POS_LSI_DT_LATCH	;ssa_khad.src\ssa_Khd2/4.INC
+
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+		.INCLUDE	"ssa_khd4.inc"		;
+	.AELSE
+		.INCLUDE	"ssa_khd2.inc"		;
+	.AENDI
+
+	.END

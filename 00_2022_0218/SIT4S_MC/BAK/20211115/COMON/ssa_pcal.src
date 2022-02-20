@@ -1,0 +1,3613 @@
+;	***************************************************
+;	***						***
+;	***						***
+;	***	カム					***
+;	***						***
+;	***						***
+;	***************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"		; //共通定義:必ず実行ﾌﾟﾛｸﾞﾗﾑにｲﾝｸﾙｰﾄﾞする事
+	.INCLUDE	"shn_cmd1.mac"		; //
+	.INCLUDE	"ssa_kmc1.mac"		; //
+	.INCLUDE	"ssa_pfom.equ"		; //equ定義
+	.INCLUDE	"ssa_khad.equ"		; //equ定義
+	.INCLUDE	"ssa_wrmk.ext"		; //
+	.INCLUDE	"ssa_ver1.equ"		; //
+	.INCLUDE	"dp_cpuab.ext"		; //
+	.INCLUDE	"dp_cpud.ext"		; //[2013-11-29 MC]
+	.INCLUDE	"ssa_krom.ext"		; //
+	
+	.LIST	ON
+
+	.SECTION	P,CODE			;
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 PROGRAM	***
+;	//	***********************************
+	.IMPORT		_SV_CLNK_DG_CHG_LINK_DG1
+
+	.IMPORT		_PAR_WTSEL_USE
+
+
+;	//	***********************************
+;	//	***	EXTERN 宣言 MEMORY,HARD	***
+;	//	***********************************
+
+
+;	//	***********************************
+;	//	***	PUBLIC 宣言 PROGRAM	***
+;	//	***********************************
+;	"開始工程番号=終了工程番号=0なら位置ｶﾑ"
+;	"設定で工程番号=-1なら最終工程"
+;	*往復運転の場合はミラー型の実測を作るしかないでしょう：実際には使えないだろう
+;	工程か純然たる位置カム程度しか使えないでしょう！
+;	モータ軸の位置カムから
+
+_GMN_LAST_STEP	.EQU	-1
+
+
+
+_ROTCAM_SIN_CNT	.EQU	16	;
+
+
+
+;_SVP_ROTCAM_ONR		.SRES	2	;ﾛｰﾀﾘｶﾑ ON行程 ﾘﾋﾟｰﾄ戻り
+;_SVP_ROTCAM_OFR		.SRES	2	;ﾛｰﾀﾘｶﾑ OFF行程 ﾘﾋﾟｰﾄ戻り
+;_SVP_EJECAM_ONR		.SRES	2	;ｴｼﾞｪｸﾀ ON行程 ﾘﾋﾟｰﾄ戻り
+;_SVP_EJECAM_OFR		.SRES	2	;ｴｼﾞｪｸﾀ OFF行程 ﾘﾋﾟｰﾄ戻り
+;_SVP_MISCAM_ONR		.SRES	2	;ﾐｽﾌｨｰﾄﾞ  ON行程 ﾘﾋﾟｰﾄ戻り
+;_SVP_MISCAM_OFR		.SRES	2	;ﾐｽﾌｨｰﾄﾞ  OFF行程 ﾘﾋﾟｰﾄ戻り
+
+
+	.EXPORT	_CAM_DATA_MOV
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+
+
+;						  工程位置ｶﾑ　位置カム 工程ﾀｲﾏｶﾑ　タイマカム
+;_CAM_ON_STP		.EQU	0*2;                   ○	"0"	○	  "0"
+;_CAM_ON_DIG		.EQU	1*2;                   ○       ○      ○        ○
+;_CAM_ON_DIR		.EQU	2*2;未使用             ×       ×      ×        ×
+;_CAM_OF_STP		.EQU	3*2;                   ○       ×      ○        ×
+;_CAM_OF_DIG(SV_TIM)	.EQU	4*2;DIG/TIM10msec      ○       "0"     ○        ○
+;_CAM_OF_DIR		.EQU	5*2;未使用             ×       ×      ×        ×
+;_CAM_OF_DGT(PV_TIM)	.EQU	6*2;内部ﾀｲﾏ時          ×       ×      ○        ○
+;_CAM_DT_FLG		.EQU	7*2;(BIT0:ON END BIT1) ×       ×      ○        ○
+;_CAM_INF_D1		.EQU	8*2;(BIT0:ON繰返戻行程 ◎       ×      ◎        ×
+;_CAM_INF_D2		.EQU	9*2;予備               ×       ×      ×        ×
+
+;	***************************************************
+;	***		カムデータMOVE			***
+;	***************************************************
+;	U2b	SET1_RCAMON_POS_TOP[10*48]	;//後から考える
+;	U2b	SET1_RCAMON_TIM_TOP[10*48]	;//1つの構造はON工程/ON角度/ON方向/OF工程/OF角度/OF方向
+;	*******************************************
+;	***	カム演算は3.3msec<ｼｰｹﾝｽ演算周期>	***
+;	*******************************************
+;	R13(1:位置ｶﾑ 0:工程ｶﾑ),R14(ｼｰｹﾝｽENBﾋﾞｯﾄ) USED
+;	R12(BIT)
+;	R10(ON-REPEAT行程指定)
+;	R11(OF-REPEAT行程指定)
+;	R0,R1
+;	R2,R4
+;	*******************************************************************
+;	***								***
+;	***	ON側　行程+位置カム					***
+;	***	OFF側 行程+位置カム(CAM_SEL=0)、タイマカム(CAM_SEL=1)	***
+;	***	進角無し						***
+;	***								***
+;	***	ﾘﾋﾟｰﾄ戻り行程対応 2014-09-22				***
+;	*******************************************************************
+
+	.MACRO	POS_CAM_MOV1 RON_STEP,RON_DT,ROF_STEP,ROF_DT,BASE_REG,FLG_BIT,CAM_SEL
+	LDC	\BASE_REG,GBR				;
+	MOV.W	#\FLG_BIT,R12				;
+
+	MOV.L	#\RON_DT,R1				;
+	MOV.W	@R1,R2					;
+	FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0		;R0,R1,R2使用
+	MOV	R2,R0					;
+	MOV.W	R0,@(_CAM_ON_DIG,GBR)			;
+
+;	--------- 2014-09-22--------------
+	TST	R12,R10					;2014-09-22 "R10=ON"
+	TST_BIT_OF JMPON_REP01\@				;ﾘﾋﾟｰﾄON行程ではない
+
+	MOV.W	@(_CAM_INF_D1,GBR),R0			;
+	OR	#BIT0,R0				;
+	MOV.W	R0,@(_CAM_INF_D1,GBR)			;
+
+	MOV.L	#_SET1_MOTREP_STGE,R1			;//繰り返し開始行程 0,1~11,"*"
+	MOV.W	@R1,R0					;
+	M_BRA	JMPON_REP02\@				;
+;	---------------------------------
+JMPON_REP01\@:						;
+;	--------- 2014-09-22--------------
+	MOV.W	@(_CAM_INF_D1,GBR),R0			;
+	AND	#LOW ~BIT0,R0				;
+	MOV.W	R0,@(_CAM_INF_D1,GBR)			;
+;	---------------------------------
+	MOV.L	#\RON_STEP,R1				;
+	MOV.W	@R1,R0					;
+JMPON_REP02\@:						;
+	FAR_JSR	#_POS_CAM_STEP_DATA_CHK,R1		;1~5,E,0ﾁｪｯｸ Input R0,R13, OUT R14,R0
+							;R0,R1,R2,R4,R12,R13使用
+	MOV.W	R0,@(_CAM_ON_STP,GBR)			;ON行程
+
+
+
+	MOV.L	#\ROF_DT,R1				;
+	MOV.W	@R1,R2					;
+	.AIF 	\CAM_SEL EQ  0				;位置ｶﾑ
+		FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0	;
+	.AELSE	
+							;ﾀｲﾏｶﾑ
+		MOV	R2,R0				;
+		ADD	R2,R2				;*2
+;;;;[2015-03-18 3.3->5]		ADD	R0,R2				;*3 3.333msec*3=10.0msec
+	.AENDI
+
+	MOV	R2,R0				;
+	MOV.W	R0,@(_CAM_OF_DIG,GBR)		;
+
+
+	.AIF 	\CAM_SEL EQ  0
+;位置ｶﾑのみ行程有効
+;	--------- 2014-09-22--------------
+	TST	R12,R11					;2014-09-22 "R10=ON"
+	TST_BIT_OF JMPOF_REP01\@			;ﾘﾋﾟｰﾄON行程ではない
+
+	MOV.W	@(_CAM_INF_D1,GBR),R0			;
+	OR	#BIT1,R0				;
+	MOV.W	R0,@(_CAM_INF_D1,GBR)			;
+
+	MOV.L	#_SET1_MOTREP_STGE,R1			;//繰り返し開始行程 0,1~11,"*"
+	MOV.W	@R1,R0					;
+	M_BRA	JMPOF_REP02\@				;
+;	---------------------------------
+JMPOF_REP01\@:						;
+;	--------- 2014-09-22--------------
+	MOV.W	@(_CAM_INF_D1,GBR),R0			;
+	AND	#LOW ~BIT1,R0				;
+	MOV.W	R0,@(_CAM_INF_D1,GBR)			;
+;	---------------------------------
+	MOV.L	#\ROF_STEP,R1				;
+	MOV.W	@R1,R0					;
+JMPOF_REP02\@:						;
+	FAR_JSR	#_POS_CAM_STEP_DATA_CHK,R1		;1~5,E,0ﾁｪｯｸ Input R0,R12,R14, OUT R13,R14,R0
+
+	.AELSE						;
+
+	MOV.L	#\ROF_STEP,R1				;ﾀｲﾏｶﾑでは使用しないが一応入れておく
+	MOV.W	@R1,R0					;
+
+	.AENDI					;
+
+	MOV.W	R0,@(_CAM_OF_STP,GBR)			;//ﾀｲﾏｶﾑでは行程は使用しない
+	ADD	#_CAM_STRCUT,\BASE_REG			;
+	.ENDM
+
+
+
+;	*******************************************************************
+;	***								***
+;	***	ON側　行程+位置カム					***
+;	***	OFF側 行程+位置カム					***
+;	***	進角有り						***
+;	***								***
+;	***	ﾘﾋﾟｰﾄ戻り行程対応 2014-09-22				***
+;	***	ﾘﾝｸ/ｸﾗﾝｸ混在しているので手直ししたい(暫定部分)		***
+;	***	進角が位置指定だとｸﾗﾝｸで引き算,ﾀｲﾏ指定だとﾘﾝｸで引き算	***
+;	*******************************************************************
+;	--------- 暫定--------
+	.MACRO	POS_CAM_MOV2 RON_STEP,RON_DT,ROF_STEP,ROF_DT,BASE_REG,FLG_BIT,ON_SIN,OF_SIN,SQONSEL,SQOFSEL
+	LDC	\BASE_REG,GBR				;
+	MOV.W	#\FLG_BIT,R12				;
+
+	MOV.L	#\RON_DT,R1				;
+	MOV.W	@R1,R2					;
+
+	MOV.L	#\SQONSEL,R1				;暫定部分
+	MOV.W	@R1,R0					;暫定部分
+	TST	R12,R0					;暫定部分 進角=ﾀｲﾏ指定?
+	TST_BIT_ON JMP1_TIMON\@				;暫定部分
+
+;	----------------------input r2------------------
+	MOV.L	#\ON_SIN,R1				;暫定部分
+	MOV.W	@R1,R0					;暫定部分
+	SUB	R0,R2					;暫定部分
+	CMP/PZ	R2					;暫定部分
+	BT	JMP1_POSON\@				;暫定部分
+	FAR_JSR	#_SIN_RCAMON_ERR_SIGSET,R0		;暫定部分
+	MOV.W	#D'3600,R0				;暫定部分
+	ADD	R0,R2					;暫定部分
+JMP1_POSON\@:						;暫定部分
+;	----------------------output r2--------------------
+	FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0		;ANS:R2
+	M_BRA	JMP_ONEND\@				;
+
+
+;	===================================================
+JMP1_TIMON\@:							;
+
+	FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0		;ANS:R2
+
+;	----------------------input r2------------------
+	MOV.L	#\ON_SIN,R1				;
+	MOV.W	@R1,R0					;
+	SUB	R0,R2					;
+	CMP/PZ	R2					;
+	BT	JMP2_TIMON\@				;
+	FAR_JSR	#_SIN_RCAMON_ERR_SIGSET,R0		;暫定部分
+	MOV.W	#D'3600,R0				;
+	ADD	R0,R2					;
+JMP2_TIMON\@:							;
+;	----------------------output r2--------------------
+	M_BRA	JMP_ONEND\@				;
+
+
+JMP_ONEND\@:						;
+	MOV	R2,R0					;
+	MOV.W	R0,@(_CAM_ON_DIG,GBR)			;
+
+;	--------------- ON行程入力-----------
+;	--------- 2014-09-22--------------
+	TST	R12,R10					;2014-09-22 "R10=ON"
+	TST_BIT_OF JMPON_REP01\@				;ﾘﾋﾟｰﾄON行程ではない
+
+	MOV.W	@(_CAM_INF_D1,GBR),R0			;
+	OR	#BIT0,R0				;
+	MOV.W	R0,@(_CAM_INF_D1,GBR)			;
+
+	MOV.L	#_SET1_MOTREP_STGE,R1			;//繰り返し開始行程 0,1~11,"*"
+	MOV.W	@R1,R0					;
+	M_BRA	JMPON_REP02\@				;
+;	---------------------------------
+JMPON_REP01\@:						;
+;	--------- 2014-09-22--------------
+	MOV.W	@(_CAM_INF_D1,GBR),R0			;
+	AND	#LOW ~BIT0,R0				;
+	MOV.W	R0,@(_CAM_INF_D1,GBR)			;
+;	---------------------------------
+	MOV.L	#\RON_STEP,R1				;
+	MOV.W	@R1,R0					;
+JMPON_REP02\@:						;
+	FAR_JSR	#_POS_CAM_STEP_DATA_CHK,R1		;1~5,E,0ﾁｪｯｸ Input R0,R13, OUT R14,R0
+	MOV.W	R0,@(_CAM_ON_STP,GBR)			;
+
+
+
+;	========== OFF行程============
+	MOV.L	#\ROF_DT,R1			;
+	MOV.W	@R1,R2				;
+
+	MOV.L	#\SQOFSEL,R1				;
+	MOV.W	@R1,R0					;
+	TST	R12,R0					;進角=ﾀｲﾏ指定?
+	TST_BIT_ON JMP1_TIMOF\@				;
+
+;	----------------------input r2------------------
+	MOV.L	#\OF_SIN,R1				;
+	MOV.W	@R1,R0					;
+	SUB	R0,R2					;
+	CMP/PZ	R2					;
+	BT	JMP1_POSOF\@				;
+	FAR_JSR	#_SIN_RCAMOF_ERR_SIGSET,R0		;暫定部分
+	MOV.W	#D'3600,R0				;
+	ADD	R0,R2					;
+JMP1_POSOF\@:						;
+;	----------------------output r2--------------------
+	FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0	;(位置ｶﾑ)
+	M_BRA	JMP_OFEND\@				;
+
+
+JMP1_TIMOF\@:
+	FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0	;(位置ｶﾑ)
+;	----------------------input r2------------------
+	MOV.L	#\OF_SIN,R1				;
+	MOV.W	@R1,R0					;
+	SUB	R0,R2					;
+	CMP/PZ	R2					;
+	BT	JMP2_TIMOF\@				;
+	FAR_JSR	#_SIN_RCAMOF_ERR_SIGSET,R0		;暫定部分
+	MOV.W	#D'3600,R0				;
+	ADD	R0,R2					;
+JMP2_TIMOF\@:						;
+;	----------------------output r2--------------------
+	M_BRA	JMP_OFEND\@				;
+
+
+JMP_OFEND\@:						;
+	MOV	R2,R0				;
+	MOV.W	R0,@(_CAM_OF_DIG,GBR)		;
+
+
+
+;	--------- 2014-09-22--------------
+	TST	R12,R11					;2014-09-22 "R10=ON"
+	TST_BIT_OF JMPOF_REP01\@			;ﾘﾋﾟｰﾄON行程ではない
+
+	MOV.W	@(_CAM_INF_D1,GBR),R0			;
+	OR	#BIT1,R0				;
+	MOV.W	R0,@(_CAM_INF_D1,GBR)			;
+
+	MOV.L	#_SET1_MOTREP_STGE,R1			;//繰り返し開始行程 0,1~11,"*"
+	MOV.W	@R1,R0					;
+	M_BRA	JMPOF_REP02\@				;
+;	---------------------------------
+JMPOF_REP01\@:						;
+;	--------- 2014-09-22--------------
+	MOV.W	@(_CAM_INF_D1,GBR),R0			;
+	AND	#LOW ~BIT1,R0				;
+	MOV.W	R0,@(_CAM_INF_D1,GBR)			;
+;	---------------------------------
+	MOV.L	#\ROF_STEP,R1				;
+	MOV.W	@R1,R0					;
+JMPOF_REP02\@:						;
+	FAR_JSR	#_POS_CAM_STEP_DATA_CHK,R1		;1~5,E,0ﾁｪｯｸ Input R0,R12,R14, OUT R13,R14,R0
+	MOV.W	R0,@(_CAM_OF_STP,GBR)			;
+
+
+
+	ADD	#_CAM_STRCUT,\BASE_REG		;
+	M_BRA	JMP3\@				;ﾗﾍﾞﾙ
+
+JMP3\@:							;
+
+	.ENDM
+
+;	*******************************************************************
+;	***								***
+;	***	ON側　行程+位置カム					***
+;	***	OFF側 行程+位置カム(CAM_SEL=0)、タイマカム(CAM_SEL=1)	***
+;	***	進角無し						***
+;	***								***
+;	***	ﾘﾋﾟｰﾄ戻り行程未対応					***
+;	*******************************************************************
+;;;	-------------------- 2014-09-22 --------------
+;;;	.MACRO	POS_CAM_MOV1 RON_STEP,RON_DT,ROF_STEP,ROF_DT,BASE_REG,FLG_BIT,CAM_SEL
+;;;	LDC	\BASE_REG,GBR				;
+;;;	MOV.W	#\FLG_BIT,R12				;
+;;;
+;;;	MOV.L	#\RON_DT,R1				;
+;;;	MOV.W	@R1,R2					;
+;;;	FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0		;R0,R1,R2使用
+;;;	MOV	R2,R0					;
+;;;	MOV.W	R0,@(_CAM_ON_DIG,GBR)			;
+;;;
+;;;	MOV.L	#\RON_STEP,R1				;
+;;;	MOV.W	@R1,R0					;
+;;;	FAR_JSR	#_POS_CAM_STEP_DATA_CHK,R1		;1~5,E,0ﾁｪｯｸ Input R0,R13, OUT R14,R0
+;;;							;R0,R1,R2,R4,R12,R13使用
+;;;	MOV.W	R0,@(_CAM_ON_STP,GBR)			;ON行程
+;;;
+;;;	MOV.L	#\ROF_DT,R1				;
+;;;	MOV.W	@R1,R2					;
+;;;	.AIF 	\CAM_SEL EQ  0				;位置ｶﾑ
+;;;		FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0	;
+;;;	.AELSE	
+;;;							;ﾀｲﾏｶﾑ
+;;;		MOV	R2,R0				;
+;;;		ADD	R2,R2				;*2
+;;;		ADD	R0,R2				;*3 3.333msec*3=10.0msec
+;;;	.AENDI
+;;;
+;;;	MOV	R2,R0				;
+;;;	MOV.W	R0,@(_CAM_OF_DIG,GBR)		;
+;;;
+;;;	MOV.L	#\ROF_STEP,R1			;
+;;;	MOV.W	@R1,R0				;
+;;;		.AIF 	\CAM_SEL EQ  0
+;;;		FAR_JSR	#_POS_CAM_STEP_DATA_CHK,R1	;1~5,E,0ﾁｪｯｸ Input R0,R12,R14, OUT R13,R14,R0
+;;;							;R0,R1,R2,R4
+;;;		.AELSE	
+;;;		.AENDI
+;;;	MOV.W	R0,@(_CAM_OF_STP,GBR)		;
+;;;	ADD	#_CAM_STRCUT,\BASE_REG		;
+;;;	.ENDM
+
+
+;	*******************************************************************
+;	***								***
+;	***	ON側　行程+位置カム					***
+;	***	OFF側 行程+位置カム(CAM_SEL=0)				***
+;	***	進角有り						***
+;	***								***
+;	***	ﾘﾋﾟｰﾄ戻り行程対応無し					***
+;	***	ﾘﾝｸ/ｸﾗﾝｸ混在しているので手直ししたい			***
+;	*******************************************************************
+;;;	-------------------- 2014-09-22 --------------
+;;;;	--------- 暫定 進角--------
+;;;	.MACRO	POS_CAM_MOV2 RON_STEP,RON_DT,ROF_STEP,ROF_DT,BASE_REG,FLG_BIT,ON_SIN,OF_SIN,SQONSEL,SQOFSEL
+;;;	LDC	\BASE_REG,GBR				;
+;;;	MOV.W	#\FLG_BIT,R12				;
+;;;
+;;;	MOV.L	#\RON_DT,R1				;
+;;;	MOV.W	@R1,R2					;
+;;;
+;;;	MOV.L	#\SQONSEL,R1				;暫定部分
+;;;	MOV.W	@R1,R0					;暫定部分
+;;;	TST	R12,R0					;暫定部分 進角=ﾀｲﾏ指定?
+;;;	TST_BIT_ON JMP1_TIMON\@				;暫定部分
+;;;
+;;;;	----------------------input r2------------------
+;;;	MOV.L	#\ON_SIN,R1				;暫定部分
+;;;	MOV.W	@R1,R0					;暫定部分
+;;;	SUB	R0,R2					;暫定部分
+;;;	CMP/PZ	R2					;暫定部分
+;;;	BT	JMP1_POSON\@				;暫定部分
+;;;	FAR_JSR	#_SIN_RCAMON_ERR_SIGSET,R0		;暫定部分
+;;;	MOV.W	#D'3600,R0				;暫定部分
+;;;	ADD	R0,R2					;暫定部分
+;;;JMP1_POSON\@:						;暫定部分
+;;;;	----------------------output r2--------------------
+;;;	FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0		;ANS:R2
+;;;	M_BRA	JMP_ONEND\@				;
+;;;
+;;;
+;;;;	===================================================
+;;;JMP1_TIMON\@:							;
+;;;
+;;;	FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0		;ANS:R2
+;;;
+;;;;	----------------------input r2------------------
+;;;	MOV.L	#\ON_SIN,R1				;
+;;;	MOV.W	@R1,R0					;
+;;;	SUB	R0,R2					;
+;;;	CMP/PZ	R2					;
+;;;	BT	JMP2_TIMON\@				;
+;;;	FAR_JSR	#_SIN_RCAMON_ERR_SIGSET,R0		;暫定部分
+;;;	MOV.W	#D'3600,R0				;
+;;;	ADD	R0,R2					;
+;;;JMP2_TIMON\@:							;
+;;;;	----------------------output r2--------------------
+;;;	M_BRA	JMP_ONEND\@				;
+;;;
+;;;
+;;;JMP_ONEND\@:						;
+;;;	MOV	R2,R0					;
+;;;	MOV.W	R0,@(_CAM_ON_DIG,GBR)			;
+;;;
+;;;
+;;;
+;;;;	========== OFF行程============
+;;;	MOV.L	#\RON_STEP,R1				;
+;;;	MOV.W	@R1,R0					;
+;;;	FAR_JSR	#_POS_CAM_STEP_DATA_CHK,R1		;1~5,E,0ﾁｪｯｸ Input R0,R13, OUT R14,R0
+;;;	MOV.W	R0,@(_CAM_ON_STP,GBR)			;
+;;;
+;;;	MOV.L	#\ROF_DT,R1			;
+;;;	MOV.W	@R1,R2				;
+;;;
+;;;	MOV.L	#\SQOFSEL,R1				;
+;;;	MOV.W	@R1,R0					;
+;;;	TST	R12,R0					;進角=ﾀｲﾏ指定?
+;;;	TST_BIT_ON JMP1_TIMOF\@				;
+;;;
+;;;;	----------------------input r2------------------
+;;;	MOV.L	#\OF_SIN,R1				;
+;;;	MOV.W	@R1,R0					;
+;;;	SUB	R0,R2					;
+;;;	CMP/PZ	R2					;
+;;;	BT	JMP1_POSOF\@				;
+;;;	FAR_JSR	#_SIN_RCAMOF_ERR_SIGSET,R0		;暫定部分
+;;;	MOV.W	#D'3600,R0				;
+;;;	ADD	R0,R2					;
+;;;JMP1_POSOF\@:						;
+;;;;	----------------------output r2--------------------
+;;;	FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0	;(位置ｶﾑ)
+;;;	M_BRA	JMP_OFEND\@				;
+;;;
+;;;
+;;;JMP1_TIMOF\@:
+;;;	FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0	;(位置ｶﾑ)
+;;;;	----------------------input r2------------------
+;;;	MOV.L	#\OF_SIN,R1				;
+;;;	MOV.W	@R1,R0					;
+;;;	SUB	R0,R2					;
+;;;	CMP/PZ	R2					;
+;;;	BT	JMP2_TIMOF\@				;
+;;;	FAR_JSR	#_SIN_RCAMOF_ERR_SIGSET,R0		;暫定部分
+;;;	MOV.W	#D'3600,R0				;
+;;;	ADD	R0,R2					;
+;;;JMP2_TIMOF\@:						;
+;;;;	----------------------output r2--------------------
+;;;	M_BRA	JMP_OFEND\@				;
+;;;
+;;;
+;;;JMP_OFEND\@:						;
+;;;	MOV	R2,R0				;
+;;;	MOV.W	R0,@(_CAM_OF_DIG,GBR)		;
+;;;
+;;;	MOV.L	#\ROF_STEP,R1			;
+;;;	MOV.W	@R1,R0				;
+;;;	FAR_JSR	#_POS_CAM_STEP_DATA_CHK,R1	;1~5,E,0ﾁｪｯｸ Input R0,R12,R14, OUT R13,R14,R0
+;;;	MOV.W	R0,@(_CAM_OF_STP,GBR)		;
+;;;	ADD	#_CAM_STRCUT,\BASE_REG		;
+;;;	M_BRA	JMP3\@				;ﾗﾍﾞﾙ
+;;;
+;;;JMP3\@:							;
+;;;
+;;;	.ENDM
+
+
+
+
+;;;	.MACRO	POS_CAM_MOV2 RON_STEP,RON_DT,ROF_STEP,ROF_DT,BASE_REG,FLG_BIT,ON_SIN,OF_SIN
+;;;	LDC	\BASE_REG,GBR				;
+;;;	MOV.W	#\FLG_BIT,R12				;
+;;;
+;;;	MOV.L	#\RON_DT,R1				;
+;;;	MOV.W	@R1,R2					;
+;;;
+;;;	FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0		;ANS:R2
+;;;
+;;;;	----------------------input r2------------------
+;;;	MOV.L	#\ON_SIN,R1				;
+;;;	MOV.W	@R1,R0					;
+;;;	SUB	R0,R2					;
+;;;	CMP/PZ	R2					;
+;;;	BT	JMP1\@					;
+;;;	MOV.W	#D'3600,R0				;
+;;;	ADD	R0,R2					;
+;;;JMP1\@:							;
+;;;;	----------------------output r2--------------------
+;;;	MOV	R2,R0					;
+;;;	MOV.W	R0,@(_CAM_ON_DIG,GBR)			;
+;;;
+;;;	MOV.L	#\RON_STEP,R1			;
+;;;	MOV.W	@R1,R0				;
+;;;	FAR_JSR	#_POS_CAM_STEP_DATA_CHK,R1	;1~5,E,0ﾁｪｯｸ Input R0,R13, OUT R14,R0
+;;;	MOV.W	R0,@(_CAM_ON_STP,GBR)		;
+;;;
+;;;
+;;;
+;;;	MOV.L	#\ROF_DT,R1			;
+;;;	MOV.W	@R1,R2				;
+;;;	FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0	;(位置ｶﾑ)
+;;;;	----------------------input r2------------------
+;;;	MOV.L	#\OF_SIN,R1				;
+;;;	MOV.W	@R1,R0					;
+;;;	SUB	R0,R2					;
+;;;	CMP/PZ	R2					;
+;;;	BT	JMP2\@					;
+;;;	MOV.W	#D'3600,R0				;
+;;;	ADD	R0,R2					;
+;;;JMP2\@:							;
+;;;;	----------------------output r2--------------------
+;;;
+;;;	MOV	R2,R0				;
+;;;	MOV.W	R0,@(_CAM_OF_DIG,GBR)		;
+;;;
+;;;	MOV.L	#\ROF_STEP,R1			;
+;;;	MOV.W	@R1,R0				;
+;;;	FAR_JSR	#_POS_CAM_STEP_DATA_CHK,R1	;1~5,E,0ﾁｪｯｸ Input R0,R12,R14, OUT R13,R14,R0
+;;;	MOV.W	R0,@(_CAM_OF_STP,GBR)		;
+;;;	ADD	#_CAM_STRCUT,\BASE_REG		;
+;;;	M_BRA	JMP3\@				;ﾗﾍﾞﾙ
+;;;
+;;;JMP3\@:							;
+;;;
+;;;	.ENDM
+
+
+
+_CAM_DATA_MOV:
+	SUB_START
+
+	XOR	R0,R0				;仮
+	MOV.L	#_SIN_RCAM_ON_ERR1,R1		;
+	MOV.W	R0,@R1				;
+	MOV.L	#_SIN_RCAM_OF_ERR1,R1		;
+	MOV.W	R0,@R1				;
+
+
+	MOV.L	#_SETX_POS_STEP_MAX,R1				;//設定=1~10(2~11)
+	MOV.W	@R1,R0			;
+	MOV.L	#_CAM_STEP_MAX,R1	;
+	MOV.W	R0,@R1			;
+
+	MOV.L	#_SET1_RCAMON_POS_TOP,R9	;//後から考える
+	XOR	R13,R13				;位置ｶﾑ=1,工程=0
+	MOV.L	#_SEQAB_DP_TOP+38*2,R1		;
+	MOV.W	@R1,R14				;位置カム:ロータリカム
+
+
+
+	MOV.L	#_SVP_ROTCAM_ONR,R1	;ﾛｰﾀﾘｶﾑ ON行程 ﾘﾋﾟｰﾄ戻り
+	MOV.W	@R1,R10			;
+	MOV.L	#_SVP_ROTCAM_OFR,R1	;ﾛｰﾀﾘｶﾑ OFF行程 ﾘﾋﾟｰﾄ戻り
+	MOV.W	@R1,R11			;
+
+
+;;;;	POS_CAM_MOV1 _SVP_RCAMON_P000,_SVP_RCAMON_D000,_SVP_RCAMOF_P000,_SVP_RCAMOF_D000,R9,BIT0,0
+;;;;	POS_CAM_MOV1 _SVP_RCAMON_P001,_SVP_RCAMON_D001,_SVP_RCAMOF_P001,_SVP_RCAMOF_D001,R9,BIT1,0
+;;;;	POS_CAM_MOV1 _SVP_RCAMON_P002,_SVP_RCAMON_D002,_SVP_RCAMOF_P002,_SVP_RCAMOF_D002,R9,BIT2,0
+;;;;	POS_CAM_MOV1 _SVP_RCAMON_P003,_SVP_RCAMON_D003,_SVP_RCAMOF_P003,_SVP_RCAMOF_D003,R9,BIT3,0
+;;;;	POS_CAM_MOV1 _SVP_RCAMON_P004,_SVP_RCAMON_D004,_SVP_RCAMOF_P004,_SVP_RCAMOF_D004,R9,BIT4,0
+;;;;	POS_CAM_MOV1 _SVP_RCAMON_P005,_SVP_RCAMON_D005,_SVP_RCAMOF_P005,_SVP_RCAMOF_D005,R9,BIT5,0
+;;;;	POS_CAM_MOV1 _SVP_RCAMON_P006,_SVP_RCAMON_D006,_SVP_RCAMOF_P006,_SVP_RCAMOF_D006,R9,BIT6,0
+;;;;	POS_CAM_MOV1 _SVP_RCAMON_P007,_SVP_RCAMON_D007,_SVP_RCAMOF_P007,_SVP_RCAMOF_D007,R9,BIT7,0
+
+
+	POS_CAM_MOV2 _SVP_RCAMON_P000,_SVP_RCAMON_D000,_SVP_RCAMOF_P000,_SVP_RCAMOF_D000,R9,BIT0,
++		_SIN_RCAM_ON_DIG+0*2,_SIN_RCAM_OF_DIG+0*2,_SIN_RCAMON_SW1,_SIN_RCAMOF_SW1
+
+	POS_CAM_MOV2 _SVP_RCAMON_P001,_SVP_RCAMON_D001,_SVP_RCAMOF_P001,_SVP_RCAMOF_D001,R9,BIT1,
++		_SIN_RCAM_ON_DIG+1*2,_SIN_RCAM_OF_DIG+1*2,_SIN_RCAMON_SW1,_SIN_RCAMOF_SW1
+
+	POS_CAM_MOV2 _SVP_RCAMON_P002,_SVP_RCAMON_D002,_SVP_RCAMOF_P002,_SVP_RCAMOF_D002,R9,BIT2,
++		_SIN_RCAM_ON_DIG+2*2,_SIN_RCAM_OF_DIG+2*2,_SIN_RCAMON_SW1,_SIN_RCAMOF_SW1
+
+	POS_CAM_MOV2 _SVP_RCAMON_P003,_SVP_RCAMON_D003,_SVP_RCAMOF_P003,_SVP_RCAMOF_D003,R9,BIT3,
++		_SIN_RCAM_ON_DIG+3*2,_SIN_RCAM_OF_DIG+3*2,_SIN_RCAMON_SW1,_SIN_RCAMOF_SW1
+
+	POS_CAM_MOV2 _SVP_RCAMON_P004,_SVP_RCAMON_D004,_SVP_RCAMOF_P004,_SVP_RCAMOF_D004,R9,BIT4,
++		_SIN_RCAM_ON_DIG+4*2,_SIN_RCAM_OF_DIG+4*2,_SIN_RCAMON_SW1,_SIN_RCAMOF_SW1
+
+	POS_CAM_MOV2 _SVP_RCAMON_P005,_SVP_RCAMON_D005,_SVP_RCAMOF_P005,_SVP_RCAMOF_D005,R9,BIT5,
++		_SIN_RCAM_ON_DIG+5*2,_SIN_RCAM_OF_DIG+5*2,_SIN_RCAMON_SW1,_SIN_RCAMOF_SW1
+
+	POS_CAM_MOV2 _SVP_RCAMON_P006,_SVP_RCAMON_D006,_SVP_RCAMOF_P006,_SVP_RCAMOF_D006,R9,BIT6,
++		_SIN_RCAM_ON_DIG+6*2,_SIN_RCAM_OF_DIG+6*2,_SIN_RCAMON_SW1,_SIN_RCAMOF_SW1
+
+	POS_CAM_MOV2 _SVP_RCAMON_P007,_SVP_RCAMON_D007,_SVP_RCAMOF_P007,_SVP_RCAMOF_D007,R9,BIT7,
++		_SIN_RCAM_ON_DIG+7*2,_SIN_RCAM_OF_DIG+7*2,_SIN_RCAMON_SW1,_SIN_RCAMOF_SW1
+
+	M_BRA	CAM_DATA_MV100
+
+CAM_DATA_MV100:
+;;	POS_CAM_MOV1 _SVP_RCAMON_P008,_SVP_RCAMON_D008,_SVP_RCAMOF_P008,_SVP_RCAMOF_D008,R9,BIT8,0
+;;	POS_CAM_MOV1 _SVP_RCAMON_P009,_SVP_RCAMON_D009,_SVP_RCAMOF_P009,_SVP_RCAMOF_D009,R9,BIT9,0
+;;	POS_CAM_MOV1 _SVP_RCAMON_P00A,_SVP_RCAMON_D00A,_SVP_RCAMOF_P00A,_SVP_RCAMOF_D00A,R9,BIT10,0
+;;	POS_CAM_MOV1 _SVP_RCAMON_P00B,_SVP_RCAMON_D00B,_SVP_RCAMOF_P00B,_SVP_RCAMOF_D00B,R9,BIT11,0
+;;	POS_CAM_MOV1 _SVP_RCAMON_P00C,_SVP_RCAMON_D00C,_SVP_RCAMOF_P00C,_SVP_RCAMOF_D00C,R9,BIT12,0
+;;	POS_CAM_MOV1 _SVP_RCAMON_P00D,_SVP_RCAMON_D00D,_SVP_RCAMOF_P00D,_SVP_RCAMOF_D00D,R9,BIT13,0
+;;	POS_CAM_MOV1 _SVP_RCAMON_P00E,_SVP_RCAMON_D00E,_SVP_RCAMOF_P00E,_SVP_RCAMOF_D00E,R9,BIT14,0
+;;	POS_CAM_MOV1 _SVP_RCAMON_P00F,_SVP_RCAMON_D00F,_SVP_RCAMOF_P00F,_SVP_RCAMOF_D00F,R9,BIT15,0
+
+	POS_CAM_MOV2 _SVP_RCAMON_P008,_SVP_RCAMON_D008,_SVP_RCAMOF_P008,_SVP_RCAMOF_D008,R9,BIT8,
++		_SIN_RCAM_ON_DIG+8*2,_SIN_RCAM_OF_DIG+8*2,_SIN_RCAMON_SW1,_SIN_RCAMOF_SW1
+
+	POS_CAM_MOV2 _SVP_RCAMON_P009,_SVP_RCAMON_D009,_SVP_RCAMOF_P009,_SVP_RCAMOF_D009,R9,BIT9,
++		_SIN_RCAM_ON_DIG+9*2,_SIN_RCAM_OF_DIG+9*2,_SIN_RCAMON_SW1,_SIN_RCAMOF_SW1
+
+	POS_CAM_MOV2 _SVP_RCAMON_P00A,_SVP_RCAMON_D00A,_SVP_RCAMOF_P00A,_SVP_RCAMOF_D00A,R9,BIT10,
++		_SIN_RCAM_ON_DIG+10*2,_SIN_RCAM_OF_DIG+10*2,_SIN_RCAMON_SW1,_SIN_RCAMOF_SW1
+
+	POS_CAM_MOV2 _SVP_RCAMON_P00B,_SVP_RCAMON_D00B,_SVP_RCAMOF_P00B,_SVP_RCAMOF_D00B,R9,BIT11,
++		_SIN_RCAM_ON_DIG+11*2,_SIN_RCAM_OF_DIG+11*2,_SIN_RCAMON_SW1,_SIN_RCAMOF_SW1
+
+	POS_CAM_MOV2 _SVP_RCAMON_P00C,_SVP_RCAMON_D00C,_SVP_RCAMOF_P00C,_SVP_RCAMOF_D00C,R9,BIT12,
++		_SIN_RCAM_ON_DIG+12*2,_SIN_RCAM_OF_DIG+12*2,_SIN_RCAMON_SW1,_SIN_RCAMOF_SW1
+
+	POS_CAM_MOV2 _SVP_RCAMON_P00D,_SVP_RCAMON_D00D,_SVP_RCAMOF_P00D,_SVP_RCAMOF_D00D,R9,BIT13,
++		_SIN_RCAM_ON_DIG+13*2,_SIN_RCAM_OF_DIG+13*2,_SIN_RCAMON_SW1,_SIN_RCAMOF_SW1
+
+	POS_CAM_MOV2 _SVP_RCAMON_P00E,_SVP_RCAMON_D00E,_SVP_RCAMOF_P00E,_SVP_RCAMOF_D00E,R9,BIT14,
++		_SIN_RCAM_ON_DIG+14*2,_SIN_RCAM_OF_DIG+14*2,_SIN_RCAMON_SW1,_SIN_RCAMOF_SW1
+
+	POS_CAM_MOV2 _SVP_RCAMON_P00F,_SVP_RCAMON_D00F,_SVP_RCAMOF_P00F,_SVP_RCAMOF_D00F,R9,BIT15,
++		_SIN_RCAM_ON_DIG+15*2,_SIN_RCAM_OF_DIG+15*2,_SIN_RCAMON_SW1,_SIN_RCAMOF_SW1
+
+	FAR_JSR	#_INPMODE_CAMOUT_CHK,R0
+	MOV.L	#_CAM_OUTPUT_SW+0*2,R1	;//0,1,2(POS),3(TIM)
+	MOV.W	R14,@R1			;
+	M_BRA	CAM_DATA_MV200
+
+CAM_DATA_MV200:
+	XOR	R13,R13			;位置ｶﾑ=1,工程=0
+	MOV.L	#_SEQAB_DP_TOP+36*2,R1	;
+	MOV.W	@R1,R14			;
+	MOV.W	#H'FF00,R3		;ミスフィード
+	OR	R3,R14			;内部カム
+
+	MOV.L	#_SVP_MISCAM_ONR,R1	;ﾐｽﾌｨｰﾄﾞ  ON行程 ﾘﾋﾟｰﾄ戻り
+	MOV.W	@R1,R10			;
+	EXTU.B	R10,R10			;BIT8~BIT15内部位置固定のｶﾑ
+	MOV.L	#_SVP_MISCAM_OFR,R1	;ﾐｽﾌｨｰﾄﾞ  OFF行程 ﾘﾋﾟｰﾄ戻り
+	MOV.W	@R1,R11			;
+	EXTU.B	R11,R11			;
+
+
+	POS_CAM_MOV1 _SVP_RCAMON_P010,_SVP_RCAMON_D010,_SVP_RCAMOF_P010,_SVP_RCAMOF_D010,R9,BIT0,0
+	POS_CAM_MOV1 _SVP_RCAMON_P011,_SVP_RCAMON_D011,_SVP_RCAMOF_P011,_SVP_RCAMOF_D011,R9,BIT1,0
+	POS_CAM_MOV1 _SVP_RCAMON_P012,_SVP_RCAMON_D012,_SVP_RCAMOF_P012,_SVP_RCAMOF_D012,R9,BIT2,0
+	POS_CAM_MOV1 _SVP_RCAMON_P013,_SVP_RCAMON_D013,_SVP_RCAMOF_P013,_SVP_RCAMOF_D013,R9,BIT3,0
+	POS_CAM_MOV1 _SVP_RCAMON_P014,_SVP_RCAMON_D014,_SVP_RCAMOF_P014,_SVP_RCAMOF_D014,R9,BIT4,0
+	POS_CAM_MOV1 _SVP_RCAMON_P015,_SVP_RCAMON_D015,_SVP_RCAMOF_P015,_SVP_RCAMOF_D015,R9,BIT5,0
+	POS_CAM_MOV1 _SVP_RCAMON_P016,_SVP_RCAMON_D016,_SVP_RCAMOF_P016,_SVP_RCAMOF_D016,R9,BIT6,0
+	POS_CAM_MOV1 _SVP_RCAMON_P017,_SVP_RCAMON_D017,_SVP_RCAMOF_P017,_SVP_RCAMOF_D017,R9,BIT7,0
+	M_BRA	CAM_DATA_MV300
+
+CAM_DATA_MV300:
+	POS_CAM_MOV1 _SVP_RCAMON_P018,_SVP_RCAMON_D018,_SVP_RCAMOF_P018,_SVP_RCAMOF_D018,R9,BIT8,0
+	POS_CAM_MOV1 _SVP_RCAMON_P019,_SVP_RCAMON_D019,_SVP_RCAMOF_P019,_SVP_RCAMOF_D019,R9,BIT9,0
+	POS_CAM_MOV1 _SVP_RCAMON_P01A,_SVP_RCAMON_D01A,_SVP_RCAMOF_P01A,_SVP_RCAMOF_D01A,R9,BIT10,0
+	POS_CAM_MOV1 _SVP_RCAMON_P01B,_SVP_RCAMON_D01B,_SVP_RCAMOF_P01B,_SVP_RCAMOF_D01B,R9,BIT11,0
+	POS_CAM_MOV1 _SVP_RCAMON_P01C,_SVP_RCAMON_D01C,_SVP_RCAMOF_P01C,_SVP_RCAMOF_D01C,R9,BIT12,0
+	POS_CAM_MOV1 _SVP_RCAMON_P01D,_SVP_RCAMON_D01D,_SVP_RCAMOF_P01D,_SVP_RCAMOF_D01D,R9,BIT13,0
+	POS_CAM_MOV1 _SVP_RCAMON_P01E,_SVP_RCAMON_D01E,_SVP_RCAMOF_P01E,_SVP_RCAMOF_D01E,R9,BIT14,0
+	POS_CAM_MOV1 _SVP_RCAMON_P01F,_SVP_RCAMON_D01F,_SVP_RCAMOF_P01F,_SVP_RCAMOF_D01F,R9,BIT15,0
+	FAR_JSR	#_INPMODE_CAMOUT_CHK,R0
+	MOV.L	#_CAM_OUTPUT_SW+1*2,R1	;//0,1,2(POS),3(TIM)
+	MOV.W	R14,@R1			;
+	M_BRA	CAM_DATA_MV400
+
+CAM_DATA_MV400:
+	XOR	R13,R13				;位置ｶﾑ=1,工程=0	;
+	MOV.L	#_SEQAB_DP_TOP+34*2,R1		;
+	MOV.W	@R1,R14				;エジェクタ
+	MOV	R14,R2				;
+	SHLR8	R2				;BIT8~BIT15 選択
+	NOT	R2,R2				;0:位置ｶﾑ 1:ﾀｲﾏｶﾑ 0のみ出力有効
+	AND	R2,R14				;
+	MOV.W	#H'00FF,R3			;
+	AND	R3,R14				;
+
+	MOV.L	#_SVP_EJECAM_ONR,R1		;ｴｼﾞｪｸﾀ ON行程 ﾘﾋﾟｰﾄ戻り
+	MOV.W	@R1,R10				;
+	EXTU.B	R10,R10				;
+	MOV.L	#_SVP_EJECAM_OFR,R1		;ｴｼﾞｪｸﾀ OFF行程 ﾘﾋﾟｰﾄ戻り
+	MOV.W	@R1,R11				;
+	EXTU.B	R11,R11				;
+
+	POS_CAM_MOV1 _SVP_RCAMON_P020,_SVP_RCAMON_D020,_SVP_RCAMOF_P020,_SVP_RCAMOF_D020,R9,BIT0,0
+	POS_CAM_MOV1 _SVP_RCAMON_P021,_SVP_RCAMON_D021,_SVP_RCAMOF_P021,_SVP_RCAMOF_D021,R9,BIT1,0
+	POS_CAM_MOV1 _SVP_RCAMON_P022,_SVP_RCAMON_D022,_SVP_RCAMOF_P022,_SVP_RCAMOF_D022,R9,BIT2,0
+	POS_CAM_MOV1 _SVP_RCAMON_P023,_SVP_RCAMON_D023,_SVP_RCAMOF_P023,_SVP_RCAMOF_D023,R9,BIT3,0
+	POS_CAM_MOV1 _SVP_RCAMON_P024,_SVP_RCAMON_D024,_SVP_RCAMOF_P024,_SVP_RCAMOF_D024,R9,BIT4,0
+	POS_CAM_MOV1 _SVP_RCAMON_P025,_SVP_RCAMON_D025,_SVP_RCAMOF_P025,_SVP_RCAMOF_D025,R9,BIT5,0
+	POS_CAM_MOV1 _SVP_RCAMON_P026,_SVP_RCAMON_D026,_SVP_RCAMOF_P026,_SVP_RCAMOF_D026,R9,BIT6,0
+	POS_CAM_MOV1 _SVP_RCAMON_P027,_SVP_RCAMON_D027,_SVP_RCAMOF_P027,_SVP_RCAMOF_D027,R9,BIT7,0
+	M_BRA	CAM_DATA_MV500
+
+CAM_DATA_MV500:
+	XOR	R10,R10	;未使用状態：予備
+	XOR	R11,R11	;
+	POS_CAM_MOV1 _SVP_RCAMON_P028,_SVP_RCAMON_D028,_SVP_RCAMOF_P028,_SVP_RCAMOF_D028,R9,BIT8,0
+	POS_CAM_MOV1 _SVP_RCAMON_P029,_SVP_RCAMON_D029,_SVP_RCAMOF_P029,_SVP_RCAMOF_D029,R9,BIT9,0
+	POS_CAM_MOV1 _SVP_RCAMON_P02A,_SVP_RCAMON_D02A,_SVP_RCAMOF_P02A,_SVP_RCAMOF_D02A,R9,BIT10,0
+	POS_CAM_MOV1 _SVP_RCAMON_P02B,_SVP_RCAMON_D02B,_SVP_RCAMOF_P02B,_SVP_RCAMOF_D02B,R9,BIT11,0
+	POS_CAM_MOV1 _SVP_RCAMON_P02C,_SVP_RCAMON_D02C,_SVP_RCAMOF_P02C,_SVP_RCAMOF_D02C,R9,BIT12,0
+	POS_CAM_MOV1 _SVP_RCAMON_P02D,_SVP_RCAMON_D02D,_SVP_RCAMOF_P02D,_SVP_RCAMOF_D02D,R9,BIT13,0
+	POS_CAM_MOV1 _SVP_RCAMON_P02E,_SVP_RCAMON_D02E,_SVP_RCAMOF_P02E,_SVP_RCAMOF_D02E,R9,BIT14,0
+	POS_CAM_MOV1 _SVP_RCAMON_P02F,_SVP_RCAMON_D02F,_SVP_RCAMOF_P02F,_SVP_RCAMOF_D02F,R9,BIT15,0
+	FAR_JSR	#_INPMODE_CAMOUT_CHK,R0
+	MOV.L	#_CAM_OUTPUT_SW+2*2,R1	;//0,1,2(POS),3(TIM)
+	MOV.W	R14,@R1			;
+	M_BRA	CAM_DATA_MV600
+
+;	===== ﾀｲﾏｶﾑ=======
+CAM_DATA_MV600:
+	MOV.L	#_SET1_RCAMON_TIM_TOP,R9	;//後から考える
+	XOR	R13,R13				;位置ｶﾑ=1,工程=0	;
+	MOV.L	#_SEQAB_DP_TOP+34*2,R1		;
+	MOV.W	@R1,R14				;エジェクタ
+	MOV	R14,R2				;
+	SHLR8	R2				;BIT8~BIT15 選択
+	AND	R2,R14				;ﾀｲﾏのみ有効
+	MOV.W	#H'00FF,R3			;
+	AND	R3,R14				;
+
+	MOV.L	#_SVP_EJECAM_ONR,R1		;ｴｼﾞｪｸﾀ ON行程 ﾘﾋﾟｰﾄ戻り
+	MOV.W	@R1,R10				;
+	EXTU.B	R10,R10				;
+	MOV.L	#_SVP_EJECAM_OFR,R1		;ｴｼﾞｪｸﾀ OFF行程 ﾘﾋﾟｰﾄ戻り
+	MOV.W	@R1,R11				;
+	XOR	R11,R11				;OFF側の行程は存在しない
+
+	POS_CAM_MOV1 _SVP_RCAMON_P100,_SVP_RCAMON_D100,_SVP_RCAMOF_P100,_SVP_RCAMOF_D100,R9,BIT0,1
+	POS_CAM_MOV1 _SVP_RCAMON_P101,_SVP_RCAMON_D101,_SVP_RCAMOF_P101,_SVP_RCAMOF_D101,R9,BIT1,1
+	POS_CAM_MOV1 _SVP_RCAMON_P102,_SVP_RCAMON_D102,_SVP_RCAMOF_P102,_SVP_RCAMOF_D102,R9,BIT2,1
+	POS_CAM_MOV1 _SVP_RCAMON_P103,_SVP_RCAMON_D103,_SVP_RCAMOF_P103,_SVP_RCAMOF_D103,R9,BIT3,1
+	POS_CAM_MOV1 _SVP_RCAMON_P104,_SVP_RCAMON_D104,_SVP_RCAMOF_P104,_SVP_RCAMOF_D104,R9,BIT4,1
+	POS_CAM_MOV1 _SVP_RCAMON_P105,_SVP_RCAMON_D105,_SVP_RCAMOF_P105,_SVP_RCAMOF_D105,R9,BIT5,1
+	POS_CAM_MOV1 _SVP_RCAMON_P106,_SVP_RCAMON_D106,_SVP_RCAMOF_P106,_SVP_RCAMOF_D106,R9,BIT6,1
+	POS_CAM_MOV1 _SVP_RCAMON_P107,_SVP_RCAMON_D107,_SVP_RCAMOF_P107,_SVP_RCAMOF_D107,R9,BIT7,1
+	M_BRA	CAM_DATA_MV700
+
+CAM_DATA_MV700:
+	XOR	R10,R10	;未使用状態：予備
+	XOR	R11,R11	;
+	POS_CAM_MOV1 _SVP_RCAMON_P108,_SVP_RCAMON_D108,_SVP_RCAMOF_P108,_SVP_RCAMOF_D108,R9,BIT8,1
+	POS_CAM_MOV1 _SVP_RCAMON_P109,_SVP_RCAMON_D109,_SVP_RCAMOF_P109,_SVP_RCAMOF_D109,R9,BIT9,1
+	POS_CAM_MOV1 _SVP_RCAMON_P10A,_SVP_RCAMON_D10A,_SVP_RCAMOF_P10A,_SVP_RCAMOF_D10A,R9,BIT10,1
+	POS_CAM_MOV1 _SVP_RCAMON_P10B,_SVP_RCAMON_D10B,_SVP_RCAMOF_P10B,_SVP_RCAMOF_D10B,R9,BIT11,1
+	POS_CAM_MOV1 _SVP_RCAMON_P10C,_SVP_RCAMON_D10C,_SVP_RCAMOF_P10C,_SVP_RCAMOF_D10C,R9,BIT12,1
+	POS_CAM_MOV1 _SVP_RCAMON_P10D,_SVP_RCAMON_D10D,_SVP_RCAMOF_P10D,_SVP_RCAMOF_D10D,R9,BIT13,1
+	POS_CAM_MOV1 _SVP_RCAMON_P10E,_SVP_RCAMON_D10E,_SVP_RCAMOF_P10E,_SVP_RCAMOF_D10E,R9,BIT14,1
+	POS_CAM_MOV1 _SVP_RCAMON_P10F,_SVP_RCAMON_D10F,_SVP_RCAMOF_P10F,_SVP_RCAMOF_D10F,R9,BIT15,1
+	FAR_JSR	#_INPMODE_CAMOUT_CHK,R0
+	MOV.L	#_CAM_OUTPUT_SW+3*2,R1	;//0,1,2(POS),3(TIM)
+	MOV.W	R14,@R1			;
+
+	FAR_JSR	#_MAIN_CAM_DATA_SORT,R0		;
+	SUB_END
+	M_RTS
+
+
+
+;	***************************************************
+;	***		Input R0 / Output R0		***
+;	***************************************************
+;	指定された工程の前と後から判断
+;	指定された工程が１なら、次の工程から求める
+;	指定された工程が最後なら、その１つ前から
+;	回転の場合
+;	反転の場合
+;	往復は考えない
+;	Input R0:工程 /Output R0:方向 0:増加 1:減少
+_CAM_STEP_DIR_CALC:
+	SUB_START
+	XOR	R0,R0		;
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***	Input  R0:工程 					***
+;	***	Input  R12:BITn					***
+;	***	Input  R14:入/切SW				***
+;	***							***
+;	***	Output R13:位置ｶﾑか工程ｶﾑか			***
+;	***	Output R14:ﾃﾞｰﾀ異常による出力ENB		***
+;	***							***
+;	***********************************************************
+;	"0"なら位置として扱う(R13のBITn=1(位置カム)　BITnはR12)
+;	"-1"なら最終工程にする
+;	"1~最終工程以外かﾁｪｯｸし、最終工程以外なら最終工程にする":出力はDISENABLE
+;	工程ﾃﾞｰﾀ範囲ﾁｪｯｸ 1~6,"-1"以外ならMAXとする
+;	"
+;	_SETXはﾁｪｯｸされたﾃﾞｰﾀ
+;	Input R0
+
+_POS_CAM_STEP_DATA_CHK:
+	SUB_START
+	
+	PUSH_REG1 R12					;2014-09-22
+
+	CMP/EQ	#0,R0					;
+	BF	POS_CAM_SPDAT_CHK050			;
+	OR	R12,R13					;BIT=1:単純位置カム
+	M_BRA	POS_CAM_SPDAT_CHK200			;
+
+POS_CAM_SPDAT_CHK050:
+	MOV.L	#_CAM_STEP_MAX,R1			;//設定=1~10(2~11)
+	MOV.W	@R1,R2					;
+	ADD	#1,R2					;
+	MOV.W	#_GMN_LAST_STEP,R4			;
+	CMP/EQ	R4,R0					;LAST-STEP 
+	BF	POS_CAM_SPDAT_CHK100			;
+	MOV	R2,R0					;
+	M_BRA	POS_CAM_SPDAT_CHK200			;
+
+POS_CAM_SPDAT_CHK100:					;
+
+	CMP/HS	R0,R2					;
+	BT	POS_CAM_SPDAT_CHK200			;R2(MAX) >= R0 ?
+	NOT	R12,R1					;
+	AND	R1,R14					;ﾃﾞｰﾀ異常出力禁止
+POS_CAM_SPDAT_CHK200:					;
+
+
+	POP_REG1 R12					;2014-09-22
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***		なにもなくても		***
+;	*******************************************
+_TIM_CAM_STEP_DATA_CHK:
+	SUB_START
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***	運転ﾓｰﾄﾞによる出力OFF作成	***
+;	*******************************************
+;	Input  R13 位置=1/工程=0
+;	Input  R14 出力ENB
+;	Output R14
+;
+;	運転ﾓｰﾄﾞは確定したﾃﾞｰﾀを使用する。
+;	非常停止状態時では工程ｶﾑは出力しない
+;	運転ﾓｰﾄﾞが段取系なら工程CAMは出力しない
+;	位置ｶﾑはいつでも出力する
+;	
+;	単純位置カムでなければ、非常停止時、段取では出力OFFする。
+_INPMODE_CAMOUT_CHK:
+	SUB_START
+;;;	MOV.L	#_INP_MODE,R1				;
+
+	XOR	R5,R5					;(工程ｶﾑ出力OFF)
+	MOV.L	#_emg_err_flg,R1			;
+	MOV.W	@R1,R2					;
+	TST	R2,R2					;
+	TST_BIT_ON INPMODE_CAMOUT_CK_100		;工程ｶﾑ出力しない<R5=0>
+
+	MOV.L	#_MODE_SEL,R1				;
+	MOV.W	@R1,R0					;
+	MOV.W	#_W1INC+_W1SGL+_W1CNT+_W1OPT,R4		;
+	TST	R4,R0					;
+	TST_BIT_OF INPMODE_CAMOUT_CK_100		;R5=0のまま(工程ｶﾑ出力OFF)
+	MOV	#-1,R5					;"FFFF"SET
+INPMODE_CAMOUT_CK_100:
+	TST	R5,R5					;
+	TST_BIT_ON INPMODE_CAMOUT_CK_200		;
+;	==== 工程ｶﾑ出力禁止 =====
+
+	AND	R13,R14					;R13のBITn=0は工程なので反転はいらない
+INPMODE_CAMOUT_CK_200:
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***	1.CAMの出力ｲﾈｰﾌﾞﾙをﾜｰｸにする			***
+;	***	2.内部ｶﾑを見かけ上・・・・			***
+;	***							***
+;	***	設定ﾃﾞｰﾀを運転と比較できる用にする,方向		***
+;	***							***
+;	***********************************************************
+;	===	CPUA	===
+;	U2b	SET1_OBJ_CAM_DIG_TOP[40*2]	;//+0*2:待機点 +1*2方向 +2*2　目標位置,,+最後 待機点
+;				工程指定時
+;	+0*2 :方向(0=>1)	(1)正転から開始する
+;	+1*2 :目標位置１	(1)
+;	+2*2 :１->2方向		(2)
+;	+3*2 :目標位置２	(2)
+;	+4*2 :2->3		(3)
+;	+5*2 :目標位置３	(3)待機点より小さければ、＋３６０したデータで比較する
+;	+4*2 :3->4		(4)
+;	+5*2 :目標位置４	(4)
+;	+4*2 :4->5		(5)
+;	+5*2 :目標位置５	(5)
+;	+4*2 :5->6		(6)(反転時は逆転で戻る,正転時は正転で進む)
+;	+5*2 :待機点		(6)
+;
+;	ＣＡＭデータ側に方向をいれておく
+;
+;
+;
+_MAIN_CAM_DATA_SORT:
+	SUB_START
+	
+	MOV.L	#_CAM_STEP_MAX,R1			;//設定=1~10(2~11)
+	MOV.W	@R1,R7					;LOOP
+	ADD	#1,R7					;
+	MOV.L	#_SETX_UPAREA_DIG,R1			;2;回転時待機点(上死点)	
+	MOV.W	@R1,R8					;上死点
+	MOV.W	#1,R13					;
+	MOV.L	#_SET1_OBJECT_DIG_TOP,R5		;
+	MOV.L	#_SETX_POS_SDAT1_INF1,R14		;BIT1=0正転 4byte
+	MOV.L	#_SET1_OBJ_CAM_DIG_TOP,R6		;
+
+MAIN_CAM_DATSRT1_LOP1:
+	TST	R7,R7					;
+	TST_BIT_OF MAIN_CAM_DATSRT1_EXT			;
+	MOV.L	@R14+,R0				;方向
+	AND	#BIT1,R0				;
+	MOV.W	R0,@R6					;DIRCT +0
+	ADD	#2,R6					;
+	MOV.W	@R5+,R3					;
+	CMP/EQ	R13,R7					;LAST
+	BF	MAIN_CAM_DATSRT1_L100			;
+	MOV	R8,R3					;待機点save
+MAIN_CAM_DATSRT1_L100:					;
+	MOV.W	R3,@R6					;OBJ
+	ADD	#2,R6					;
+	ADD	#-1,R7					;
+	M_BRA	MAIN_CAM_DATSRT1_LOP1			;
+MAIN_CAM_DATSRT1_EXT:
+	SUB_END
+	M_RTS
+
+
+	.AELSE
+;	===	CPUB	===
+_CAM_DATA_MOV:
+	SUB_START
+	SUB_END
+	M_RTS
+_MAIN_CAM_DATA_SORT:
+	SUB_START
+	SUB_END
+	M_RTS
+	.AENDI
+
+
+	.EXPORT	_CAM_CTRL
+	.AIF	_CB_CPU_SEL EQ	_CB_CPUA
+;	===	CPUA	===
+;	<2.5msec>
+_CAM_CTRL:
+	SUB_START
+;	===============================
+;	==<反転と回転でみるカムを変える?>
+	MOV.L	#_SETX_POS_CTL_MATH,R1		;
+	MOV.W	@R1,R0				;
+	MOV.L	#_DNM_CTL_INC3600,R1		;//CAM、ﾛｯﾄｶｳﾝﾀ、荷重用
+	MOV.W	@R1,R2				;
+	MOV.L	#_CAM_NOW_DIG,R1		;
+	MOV.W	R2,@R1				;
+	MOV	R2,R6				;R6:現在角度として使用
+
+;;;;;;-----------1度単位で扱う==>0.1度単位に変更2014-09-09 + ﾘﾆｱ位置でｶﾑは行わない===============
+;;;;;(1度単位に変換:ﾊﾞｯｸﾗｯｼ対策とする)
+;;;;;	------ 2014-09-09 CAMの性質を考えればリニアで制御するのは変
+;;;;;	TST	#_DMATH_CNTROT+_DMATH_DNDRIV,R0	;
+;;;;;	TST_BIT_ON CAM_CTL_ENC050	;
+;;;;;	MOV.L	#_RNA_ENC360,R1		;//ﾘﾆｱｽｹ-ﾙ
+;;;;;CAM_CTL_ENC050:				;
+;;;;;;	MOV.W	@R1,R2			;(1度単位に変換:ﾊﾞｯｸﾗｯｼ対策とする)
+;;;;;;	==== 4舎５入 ===
+;;;;;	ADD	#5,R2						;
+;;;;;	MOV.W	#D'10,R4					;
+;;;;;	FAR_JSR	#_FPU_DIVS_32REG2_32REG1_R4_32REG2_R2,R0	;
+;;;;;	DMULS.L	R4,R2			;
+;;;;;	STS	MACL,R6			;
+;;;;;	MOV.W	#D'3600,R4		;
+;;;;;	CMP/HI	R6,R4			;
+;;;;;	BT	CAM_CTL_ENC080		;
+;;;;;	SUB	R4,R6			;
+;;;;;CAM_CTL_ENC080:				;
+;;;;;	MOV.L	#_CAM_NOW_DIG,R1	;
+;;;;;	MOV.W	R6,@R1			;
+
+
+	MOV.L	#_INT_POS_CTL_STEP,R1		;//内部制御工程1~11
+	MOV.W	@R1,R14				;
+	MOV.W	#1,R2				;
+	CMP/EQ	R2,R14				;
+	BT	CAM_CTL_STPCHK050		;
+	XOR	R0,R0				;内部上行程２～行程６ならフラグは０
+	MOV.L	#_CAM_CNT_CHG_FLG,R1		;
+	MOV.W	R0,@R1				;
+	M_BRA	CAM_CTL_STPCHK200		;
+
+CAM_CTL_STPCHK050:				;
+	MOV.L	#_CAM_CNT_CHG_FLG,R1		;
+	MOV.W	@R1,R0				;=1:内部上は行程１
+	TST	R0,R0				;
+	TST_BIT_OF CAM_CTL_STPCHK200		;
+;	============>>>FLG=1(回転の連続の最後近辺の行程) <<<=======
+	FAR_JSR	#_CAM_STEP_PROC_CHANGE,R0	;//回転・連続の時 
+	MOV.L	#_CAM_POS_CTL_STEP,R1		;//内部制御工程1~11
+	MOV.W	@R1,R14				;1行程の時だけ今の位置からカム用の行程を作る
+
+CAM_CTL_STPCHK200:				;
+	MOV.L	#_CAM_POS_CTL_STEP,R1		;//内部制御工程1~11
+	MOV.W	R14,@R1				;
+
+
+
+	TST	R14,R14			;
+	TST_BIT_OF CAM_CTL_CHK020	;
+	MOV.L	#_CAM_STEP_NO,R1	;
+	MOV.W	R14,@R1			;
+CAM_CTL_CHK020:				;
+
+	MOV.L	#_CAM_STEP_NO,R1	;
+	MOV.W	@R1,R14			;
+
+	MOV.L	#_emg_err_flg,R1	;
+	MOV.W	@R1,R0			;
+	TST	R0,R0			;
+	TST_BIT_OF CAM_CTL_CHK040	;
+	XOR	R14,R14			;
+CAM_CTL_CHK040:				;
+
+	MOV.L	#_CAM_STEP_NO_OLD,R1	;
+	MOV.W	@R1,R13			;
+	MOV.W	R14,@R1			;
+	TST	R13,R13			;OLD=0?
+	TST_BIT_ON CAM_CTL_CHK050	;
+	MOV	R14,R13			;
+CAM_CTL_CHK050:					;
+	TST	R14,R14				;
+	TST_BIT_OF CAM_CTL_CHK100		;
+	MOV	R14,R1				;
+	ADD	#-1,R1				;
+	SHLL2	R1				;
+	MOV.L	#_SET1_OBJ_CAM_DIG_TOP,R0	;
+	ADD	R0,R1				;
+	MOV.W	@R1+,R9				;(この行程の進行方向)
+	MOV.W	@R1,R10				;(この行程の目標角度)
+
+;	=== R9 :現在の工程の目標位置の方向
+;	=== R10:現在の工程の目標位置
+;	-----------------------------
+;	-----   繰返戻行程	-----
+;	-----------------------------
+	MOV.L	#_MOT_REP_F,R1		;//BIT0(ﾘﾋﾟｰﾄ動作
+	MOV.W	@R1,R0			;
+	TST	#BIT0,R0		;
+	TST_BIT_OF CAM_CTL_CHK100	;
+	MOV.L	#_SETX_MOTREP_DIR,R1	;//設定上どっちの方向　  1:-1
+	MOV.W	@R1,R9			;方向
+	MOV.L	#_REP_CAMOBJ_DIG,R1	;//ｶﾑ用の戻り目標角度
+	MOV.W	@R1,R10			;
+
+
+
+
+CAM_CTL_CHK100:				;R6,R9,R10,R13,R14
+
+;	=== R6 :現在角度
+;	(=== R7 :BIT)
+;	(=== R8 :ON/OFF)
+;	=== R9 :現在の工程の目標位置の方向
+;	=== R10:現在の工程の目標位置
+;	=== R13:前回工程PV
+;	=== R14:現在工程PV
+
+;	===========================================
+;	===		ロータリカム 		===
+;	===========================================
+	MOV.L	#_SET1_RCAMON_POS_TOP,R0		;//後から考える
+	LDC	R0,GBR					;
+	MOV.L	#_CAM_OUTPUT_SW+0*2,R1			;//0,1,2(POS),3(TIM) 出力OFF/ON
+	MOV.W	@R1,R5					;
+	MOV.L	#_CAM_SELECT_SW+0*2,R1			;1:ﾀｲﾏｶﾑ/0:位置ｶﾑ
+	MOV.W	@R1,R3					;
+	MOV.L	#_CAM_OUTPUT_DT+0*2,R1			;
+	MOV.W	@R1,R8					;
+	FAR_JSR	#_POS_CAM16CH_CALC1,R0			;
+	MOV.L	#_CAM_OUTPUT_DT+0*2,R1			;
+	MOV.W	R8,@R1					;
+
+;	======= フィーダ、内部カム =======
+	MOV.L	#_SET1_RCAMON_POS_TOP+16*1*_CAM_STRCUT,R0	;//後から考える
+	LDC	R0,GBR					;
+	MOV.L	#_CAM_OUTPUT_SW+1*2,R1			;//0,1,2(POS),3(TIM) 出力OFF/ON
+	MOV.W	@R1,R5					;
+	MOV.L	#_CAM_SELECT_SW+1*2,R1			;1:ﾀｲﾏｶﾑ/0:位置ｶﾑ
+	MOV.W	@R1,R3					;
+	MOV.L	#_CAM_OUTPUT_DT+1*2,R1			;
+	MOV.W	@R1,R8					;
+	FAR_JSR	#_POS_CAM16CH_CALC1,R0			;
+	MOV.L	#_CAM_OUTPUT_DT+1*2,R1			;
+	MOV.W	R8,@R1					;
+
+;	=== エジェクタ・位置 ===
+	MOV.L	#_SET1_RCAMON_POS_TOP+16*2*_CAM_STRCUT,R0	;//後から考える
+	LDC	R0,GBR						;
+	MOV.L	#_CAM_OUTPUT_SW+2*2,R1			;//0,1,2(POS),3(TIM) 出力OFF/ON
+	MOV.W	@R1,R5					;
+	MOV.L	#_CAM_SELECT_SW+2*2,R1			;1:ﾀｲﾏｶﾑ/0:位置ｶﾑ
+	MOV.W	@R1,R3					;
+	MOV.L	#_CAM_OUTPUT_DT+2*2,R1			;
+	MOV.W	@R1,R8					;
+	FAR_JSR	#_POS_CAM16CH_CALC1,R0			;
+	MOV.L	#_CAM_OUTPUT_DT+2*2,R1			;
+	MOV.W	R8,@R1					;
+
+;	=== エジェクタ・タイマ ===
+	MOV.L	#_SET1_RCAMON_TIM_TOP,R0	;//後から考える
+	LDC	R0,GBR						;
+	MOV.L	#_CAM_OUTPUT_SW+3*2,R1			;//0,1,2(POS),3(TIM) 出力OFF/ON
+	MOV.W	@R1,R5					;
+	MOV.L	#_CAM_SELECT_SW+3*2,R1			;1:ﾀｲﾏｶﾑ/0:位置ｶﾑ
+	MOV.W	@R1,R3					;
+	MOV.L	#_CAM_OUTPUT_DT+3*2,R1			;
+	MOV.W	@R1,R8					;
+	FAR_JSR	#_TIM_CAM16CH_CALC1,R0			;
+	MOV.L	#_CAM_OUTPUT_DT+3*2,R1			;
+	MOV.W	R8,@R1					;
+
+
+CAM_CTRL_0900:
+	MOV.L	#_CAM_OUTPUT_DT,R5	;
+	MOV.L	#_SEQAB_DP_TOP+360*2,R6	;
+	MOV.W	@R5+,R1			;
+	MOV.W	R1,@R6			;360(POS)
+	ADD	#2,R6			;
+	MOV.W	@R5+,R1			;
+	MOV.W	R1,@R6			;361(POS)
+	ADD	#2,R6			;
+	MOV.W	@R5+,R1			;
+	MOV.W	R1,@R6			;362(POS)
+	ADD	#2,R6			;
+	MOV.W	@R5+,R1			;
+	MOV.W	R1,@R6			;363(POS)
+	ADD	#2,R6			;
+	MOV.W	@R5+,R1			;
+	MOV.W	R1,@R6			;364(TIM)
+
+;	===========================
+;	===	ﾘﾌﾚｯｼｭ		===
+;	===========================
+	MOV.L	#_CAM_NOW_DIG,R1	;
+	MOV.W	@R1,R6			;
+
+	MOV.L	#_CAM_OLD_DIG,R1	;
+	MOV.W	R6,@R1			;
+
+	XOR	R0,R0
+	MOV.L	#_CAM_POS_STEP_END_FLG1,R1	;//各工程の
+	MOV.W	R0,@R1				;
+	MOV.L	#_CAM_POS_STEP_END_FLG2,R1	;//各工程の
+	MOV.W	R0,@R1				;
+
+	SUB_END
+	M_RTS
+
+
+
+
+;	***********************************
+;	***				***
+;	***	工程付	位置カム	***
+;	***		位置カム	***
+;	***				***
+;	***********************************
+;	16ﾁｬﾝﾈﾙ分
+;	=== R6 :現在角度
+;	(=== R7 :BIT)
+;	=== R8 :ON/OFF
+;	=== R9 :現在の工程の目標位置の方向
+;	=== R10:現在の工程の目標位置
+;	=== R13:前回工程PV
+;	=== R14:現在工程PV
+;	MOV.L	#_CAM_OUTPUT_SW+0*2,R1			;//0,1,2(POS),3(TIM) 出力OFF/ON
+;	MOV.W	@R1,R5					;
+;	MOV.L	#_CAM_SELECT_SW+0*2,R1			;1:ﾀｲﾏｶﾑ/0:位置ｶﾑ
+;	MOV.W	@R1,R3					;
+	.MACRO	CAM_ON1
+	OR	R7,R8		;ON
+	.ENDM
+
+	.MACRO	CAM_OF1
+	NOT	R7,R4		;
+	AND	R4,R8		;OFF
+	.ENDM
+
+_POS_CAM16CH_CALC1:
+	SUB_START
+	MOV.W	#BIT0,R7				;
+	MOV.W	#16,R2					;
+
+POS_CAM16CH_CALOP00:					;
+	TST	R7,R5					;ENABLE?
+	TST_BIT_ON POS_CAM16CH_CAL100			;
+	CAM_OF1						;
+	M_BRA	POS_CAM16CH_CAL400			;
+
+POS_CAM16CH_CAL100:
+	PUSH_REG1 R2					;
+	PUSH_REG1 R5					;
+	MOV.L	#_CAM_POS_STEP_END_FLG1,R1	;//各工程の位置決め完了
+	MOV.W	@R1,R5				;
+	TST	R5,R5				;
+	TST_BIT_OF POS_CAM16CH_CAL120		;
+	NOP
+POS_CAM16CH_CAL120:
+	FAR_JSR	#_CAM_PROC1_POS,R0			;
+	POP_REG1 R5
+	POP_REG1 R2					;
+POS_CAM16CH_CAL400:
+	SHLL	R7					;BIT SHIFT
+	ADD	#-1,R2					;
+	STC	GBR,R0					;
+	ADD	#_CAM_STRCUT,R0
+	LDC	R0,GBR					;
+	
+	TST	R2,R2					;
+	TST_BIT_OF POS_CAM16CH_CAL500			;
+	M_BRA	POS_CAM16CH_CALOP00			;
+POS_CAM16CH_CAL500:
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	工程付	タイマカム	***
+;	***	工程			***
+;	***	工程なし+TIM		***
+;	***********************************
+_TIM_CAM16CH_CALC1:
+	SUB_START
+	MOV.W	#BIT0,R7				;
+	MOV.W	#16,R2					;
+
+TIM_CAM16CH_CALOP00:					;
+	TST	R7,R5					;ENABLE?
+	TST_BIT_ON TIM_CAM16CH_CAL100			;
+	CAM_OF1						;
+	M_BRA	TIM_CAM16CH_CAL400			;
+
+TIM_CAM16CH_CAL100:
+	PUSH_REG1 R2					;
+	PUSH_REG1 R5					;
+	FAR_JSR	#_CAM_PROC1_TIM,R0			;
+	POP_REG1 R5
+	POP_REG1 R2					;
+TIM_CAM16CH_CAL400:
+	SHLL	R7					;BIT SHIFT
+	ADD	#-1,R2					;
+	STC	GBR,R0					;
+	ADD	#_CAM_STRCUT,R0
+	LDC	R0,GBR					;
+	
+	TST	R2,R2					;
+	TST_BIT_OF TIM_CAM16CH_CAL500			;
+	M_BRA	TIM_CAM16CH_CALOP00			;
+TIM_CAM16CH_CAL500:
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+;	***********************************
+;	***				***
+;	***	１個の工程カム演算	***
+;	***	(位置タイプ)		***
+;	***				***
+;	***********************************
+;	CASE1:開始工程<終了工程
+;	CASE2:開始工程==終了工程
+;	CASE3:開始工程>終了工程
+;	"10msec"
+;
+;
+;	=== R6 :現在角度
+;	=== R7 :BIT
+;	=== R8 :ON/OFF
+;	=== R9 :現在の工程の目標位置の方向
+;	=== R10:現在の工程の目標位置
+;	=== R13:前回工程PV
+;	=== R14:現在工程PV
+;	Input   R7:BIT
+;	Input   R8:ON/OF SIGNAL
+;	Input 	R13<前回工程>
+;	Input 	R14<現在工程>
+;	
+;	(OFF条件はここ以外で処理する)
+;	(現在工程=0ならEXIT)
+
+_CAM_PROC1_POS:
+	SUB_START
+	MOV.W	@(_CAM_ON_STP,GBR),R0	;
+	MOV	R0,R11			;開始工程
+	TST	R11,R11			;
+	TST_BIT_OF CAM_PROC1_POS_0100	;
+
+	MOV.W	@(_CAM_OF_STP,GBR),R0	;
+	MOV	R0,R12			;終了工程
+	TST	R12,R12			;
+	TST_BIT_ON CAM_PROC1_POS_0200	;
+CAM_PROC1_POS_0100:			;
+	FAR_JSR	#_CAM_ONLY1_POS_CHK,R0	;通常の位置ｶﾑ
+	M_BRA	CAM_PROC1_POS_5000	;
+
+CAM_PROC1_POS_0200:			;
+	TST	R14,R14			;
+	TST_BIT_ON CAM_PROC1_POS_0300	;
+	M_BRA	CAM_PROC1_POS_5000	;(演算しない OFFではない)
+
+CAM_PROC1_POS_0300:			;
+	CMP/EQ	R11,R12			;開始ON=終了OFF
+	BF	CAM_PROC1_POS_0500	;
+	M_BRA	CAM_PROC1_POS_3000	;
+CAM_PROC1_POS_0500:
+        CMP/GT  R11,R12                 ;開始ON<終了OFF
+	BT	CAM_PROC1_POS_1000	;
+	M_BRA	CAM_PROC1_POS_2000	;終了ON<開始OFF
+
+;	=== R5 :_CAM_POS_STEP_END_FLG1,R1	;//各工程の位置決め完了
+;	=== R6 :現在角度
+;	=== R7 :BIT
+;	=== R8 :ON/OFF
+;	=== R9 :現在の工程の目標位置の方向
+;	=== R10:現在の工程の目標位置
+;	=== R11:START工程(ON)
+;	=== R12:END工程(OFF)
+;	=== R13:前回工程PV
+;	=== R14:現在工程PV
+;
+;	===========================
+;	===	開始<終了	===
+;	===========================
+CAM_PROC1_POS_1000:
+	MOV.W	@(_CAM_INF_D1,GBR),R0	;
+	TST	#(BIT1+BIT0),R0		;どちらかに戻り行程が存在するか
+	TST_BIT_OF CAM_PROC1_POS_1010	;
+	FAR_JSR	#_CAM_REP_STR1_PROC,R0	;
+	M_BRA	CAM_PROC1_POS_5000	;
+CAM_PROC1_POS_1010:
+	MOV.L	#_MOT_REP_F,R1			;
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_OF CAM_PROC1_POS_1020		;
+	M_BRA	CAM_PROC1_POS_5000	;
+CAM_PROC1_POS_1020:
+
+;	-------------- 繰り返し以外--------------
+
+	CMP/GT	R12,R14			;OFF工程 < 現在工程
+	BT	CAM_PROC1_POS_1900	;"OFF固定" 区間C
+
+	CMP/GT	R14,R11			;
+	BT	CAM_PROC1_POS_1900	;PV < "ON" OFF固定
+
+	CMP/EQ	R11,R14			;ON工程?   区間ONx
+	BT	CAM_PROC1_POS_1050	;
+
+	CMP/EQ	R12,R14			;OFF工程?
+	BT	CAM_PROC1_POS_1100	;YES
+	M_BRA	CAM_PROC1_POS_1950	;ON固定
+
+CAM_PROC1_POS_1050:
+;	====== ON位置と目標位置の間に方向を判定して入ればON ===
+	FAR_JSR	#_CAM_POS_ON_PROC_CHK,R0	;
+	M_BRA	CAM_PROC1_POS_5000	;
+
+CAM_PROC1_POS_1100:
+	FAR_JSR	#_CAM_POS_OF_PROC_CHK,R0	;
+	M_BRA	CAM_PROC1_POS_5000	;
+
+;	===	OFF  ===
+CAM_PROC1_POS_1900:
+	CAM_OF1
+	M_BRA	CAM_PROC1_POS_5000	;
+;	===	ON  ===
+CAM_PROC1_POS_1950:
+	CAM_ON1
+	M_BRA	CAM_PROC1_POS_5000	;
+
+;	=== そのまま ===
+CAM_PROC1_POS_1980:
+	M_BRA	CAM_PROC1_POS_5000	;
+
+
+;	===========================
+;	===	開始>終了	===
+;	===========================
+CAM_PROC1_POS_2000:
+	MOV.W	@(_CAM_INF_D1,GBR),R0	;
+	TST	#(BIT1+BIT0),R0		;どちらかに戻り行程が存在するか
+	TST_BIT_OF CAM_PROC1_POS_2010	;
+	FAR_JSR	#_CAM_REP_STR1_PROC,R0	;
+	M_BRA	CAM_PROC1_POS_5000	;
+CAM_PROC1_POS_2010:
+	MOV.L	#_MOT_REP_F,R1		;
+	MOV.W	@R1,R0			;
+	TST	#BIT0,R0		;
+	TST_BIT_OF CAM_PROC1_POS_2020	;
+	M_BRA	CAM_PROC1_POS_5000	;
+CAM_PROC1_POS_2020:
+
+;	-------------- 繰り返し以外--------------
+	CMP/GT	R11,R14			;ON工程 < 現在工程
+	BT	CAM_PROC1_POS_2950	;"ON"
+
+        CMP/GT  R14,R12                 ;OFF工程
+	BF	CAM_PROC1_POS_2100	;OFFより小さい NO
+	M_BRA	CAM_PROC1_POS_2950	;"ON"
+
+;	===OFF=< NOW =< ON ===
+CAM_PROC1_POS_2100:
+	CMP/EQ	R12,R14			;OFF 開始工程
+	BT	CAM_PROC1_POS_2400	;
+	CMP/EQ	R11,R14			;
+	BF	CAM_PROC1_POS_2900	;OFF < NOW(OFF)<ON OFF固定
+
+	FAR_JSR	#_CAM_POS_ON_PROC_CHK,R0	;
+	M_BRA	CAM_PROC1_POS_5000	;
+
+;	======== OFF開始工程===
+CAM_PROC1_POS_2400:
+	FAR_JSR	#_CAM_POS_OF_PROC_CHK,R0	;
+	M_BRA	CAM_PROC1_POS_5000	;
+
+;	===	OFF  ===
+CAM_PROC1_POS_2900:
+	CAM_OF1
+	M_BRA	CAM_PROC1_POS_5000	;
+;	===	ON  ===
+CAM_PROC1_POS_2950:
+	CAM_ON1
+	M_BRA	CAM_PROC1_POS_5000	;
+
+;	=== そのまま ===
+CAM_PROC1_POS_2980:
+	M_BRA	CAM_PROC1_POS_5000	;
+
+;	===========================
+;	===	開始==終了	===
+;	===========================
+;	"位置ｶﾑ的な動作になる"
+;	ON-->OFF-->OBJ:以降OFF
+;	OFF-->ON-->OBJ:以降ON
+CAM_PROC1_POS_3000:
+	MOV.W	@(_CAM_INF_D1,GBR),R0	;
+	TST	#(BIT1+BIT0),R0		;どちらかに戻り行程が存在するか
+	TST_BIT_OF CAM_PROC1_POS_3010	;
+	FAR_JSR	#_CAM_REP_STR2_PROC,R0	;
+	M_BRA	CAM_PROC1_POS_5000	;
+CAM_PROC1_POS_3010:
+	MOV.L	#_MOT_REP_F,R1			;
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_OF CAM_PROC1_POS_3020		;
+	M_BRA	CAM_PROC1_POS_5000	;
+CAM_PROC1_POS_3020:
+
+;	-------------- 繰り返し以外--------------
+	CMP/EQ	R11,R14				;開始工程=終了工程=NOW
+	BF	CAM_PROC1_POS_3300		;
+	TST	R5,R5				;
+	TST_BIT_ON CAM_PROC1_POS_3300		;工程終了ならON/OFF条件にゆだねる
+	M_BRA	CAM_PROC1_POS_3400		;
+
+CAM_PROC1_POS_3300:
+;	======= 開始=終了で　現在はその工程にない ===
+	MOV	R11,R1				;
+	ADD	#-1,R1				;
+	SHLL2	R1				;
+	MOV.L	#_SET1_OBJ_CAM_DIG_TOP,R0	;
+	ADD	R0,R1				;
+	MOV.W	@R1+,R4				;方向
+	MOV.W	@R1,R3				;目標角度
+
+	MOV.W	@(_CAM_ON_DIG,GBR),R0		;[off-->on-->obJならon固定]
+	MOV	R0,R1				;
+	MOV	R4,R0
+	TST	#BIT1,R0			;
+	TST_BIT_OF CAM_PROC1_POS_3330		;
+	MOV	R1,R0
+	MOV	R3,R1				;
+	MOV	R0,R3				;
+
+CAM_PROC1_POS_3330:
+	MOV.W	@(_CAM_OF_DIG,GBR),R0		;R1
+	MOV	R0,R2				;ON(R1)  OBJ(R3)
+	FAR_JSR	#_DIG_AREA_CHK0,R0		;(ON範囲)
+	TST	R0,R0				;
+	TST_BIT_ON CAM_PROC1_POS_3900		;ON-->OFF-->OBJ (OFFでかならず終わる)
+	M_BRA	CAM_PROC1_POS_3950		;YES:ON
+
+
+;	====== ON/OFFを判定する工程====
+CAM_PROC1_POS_3400:
+	MOV.W	@(_CAM_ON_DIG,GBR),R0		;
+	MOV	R0,R1				;
+	MOV.W	@(_CAM_OF_DIG,GBR),R0		;
+	MOV	R0,R3				;
+	MOV	R9,R0				;
+	TST	#BIT1,R0			;
+	TST_BIT_OF CAM_PROC1_POS_3450		;
+	MOV	R1,R0				;
+	MOV	R3,R1				;
+	MOV	R0,R3				;
+CAM_PROC1_POS_3450:				;
+	MOV	R6,R2				;(ON)
+	FAR_JSR	#_DIG_AREA_CHK0,R0		;(ON範囲)
+	TST	R0,R0				;
+	TST_BIT_ON CAM_PROC1_POS_3950		;
+;	===	OFF  ===
+CAM_PROC1_POS_3900:
+	CAM_OF1
+	M_BRA	CAM_PROC1_POS_5000	;
+;	===	ON  ===
+CAM_PROC1_POS_3950:
+	CAM_ON1
+	M_BRA	CAM_PROC1_POS_5000	;
+
+;	=== そのまま ===
+CAM_PROC1_POS_3980:
+
+CAM_PROC1_POS_5000:
+	SUB_END
+	M_RTS
+
+
+
+
+;	***********************************
+;	***				***
+;	***	ON工程時のﾁｪｯｸ+CAM_ON	***
+;	***				***
+;	***********************************
+_CAM_POS_ON_PROC_CHK:
+	SUB_START
+	CMP/EQ	R13,R14				;
+	BT	CAM_POS_ON_CAM_50		;
+;	====== 今この工程に入った=====		;
+	CAM_OF1					;"OFF"していていたはず
+CAM_POS_ON_CAM_50:				;
+
+	TST	R7,R8				;
+	TST_BIT_ON CAM_POS_ON_CAM_EXT		;(ﾋｽﾃﾘｼｽ対策)
+
+	MOV.W	@(_CAM_ON_DIG,GBR),R0		;
+	MOV	R0,R1				;
+	FAR_JSR	#_CAM_POS_DIR_ON_OF_CHK,R0	;ANS R0=1(AREA) R0=0 NOT AREA
+	TST	R0,R0				;
+	TST_BIT_ON CAM_POS_ON_CAM_ON		;
+	TST	R5,R5				;
+	TST_BIT_ON CAM_POS_ON_CAM_ON		;"ﾆｱｾﾞﾛはみるとしたらBUSYの次"
+	M_BRA	CAM_POS_ON_CAM_EXT		;
+
+CAM_POS_ON_CAM_ON:
+	CAM_ON1
+CAM_POS_ON_CAM_EXT:
+	SUB_END
+	M_RTS
+
+
+_CAM_POS_OF_PROC_CHK:
+	SUB_START
+;	====== OFF位置と目標位置の間に方向を判定して入ればOFF ===
+	CMP/EQ	R13,R14				;
+	BT	CAM_POS_OF_CAM_50		;
+;	====== 今この工程に入った=====		;
+	CAM_ON1					;"ON"していたはず
+CAM_POS_OF_CAM_50:				;
+	MOV.W	@(_CAM_OF_DIG,GBR),R0		;
+	MOV	R0,R1				;
+	FAR_JSR	#_CAM_POS_DIR_ON_OF_CHK,R0	;ANS R0=1(AREA) R0=0 NOT AREA
+	TST	R0,R0				;
+	TST_BIT_ON CAM_POS_OF_CAM_OF		;
+	TST	R5,R5				;
+	TST_BIT_ON CAM_POS_OF_CAM_OF		;(この工程の位置決め完了)
+	M_BRA	CAM_POS_OF_CAM_EXT		;
+CAM_POS_OF_CAM_OF				;
+	CAM_OF1					;
+CAM_POS_OF_CAM_EXT
+	SUB_END
+	M_RTS
+
+
+
+
+;R1(ON),R10(OBJ),R6(現在角度),R9(BIT1=0正転)
+;ANS R0=FFFF(AREA) R0=0 NOT AREA
+;DESTROY R1,R3
+
+_CAM_POS_DIR_ON_OF_CHK:	;ANS R0=1(AREA) R0=0 NOT AREA
+	SUB_START
+	MOV	R10,R3						;
+	MOV	R9,R0						;
+	TST	#BIT1,R0					;
+	TST_BIT_OF CAM_POS_DIR_ON_OFCHK_050			;
+	MOV	R1,R3						;
+	MOV	R10,R1						;
+CAM_POS_DIR_ON_OFCHK_050:					;
+	MOV	R6,R2						;
+	DIG_AREA_CHK STREG=R1,EDREG=R3,PVREG=R2,ANSREG=R0	;R0 !=0 範囲内
+	SUB_END							;R0=0範囲外
+	M_RTS
+
+
+;	***************************************************
+;	***						***
+;	***						***
+;	***						***
+;	***						***
+;	***	リピートを設定された行程を含む場合	***
+;	***						***
+;	***						***
+;	***						***
+;	***						***
+;	***************************************************
+;	開始行程＜終了行程
+_CAM_REP_STR1_PROC
+	SUB_START
+
+	CMP/EQ	R11,R14			;ON行程==現在行程
+	BF	CAM_REP_STR1PRC_100	;
+
+	FAR_JSR	#_CAMREP_ON_PROC,R0	;
+
+	M_BRA	CAM_REP_STR1PRC_500	;
+
+CAM_REP_STR1PRC_100
+
+	CMP/EQ	R12,R14			;OF行程==現在行程
+	BF	CAM_REP_STR1PRC_500	;
+
+	FAR_JSR	#_CAMREP_OF_PROC,R0	;
+
+CAM_REP_STR1PRC_500
+
+	SUB_END
+	M_RTS
+
+
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+;
+;
+_CAM_REP_STR2_PROC
+	SUB_START
+
+	CMP/EQ	R11,R14			;ON行程==OFF行程==現在行程
+	BT	CAM_REP_STR2PRC_050	;YES
+	M_BRA	CAM_REP_STR2PRC_500	;
+
+CAM_REP_STR2PRC_050	;
+;	----- 実際はもう少し分解が必要 -------
+	MOV.W	@(_CAM_INF_D1,GBR),R0		;
+	AND	#(BIT1+BIT0),R0			;
+	CMP/EQ	#(BIT1+BIT0),R0			;
+	BF	CAM_REP_STR2PRC_100		;
+
+	MOV.L	#_MOT_REP_F,R1			;
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_OF CAM_REP_STR2PRC_500		;
+
+	FAR_JSR	#_CAM_POS_REP_AREACMP,R0	;ON/ONで且つ同一行程
+	M_BRA	CAM_REP_STR2PRC_500		;
+
+
+
+CAM_REP_STR2PRC_100
+	MOV.W	@(_CAM_INF_D1,GBR),R0		;
+	TST	#BIT1,R0			;
+	TST_BIT_ON CAM_REP_STR2PRC_300		;
+;
+;	D.BIT0=1 n.5(ON条件行程)
+;	D.BIT1=0 n  (OFF条件行程)
+;
+;	----- D1.BIT0=1 n.5行程--------
+	MOV.L	#_MOT_REP_F,R1			;
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON CAM_REP_STR2PRC_150
+
+;	----行程=n OFF条件ﾁｪｯｸ[通常の行程]---
+	FAR_JSR	#_CAM_POSEDG_OF_PROC_CHK,R0	;2014-09-22
+	M_BRA	CAM_REP_STR2PRC_500
+
+CAM_REP_STR2PRC_150:
+;	----行程=n.5 ON条件----------
+	FAR_JSR	#_CAM_POS_REPDIG_CMP1,R0	;
+	M_BRA	CAM_REP_STR2PRC_500
+
+
+
+CAM_REP_STR2PRC_300
+;	BIT1=1:------ OFF行程が後------------
+;	D.BIT1=1 n.5(OF条件行程)
+;	D.BIT0=0 n  (ON条件行程)
+
+	MOV.L	#_MOT_REP_F,R1			;
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON CAM_REP_STR2PRC_350
+
+;	----- ON条件ﾁｪｯｸ[通常の行程]
+	FAR_JSR	#_CAM_POSEDG_ON_PROC_CHK,R0	;2014-09-22
+	M_BRA	CAM_REP_STR2PRC_500
+
+CAM_REP_STR2PRC_350:
+;	------- OFF条件----------
+	FAR_JSR	#_CAM_POS_REPDIG_CMP2,R0	;
+
+CAM_REP_STR2PRC_500
+
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+_CAMREP_ON_PROC:
+	SUB_START
+
+	MOV.L	#_MOT_REP_F,R1			;//BIT0(ﾘﾋﾟｰﾄ動作
+	MOV.W	@R1,R2				;
+
+	MOV.W	@(_CAM_INF_D1,GBR),R0		;
+	TST	#BIT0,R0			;ON
+	TST_BIT_ON CAMREP_ON_PC_100		;
+
+	MOV	R2,R0				;
+	TST	#BIT0,R0			;ﾘﾋﾟｰﾄではない
+	TST_BIT_OF CAMREP_ON_PC_200		;同一行程
+	M_BRA	CAMREP_ON_PC_EXT
+
+
+CAMREP_ON_PC_100:
+	MOV	R2,R0				;
+	TST	#BIT0,R0			;ﾘﾋﾟｰﾄ
+	TST_BIT_ON CAMREP_ON_PC_200		;同一行程
+	M_BRA	CAMREP_ON_PC_EXT
+
+CAMREP_ON_PC_200:
+	TST	R5,R5				;
+	TST_BIT_ON CAMREP_ON_PC_CAMON		;
+
+
+
+	MOV.W	@(_CAM_ON_DIG,GBR),R0		;[off-->on-->obJならon固定]
+	MOV	R0,R1
+	FAR_JSR	#_CAM_POS_DIR_ON_OF_CHK,R0	;ANS R0=1(AREA) R0=0 NOT AREA
+	TST	R0,R0				;
+	TST_BIT_ON CAMREP_ON_PC_CAMON		;
+	M_BRA	CAMREP_ON_PC_EXT		;
+
+
+CAMREP_ON_PC_CAMON:
+	CAM_ON1
+CAMREP_ON_PC_EXT:
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+_CAMREP_OF_PROC:
+	SUB_START
+
+	MOV.L	#_MOT_REP_F,R1			;//BIT0(ﾘﾋﾟｰﾄ動作
+	MOV.W	@R1,R2				;
+
+	MOV.W	@(_CAM_INF_D1,GBR),R0		;
+	TST	#BIT1,R0			;ON
+	TST_BIT_ON CAMREP_OF_PC_100		;
+
+	MOV	R2,R0				;
+	TST	#BIT0,R0			;ﾘﾋﾟｰﾄではない
+	TST_BIT_OF CAMREP_OF_PC_200		;同一行程
+	M_BRA	CAMREP_OF_PC_EXT
+
+
+CAMREP_OF_PC_100:
+	MOV	R2,R0				;
+	TST	#BIT0,R0			;ﾘﾋﾟｰﾄ
+	TST_BIT_ON CAMREP_OF_PC_200		;同一行程
+	M_BRA	CAMREP_OF_PC_EXT
+
+CAMREP_OF_PC_200:
+	TST	R5,R5				;
+	TST_BIT_ON CAMREP_OF_PC_CAMON		;
+
+	MOV.W	@(_CAM_OF_DIG,GBR),R0		;R1
+	MOV	R0,R1
+	FAR_JSR	#_CAM_POS_DIR_ON_OF_CHK,R0	;ANS R0=1(AREA) R0=0 NOT AREA
+	TST	R0,R0				;
+	TST_BIT_ON CAMREP_OF_PC_CAMON		;
+	M_BRA	CAMREP_OF_PC_EXT		;
+
+
+CAMREP_OF_PC_CAMON:
+	CAM_OF1
+CAMREP_OF_PC_EXT:
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+
+
+
+
+
+;	***********************************
+;	***				***
+;	***	まずはﾘﾋﾟｰﾄ用EDGﾀｲﾌﾟ	***
+;	***	ON工程時のﾁｪｯｸ+CAM_ON	***
+;	***				***
+;	***********************************
+_CAM_POSEDG_ON_PROC_CHK:
+	SUB_START
+	CMP/EQ	R13,R14				;
+	BT	CAM_POSEDG_ON_CAM_50		;
+;	====== 今この工程に入った=====		;
+;;;;;;;;;;;;;;	CAM_OF1					;"OFF"していていたはず
+CAM_POSEDG_ON_CAM_50:				;
+
+	TST	R7,R8				;
+	TST_BIT_ON CAM_POSEDG_ON_CAM_EXT		;(ﾋｽﾃﾘｼｽ対策)
+
+	MOV.W	@(_CAM_ON_DIG,GBR),R0		;
+	MOV	R0,R1				;
+	FAR_JSR	#_CAM_POS_DIR_ON_OF_CHK,R0	;ANS R0=1(AREA) R0=0 NOT AREA
+	TST	R0,R0				;
+	TST_BIT_ON CAM_POSEDG_ON_CAM_ON		;
+	TST	R5,R5				;
+	TST_BIT_ON CAM_POSEDG_ON_CAM_ON		;"ﾆｱｾﾞﾛはみるとしたらBUSYの次"
+	M_BRA	CAM_POSEDG_ON_CAM_EXT		;
+
+CAM_POSEDG_ON_CAM_ON:
+	CAM_ON1
+CAM_POSEDG_ON_CAM_EXT:
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	まずはﾘﾋﾟｰﾄ用EDGﾀｲﾌﾟ	***
+;	***	OFF工程時のﾁｪｯｸ+CAM_ON	***
+;	***				***
+;	***********************************
+_CAM_POSEDG_OF_PROC_CHK:
+	SUB_START
+;	====== OFF位置と目標位置の間に方向を判定して入ればOFF ===
+	CMP/EQ	R13,R14				;
+	BT	CAM_POSEDG_OF_CAM_50		;
+;	====== 今この工程に入った=====		;
+;;;;;;;;;;;	CAM_ON1					;"ON"していたはず
+CAM_POSEDG_OF_CAM_50:				;
+	MOV.W	@(_CAM_OF_DIG,GBR),R0		;
+	MOV	R0,R1				;
+	FAR_JSR	#_CAM_POS_DIR_ON_OF_CHK,R0	;ANS R0=1(AREA) R0=0 NOT AREA
+	TST	R0,R0				;
+	TST_BIT_ON CAM_POSEDG_OF_CAM_OF		;
+	TST	R5,R5				;
+	TST_BIT_ON CAM_POSEDG_OF_CAM_OF		;(この工程の位置決め完了)
+	M_BRA	CAM_POSEDG_OF_CAM_EXT		;
+CAM_POSEDG_OF_CAM_OF				;
+	CAM_OF1					;
+CAM_POSEDG_OF_CAM_EXT
+	SUB_END
+	M_RTS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;	***********************************
+;	***				***
+;	***	2014-09-23		***
+;	***	CAM 繰り返し		***
+;	***	ON行程ﾁｪｯｸ		***
+;	***********************************
+_CAM_POS_ON_REPPROC_CHK:
+	SUB_START
+
+	MOV.W	@(_CAM_INF_D1,GBR),R0		;
+	TST	#(BIT1+BIT0),R0			;
+	TST_BIT_OF CAM_POS_ON_REPPRCCHK_500	;REPEATと関係ない指定
+
+
+	MOV.L	#_MOT_REP_F,R1			;//BIT0(ﾘﾋﾟｰﾄ動作
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON CAM_POS_ON_REPPRCCHK_200	;
+
+	MOV.W	@(_CAM_INF_D1,GBR),R0		;
+	TST	#BIT0,R0			;
+	TST_BIT_OF CAM_POS_ON_REPPRCCHK_500	;同じ状態OFF-OFF(R指定無しも)
+	M_BRA	CAM_POS_ON_REPPRCCHK_400	;指定はREP:ON　行程はREP行程に達していない=OFF
+
+
+CAM_POS_ON_REPPRCCHK_200:
+	MOV.W	@(_CAM_INF_D1,GBR),R0		;
+	TST	#BIT0,R0			;
+	TST_BIT_ON CAM_POS_ON_REPPRCCHK_500	;同じ状態ON-ON
+	M_BRA	CAM_POS_ON_REPPRCCHK_300	;指定はREP:OF　行程はREP-ON：超えた
+
+
+CAM_POS_ON_REPPRCCHK_300:
+	MOV.B	#BIT0,R0			;ON固定
+	M_BRA	CAM_POS_ON_REPPRCCHK_END
+CAM_POS_ON_REPPRCCHK_400:
+	MOV.B	#-1,R0				;OFF固定
+	M_BRA	CAM_POS_ON_REPPRCCHK_END
+CAM_POS_ON_REPPRCCHK_500:
+	XOR	R0,R0				;不明
+CAM_POS_ON_REPPRCCHK_END:
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***	2014-09-23		***
+;	***	CAM 繰り返し		***
+;	***	OFF行程ﾁｪｯｸ		***
+;	***********************************
+_CAM_POS_OF_REPPROC_CHK:
+	SUB_START
+	MOV.L	#_MOT_REP_F,R1			;//BIT0(ﾘﾋﾟｰﾄ動作
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON CAM_POS_OF_REPPRCCHK_200	;
+
+	MOV.W	@(_CAM_INF_D1,GBR),R0		;
+	TST	#BIT1,R0			;
+	TST_BIT_OF CAM_POS_OF_REPPRCCHK_500	;同じ状態OFF-OFF(R指定無しも)
+	M_BRA	CAM_POS_OF_REPPRCCHK_400	;指定はREP:ON　行程はREP行程に達していない=OFF
+
+
+CAM_POS_OF_REPPRCCHK_200:
+	MOV.W	@(_CAM_INF_D1,GBR),R0		;
+	TST	#BIT1,R0			;
+	TST_BIT_ON CAM_POS_OF_REPPRCCHK_500	;同じ状態ON-ON
+	M_BRA	CAM_POS_OF_REPPRCCHK_300	;指定はREP:OF　行程はREP-ON：超えた
+
+
+CAM_POS_OF_REPPRCCHK_300:
+	MOV.B	#-1,R0				;OFF固定
+	M_BRA	CAM_POS_OF_REPPRCCHK_END
+CAM_POS_OF_REPPRCCHK_400:
+	MOV.B	#BIT0,R0			;ON固定
+	M_BRA	CAM_POS_OF_REPPRCCHK_END
+CAM_POS_OF_REPPRCCHK_500:
+	XOR	R0,R0				;不明
+CAM_POS_OF_REPPRCCHK_END:
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***	2014-09-23		***
+;	***	CAM 繰り返し		***
+;	***	角度ﾁｪｯｸ		***
+;	***********************************
+;	ON角度
+;	4:OF => 4.5 ON;
+_CAM_POS_REPDIG_CMP1
+	SUB_START
+
+
+	TST	R5,R5				;
+	TST_BIT_ON CAM_POS_REPDIGCMP_ON		;
+
+	MOV.W	@(_CAM_ON_DIG,GBR),R0		;
+	MOV	R0,R2				;
+	MOV.L	#_REP_CAMOBJ_DIG,R4		;//ｶﾑ用の戻り目標角度
+	MOV.W	@R4,R3				;
+
+
+	MOV.L	#_SETX_MOTREP_DIR,R4		;//設定上どっちの方向　  1:-1
+	MOV.W	@R4,R0				;
+	TST	#BIT1,R0			;
+	TST_BIT_ON CAM_POS_REPDIGCMP1_100
+	;"正転"
+	MOV	R2,R1				;
+	MOV	R6,R2				;R1(on角度)=<R2=<R3(目標)
+	M_BRA	CAM_POS_REPDIGCMP1_200		;
+
+CAM_POS_REPDIGCMP1_100
+	;"逆転"
+	MOV	R3,R1						;
+	MOV	R2,R3						;
+	MOV	R6,R2						;R1(目標)=<R2=<R3(on角度)
+
+
+CAM_POS_REPDIGCMP1_200
+	DIG_AREA_CHK STREG=R1,EDREG=R3,PVREG=R2,ANSREG=R0	;R0 !=0 範囲内
+	TST	R0,R0
+	TST_BIT_ON CAM_POS_REPDIGCMP_ON				;範囲内=on
+	M_BRA	CAM_POS_REPDIGCMP_KEP
+
+
+;	4:ON => 4.5 OFF
+_CAM_POS_REPDIG_CMP2
+	SUB_START
+
+
+	TST	R5,R5				;
+	TST_BIT_ON CAM_POS_REPDIGCMP_OF		;
+
+	MOV.W	@(_CAM_OF_DIG,GBR),R0		;
+	MOV	R0,R2				;
+	MOV.L	#_REP_CAMOBJ_DIG,R4		;//ｶﾑ用の戻り目標角度
+	MOV.W	@R4,R3				;
+
+
+	MOV.L	#_SETX_MOTREP_DIR,R4		;//設定上どっちの方向　  1:-1
+	MOV.W	@R4,R0				;
+	TST	#BIT1,R0			;
+	TST_BIT_ON CAM_POS_REPDIGCMP2_100
+	;"正転"
+	MOV	R2,R1				;
+	MOV	R6,R2				;;R1(off角度)=<R2=<R3(目標)
+	M_BRA	CAM_POS_REPDIGCMP2_200		;
+
+CAM_POS_REPDIGCMP2_100
+	;"逆転"
+	MOV	R3,R1				;
+	MOV	R2,R3				;
+	MOV	R6,R2				;;R1(目標)=<R2=<R3(on角度)
+
+
+CAM_POS_REPDIGCMP2_200
+	DIG_AREA_CHK STREG=R1,EDREG=R3,PVREG=R2,ANSREG=R0	;R0 !=0 範囲内
+	TST	R0,R0
+	TST_BIT_ON CAM_POS_REPDIGCMP_OF		;範囲内=off
+	M_BRA	CAM_POS_REPDIGCMP_KEP		;
+;;;;;;;	M_BRA	CAM_POS_REPDIGCMP_ON		;;KEEPでも構わないないが..
+
+CAM_POS_REPDIGCMP_OF
+	CAM_OF1
+	M_BRA	CAM_POS_REPDIGCMP_END
+CAM_POS_REPDIGCMP_ON
+	CAM_ON1
+	M_BRA	CAM_POS_REPDIGCMP_END
+CAM_POS_REPDIGCMP_KEP
+CAM_POS_REPDIGCMP_END
+	SUB_END
+	M_RTS
+
+
+
+
+;	***********************************
+;	***				***
+;	***	2014-09-23		***
+;	***	CAM 繰り返し		***
+;	***	角度ﾁｪｯｸ		***
+;	***********************************
+;	ON角度
+;	その行程でのみ判断
+_CAM_POS_REP_AREACMP
+	SUB_START
+
+
+	MOV.W	@(_CAM_ON_DIG,GBR),R0		;
+	MOV	R0,R1				;
+	MOV.W	@(_CAM_OF_DIG,GBR),R0		;
+	MOV	R0,R2				;
+	MOV	R10,R3				;R10:_REP_CAMOBJ_DIG
+	MOV	R9,R0				;R9:SETX_MOTREP_DIR
+	TST	#BIT1,R0			;
+	TST_BIT_ON CAM_POS_REPAREACMP_300	;逆転動作を行う
+
+;	----------モータは正転動作---------------
+	DIG_AREA_CHK STREG=R1,EDREG=R3,PVREG=R2,ANSREG=R0	;ON(R1)->OF(R2)->OBJ(R3)の並びか?
+	TST	R0,R0						;
+	TST_BIT_OF CAM_POS_REPAREACMP_100			;
+
+;	ON(100)->OFF(200) OFFで終わる
+
+	TST	R5,R5
+	TST_BIT_ON CAM_POS_REPAREACMP_090_OF
+
+	MOV	R2,R3
+	MOV	R6,R2
+	DIG_AREA_CHK STREG=R1,EDREG=R3,PVREG=R2,ANSREG=R0	;R0 !=0 範囲内
+	TST	R0,R0						;ON(R1)<= R2 <= OFF(R3)
+	TST_BIT_ON CAM_POS_REPAREACMP_090_ON			;
+
+	MOV	R3,R1						;
+	MOV	R10,R3						;
+	DIG_AREA_CHK STREG=R1,EDREG=R3,PVREG=R2,ANSREG=R0	;R0 !=0 範囲内
+	TST	R0,R0						;OFF(R1)<= R2 <= OBJ(R3)
+	TST_BIT_ON CAM_POS_REPAREACMP_090_OF			;
+	M_BRA	CAM_POS_REPAREACMP_KEP				;
+
+CAM_POS_REPAREACMP_090_ON
+	M_BRA	CAM_POS_REPAREACMP_ON				;
+
+CAM_POS_REPAREACMP_090_OF
+	M_BRA	CAM_POS_REPAREACMP_OF				;
+
+
+
+CAM_POS_REPAREACMP_100
+;	OFF(100)->ON(200) ONで終わる
+	MOV	R2,R3
+	MOV	R6,R2
+	DIG_AREA_CHK STREG=R3,EDREG=R1,PVREG=R2,ANSREG=R0	;R0 !=0 範囲内
+	TST	R0,R0						;
+	TST_BIT_ON CAM_POS_REPAREACMP_150_OF			;必ず
+
+	TST	R5,R5						;
+	TST_BIT_ON CAM_POS_REPAREACMP_150_ON			;行程完了のとき
+
+	MOV	R10,R3						;
+	DIG_AREA_CHK STREG=R1,EDREG=R3,PVREG=R2,ANSREG=R0	;R0 !=0 範囲内
+	TST	R0,R0						;ON角度~R2~目標角度
+	TST_BIT_ON CAM_POS_REPAREACMP_ON			;必ずONする角度
+	M_BRA	CAM_POS_REPAREACMP_KEP				;
+
+CAM_POS_REPAREACMP_150_ON
+	M_BRA	CAM_POS_REPAREACMP_ON				;
+
+CAM_POS_REPAREACMP_150_OF
+	M_BRA	CAM_POS_REPAREACMP_OF				;
+
+
+
+
+
+
+CAM_POS_REPAREACMP_300
+;	----------逆転動作(300->100)---------------
+	DIG_AREA_CHK STREG=R3,EDREG=R1,PVREG=R2,ANSREG=R0	;ON(R1)->OF(R2)->OBJ(R3)の並びか?
+	TST	R0,R0
+	TST_BIT_OF CAM_POS_REPAREACMP_400		;
+
+;	----------(300...->200...->100)---------------
+;	R3(100)<R1(200)ON角度 ONが先にくる:OFFで終わる
+	MOV	R2,R3
+	MOV	R6,R2
+	DIG_AREA_CHK STREG=R3,EDREG=R1,PVREG=R2,ANSREG=R0	;R0 !=0 範囲内
+	TST	R0,R0						;ON(R1)->PV(R2)->OF(R3)の並びか?
+	TST_BIT_ON CAM_POS_REPAREACMP_350_ON			;
+
+	MOV	R3,R1				;
+	MOV	R10,R3				;R10:_REP_CAMOBJ_DIG
+	DIG_AREA_CHK STREG=R3,EDREG=R1,PVREG=R2,ANSREG=R0	;R0 !=0 範囲内
+	TST	R0,R0						;ON(R1)->PV(R2)->OF(R3)の並びか?
+	TST_BIT_ON CAM_POS_REPAREACMP_350_OF			;
+	M_BRA	CAM_POS_REPAREACMP_KEP				;
+
+
+CAM_POS_REPAREACMP_350_ON
+	M_BRA	CAM_POS_REPAREACMP_ON				;
+
+CAM_POS_REPAREACMP_350_OF
+	M_BRA	CAM_POS_REPAREACMP_OF				;
+
+
+
+
+
+CAM_POS_REPAREACMP_400
+;	----------(300...->200...->100)---------------
+;	R1(100)<R3(200) ONが後にくる:ONで終わる
+
+	MOV	R2,R3
+	MOV	R6,R2
+	DIG_AREA_CHK STREG=R1,EDREG=R3,PVREG=R2,ANSREG=R0	;R0 !=0 範囲内
+	TST	R0,R0						;
+	TST_BIT_ON CAM_POS_REPAREACMP_OF			;必ずOFFすべき範囲
+
+	TST	R5,R5						;
+	TST_BIT_ON CAM_POS_REPAREACMP_ON			;行程完了のとき
+
+	MOV	R10,R3						;
+	DIG_AREA_CHK STREG=R3,EDREG=R1,PVREG=R2,ANSREG=R0	;R0 !=0 範囲内
+	TST	R0,R0						;ON角度~R2~目標角度
+	TST_BIT_ON CAM_POS_REPAREACMP_ON			;
+	M_BRA	CAM_POS_REPAREACMP_KEP
+
+
+
+CAM_POS_REPAREACMP_ON
+	CAM_ON1
+	M_BRA	CAM_POS_REPAREACMP_END
+
+CAM_POS_REPAREACMP_OF
+	CAM_OF1
+	M_BRA	CAM_POS_REPAREACMP_END
+
+CAM_POS_REPAREACMP_KEP
+
+
+CAM_POS_REPAREACMP_END
+	SUB_END
+	M_RTS
+
+
+
+
+
+;	***********************************
+;	***				***
+;	***	位置カム		***
+;	***				***
+;	***********************************
+_CAM_ONLY1_POS_CHK:
+	SUB_START
+	MOV.W	@(_CAM_ON_DIG,GBR),R0		;
+	MOV	R0,R1				;On
+	MOV.W	@(_CAM_OF_DIG,GBR),R0		;
+	MOV	R0,R3				;Of
+	DIG_AREA_CHK STREG=R1,EDREG=R3,PVREG=R6,ANSREG=R0	;R0 !=0 範囲内
+	TST	R0,R0						;R0=0範囲外
+	TST_BIT_OF CAM_ONLY1_POSCK_100
+	CAM_ON1
+	M_BRA	CAM_ONLY1_POSCK_200	
+CAM_ONLY1_POSCK_100:
+	CAM_OF1
+CAM_ONLY1_POSCK_200:
+	SUB_END
+	M_RTS
+
+
+
+
+
+;	***********************************
+;	***				***
+;	***				***
+;	***				***
+;	***********************************
+;	Input R6:NOW_POS
+;	==== この上位に工程条件が入る。または単独で呼ばれる ====
+;	Input R5(工程の場合はR9をMOV,単体の場合はR4=0)
+;
+;	<"ON角度+/-:3度"の範囲外になったら(ﾀｲﾏ中であろうと監視する)ONﾁｪｯｸ再度有効>
+;
+;	OFF行程は使用していない
+;
+;
+_CAM_DIG_UNIT	.EQU	3600	;
+_TIM_DIG_HIS	.EQU	30	;3.0度
+
+_CAM_PROC1_TIM:
+	SUB_START
+	MOV.W	@(_CAM_ON_STP,GBR),R0	;
+	MOV	R0,R11			;開始工程
+	TST	R11,R11			;
+	TST_BIT_ON CAM_PROC1_TIM_0200	;
+	PUSH_REG1 R9
+	XOR	R9,R9			;
+	FAR_JSR	#_CAM_ONLY2_TIM_CHK,R0	;通常のﾀｲﾏｶﾑ
+	POP_REG1 R9
+	M_BRA	CAM_PROC1_TIM_5000	;"ANS R8"
+
+;	===============================
+CAM_PROC1_TIM_0200:						;
+
+	TST	R7,R8						;
+	TST_BIT_ON CAM_PROC1_TIM_1000				;ON中は工程に関わらず呼ぶ
+
+	MOV.W	@(_CAM_DT_FLG,GBR),R0				;
+	TST	#BIT0,R0					;
+	TST_BIT_ON CAM_PROC1_TIM_1000				;(工程が変わったの条件でOFFした方がいいか?)
+
+	CMP/EQ	R11,R14						;//R11<ON工程>=R14現在の工程
+	BF	CAM_PROC1_TIM_0250				;
+
+;	一見行程は同じ REPは0.5行程の意味
+;	-------- REP ------------
+	MOV.W	@(_CAM_INF_D1,GBR),R0				;
+	TST	#BIT0,R0					;
+	TST_BIT_OF CAM_PROC1_TIM_1000				;R指定無し
+
+;	------- ﾘﾋﾟｰﾄ指定有り-------
+	MOV.L	#_MOT_REP_F,R1					;//BIT0(ﾘﾋﾟｰﾄ動作
+	MOV.W	@R1,R0						;
+	TST	#BIT0,R0					;
+	TST_BIT_ON CAM_PROC1_TIM_1000				;R指定有り
+
+CAM_PROC1_TIM_0250:						;	
+	M_BRA	CAM_PROC1_TIM_5000				;(演算しない OFFではない)
+
+;;;;;;;	CMP/EQ	R11,R14						;//R11<ON工程>=R14現在の工程
+;;;;;;;	BT	CAM_PROC1_TIM_1000				;
+;;;;;;;	CMP/GT	R11,R14						; ON工程を過ぎたR14
+;;;;;;;	BF	CAM_PROC1_TIM_5000				; 
+;;;;;;;	CMP/GT	R13,R11						;R13:前回の工程< ON工程
+;;;;;;;	BF	CAM_PROC1_TIM_5000				; 
+;;;;;;;	======= 工程をまたいだ(強制ON)===
+;;;;;;;	M_BRA	CAM_PROC1_TIM_5000				;(演算しない OFFではない)
+
+;	===========================================
+;	===	ON条件工程中またはON中のOFF待ち	===
+;	===========================================
+CAM_PROC1_TIM_1000:
+	FAR_JSR	#_CAM_ONLY2_TIM_CHK,R0	;通常のﾀｲﾏｶﾑ
+CAM_PROC1_TIM_5000:
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***	通常のタイマカム	***
+;	***********************************
+;	現状の論理
+;
+;	ON角度 +/-3度
+;	ON-3度~=< DIG =< ~ON+3度
+;　　　=>方向の判別がない為、逆回転したらONしてしまう。
+;	_CAM_DT_FLG=0:ON有効
+;	_CAM_DT_FLG=1:ON不可
+;
+
+_CAM_ONLY2_TIM_CHK:
+	SUB_START
+	MOV.W	@(_CAM_DT_FLG,GBR),R0				;
+	TST	#BIT0,R0					;
+	TST_BIT_OF CAM_ONLY2_TIMCK_100				;BIT0=0:ON条件ﾁｪｯｸ
+
+	MOV.W	@(_CAM_ON_DIG,GBR),R0				;ON不可状態 
+	MOV	R0,R1						;
+	MOV.W	#_TIM_DIG_HIS,R3				;R2+R3==>R3
+	DIG_REGA_SUB_REGB_ANS_REGB REGA=R3,REGB=R1,WKREG=R4,LATE=_CAM_DIG_UNIT	;R0=R1-his-->R1
+	DIG_REGA_ADD_REGB_ANS_REGB REGA=R0,REGB=R3,WKREG=R4,LATE=_CAM_DIG_UNIT	;R0=R1+his-->R3
+	DIG_AREA_CHK STREG=R1,EDREG=R3,PVREG=R6,ANSREG=R0	;R0 !=0 範囲内
+								;R0=0範囲外
+	TST	R0,R0						;
+	TST_BIT_ON CAM_ONLY2_TIMCK_100				;
+;	==== 範囲外になった・ﾀｲﾏｶﾑﾁｪｯｸ有効 ====
+	XOR	R0,R0						;
+	MOV.W	R0,@(_CAM_DT_FLG,GBR)				;
+	M_BRA	CAM_ONLY2_TIMCK_300				;W
+
+
+
+CAM_ONLY2_TIMCK_100:
+	TST	R7,R8				;出力ON?
+	TST_BIT_ON CAM_ONLY2_TIMCK_200		;
+
+;	===== OFF(ON条件検索) ====
+	MOV.W	@(_CAM_DT_FLG,GBR),R0		;
+	TST	#BIT0,R0			;
+	TST_BIT_ON CAM_ONLY2_TIMCK_300		;
+
+
+	FAR_JSR	#_TIM_CAM_ON_CONF,R0		;
+	TST	R0,R0				;
+	TST_BIT_OF CAM_ONLY2_TIMCK_300		;
+
+;	===== 設定角度をまたいだ======
+	MOV	#BIT0,R0			;
+	MOV.W	R0,@(_CAM_DT_FLG,GBR)		;
+	CAM_ON1					;
+	MOV.W	@(_CAM_OF_TIM,GBR),R0		;
+	MOV.W	R0,@(_CAM_OF_DGT,GBR)		;
+	M_BRA	CAM_ONLY2_TIMCK_300		;
+
+;	==========================
+CAM_ONLY2_TIMCK_200:
+	MOV.W	@(_CAM_OF_DGT,GBR),R0		;ﾀﾞｳﾝﾀｲﾏLOAD
+	TST	R0,R0				;
+	TST_BIT_OF CAM_ONLY2_TIMCK_250		;
+	ADD	#-1,R0				;ｶｳﾝﾄﾀﾞｳﾝ
+	MOV.W	R0,@(_CAM_OF_DGT,GBR)		;
+	TST	R0,R0
+	TST_BIT_ON CAM_ONLY2_TIMCK_300		;
+CAM_ONLY2_TIMCK_250:				;
+	CAM_OF1					;ﾀｲﾑｱｯﾌﾟｶﾑOFF
+CAM_ONLY2_TIMCK_300:
+	SUB_END
+	M_RTS
+
+
+
+
+
+;	***************************************************************************
+;	***									***
+;	***	前回実測角度と今回実測角度が設定角度を動作方向を含みまたいだら	***
+;	***									***
+;	***************************************************************************
+;	R0= FF:ON   範囲内
+;	R0= 0 :OFF  範囲外
+;
+;;	.AIF	_PRG_CHG20030127 EQ _COMPILE_YES ;ﾌﾟﾛｸﾞﾗﾑ変更箇所(反転仕様以外の標準に入れる変更)
+;;_TIM_CAM_ON_CONF:
+;;	SUB_START
+;;
+;;	MOV.L	#_CAM_OLD_DIG,R1				;
+;;	MOV.W	@R1,R3						;OLD_POS
+;;	MOV.W	@(_CAM_ON_DIG,GBR),R0				;
+;;	MOV	R0,R2						; 現在位置OLD =< SV  =< 現在位置NEW CW方向
+;;
+;;	MOV	R9,R0						;
+;;	TST	#BIT1,R0					;
+;;	TST_BIT_ON TIM_CAM_ON_CF30				;
+;;	DIG_AREA_CHK STREG=R3,EDREG=R6,PVREG=R2,ANSREG=R0	;CW(FWD)
+;;	M_BRA	TIM_CAM_ON_CF50					;
+;;
+;;TIM_CAM_ON_CF30:
+;;	DIG_AREA_CHK STREG=R6,EDREG=R3,PVREG=R2,ANSREG=R0	;CCW(REV)
+;;TIM_CAM_ON_CF50:
+;;
+;;	SUB_END
+;;	M_RTS
+
+;	***************************************************************************
+;	***									***
+;	***	前回実測角度と今回実測角度が設定角度を動作方向を含みまたいだら	***
+;	***	但し、動作方向は実角度から割り出す				***
+;	***									***
+;	***************************************************************************
+;	.AIF	_PRG_CHG20030127 EQ _COMPILE_YES ;ﾌﾟﾛｸﾞﾗﾑ変更箇所(反転仕様以外の標準に入れる変更)
+;	ANS "R0=0:OFF" "R0!=1 ON"
+;	Input R6
+_TIM_CAM_ON_CONF:
+	SUB_START
+
+	MOV.L	#_CAM_OLD_DIG,R1				;
+	MOV.W	@R1,R3						;OLD_POS
+	MOV.W	@(_CAM_ON_DIG,GBR),R0				;
+	MOV	R0,R2						; 現在位置OLD =< SV  =< 現在位置NEW CW方向
+
+;;;;;;	MOV	R9,R0						;
+;;;;;;	TST	#BIT1,R0					;
+;;;;;;	TST_BIT_ON TIM_CAM_ON_CF30				;
+
+	MOV	R6,R4
+	DIG_REGA_SUB_REGB_ANS_REGB REGA=R3,REGB=R4,WKREG=R0,LATE=_CAM_DIG_UNIT	;REGB=REGB-REGA
+;	R4(今回)-R3(前回)=R4
+	MOV.W	#_CAM_DIG_UNIT/2,R0				;
+	CMP/GE	R4,R0						;R4 =< 3600/2
+	BF	TIM_CAM_ON_CF30					;NO! 逆転
+
+	DIG_AREA_CHK STREG=R3,EDREG=R6,PVREG=R2,ANSREG=R0	;CW(FWD)
+	M_BRA	TIM_CAM_ON_CF50					;
+
+TIM_CAM_ON_CF30:
+	DIG_AREA_CHK STREG=R6,EDREG=R3,PVREG=R2,ANSREG=R0	;CCW(REV)
+TIM_CAM_ON_CF50:
+
+	SUB_END
+	M_RTS
+
+
+
+;	***************************
+;	***			***
+;	***	回転･連続	***
+;	***			***
+;	***************************
+;	>>CAM行程~最終工程<<
+;	ans: _CAM_POS_CTL_STEP
+_CAM_STEP_PROC_CHANGE:
+	SUB_START
+
+;;;	MOV.L	#_CAM_POS_CTL_STEP,R1		;//内部制御工程1~11
+;;;	MOV.W	@R1,R0				;現在の制御行程
+;;;	ADD	#1,R5				;
+;;;	CMP/EQ	R0,R5				;
+;;;	BT	CAM_STEP_PROC_CGE_END		;最終工程
+
+	MOV.L	#_CPOS_STEP_MAX,R2		;
+	MOV.W	@R2,R5				;1:TOP
+	ADD	#1,R5
+	MOV.L	#_CAM_POS_CTL_STEP,R10		;//内部制御工程1~11
+	MOV.W	@R10,R11			;
+
+
+;	========工程１?====
+;
+	MOV.L	#_CAM_NOW_DIG,R1				;
+	MOV.W	@R1,R2						;
+
+	MOV.L	#_SET1_UPAREA_DIG1,R4				;2;回転時待機点(上死点)	
+	MOV.W	@R4,R1						;
+
+;	===(2004-05-24)==
+	MOV.L	#_PAR_WTSEL_USE,R0				
+	MOV.W	@R0,R0						;
+	CMP/EQ	#1,R0						;待機点選択使用時は上死点ではない
+	BF	CAM_WTSEL_POS_CHG00				;通常使用
+
+	MOV.L	#_SETX_UPAREA_DIG,R4				;2;両方の選択結果の待機点
+	MOV.W	@R4,R1						;
+
+CAM_WTSEL_POS_CHG00
+
+	MOV.L	#_SET1_OBJ_CAM_DIG_TOP,R7			;1段
+	MOV	R7,R4						;
+	MOV.W	@R4+,R0
+	MOV.W	@R4+,R3						;目標位置
+	DIG_AREA_CHK STREG=R1,EDREG=R3,PVREG=R2,ANSREG=R0	;
+	TST	R0,R0						;
+	TST_BIT_OF CAM_STEP_PROC_CGE_100			;
+
+	MOV.W	#1,R0						;
+	MOV.L	#_CAM_POS_CTL_STEP,R1				;//内部制御工程1~11
+	MOV.W	R0,@R1						;
+
+;2012-03-19不具合対策：下記追加
+	XOR	R0,R0				;
+	MOV.L	#_CAM_CNT_CHG_FLG,R1		;
+	MOV.W	R0,@R1				;
+	M_BRA	CAM_STEP_PROC_CGE_END		;
+
+;	========工程１時[連続のVモーションの時　減速～０度まで１行程になる。
+;	========       その部分を演算でカムの行程とする]=====
+
+CAM_STEP_PROC_CGE_100:
+					;R5=MAX+1
+	MOV	R5,R0			;
+	ADD	#-1,R0			;
+	SHLL2	R0			;
+	ADD	R0,R7			;
+	ADD	#2,R7			;
+	MOV.W	@R7,R3			;(R3待機点)
+
+CAM_STEP_PROC_CGE_150:
+	CMP/HS	R5,R11						;
+	BT	CAM_STEP_PROC_CGE_END				;
+
+	ADD	#-4,R7						;
+	MOV.W	@R7,R1						;(R1)
+	DIG_AREA_CHK STREG=R1,EDREG=R3,PVREG=R2,ANSREG=R0	;
+	TST	R0,R0						;R5:ｽﾃｯﾌﾟ
+	TST_BIT_ON CAM_STEP_PROC_CGE_200			;
+	ADD	#-1,R5						;
+	MOV	R1,R3						;
+	M_BRA	CAM_STEP_PROC_CGE_150
+
+CAM_STEP_PROC_CGE_200:
+	CMP/HI	R0,R5						;
+	BF	CAM_STEP_PROC_CGE_END				;
+	MOV.W	R5,@R10						;工程ﾁｪﾝｼﾞ
+CAM_STEP_PROC_CGE_END:
+	SUB_END
+	M_RTS
+
+
+
+	.AELSE
+;	===	CPUB	===
+_CAM_CTRL
+	SUB_START
+	SUB_END
+	M_RTS
+	.AENDI
+
+
+
+
+
+
+;;//	***********************************************************
+;;//	***							***
+;;//	***			進角演算可能／不可能		***
+;;//	***	回転・ふりこで待機点以外で停止する(逆転含む)	***
+;;//	***	反転で待機点以外、最死点以外で停止する(逆転含む)***
+;;//	***							***
+;;//	***********************************************************
+;;
+;;
+;;
+;;
+;;
+;;
+;;//	***********************************
+;;//	***	進角演算		***
+;;//	***********************************
+;;	S2b	SINKAKU_INF;		//BIT0:1:ｼｰｹﾝｽ              BIT0=1
+;;					//BIT1 1進角1~4
+;;					//BIT2 1進角5~8
+;;					//BIT3 1進角9~12
+;;					//BIT4 1進角13~16
+;;					//BIT5:1:停止行程が存在する
+
+
+ .AIF	_CB_CPU_SEL EQ	_CB_CPUA
+
+	.EXPORT		_CAM_SINKAKU_DAT_CHK1	;ssa_
+
+
+_CAM_SINKAKU_DAT_CHK1:
+	SUB_START
+
+
+;	---	進角演算する・しないの作成	----
+	FAR_JSR	#_CAM_SINKAKU_ENB_CONF,R0		;
+
+;	---	進角データ作成の行程・速度算出[ｽｷｬﾝ分割]	----
+	FAR_JSR	#_SINKAKU_DATA_MAKE1,R0			;
+
+
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+;;	.IMPORT	_PVP_SINKAKU_UPDN1			;//BITn：1=ﾛｰﾀﾘｶﾑnのON進角が加減速範囲にある。
+;;	.IMPORT	_PVP_SINKAKU_UPDN2			;//BITn：1=ﾛｰﾀﾘｶﾑnのON進角が加減速範囲にある。
+
+	.IMPORT	_SQ_CBWK_TOP
+
+_CAM_SINKAKU_ENB_CONF:
+	SUB_START
+
+	MOV.L	#_SEQAB_DP_TOP+151*2,R1			;151.10
+	MOV.W	@R1,R0					;
+	MOV.W	#BIT10,R4				;
+	TST	R4,R0					;
+	TST_BIT_ON CAM_SINKAKU_DATCK1_005		;
+	M_BRA	CAM_SINKAKU_DATCK1_500			;
+
+
+CAM_SINKAKU_DATCK1_005:
+;	------------進角機能有効----------
+;46 18.13  01~04
+;48 18.15  05~08
+;50 19.1   09~12
+;52 19.3   13~16
+	XOR	R5,R5
+	MOV.L	#_SEQAB_DP_TOP+18*2,R1			;46
+	MOV.W	@R1,R0					;
+	MOV.W	#BIT13,R4				;
+	TST	R4,R0					;
+	TST_BIT_OF CAM_SINKAKU_DATCK1_050		;
+	MOV.W	#(BIT3+BIT2+BIT1+BIT0),R4		;
+	OR	R4,R5					;
+CAM_SINKAKU_DATCK1_050:
+
+	MOV.W	#BIT15,R4				;48
+	TST	R4,R0					;
+	TST_BIT_OF CAM_SINKAKU_DATCK1_100		;
+	MOV.W	#(BIT7+BIT6+BIT5+BIT4),R4		;
+	OR	R4,R5					;
+CAM_SINKAKU_DATCK1_100:
+
+	MOV.L	#_SEQAB_DP_TOP+19*2,R1			;50
+	MOV.W	@R1,R0					;
+	MOV.W	#BIT1,R4				;
+	TST	R4,R0					;
+	TST_BIT_OF CAM_SINKAKU_DATCK1_150		;
+	MOV.W	#(BIT11+BIT10+BIT9+BIT8),R4		;
+	OR	R4,R5					;
+CAM_SINKAKU_DATCK1_150:
+
+	MOV.W	#BIT3,R4				;
+	TST	R4,R0					;
+	TST_BIT_OF CAM_SINKAKU_DATCK1_200		;52
+	MOV.W	#(BIT15+BIT14+BIT13+BIT12),R4		;
+	OR	R4,R5					;[]
+CAM_SINKAKU_DATCK1_200:
+
+	PUSH_REG1 R5
+	FAR_JSR	#_CAM_SINKAKU_INFO_MAK1,R0		;input R5:ENB設定情報
+	POP_REG1 R5					;
+	TST	R0,R0					;
+	TST_BIT_ON CAM_SINKAKU_DATCK1_250		;R0!=0 だめ
+	DI_PUSH_SR_SH3	WK_REG1=R1,WK_REG2=R4	;2020-05-07(2019-11-26)
+	MEM1_BIT0_F_ADCLR MEM=_SQ_CBWK_TOP+_WKSQCB251,LG=W,BIT=(~BIT10),WKRG1=R1,WKRG2=R4	;設定上は行う
+	EI_POP_SR_SH3 							;2020-05-07(2019-11-26)
+	M_BRA	CAM_SINKAKU_DATCK1_300			;
+
+CAM_SINKAKU_DATCK1_250:
+	DI_PUSH_SR_SH3	WK_REG1=R1,WK_REG2=R4	;2020-05-07(2019-11-26)
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB251,LG=W,BIT=(BIT10),WKRG1=R1,WKRG2=R4	;やらない
+	EI_POP_SR_SH3 							;2020-05-07(2019-11-26)
+	XOR	R5,R5
+CAM_SINKAKU_DATCK1_300:
+	MOV.L	#_SINKAKU_ROTCAM_ENBSEL_WK,R1		;//BIT0=1 CH1:ENB
+	MOV.W	R5,@R1					;
+
+	TST	R5,R5					;
+	TST_BIT_OF CAM_SINKAKU_DATCK1_500		;進角無効状態
+
+;	-------------------------------------------
+	MOV.L	#_MODE_SEL,R1				;
+	MOV.W	@R1,R0					;
+	TST	#_W1CNT+_W1SGL+_W1INC+_W1OPT,R0		;
+	TST_BIT_ON CAM_SINKAKU_DATCK1_310		;
+	M_BRA	CAM_SINKAKU_DATCK1_500			;進角演算無効ﾓｰﾄﾞ
+
+CAM_SINKAKU_DATCK1_310:
+
+	FAR_JSR	#_CAM_SINKAKU_INFO_MAK2,R0		;_SINKAKU_USESEL_ON_INF
+							;_SINKAKU_USESEL_OF_INF
+
+	MOV.L	#_SINKAKU_USESEL_ON_INF,R1		;//ﾛｰﾀﾘｶﾑ1~16 ON行程  1:不可
+	MOV.W	@R1,R4					;
+;;;;;	MOV.L	#_PVP_SINKAKU_UPDN1,R1			;//BITn：1=ﾛｰﾀﾘｶﾑnのON進角が加減速範囲にある。
+;;;;;	MOV.W	R4,@R1					;
+
+	MOV.L	#_SINKAKU_USESEL_OF_INF,R1		;//ﾛｰﾀﾘｶﾑ1~16 OFF行程
+	MOV.W	@R1,R0					;
+;;;;;	MOV.L	#_PVP_SINKAKU_UPDN2,R1			;//BITn：1=ﾛｰﾀﾘｶﾑnのON進角が加減速範囲にある。
+;;;;;	MOV.W	R0,@R1					;
+
+	MOV.L	#_SINKAKU_ROTCAM_ENBSEL_WK,R1		;//BIT0=1 CH1:ENB
+	MOV.W	@R1,R5					;
+	MOV	R0,R3					;
+	OR	R4,R3					;1:使用しない
+	NOT	R3,R3					;
+	AND	R3,R5					;
+	MOV.L	#_SINKAKU_ROTCAM_ENBSEL,R1		;
+	MOV.W	R5,@R1					;ENB
+	M_BRA	CAM_SINKAKU_DATCK1_600			;
+
+;;;;;;	OR	R4,R0					;
+;;;;;;	TST	R0,R0					;
+;;;;;;	TST_BIT_ON CAM_SINKAKU_DATCK1_350		;
+;;;;;;	MEM1_BIT0_F_ADCLR MEM=_SQ_CBWK_TOP+_WKSQCB251,LG=W,BIT=(~BIT11),WKRG1=R1,WKRG2=R4	;
+;;;;;;	M_BRA	CAM_SINKAKU_DATCK1_400			;
+;;;;;;CAM_SINKAKU_DATCK1_350:
+;;;;;;	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB251,LG=W,BIT=(BIT11),WKRG1=R1,WKRG2=R4	;行わない進角カム有り
+;;;;;;CAM_SINKAKU_DATCK1_400:
+;;;;;;	M_BRA	CAM_SINKAKU_DATCK1_600			;
+
+CAM_SINKAKU_DATCK1_500:
+;	--------------進角全て無効状態-----------------
+	XOR	R0,R0
+	MOV.L	#_SINKAKU_ROTCAM_ENBSEL,R1		;
+	MOV.W	@R1,R2
+	MOV.W	R0,@R1					;
+	TST	R2,R2					;
+	TST_BIT_OF CAM_SINKAKU_DATCK1_600		;
+	
+	FAR_JSR	#_SINKAKU_DATA_OFFCLR,R0		;
+	
+CAM_SINKAKU_DATCK1_600:
+
+
+
+	MOV.L	#_SIN_RCAM_ON_ERR1,R1
+	MOV.W	@R1,R0
+	MOV.L	#_PVP_SINKAKU_UPDN1,R1
+	MOV.W	R0,@R1
+	
+	MOV.L	#_SIN_RCAM_OF_ERR1,R1
+	MOV.W	@R1,R2
+	MOV.L	#_PVP_SINKAKU_UPDN2,R1
+	MOV.W	R2,@R1
+
+	OR	R2,R0
+	TST	R0,R0
+	TST_BIT_ON CAM_SINKAKU_DATCK1_650
+	DI_PUSH_SR_SH3	WK_REG1=R1,WK_REG2=R4	;2020-05-07(2019-11-26)
+	MEM1_BIT0_F_ADCLR MEM=_SQ_CBWK_TOP+_WKSQCB251,LG=W,BIT=(~BIT11),WKRG1=R1,WKRG2=R4	;
+	EI_POP_SR_SH3 							;2020-05-07(2019-11-26)
+
+	M_BRA	CAM_SINKAKU_DATCK1_700
+
+CAM_SINKAKU_DATCK1_650:
+	DI_PUSH_SR_SH3	WK_REG1=R1,WK_REG2=R4	;2020-05-07(2019-11-26)
+	MEM1_BIT0_F_ORSET MEM=_SQ_CBWK_TOP+_WKSQCB251,LG=W,BIT=(BIT11),WKRG1=R1,WKRG2=R4	;行わない進角カム有り
+	EI_POP_SR_SH3 							;2020-05-07(2019-11-26)
+
+CAM_SINKAKU_DATCK1_700:
+
+	SUB_END
+	M_RTS
+
+;	***********************************************************
+;	***							***
+;	***	回転、ふりこでは停止が1回以上存在するか		***
+;	***	反転では停止が2回以上存在するか			***
+;	***							***
+;	***********************************************************
+;	R0=0
+;	R0=1:停止有り
+_CAM_SINKAKU_INFO_MAK1
+	SUB_START
+
+	MOV.B	#1,R8				;ERR SET
+
+	MOV.L	#_SETX_POS_STEP_MAX,R1		;//設定= 1~10
+	MOV.W	@R1,R5				;ｽﾃｯﾌﾟ最大数 1~10
+	CMP/PL	R5				;
+	BF	CAM_SINKAKU_INF_MK1EXT		;0以下でEXIT
+
+	XOR	R7,R7				;
+	
+CAM_SINKAKU_INF_MK1_050LOP
+	MOV.L	#_SETX_POS_SDAT1_INF1,R10	;
+	MOV.L	@R10+,R0			;
+	TST	#BIT0,R0				;
+	TST_BIT_ON CAM_SINKAKU_INF_MK1_100	;速度継続?
+
+	ADD	#1,R7				;
+CAM_SINKAKU_INF_MK1_100
+	ADD	#-1,R5				;
+	TST	R5,R5				;
+	TST_BIT_ON CAM_SINKAKU_INF_MK1_050LOP
+
+
+	MOV.L	#_SETX_POS_CTL_MATH,R1			;
+	MOV.W	@R1,R0					;
+	TST	#_DMATH_REVRSE,R0			;DRIVE MATH 反転
+	TST_BIT_ON CAM_SINKAKU_INF_MK1_200		;
+
+;回転、ふりこ
+	TST	R7,R7					;
+	TST_BIT_ON CAM_SINKAKU_INF_MK1EXT		;0以外 停止有り
+	XOR	R8,R8					;停止無し
+	M_BRA	CAM_SINKAKU_INF_MK1EXT			;
+
+CAM_SINKAKU_INF_MK1_200
+	MOV.B	#1,R1					;
+	CMP/HI	R1,R7					;2回以上?
+	BT	CAM_SINKAKU_INF_MK1EXT			;YES 停止有り
+
+	XOR	R8,R8					;停止無し
+
+CAM_SINKAKU_INF_MK1EXT
+	MOV	R8,R0					;
+	SUB_END
+	M_RTS
+
+
+
+;	***********************************
+;	***				***
+;	***	進角の結果０度を跨ぐ	***
+;	***	[加減速位置にある]	***
+;	***				***
+;	***********************************
+;
+;	"0度を跨ぐ"設定をしている
+;
+_CAM_SINKAKU_INFO_MAK2
+	SUB_START
+
+	XOR	R0,R0
+	MOV.L	#_SINKAKU_USESEL_ON_INF,R1		;//ﾛｰﾀﾘｶﾑ1~16 ON行程  1:不可
+	MOV.W	R0,@R1
+	MOV.L	#_SINKAKU_USESEL_OF_INF,R1		;//ﾛｰﾀﾘｶﾑ1~16 OFF行程
+	MOV.W	R0,@R1
+
+	SUB_END
+	M_RTS
+
+
+
+
+
+;	***********************************
+;	***				***
+;	***				***
+;	***				***
+;	***				***
+;	***********************************
+_SINKAKU_DATA_OFFCLR:
+	SUB_START
+
+	MOV.W	#_ROTCAM_SIN_CNT,R3	;
+	XOR	R0,R0
+	MOV.L	#_SIN_RCAM_ON_DIG,R5
+	MOV.L	#_SIN_RCAM_OF_DIG,R6
+
+
+SINKAKU_DATOFFCLR_100LOP:
+	MOV.W	R0,@R5
+	MOV.W	R0,@R6
+	ADD	#2,R5
+	ADD	#2,R6
+	ADD	#-1,R3
+	TST	R3,R3
+	TST_BIT_ON SINKAKU_DATOFFCLR_100LOP	;
+
+
+	SUB_END
+	M_RTS
+
+;	***********************************
+;	***				***
+;	***				***
+;	***				***
+;	***				***
+;	***********************************
+_SINKAKU_DATA_COPY:
+	SUB_START
+
+
+	MOV.W	#_ROTCAM_SIN_CNT,R3	;
+	XOR	R0,R0
+
+	MOV.L	#_WK_SIN_RCAM_ON_DIG,R1;//設定レベル
+	MOV.L	#_WK_SIN_RCAM_OF_DIG,R2;//設定レベル
+	MOV.L	#_SIN_RCAM_ON_DIG,R5
+	MOV.L	#_SIN_RCAM_OF_DIG,R6
+
+SINKAKU_DATCOPY_100LOP:
+	MOV.W	@R1+,R0
+	MOV.W	R0,@R5
+	MOV.W	@R2+,R0
+	MOV.W	R0,@R6
+	ADD	#2,R5
+	ADD	#2,R6
+	ADD	#-1,R3
+	TST	R3,R3
+	TST_BIT_ON SINKAKU_DATCOPY_100LOP	;
+
+
+	SUB_END
+	M_RTS
+
+
+
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+;	進角×運転速度%×オーバライド%
+;	運転速度%は行程番号から引っ張る
+;
+;	1行程毎にスキャン分割して進角データをつくる
+;	進角しないなどは別
+;
+_SINKAKU_DATA_MAKE1
+	SUB_START
+
+
+	MOV.L	#_SINKAKU_ROTCAM_ENBSEL,R1		;//BIT0=1 CH1:ENB
+	MOV.W	@R1,R0					;
+	TST	R0,R0					;
+	TST_BIT_OF SINKAKU_DATMK1_200			;
+
+
+	MOV.L	#_SEQAB_DP_TOP+55*2,R1		;SQ55
+	MOV.W	@R1,R5
+	MOV.L	#_SEQAB_DP_TOP+59*2,R1		;SQ59
+	MOV.W	@R1,R6
+
+
+	MOV.L	#_SEQAB_DP_TOP+151*2,R1			;151.11
+	MOV.W	@R1,R0					;進角ﾀｲﾏｶﾑ未仕様
+	MOV.W	#BIT11,R4				;
+	TST	R4,R0					;
+	TST_BIT_ON SINKAKU_DATMK1_100			;
+	XOR	R5,R5					;
+	XOR	R6,R6					;
+SINKAKU_DATMK1_100:
+	MOV.L	#_WK_SIN_RCAMON_SW1,R1			;SQ55
+	MOV.W	R5,@R1					;
+	MOV.L	#_WK_SIN_RCAMOF_SW1,R1			;SQ59
+	MOV.W	R6,@R1				
+
+	FAR_JSR	#_SINKAKU_DATA_MAKE2,R0		;演算はﾜｰｸに対して行う
+
+
+
+SINKAKU_DATMK1_200:
+
+	SUB_END
+	M_RTS
+
+
+
+;	***************************************************
+;	***						***
+;	***						***
+;	***		1行程(ON,OFF)			***
+;	***						***
+;	***************************************************
+	.IMPORT	_WORD_BIT_TBL1
+
+_SINKAKU_DATA_MAKE2
+	SUB_START
+
+	MOV.L	#_SINWK_CALC_SCAN,R1		;
+	MOV.W	@R1,R0				;0~15:16ｽｷｬﾝ分割
+
+	MOV.L	#_WK_SIN_RCAMON_SW1,R1		;SQ55
+	MOV.W	@R1,R5				;
+
+	MOV.L	#_WK_SIN_RCAMOF_SW1,R1		;SQ59
+	MOV.W	@R1,R6				;
+
+
+	TST	R0,R0				;
+	TST_BIT_ON SINKAKU_DATAMK2_100		;
+
+	MOV.W	#BIT0,R7			;
+	AND	R5,R7				;進角=角度(0),ﾀｲﾏ(0以外)
+	MOV.L	#_SVP_RCAMON_P000,R8		;行程
+	MOV.L	#_SVP_RCAMON_D000,R9		;角度固定
+	MOV.L	#_SVP_RCAMON_SA00,R10		;進角ON角度 0.1度
+	MOV.L	#_SVP_RCAMON_ST00,R11		;進角ON時間 ms
+;;;;;;;;;不要	MOV.L	#_WK_SIN_RCAM_ON_KOUTEI,R12	;設定レベル 設定が0以外あれば設定、00位置の場合算出
+;;;;;;;;;不要	MOV.L	#_WK_SIN_RCAM_ON_SPD,R13	;設定レベル
+	MOV.L	#_WK_SIN_RCAM_ON_DIG,R14	;設定レベル－ON角度(360ｴﾝｺｰﾀﾞ演算結果0.1)
+	PUSH_REG1 R6
+	PUSH_REG1 R7
+	FAR_JSR	#_SINKAKU_1STEP_DATMAKE,R0	;
+	POP_REG1 R7
+	POP_REG1 R6
+
+
+	AND	R6,R7				;進角=角度(0),ﾀｲﾏ(0以外)
+	MOV.L	#_SVP_RCAMOF_P000,R8		;
+	MOV.L	#_SVP_RCAMOF_D000,R9		;
+	MOV.L	#_SVP_RCAMOF_SA00,R10		;進角OF角度 0.1度
+	MOV.L	#_SVP_RCAMOF_ST00,R11		;進角OF時間 ms
+;;;;;;;;;不要	MOV.L	#_WK_SIN_RCAM_OF_KOUTEI,R12	;設定レベル 設定が0以外あれば設定、00位置の場合算出
+;;;;;;;;;不要	MOV.L	#_WK_SIN_RCAM_OF_SPD,R13	;設定レベル
+	MOV.L	#_WK_SIN_RCAM_OF_DIG,R14	;設定レベル－ON角度(360ｴﾝｺｰﾀﾞ演算結果0.1)
+	FAR_JSR	#_SINKAKU_1STEP_DATMAKE,R0	;
+	M_BRA	SINKAKU_DATAMK2_200
+
+SINKAKU_DATAMK2_100
+	SHLL	R0				;2byte 
+
+
+	PUSH_REG1 R0
+	MOV.L	#_WORD_BIT_TBL1,R4		;R0=0のときにBIT0
+	ADD	R0,R4				;
+	MOV.W	@R4,R7				;ﾁｪｯｸﾋﾞｯﾄ
+
+	MOV.L	#_WK_SIN_RCAM_ON_DIG,R14	;設定レベル－ON角度(360ｴﾝｺｰﾀﾞ演算結果0.1)
+	ADD	R0,R14
+
+	SHLL	R0				;*4
+	SHLL	R0				;*8
+	MOV.L	#_SVP_RCAMON_P000,R8		;行程
+	ADD	R0,R8
+	MOV.L	#_SVP_RCAMON_D000,R9		;角度固定
+	ADD	R0,R9
+	MOV.L	#_SVP_RCAMON_SA00,R10		;進角ON角度 0.1度
+	ADD	R0,R10
+	MOV.L	#_SVP_RCAMON_ST00,R11		;進角ON時間 ms
+	ADD	R0,R11
+
+	AND	R5,R7				;進角=角度(0),ﾀｲﾏ(0以外)
+
+	PUSH_REG1 R6
+	PUSH_REG1 R7
+	FAR_JSR	#_SINKAKU_1STEP_DATMAKE,R0	;
+	POP_REG1 R7
+	POP_REG1 R6
+
+	POP_REG1 R0
+
+	MOV.L	#_WK_SIN_RCAM_OF_DIG,R14	;設定レベル－ON角度(360ｴﾝｺｰﾀﾞ演算結果0.1)
+	ADD	R0,R14
+	SHLL	R0				;*4
+	SHLL	R0				;*8
+
+
+	MOV.L	#_SVP_RCAMOF_P000,R8		;
+	ADD	R0,R8
+	MOV.L	#_SVP_RCAMOF_D000,R9		;
+	ADD	R0,R9
+	MOV.L	#_SVP_RCAMOF_SA00,R10		;進角OF角度 0.1度
+	ADD	R0,R10
+	MOV.L	#_SVP_RCAMOF_ST00,R11		;進角OF時間 ms
+	ADD	R0,R11
+
+	AND	R6,R7				;進角=角度(0),ﾀｲﾏ(0以外)
+	FAR_JSR	#_SINKAKU_1STEP_DATMAKE,R0	;
+
+
+SINKAKU_DATAMK2_200
+
+
+
+;	------------ 16ｽｷｬﾝで反映----------------
+	MOV.L	#_SINWK_CALC_SCAN,R1		;
+	MOV.W	@R1,R0				;
+	ADD	#1,R0				;
+	AND	#H'0F,R0			;
+	MOV.W	R0,@R1				;
+
+	TST	R0,R0
+	TST_BIT_ON SINKAKU_DATAMK2_EXT		;
+
+	FAR_JSR	#_SINKAKU_DATA_COPY,R0		;最後
+
+	MOV.L	#_WK_SIN_RCAMON_SW1,R1		;SQ55
+	MOV.W	@R1,R0				;
+	MOV.L	#_SIN_RCAMON_SW1,R1;//設定レベル－ON角度(360ｴﾝｺｰﾀﾞ演算結果0.1)
+	MOV.W	R0,@R1
+
+	MOV.L	#_WK_SIN_RCAMOF_SW1,R1		;SQ59
+	MOV.W	@R1,R0				;
+	MOV.L	#_SIN_RCAMOF_SW1,R1		;//設定レベル－OFF角度(360ｴﾝｺｰﾀﾞ演算結果0.1)
+	MOV.W	R0,@R1
+
+SINKAKU_DATAMK2_EXT
+
+	SUB_END
+	M_RTS
+
+
+;	R7 0(進角=位置)/0以外(進角=タイマ)
+;	MOV.L	#_SVP_RCAMON_P000,R8	;行程
+;	MOV.L	#_SVP_RCAMON_D000,R9	;角度固定
+;	MOV.L	#_SVP_RCAMON_SA00,R10	;進角ON角度 0.1度
+;	MOV.L	#_SVP_RCAMON_ST00,R11	;進角ON時間 ms
+;
+;	MOV.L	#_WK_SIN_RCAM_ON_KOUTEI,R12;	//設定レベル 設定が0以外あれば設定、00位置の場合算出
+;	MOV.L	#_WK_SIN_RCAM_ON_SPD,R13;	//設定レベル
+;	MOV.L	#_WK_SIN_RCAM_ON_DIG,R14;	//設定レベル－ON角度(360ｴﾝｺｰﾀﾞ演算結果0.1)
+
+_SINKAKU_1STEP_DATMAKE
+	SUB_START
+
+	MOV.W	@R8,R0				;行程番号
+	TST	R0,R0				;00:位置カム
+	TST_BIT_ON SINKAKU_1STEP_DATMAK100			;NO!行程ｶﾑ
+	MOV.W	@R9,R2				;位置LOAD
+	FAR_JSR	#_POSCAM_SEARCH_KOUTEI,R0	;input R2
+	TST	R0,R0				;
+	TST_BIT_ON SINKAKU_1STEP_DATMAK100	;
+	M_BRA	SINKAKU_1STEP_DATMAK400		;進角演算無し
+
+SINKAKU_1STEP_DATMAK100:			;R0:行程番号
+;;;;;;;;;不要	MOV.W	R0,@R12				;
+
+	MOV.L	#_CAM_STEP_MAX,R1		;
+	MOV.W	@R1,R4				;
+	ADD	#1,R4				;
+	CMP/EQ	R0,R4				;
+	BF	SINKAKU_1STEP_DATMAK120		;最終行程(戻)ではない
+	MOV.L	#_SVP_UPAREA_SPD0,R1		;基準速度(戻速度)
+	MOV.W	@R1,R2				;
+	M_BRA	SINKAKU_1STEP_DATMAK150		;
+
+SINKAKU_1STEP_DATMAK120:			
+	ADD	#-1,R0				;
+	SHLL	R0
+	MOV.L	#_SVP_OBJECT_SPD_TOP,R1		;
+	ADD	R0,R1				;
+	MOV.W	@R1,R2				;速度 0~100.0%
+SINKAKU_1STEP_DATMAK150:			
+
+
+
+
+
+
+
+	MOV.L	#_SET_SPD_OVRLIDE,R1		;画面ｵｰﾊﾞﾗｲﾄﾞﾃﾞｰﾀ　もしくはｼｰｹﾝｽｵｰﾊﾞﾗｲﾄﾞﾃﾞｰﾀ
+	MOV.W	@R1,R1				;_OVERLIDE_DT_SEL=1
+	MOV.W	#_OVRLIDE_LATE_MAX,R4		;
+	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0	;R2:SPD
+;;;;;;;;;不要	MOV.W	R2,@R13				;SPD SAVE(ｵｰﾊﾞﾗｲﾄﾞ結果の速度 0.1%)
+
+	TST	R7,R7				;
+	TST_BIT_ON SINKAKU_1STEP_DATMAK200	;ﾀｲﾏ
+
+	PUSH_REG1 R2				;速度
+	MOV.W	@R10,R2				;進み角度量
+						;ここで実はｸﾗﾝｸｰﾘﾝｸの面倒な計算必要
+
+	POP_REG1 R1				;
+	MOV.W	#_SPD_PER_MAX/10,R4		;10000/10 100.0per
+	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0	;R2:角度
+	M_BRA	SINKAKU_1STEP_DATMAK500		;進角演算終了
+
+SINKAKU_1STEP_DATMAK200:			;
+
+	PUSH_REG1 R2				;設定速度
+	MOV.W	@R11,R1				;設定時間1msec
+	MOV.W	#_SPD_PER_MAX/10,R4		;10000/10 100.0per
+	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0	;R2:時間
+	MOV	R2,R1				;R1:時間 速度が半分なら 時間も半分でいい
+	POP_REG1 R2				;
+
+	PUSH_REG1 R1				;
+	MOV.L	#_SETD_DEGSPD_MAX,R0		;//最大速度で1秒間に何度動作しますか 0.1度/SEC
+	MOV.L	@R0,R1				;最大速度　0.1度/sec
+	MOV.W	#_SPD_PER_MAX/10,R4		;10000/10 100.0per
+	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0	;R2:速度
+						;R2:移動速度 この速度時に1秒間で移動する量
+	POP_REG1 R1				;
+
+;	R2:移動速度 R1時間
+	MOV.W	#D'1000,R4			;msec
+	FAR_JSR	#_FPU_R2_MUL_R1_DIV_R4,R0	;R2:速度*時間
+	M_BRA	SINKAKU_1STEP_DATMAK500		;進角演算終了
+
+
+SINKAKU_1STEP_DATMAK400:			;進角演算無し
+	XOR	R2,R2				;
+SINKAKU_1STEP_DATMAK500:			;進角演算終了
+	MOV.W	R2,@R14				;
+	SUB_END
+	M_RTS
+
+
+;
+;
+;
+;
+;
+
+
+
+
+
+	SUB_START
+	MOV.L	#_SET_SPD_OVRLIDE,R1				;画面ｵｰﾊﾞﾗｲﾄﾞﾃﾞｰﾀ　もしくはｼｰｹﾝｽｵｰﾊﾞﾗｲﾄﾞﾃﾞｰﾀ
+	MOV.W	@R1,R2						;_OVERLIDE_DT_SEL=1
+	SUB_END
+	M_RTS
+
+
+;"00:位置カムの場合 初めにその位置を横切る角度→速度算出"
+
+
+;	***************************************************
+;	***						***
+;	***	行程00 設定した角度を横切る行程算出	***
+;	***						***
+;	***************************************************
+;	input  R2:角度
+;	Output R0:行程
+;	R8:dig_n1	= SV_TAIKIKAKU_SRV;	//ｽﾀｰﾄ地点
+;	R9:dig_n	= SV_TAIKIKAKU_SRV;	//
+;	R7:STEPMAX+1(LOOP回数)
+;	R10:最後の段の目標角度
+;	R11:ANSWK 
+;	R12:
+_POSCAM_SEARCH_KOUTEI
+	SUB_START
+	PUSH_REG1 R7
+	PUSH_REG1 R8
+	PUSH_REG1 R9
+	PUSH_REG1 R10
+	PUSH_REG1 R11
+	PUSH_REG1 R12
+	PUSH_REG1 R13
+	PUSH_REG1 R14
+
+	XOR	R0,R0
+	MOV.L	#_SVP_UPAREA_DIG0,R1		;待機点角度
+	MOV.W	@R1,R8				;
+	MOV	R8,R9				;R9:degN,R8:degN_1
+	MOV.L	#_CAM_STEP_MAX,R1		;
+	MOV.W	@R1,R7				;
+	TST	R7,R7				;
+	TST_BIT_ON POSCAM_SEARCH_KT100		;
+	M_BRA	POSCAM_SEARCH_KTEXT		;
+
+POSCAM_SEARCH_KT100
+
+	ADD	#1,R7				;LOOP
+	XOR	R11,R11				;CNT
+
+	MOV.L	#_SETX_POS_CTL_MATH,R1		;
+	MOV.W	@R1,R0				;
+	TST	#_DMATH_REVRSE,R0		;DRIVE MATH 反転
+	TST_BIT_OF POSCAM_SEARCH_KT120
+	MOV	R8,R10				;R10:dig_last=待機点
+	M_BRA	POSCAM_SEARCH_KT200
+
+POSCAM_SEARCH_KT120:
+	TST	#_DMATH_DNDRIV,R0		;DRIVE MATH ふりこ
+	TST_BIT_OF POSCAM_SEARCH_KT140		;
+	MOV.W	#_CAM_DIG_UNIT,R10		;.EQU3600
+	SUB	R8,R10				;3600-開始待機点＝終了待機点
+	M_BRA	POSCAM_SEARCH_KT200
+POSCAM_SEARCH_KT140:
+	MOV.W	#_CAM_DIG_UNIT,R10		;.EQU3600
+	ADD	R8,R10				;3600+開始待機点0＝終了待機点3600
+POSCAM_SEARCH_KT200
+
+
+
+	MOV.L	#_SVP_OBJECT_DIG_TOP,R12	;角度
+
+
+POSCAM_SEARCH_KT300LOP
+	MOV	R9,R8			;N->N_1
+
+	MOV	R10,R9			;LAST
+	MOV.B	#1,R4			;
+	CMP/EQ	R4,R7			;
+	BT	POSCAM_SEARCH_KT320	;YES LAST
+	MOV.W	@R12+,R9		;NO.通常
+POSCAM_SEARCH_KT320
+
+	CMP/EQ	R8,R9			;
+	BT	POSCAM_SEARCH_KT500	;同じ位置(評価しない)
+
+	CMP/GT	R8,R9			;degN_1<degN
+	BT	POSCAM_SEARCH_KT450	;yes 正転
+;	--------- 逆----------
+	CMP/GT	R9,R2			;
+	BF	POSCAM_SEARCH_KT500	;NO!
+	CMP/GE	R2,R8			;
+	BF	POSCAM_SEARCH_KT500	;NO!
+;	------- 見つけた(R8 >= R2 >R9)----------
+	M_BRA	POSCAM_SEARCH_KT800
+
+
+POSCAM_SEARCH_KT450:
+;	--------- 正----------
+	CMP/GE	R8,R2			;N1=<OBJ
+	BF	POSCAM_SEARCH_KT500	;NO!
+	CMP/GT	R2,R9			;OBJ<N
+	BF	POSCAM_SEARCH_KT500	;NO!
+	M_BRA	POSCAM_SEARCH_KT800
+
+POSCAM_SEARCH_KT500
+	ADD	#1,R11
+	ADD	#-1,R7
+	TST	R7,R7
+	TST_BIT_ON POSCAM_SEARCH_KT300LOP	;
+
+	XOR	R0,R0
+	M_BRA	POSCAM_SEARCH_KTEXT		;見つからなかった
+
+POSCAM_SEARCH_KT800
+;	------- 見つけた(R8 =< R2 <R9)----------
+	MOV	R11,R0				;
+	ADD	#1,R0				;
+POSCAM_SEARCH_KTEXT
+
+	POP_REG1 R14
+	POP_REG1 R13
+	POP_REG1 R12
+	POP_REG1 R11
+	POP_REG1 R10
+	POP_REG1 R9
+	POP_REG1 R8
+	POP_REG1 R7
+	SUB_END
+	M_RTS
+
+
+_SIN_RCAMON_ERR_SIGSET
+	SUB_START
+
+	PUSH_REG1 R0
+	PUSH_REG1 R1
+	MOV.L	#_SIN_RCAM_ON_ERR1,R1
+	MOV.W	@R1,R0
+	OR	R12,R0
+	MOV.W	R0,@R1
+	POP_REG1 R1
+	POP_REG1 R0
+	SUB_END
+	M_RTS
+
+_SIN_RCAMOF_ERR_SIGSET
+	SUB_START
+
+	PUSH_REG1 R0
+	PUSH_REG1 R1
+	MOV.L	#_SIN_RCAM_OF_ERR1,R1
+	MOV.W	@R1,R0
+	OR	R12,R0
+	MOV.W	R0,@R1
+	POP_REG1 R1
+	POP_REG1 R0
+	SUB_END
+	M_RTS
+	
+
+
+;;
+;;
+;;
+;;
+;;
+;;
+;;
+;;
+;;//	***********************************************************
+;;//	***								***
+;;//	***			進角演算可能／不可能			***
+;;//	***	回転・ふりこで待機点以外で停止する(逆転含む)		***
+;;//	***	反転で待機点以外、最死点以外で停止する(逆転含む)	***
+;;//	***								***
+;;//	***********************************************************
+;;//	0:進角演算可能
+;;//	1:不可能
+;;U2b		MOT_INF_GET(void)
+;;{
+;;	U2b	*srvdeg;
+;;	U2b	*srvtim;
+;;
+;;	U2b	stepmax;
+;;	U2b	dig_n1,dig_n,dig_last;
+;;	U2b	dir=0;
+;;	U2b	olddir=0;
+;;	U2b	tim_n;
+;;
+;;	U2b	stopcnt=0;
+;;	U2b	stopcntmax;
+;;	U2b	ans=0;
+;;	int	i;
+;;
+;;	dig_n1	= SV_TAIKIKAKU_SRV;	//ｽﾀｰﾄ地点
+;;	dig_n	= SV_TAIKIKAKU_SRV;	//
+;;
+;;	stepmax	= SV_DANSUU_SRV+1;
+;;	if((1<stepmax)&&(stepmax<=11)){//1~10→2~11
+;;		if(SEQ_050_SV & BIT_1) {//反転
+;;			dig_last	=dig_n1;//待機点に戻る
+;;			stopcntmax	=1;	//反転の場合１回は必ず存在する
+;;	    }else{
+;;			if(SEQ_050_SV & BIT_2) {//ふりこ
+;;				dig_last=3600-dig_n1;	//180.0-taiki+180.0
+;;			}else{//回転
+;;				dig_last=dig_n1+3600;	//370.0度でも良い
+;;			}
+;;			stopcntmax	=0;	//回転・ふりこでは存在しない
+;;		}
+;;
+;;		srvdeg	= &SV_1DANDEG_SRV;	//
+;;		srvtim	= &SV_1DANTIM_SRV;
+;;		tim_n	=0;			//最初の行程は0とする 2行程のときに1行程のﾀｲﾏと1→2行程の方向を評価する
+;;
+;;		for(i=0;i<stepmax;i++){
+;;			dig_n1	=dig_n;
+;;			if(i==(stepmax-1)){//最後
+;;				dig_n	=dig_last;
+;;			}else{
+;;				dig_n	=srvdeg[i];
+;;			}
+;;			if(dig_n1!=dig_n){//角度が異なる
+;;				if(dig_n1<dig_n){
+;;					dir=0;//正転
+;;				}else{
+;;					dir=1;//逆転
+;;				}
+;;			}
+;;			if((olddir!=dir)||(tim_n!=0)){//ﾀｲﾏが0以外　または　極性が反対
+;;				stopcnt++;
+;;			}
+;;			olddir	=dir;
+;;			tim_n	=srvtim[i];//戻り行程のﾀｲﾏは評価されない
+;;		}
+;;	}
+;;
+;;	if(stopcntmax<stopcnt){
+;;		ans=1;//停止有り=>進角設定不可
+;;	}
+;;
+;;	return(ans);//
+;;
+;;
+;;}
+;;
+;;
+;;
+;;
+;;
+
+
+
+ .AENDI
+
+
+	.END

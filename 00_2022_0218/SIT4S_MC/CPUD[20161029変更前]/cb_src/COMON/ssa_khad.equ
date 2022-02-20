@@ -1,0 +1,187 @@
+;	***********************************
+;	***				***
+;	***	C/Bのﾊｰﾄﾞ関係ｿｰｽ切分	***
+;	***				***
+;	***********************************
+_COMPILE_YES		.DEFINE		"1"		;
+_COMPILE_NO		.DEFINE		"0"		;
+
+_DEBUG_YES		.DEFINE		"1"		;
+_DEBUG_NO		.DEFINE		"0"		;
+
+;	==== 出荷時 ===
+_FPU_RESET		.DEFINE		"_COMPILE_YES"	;
+
+;	===== ﾃｰﾌﾞﾙ内臓ROM/FLASH化=====
+_CB_TBL_INROM		.DEFINE		"0"		;
+_CB_TBL_FLASH		.DEFINE		"1"		;
+;;_CB_TBL_SEL		.DEFINE		"_CB_TBL_INROM"	;こっちはｾｸｼｮﾝも変更する必要有り
+_CB_TBL_SEL		.DEFINE		"_CB_TBL_FLASH"	;(ﾃﾞﾊﾞｯｸ時,出荷時共にこっち)
+
+
+
+;	===== ﾃﾞﾊﾞｯｸ機能選択(出荷時_DEBUG_NO)===
+;;;;_DEBUG_INC_PLS		.DEFINE		"_DEBUG_YES"	;
+_DEBUG_INC_PLS		.DEFINE		"_DEBUG_NO"	;出荷時
+;	===== ﾃﾞﾊﾞｯｸ機能選択(出荷時_DEBUG_NO)===
+;;;;;;_DEBUG_RNA_PLS		.DEFINE		"_DEBUG_YES"	;
+_DEBUG_RNA_PLS		.DEFINE		"_DEBUG_NO"	;出荷時
+;	====== PARAM ERR =====
+;;_DBG_PARAM_ERR		.DEFINE		"_COMPILE_YES"	;出荷時YESの予定
+_DBG_PARAM_ERR		.DEFINE		"_COMPILE_NO"	;出荷時YESの予定
+
+
+
+;	===== 2重回路対策 ====
+_CPUB_SPCAL_CHG1	.DEFINE		"_COMPILE_YES"	;CPU-Bの2重回路対策
+
+
+;	===== 2003-01-22 ====
+_NEG_SPEC1		.DEFINE		"_COMPILE_YES"	;ﾌﾟﾛｸﾞﾗﾑ変更箇所(反転仕様に関わる変更)
+_PRG_CHG20030127	.DEFINE		"_COMPILE_YES"	;ﾌﾟﾛｸﾞﾗﾑ変更箇所(反転仕様以外の標準に入れる変更)
+
+
+;	====== 2003-04-03 ===
+;	[S01m 2003-04-03] 外部急停止・遮光停止でのｵｰﾊﾞﾗﾝ機能
+_PRG_CHG200300403	.DEFINE		"_COMPILE_YES"	;
+
+;	====== 2003-05-12(変更は05-09~) ====
+;	[S01n 2003-05-12] ｵｰﾊﾞﾗﾝ及び逆転異常と停止異常
+_PRG_CHG20030512	.DEFINE		"_COMPILE_YES"	;
+
+;	==== 基本的にはOFF プログラム追加の確認までの間の対応 検証後はIFをはずす====
+
+_TIM_CNT010MS_DT	.EQU	10	;10MSEC
+_TIM_CNT100MS_DT	.EQU	100	;100MSEC
+
+;	***********************************
+;	***	ハード関係のビット	***
+;	***********************************
+;	_WはWbitの意味 出力
+_WOQST			.EQU	BIT0
+_WOVN1			.EQU	BIT1
+_WOVN2			.EQU	BIT2
+_WOVN3			.EQU	BIT3
+_WOANT			.EQU	BIT4
+_WORDY			.EQU	BIT5
+_WOATO			.EQU	BIT6
+_WOFCY			.EQU	BIT7
+_WORCY			.EQU	BIT8
+_WORST			.EQU	BIT9
+
+;	***********************************
+;	***	ハード関係のビット	***
+;	***********************************
+;	_WはWbitの意味 入力
+_W1OFF			.EQU	BIT0	;
+_W1INC			.EQU	BIT1	;
+_W1SGL			.EQU	BIT2	;
+_W1CNT			.EQU	BIT3	;
+_W1OPT			.EQU	BIT4	;
+_W1DIC			.EQU	BIT5	;
+_W1DUP			.EQU	BIT6	;
+_W1END			.EQU	BIT7	;停止時1
+_W1RNC			.EQU	BIT8	;起動時0
+_W1RNO			.EQU	BIT9	;起動時1
+;	==== 2003-02-22 復活=====
+_W1LNC			.EQU	BIT10	;起動時0 (新構造対応用)
+_W1LNO			.EQU	BIT11	;起動時1 (新構造対応用)
+;;2003-02-22 _W1LNC			.EQU	0	;起動時0
+;;2003-02-22 _W1LNO			.EQU	0	;起動時1
+
+
+_W1SNC			.EQU	BIT12	;有効時0
+_W1SNO			.EQU	BIT13	;有効時1
+_W1REV			.EQU	BIT14	;REV
+_W1RST			.EQU	BIT15	;ﾘｾｯﾄ
+
+_W2LS1			.EQU	BIT2	;
+_W2LS2			.EQU	BIT3	;
+_W2WT1			.EQU	BIT4	;
+_W2WT2			.EQU	BIT5	;
+_W2WT3			.EQU	BIT6	;
+_W2SUP			.EQU	BIT7	;連続ｾｯﾄｱｯﾌﾟ
+
+;	===== 機種ﾃｰﾌﾞﾙ機能選択===
+_MCN_TBL_H000S		.DEFINE		"0"
+_MCN_TBL_H035S		.DEFINE		"1"	;1
+_MCN_TBL_H035H		.DEFINE		"2"	;2
+_MCN_TBL_H045S		.DEFINE		"3"	;3
+_MCN_TBL_H045H		.DEFINE		"4"	;4
+_MCN_TBL_H060S		.DEFINE		"5"	;5
+_MCN_TBL_H060H		.DEFINE		"6"	;6
+_MCN_TBL_H080S		.DEFINE		"7"	;7
+_MCN_TBL_H080H		.DEFINE		"8"	;8
+_MCN_TBL_H110S		.DEFINE		"17"	;A
+_MCN_TBL_H110H		.DEFINE		"18"	;B
+_MCN_TBL_H150S		.DEFINE		"19"	;C
+_MCN_TBL_H150H		.DEFINE		"20"	;D
+_MCN_TBL_H200S		.DEFINE		"21"	;E
+_MCN_TBL_H200H		.DEFINE		"22"	;F
+_MCN_TBL_H250S		.DEFINE		"23"	;G
+_MCN_TBL_H250H		.DEFINE		"24"	;H
+						;I 25
+						;J 26
+;	====2006-06-10=====================================
+_MCN_TBL_H630S		.DEFINE		"27"	;K(27) ｻｰﾎﾞﾌﾟﾚｽ
+						;L(28)
+;	====2007-06-19=====================================
+_MCN_TBL_H110L		.DEFINE		"29"	;M(29) ｻｰﾎﾞﾌﾟﾚｽ
+						;N(30)
+;	====2004-05-26=====================================
+_MCN_TBL_H470M		.DEFINE		"31"	;O(31) ｻｰﾎﾞﾌﾟﾚｽ
+
+;	====2005-06-10=====================================
+_MCN_TBL_H630L		.DEFINE		"32"	;P(32) ｻｰﾎﾞﾌﾟﾚｽ
+;	====2005-07-14=====================================
+_MCN_TBL_H920C		.DEFINE		"33"	;Q(33) ｻｰﾎﾞﾌﾟﾚｽ
+						;R(34)
+						;S(35)
+
+;	====== 2007-08-24 H2W 300 ====================
+_MCN_TBL_H2W31		.DEFINE		"36"	;T(36) 200
+
+;	==== 2007-04-25 ====
+_MCN_TBL_H2W20		.DEFINE		"37"	;U(37) H2W 200ton
+
+;	==== 2007-02-18 ====
+_MCN_TBL_H2W30		.DEFINE		"38"	;V(38) H2W 300ton
+
+
+_MCN_TBL_H001S		.DEFINE		"39"	;W(39) ﾀﾞﾐｰ装置
+_MCN_TBL_H2WCS		.DEFINE		"40"	;X(40) COS(H2W200CS 理想　2006-10-17)
+
+
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H035S"	;
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H035H"	;
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H045S"	;
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H045H"	;
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H060S"	;
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H060H"	;
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H080S"	;7
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H080H"	;8
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H110S"	;A
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H110H"	;B
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H150S"	;C
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H150H"	;D
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H200S"	;E
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H200H"	;F
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H250S"	;G
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H250H"	;H
+
+
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H110L"	;M 2007-06-19
+
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H470M"	;O
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H630L"	;P
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H920C"	;Q
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H630S"	;K
+
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H2W31"	;T(36) 2007-08-24
+
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H2W20"	;U(37) 2007-02-18
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H2W30"	;V(38) 2007-02-18
+
+_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H001S"	;(39) ﾀﾞﾐｰ装置
+;;_MACINE_TBL_SEL		.DEFINE		"_MCN_TBL_H2WCS"	;(40)理想COS
+

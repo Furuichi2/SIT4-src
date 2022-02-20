@@ -1,0 +1,32 @@
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/12/17 19:20:03                                                  PAGE     1
+PROGRAM NAME =
+
+    1                               1     ;       ***********************************
+    2                               2     ;       ***                             ***
+    3                               3     ;       ***             ram’è‹`         ***
+    4                               4     ;       ***             (WRAM)          ***
+    5                               5     ;       ***********************************
+    6                               6     ;       0c400,000
+    7 00000000                      7             .SECTION        BsnapRAM,DATA                   ;
+    8 00000000                      8             .ALIGN  4                                       ;
+    9                               9             .EXPORT _SNAPBUF_TOP                            ;ram¸Ø±‚µ‚È‚¢
+   10 00000000 0004B000            10     _SNAPBUF_TOP            .sres   480*640                 ;
+   11                              11     
+   12                              12             .END
+  *****TOTAL ERRORS       0
+  *****TOTAL WARNINGS     0
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/12/17 19:20:03                                                  PAGE     2
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+BsnapRAM                         BsnapRAM SCT  00000000      7*
+_SNAPBUF_TOP                     BsnapRAM EXPT 00000000      9    10*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/12/17 19:20:03                                                  PAGE     3
+
+*** SECTION DATA LIST
+
+SECTION                          ATTRIBUTE    SIZE             START
+
+BsnapRAM                         REL-DATA    00004B000        

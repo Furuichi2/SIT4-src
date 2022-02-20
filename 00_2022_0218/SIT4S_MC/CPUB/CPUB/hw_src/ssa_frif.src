@@ -1,0 +1,949 @@
+;	*************************************************************************************
+;	*****										*****
+;	*****	フラッシュＲＯＭインターフェース					*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+	.LIST	OFF
+	.include	"cm_equ1.equ"
+	.include	"vect.inc"
+	.include	"CPU_REG.EXT"
+	.include	"ssa_ver1.equ"
+	.include	"shn_cmd1.mac"
+	.include	"ssa_com1.mac"
+	.include	"dp_cpud.ext"				; 
+	.include	"dp_cpuab.ext"
+	.include	"ssa_svup.equ"
+	.INCLUDE	"ssa_had1.equ"		;2006-10-19 SAITO WDTﾏｸﾛ変更に伴い追加
+	.INCLUDE	"ssa_wrmy.ext"		;2006-10-19 SAITO WDTﾏｸﾛ変更に伴い追加
+	.import		_dio_top2		;2006-10-19 SAITO WDTﾏｸﾛ変更に伴い追加
+        .IMPORT		_ResetHandler
+	.LIST	ON
+
+
+_EPROM_CODE	.EQU	1114
+_NON_SUM_CODE	.EQU	0917
+
+
+	.SECTION	PvupsciROM,CODE,ALIGN=4
+
+	.export		_ASM_VUP_MAIN;
+_ASM_VUP_MAIN:
+	SUB_START
+	PUSH_ALL
+
+_ASM_VUP_M000:
+	_WDT_CLR					; R0,R10 USED
+
+	FAR_JSR	#_VUP_MAIN,R0
+
+	MOV.L	#_VUP_WKRAM+VUP_START,R1
+	MOV.W	@R1,R0					; 
+	TST	R0,R0					; 
+	BF	_ASM_VUP_M000				; 
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+_VUP_MAIN:
+	SUB_START
+
+	MOV.L	#_VUP_HSAREA_B_TO_A,R8			; ﾊﾝﾄﾞｼｪｲｸ領域CPUB書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_HSAREA_A_TO_B,R9			; ﾊﾝﾄﾞｼｪｲｸ領域CPUA書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+
+	MOV.W	@(VUP_STR_PC,R8),R0			;
+	CMP/EQ	#1,R0					; ﾊﾞｰｼﾞｮﾝUPｽﾀｰﾄ？
+	BT	_FROM_CPUA_REWRITE			; はい
+
+	MOV.W	R0,@(VUP_STR_PC,R9)			;
+
+	XOR	R0,R0
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	R0,@R10
+
+	SUB_END
+	M_RTS
+
+
+_FROM_CPUA_REWRITE:
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT0,R0				; ＶＵＰへスタート開始済み？
+	BT	_FROM_CPUA_REWR_05			; いいえ
+	M_BRA	_FROM_CPUA_REWR_150			; はい
+
+_FROM_CPUA_REWR_05:
+	mov.l	#SR_Init_DI,r0
+	ldc	r0,sr					; SR set (全割込み禁止)
+
+	MOV.L	#_VUP_WKRAM+VUP_START,R1
+	MOV.W	#H'FF,R0
+	MOV.W	R0,@R1
+
+	MOV.W	@(VUP_SEL_PC,R8),R0			; ﾊﾞｰｼﾞｮﾝUP種別CPUAへ
+
+;///////	CMP/EQ	#2,R0					; SEQ VUP?
+;///////	BF	_FROM_CPUA_REWR_10			; いいえ
+;///////
+;///////;	--------------- SEQ VUP -------------------
+;///////	MOV.L	#_FROM_SECT_TBL_SEQ,R0
+;///////	MOV.L	#_SVP_MACINE_SEL1,R1
+;///////	MOV.W	@R1,R2
+;///////	EXTU.W	R2,R2
+;///////	MOV.L	#_EPROM_CODE,R1
+;///////	CMP/EQ	R1,R2
+;///////	BF	_FROM_CPUA_REWR_07
+;///////	MOV.L	#_FROM_SECT_TBLP_SEQ,R0
+;///////_FROM_CPUA_REWR_07:
+;///////	MOV.L	#_FROM_SCT_TOP_ADR,R11
+;///////	MOV.L	R0,@R11
+;///////
+;///////	MOV.L	@R0,R1
+;///////	MOV.L	#_FROM_REWR_TOP_ADR,R10
+;///////	MOV.L	R1,@R10
+;///////
+;///////	MOV.L	#_SEQ_PRO_SIZE,R10
+;///////	ADD	R10,R1
+;///////	MOV.L	#_FROM_REWR_END_ADR,R10
+;///////	MOV.L	R1,@R10
+;///////
+;///////	MOV.L	#_VUP_DATA_AREA_CPUA,R1
+;///////	MOV.L	#_VUP_DATA_AREA_ADR,R10
+;///////	MOV.L	R1,@R10
+;///////
+;///////	M_BRA	_FROM_CPUA_REWR_100
+;///////
+;///////_FROM_CPUA_REWR_10:
+;///////	CMP/EQ	#3,R0					; CPUA(BOOTなし)VUP?
+;///////	BF	_FROM_CPUA_REWR_20			; いいえ
+;///////
+;///////;	--------------- CPUA VUP -------------------
+;///////	MOV.L	#_FROM_SECT_TBL03,R0
+;///////	MOV.L	#_SVP_MACINE_SEL1,R1
+;///////	MOV.W	@R1,R2
+;///////	EXTU.W	R2,R2
+;///////	MOV.L	#_EPROM_CODE,R1
+;///////	CMP/EQ	R1,R2
+;///////	BF	_FROM_CPUA_REWR_17
+;///////	MOV.L	#_FROM_SECT_TBLP03,R0
+;///////_FROM_CPUA_REWR_17:
+;///////	MOV.L	#_FROM_SCT_TOP_ADR,R11
+;///////	MOV.L	R0,@R11
+;///////
+;///////	MOV.L	@R0,R1
+;///////	MOV.L	#_FROM_REWR_TOP_ADR,R10
+;///////	MOV.L	R1,@R10
+;///////
+;///////	MOV.L	#_FROM_SECT_TBL00,R0
+;///////	MOV.L	#_SVP_MACINE_SEL1,R1
+;///////	MOV.W	@R1,R2
+;///////	EXTU.W	R2,R2
+;///////	MOV.L	#_EPROM_CODE,R1
+;///////	CMP/EQ	R1,R2
+;///////	BF	_FROM_CPUA_REWR_18
+;///////	MOV.L	#_FROM_SECT_TBLP00,R0
+;///////_FROM_CPUA_REWR_18:
+;///////	MOV.L	@R0,R1
+;///////	MOV.L	#_CPUA_PRO_SIZE,R10
+;///////	ADD	R10,R1
+;///////	MOV.L	#_FROM_REWR_END_ADR,R10
+;///////	MOV.L	R1,@R10
+;///////
+;///////	MOV.L	#_FROM_SECT_TBL03,R0
+;///////	MOV.L	#_SVP_MACINE_SEL1,R1
+;///////	MOV.W	@R1,R2
+;///////	EXTU.W	R2,R2
+;///////	MOV.L	#_EPROM_CODE,R1
+;///////	CMP/EQ	R1,R2
+;///////	BF	_FROM_CPUA_REWR_19
+;///////	MOV.L	#_FROM_SECT_TBLP03,R0
+;///////_FROM_CPUA_REWR_19:
+;///////	MOV.L	@R0,R1
+;///////	MOV.L	#H'00FFFFFF,R0
+;///////	AND	R0,R1
+;///////	MOV.L	#_VUP_DATA_AREA_CPUA,R0
+;///////	ADD	R0,R1
+;///////	MOV.L	#_VUP_DATA_AREA_ADR,R10
+;///////	MOV.L	R1,@R10
+;///////
+;///////	M_BRA	_FROM_CPUA_REWR_100
+
+_FROM_CPUA_REWR_20:
+	CMP/EQ	#6,R0					; SENB VUP?
+	BF	_FROM_CPUA_REWR_30			; いいえ
+
+;	--------------- SENB VUP -------------------
+	MOV.L	#_FROM_SECT_TBL_SENB,R0
+;///////	MOV.L	#_SVP_MACINE_SEL1,R1
+;///////	MOV.W	@R1,R2
+;///////	EXTU.W	R2,R2
+;///////	MOV.L	#_EPROM_CODE,R1
+;///////	CMP/EQ	R1,R2
+;///////	BF	_FROM_CPUA_REWR_27
+;///////	MOV.L	#_FROM_SECT_TBLP_SENA,R0
+;///////_FROM_CPUA_REWR_27:
+	MOV.L	#_FROM_SCT_TOP_ADR,R11
+	MOV.L	R0,@R11
+
+	MOV.L	@R0,R1
+	MOV.L	#_FROM_REWR_TOP_ADR,R10
+	MOV.L	R1,@R10
+
+	MOV.L	#_CB_TBL_SIZE,R10
+	ADD	R10,R1
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	R1,@R10
+
+	MOV.L	#_VUP_DATA_AREA_CPUB,R1
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	R1,@R10
+
+	MOV.L	#_FROM16_SECT_TBL00,R0
+	M_BRA	_FROM_CPUA_REWR_100
+
+_FROM_CPUA_REWR_30:
+	CMP/EQ	#8,R0					; CPUB(BOOTあり)VUP?
+	BF	_FROM_CPUA_REWR_40			; いいえ
+
+;	--------------- CPUB VUP -------------------
+	MOV.L	#_FROM8_SECT_TBL00,R0
+	MOV.L	#_SVP_MACINE_SEL1,R1
+	MOV.W	@R1,R2
+	EXTU.W	R2,R2
+;	-------------------------------- 2006/12/26(INS) V05 {
+	MOV.L	#_VUP_PRG_NON_SUM_CODE,R1
+	MOV.W	R2,@R1
+;	-------------------------------- }
+;///////	MOV.L	#_EPROM_CODE,R1
+;///////	CMP/EQ	R1,R2
+;///////	BF	_FROM_CPUA_REWR_37
+;///////	MOV.L	#_FROM_SECT_TBLP00,R0
+;///////_FROM_CPUA_REWR_37:
+	MOV.L	#_FROM_SCT_TOP_ADR,R11
+	MOV.L	R0,@R11
+
+	MOV.L	@R0,R1
+	MOV.L	#_FROM_REWR_TOP_ADR,R10
+	MOV.L	R1,@R10
+
+	MOV.L	#_CPUB_PRO_SIZE,R10
+	ADD	R10,R1
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	R1,@R10
+
+	MOV.L	#_VUP_DATA_AREA_CPUB,R1
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	R1,@R10
+
+	MOV.L	#_FROM8_SECT_TBL00,R0
+	M_BRA	_FROM_CPUA_REWR_100
+
+_FROM_CPUA_REWR_40:
+	CMP/EQ	#10,R0					; C/Bｼｽﾃﾑﾊﾟﾗﾒｰﾀ
+	BF	_FROM_CPUA_REWR_50			; いいえ
+
+;	--------------- C/Bｼｽﾃﾑﾊﾟﾗﾒｰﾀ VUP -------------------
+	MOV.L	#_FROM_SECT_TBL_SYSB,R0
+;///////	MOV.L	#_SVP_MACINE_SEL1,R1
+;///////	MOV.W	@R1,R2
+;///////	EXTU.W	R2,R2
+;///////	MOV.L	#_EPROM_CODE,R1
+;///////	CMP/EQ	R1,R2
+;///////	BF	_FROM_CPUA_REWR_47
+;///////	MOV.L	#_FROM_SECT_TBLP_SYSA,R0
+;///////_FROM_CPUA_REWR_47:
+	MOV.L	#_FROM_SCT_TOP_ADR,R11
+	MOV.L	R0,@R11
+
+	MOV.L	@R0,R1
+	MOV.L	#_FROM_REWR_TOP_ADR,R10
+	MOV.L	R1,@R10
+
+	MOV.L	#_CB_SYS_SIZE,R10
+	ADD	R10,R1
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	R1,@R10
+
+	MOV.L	#_VUP_DATA_AREA_CPUB,R1
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	R1,@R10
+
+	MOV.L	#_FROM16_SECT_TBL00,R0
+	M_BRA	_FROM_CPUA_REWR_100
+
+_FROM_CPUA_REWR_50:
+	M_BRA	_FROM_CPUA_REWR_END
+
+_FROM_CPUA_REWR_100:
+;///////	MOV.L	#_FROM_SECT_TBL00,R0
+;///////	MOV.L	#_SVP_MACINE_SEL1,R1
+;///////	MOV.W	@R1,R2
+;///////	EXTU.W	R2,R2
+;///////	MOV.L	#_EPROM_CODE,R1
+;///////	CMP/EQ	R1,R2
+;///////	BF	_FROM_CPUA_REWR_105
+;///////	MOV.L	#_FROM_SECT_TBLP00,R0
+;///////_FROM_CPUA_REWR_105:
+	MOV.L	@R0,R1
+	MOV.L	#_FROM_TOP_ADR,R11
+	MOV.L	R1,@R11
+
+	MOV.W	@(VUP_STR_PC,R8),R0			;
+	MOV.W	R0,@(VUP_STR_PC,R9)			; ｽﾀｰﾄ応答
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	#BIT0,R0				; ｽﾀｰﾄ応答済みＯＮ！
+	MOV.W	R0,@R10
+
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+_FROM_CPUA_REWR_150:
+;	-------------------------------- 2006/12/26(INS) V05 {
+	MOV.L	#_VUP_PRG_NG_DAT,R1			;
+	MOV.W	@R1,R0
+	TST	R0,R0					; ﾊﾞｰｼﾞｮﾝUP時異常あった？
+	BT	_FROM_CPUA_REWR_155			; いいえ
+	MOV.W	R0,@(VUP_REV1_SH,R9)			;
+	M_BRA	_FROM_CPUA_REWR_END
+_FROM_CPUA_REWR_155:
+;	-------------------------------- }
+
+;	-------------------------------------------------
+;		CPUAへ2000H受信待ち
+;	-------------------------------------------------
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT1,R0				; 2000Ｈ受信済み？
+	BT	_FROM_CPUA_REWR_160			; いいえ
+	M_BRA	_FROM_CPUA_REWR_250			; はい
+
+_FROM_CPUA_REWR_160:
+	MOV.W	@(VUP_REV1_PC,R8),R0
+	CMP/EQ	#1,R0					; 2000H受信完了？
+	BF	_FROM_CPUA_REWR_200			; いいえ
+
+	MOV.W	@(VUP_REV2_PC,R8),R0			; データブロック番号
+	ADD	#-1,R0
+	MOV.L	#H'2000,R1
+	MULU.W	R1,R0
+	STS	MACL,R0
+	MOV.L	#_VUP_DATA_AREA_CPUB,R12
+	ADD	R0,R12
+	MOV.L	#_VUP_DATA_ADR_OP1,R11
+	MOV.W	#(H'2000/4),R4
+
+_FROM_CPUA_REWR_170:
+	MOV.L	@R11+,R0
+	NOP
+	MOV.L	R0,@R12
+	ADD	#4,R12
+	DT	R4
+	BF	_FROM_CPUA_REWR_170
+
+	MOV.W	@(VUP_REV1_PC,R8),R0
+	MOV.W	R0,@(VUP_REV1_PC,R9)			; 2000Ｈ受信応答
+
+;	MOV.W	@(VUP_REV4_SH,R9),R0
+;	ADD	#H'20,R0
+;	MOV.W	R0,@(VUP_REV4_SH,R9)
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	OR	#BIT1,R0				; 2000Ｈ受信完了ＯＮ！
+	MOV.W	R0,@R10
+
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+;	-------------------------------------------------
+;		CPUBから書込み指令待ち
+;	-------------------------------------------------
+_FROM_CPUA_REWR_200:
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT2,R0				; 書込み完了済み？
+	BT	_FROM_CPUA_REWR_202			; いいえ
+	M_BRA	_FROM_CPUA_REWR_300			; はい
+
+_FROM_CPUA_REWR_202:
+	MOV.W	@(VUP_DATA_WR_PC,R8),R0			; 
+	CMP/EQ	#1,R0					; 書込み指令有り？
+	BT	_FROM_CPUA_REWR_202A			; はい
+	M_BRA	_FROM_CPUA_REWR_240			; いいえ
+
+_FROM_CPUA_REWR_202A:
+;	-------------------------------- 2006/12/26(INS) V05 {
+;;2016-04-16 SUM削除	FAR_JSR	#_VUP_PROG_SUM_CHK,R11			; ﾊﾞｰｼﾞｮﾝUPﾌﾟﾛｸﾞﾗﾑのSUMﾁｪｯｸ
+	MOV.L	#_VUP_PRG_NG_DAT,R11
+	MOV.W	@R11,R1
+	TST	R1,R1					; ﾊﾞｰｼﾞｮﾝUPﾌﾟﾛｸﾞﾗﾑのSUM異常ある？
+	BT	_FROM_CPUB4_RW140			; いいえ
+	MOV.W	#H'FF,R1				; エラー有り
+	M_BRA	_FROM_CPUA_REWR_END
+_FROM_CPUB4_RW140:
+;	-------------------------------- }
+
+;	MOV	#100,R0
+;	MOV.W	R0,@(VUP_REV4_SH,R9)
+
+	PUSH_REG1 R8
+	PUSH_REG1 R9
+;	-------------------------------------
+;	-----	ｾｸﾀnの消去		-----
+;	-------------------------------------
+_FROM_CPUA_REWR_203:
+	MOV.L	#_FROM_REWR_TOP_ADR,R6
+	MOV.L	@R6,R8					; 書込み／消去セクタ先頭アドレス格納
+
+	MOV.L	#_FROM_TOP_ADR,R6
+	MOV.L	@R6,R13
+
+	FAR_JSR	#_FROM_ERASE_CMND,R10			; FROM消去ｺﾏﾝﾄﾞ発行
+							; In : R13<-_from_top  R0:KEEP
+							; In : R8 <- 消去するｾｸﾀの先頭ｱﾄﾞﾚｽ
+	FAR_JSR	#_FROM_ERASE_POLLINKG,R10		; 消去時のﾎﾟｰﾘﾝｸﾞ
+							; In : R8 <- 消去するｾｸﾀの先頭ｱﾄﾞﾚｽ
+							; Out: R2 <- 異常情報（0以外で異常）
+;	-------------------------------------
+;	-----	ｾｸﾀnの書込み		-----
+;	-------------------------------------
+	MOV.L	#_VUP_DATA_AREA_ADR,R6
+	MOV.L	@R6,R9					; 転送元先頭ｱﾄﾞﾚｽ
+	MOV.L	#_FROM_REWR_TOP_ADR,R6
+	MOV.L	@R6,R8					; 書込み／消去セクタ先頭アドレス格納
+	MOV.L	#_FROM_TOP_ADR,R6
+	MOV.L	@R6,R13
+
+_FROM_CPUA_REWR_205:
+	FAR_JSR	#_FROM_WRITE_CMND,R10			; FROM書込みｺﾏﾝﾄﾞ発行
+							; In:R13<-_from_top  R0:KEEP
+	MOV.W	@R9+,R0
+	MOV.W	R0,@R8
+
+	FAR_JSR	#_FROM_WRITE_POLLINKG,R10
+
+	ADD	#2,R8
+
+	MOV.L	#_FROM_SCT_TOP_ADR,R6
+	MOV.L	@R6,R6					; 書込み中の先頭のセクタテーブルアドレス
+	ADD	#4,R6
+	MOV.L	@R6,R1					; 次のﾌﾗｯｼｭROMｾｸﾀの先頭ｱﾄﾞﾚｽ
+	CMP/HS	R1,R8					; 次のｾｸﾀになった？
+	BF	_FROM_CPUA_REWR_205			; いいえ
+
+;	-------------------------------------
+;	-----	ｾｸﾀnのﾍﾞﾘﾌｧｲ		-----
+;	-------------------------------------
+	MOV.L	#_VUP_DATA_AREA_ADR,R6
+	MOV.L	@R6,R9					; 転送元先頭ｱﾄﾞﾚｽ
+	MOV.L	#_FROM_REWR_TOP_ADR,R6
+	MOV.L	@R6,R8					; 書込み／消去セクタ先頭アドレス格納
+_FROM_CPUA_REWR_210:
+	_WDT_CLR					; R0,R10 USED
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	MOV.W	@R9+,R0
+	EXTU.W	R0,R0
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	MOV.W	@R8+,R1
+	EXTU.W	R1,R1
+
+	CMP/EQ	R1,R0
+	BT	_FROM_REWR_VEROK
+
+	POP_REG1 R9
+	POP_REG1 R8
+
+;	-------------------------------- 2006/12/26(INS) V05 {
+	MOV.L	#_VUP_PRG_RETRY_CNT,R6
+	MOV.W	@R6,R0
+	ADD	#1,R0
+	MOV.W	R0,@R6
+	CMP/EQ	#3,R0
+	BF	_FROM_REWR_450
+	MOV.W	#H'0092,R0				; 書き込みリトライオーバー
+	MOV.L	#_VUP_PRG_NG_DAT,R1
+	MOV.W	R0,@R1
+_FROM_REWR_450:
+;	-------------------------------- }
+
+	MOV.W	#H'FF,R1				; エラー有り
+	M_BRA	_FROM_CPUA_REWR_END
+
+
+_FROM_REWR_VEROK:
+	MOV.L	#_FROM_SCT_TOP_ADR,R6
+	MOV.L	@R6,R6					; 書込み中の先頭のセクタテーブルアドレス
+	ADD	#4,R6
+	MOV.L	@R6,R1					; 次のﾌﾗｯｼｭROMｾｸﾀの先頭ｱﾄﾞﾚｽ
+	CMP/HS	R1,R8					; 次のｾｸﾀになった？
+	BF	_FROM_CPUA_REWR_210			; いいえ
+
+	MOV.L	#_FROM_SCT_TOP_ADR,R7
+	MOV.L	R6,@R7					; 書込み中の先頭のセクタテーブルアドレス
+	MOV.L	#_VUP_DATA_AREA_ADR,R7
+	MOV.L	R9,@R7					; 転送元先頭ｱﾄﾞﾚｽ
+	MOV.L	#_FROM_REWR_TOP_ADR,R7
+	MOV.L	R8,@R7					; 書込み／消去セクタ先頭アドレス格納
+
+	MOV.L	@R6,R1					; 次のﾌﾗｯｼｭROMｾｸﾀの先頭ｱﾄﾞﾚｽ
+	MOV.L	#_FROM_REWR_END_ADR,R6
+	MOV.L	@R6,R11					; 書込み最終ｱﾄﾞﾚｽ
+	CMP/HS	R11,R1					; このセクタは最後？
+	BT	_FROM_CPUA_REWR_220			; はい
+	M_BRA	_FROM_CPUA_REWR_203			; いいえ
+
+_FROM_CPUA_REWR_220:
+	POP_REG1 R9
+	POP_REG1 R8
+
+	MOV.W	@(VUP_DATA_WR_PC,R8),R0			; 
+	MOV.W	R0,@(VUP_DATA_WR_PC,R9)			; 書込み完了応答
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	OR	#BIT2,R0				; 書込み完了ＯＮ！
+	MOV.W	R0,@R10
+
+_FROM_CPUA_REWR_240:
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+;	-------------------------------------------------
+;		CPUBから2000H転送完了信号OFF待ち
+;	-------------------------------------------------
+_FROM_CPUA_REWR_250:
+	MOV.W	@(VUP_REV1_PC,R8),R0			;
+	CMP/EQ	#0,R0
+	BF	_FROM_CPUA_REWR_290			; いいえ
+
+	MOV.W	R0,@(VUP_REV1_PC,R9)			; 2000Ｈ受信応答
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	AND	#NBIT1,R0
+	MOV.W	R0,@R10
+
+_FROM_CPUA_REWR_290:
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+;	-------------------------------------------------
+;		CPUBから書込み指令OFF待ち
+;	-------------------------------------------------
+_FROM_CPUA_REWR_300:
+	MOV.W	@(VUP_DATA_WR_PC,R8),R0			; 
+	CMP/EQ	#0,R0					; 書込み指令有り？
+	BF	_FROM_CPUA_REWR_340			; いいえ
+
+	MOV.W	R0,@(VUP_DATA_WR_PC,R9)			; 書込み完了OFF応答
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	AND	#NBIT2,R0
+	MOV.W	R0,@R10
+
+_FROM_CPUA_REWR_340:
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+_FROM_CPUA_REWR_END:
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****										*****
+;	*****	受信データのSUMチェック							*****
+;	*****										*****
+;	*****	V05 (MAKE) 2006/12/26							*****
+;	*****										*****
+;	*************************************************************************************
+_FROMCHK_NASI_CODE	.EQU	H'5AA53CC3
+	.IMPORT		_ROM_SUM_CODE;
+_VUP_PROG_SUM_CHK:
+	SUB_START
+	PUSH_ALL
+
+	MOV.W	@(VUP_SEL_PC,R8),R0			; ﾊﾞｰｼﾞｮﾝUP種別CPUDから
+	CMP/EQ	#8,R0					; CPUBﾌﾟﾛｸﾞﾗﾑ？
+	BT	_VUP_PROG_SUMCHK_020
+	M_BRA	_VUP_PROG_SUMCHK_EXT
+
+_VUP_PROG_SUMCHK_020:
+	MOV.L	#_VUP_PRG_NON_SUM_CODE,R1
+	MOV.W	@R1,R0
+	MOV.W	#_NON_SUM_CODE,R2
+	CMP/EQ	R2,R0					; SUM CHECK無しｺｰﾄﾞ？
+	BF	_VUP_PROG_SUMCHK_030			; いいえ
+	M_BRA	_VUP_PROG_SUMCHK_EXT			; はい
+
+_VUP_PROG_SUMCHK_030:
+	MOV.L	#_VUP_DATA_AREA_CPUB,R9			; ﾊﾞｰｼﾞｮﾝUPﾌﾟﾛｸﾞﾗﾑ格納領域先頭
+	MOV.L	#_ROM_SUM_CODE,R8			;
+;//SIT4-MC	MOV.L	#H'A0000000,R7
+	MOV.L	#_ResetHandler,R7
+	SUB	R7,R8					
+	ADD	R9,R8					; ﾊﾞｰｼﾞｮﾝUPﾌﾟﾛｸﾞﾗﾑ格納領域最終
+	XOR	R2,R2					; SUM作成用
+	MOV.W	#H'7FFF,R6
+
+_VUP_PROG_SUMCHK_050:
+	CMP/HS	R8,R9					; 最終ｱﾄﾞﾚｽまできた？
+	BT	_VUP_PROG_SUMCHK_100			; はい
+	MOV.L	@R9+,R0
+	ADD	R0,R2
+	MOV	R9,R7
+	AND	R6,R7
+	TST	R7,R7
+	BF	_VUP_PROG_SUMCHK_050
+	_WDT_CLR					; R0,R10 USED
+	M_BRA	_VUP_PROG_SUMCHK_050
+
+_VUP_PROG_SUMCHK_100:
+	MOV.L	@R9,R0					; 送られてきたSUM
+	MOV.L	#_FROMCHK_NASI_CODE,R1
+	CMP/EQ	R1,R0					; SUM CHECK無し？
+	BT	_VUP_PROG_SUMCHK_150			; はい
+	CMP/EQ	R2,R0					; SUM CHECK!!
+	BT	_VUP_PROG_SUMCHK_150			; OK
+_VUP_PROG_SUMCHK_NG:
+	MOV.W	#H'0091,R0				; 受信したﾌﾟﾛｸﾞﾗﾑのSUM異常
+	MOV.L	#_VUP_PRG_NG_DAT,R1
+	MOV.W	R0,@R1
+
+_VUP_PROG_SUMCHK_150:
+_VUP_PROG_SUMCHK_EXT:
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****		WORK RAM							*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+	.SECTION	Bvupwkram,CODE,ALIGN=4
+_FROM_TOP_ADR		.SRES		4		;
+_FROM_SCT_TOP_ADR	.SRES		4		;
+_FROM_REWR_TOP_ADR	.SRES		4		;
+_FROM_REWR_END_ADR	.SRES		4		;
+_VUP_DATA_AREA_ADR	.SRES		4		;
+_FROM_REWR_STR_FLG	.SRES		2		;
+	.ALIGN 4
+_VUP_WKRAM		.SRES		2*16		;
+_VUP_PRG_NG_DAT		.SRES		2		; 2006/12/26 V05
+_VUP_PRG_RETRY_CNT	.SRES		2		; 2006/12/26 V05
+_VUP_PRG_NON_SUM_CODE	.SRES		2		; 2006/12/26 V05
+
+
+	.SECTION	PvupsciROM,CODE,ALIGN=4
+;	-------------------------------------------------------------------------------------
+;	-----										-----
+;	-----	ＦＲＯＭへ消去コマンド発行						-----
+;	-----										-----
+;	-----	Input	: R13 <- _from_top						-----
+;	-----	Input	: R8 <- 消去するｾｸﾀの先頭ｱﾄﾞﾚｽ					-----
+;	-----										-----
+;	-------------------------------------------------------------------------------------
+	.EXPORT	_FROM_ERASE_CMND
+_FROM_ERASE_CMND:
+	SUB_START
+
+	MOV.W	#FROM_ERS_CMND_DAT0,R1
+	MOV.L	#FROM_ERS_CMND_ADR0,R2
+	SHLL	R2
+	ADD	R13,R2
+	MOV.W	R1,@R2					; 消去ｺﾏﾝﾄﾞ1(AAH)
+	NOP
+
+	MOV.W	#FROM_ERS_CMND_DAT1,R1
+	MOV.L	#FROM_ERS_CMND_ADR1,R2
+	SHLL	R2
+	ADD	R13,R2
+	MOV.W	R1,@R2					; 消去ｺﾏﾝﾄﾞ2(55H)
+	NOP
+
+	MOV.W	#FROM_ERS_CMND_DAT2,R1
+	MOV.L	#FROM_ERS_CMND_ADR2,R2
+	SHLL	R2
+	ADD	R13,R2
+	MOV.W	R1,@R2					; 消去ｺﾏﾝﾄﾞ3(80H)
+	NOP
+
+	MOV.W	#FROM_ERS_CMND_DAT3,R1
+	MOV.L	#FROM_ERS_CMND_ADR3,R2
+	SHLL	R2
+	ADD	R13,R2
+	MOV.W	R1,@R2					; 消去ｺﾏﾝﾄﾞ4(AAH)
+	NOP
+
+	MOV.W	#FROM_ERS_CMND_DAT4,R1
+	MOV.L	#FROM_ERS_CMND_ADR4,R2
+	SHLL	R2
+	ADD	R13,R2
+	MOV.W	R1,@R2					; 消去ｺﾏﾝﾄﾞ5(55H)
+	NOP
+
+	MOV.W	#FROM_ERS_DAT11,R1			; 
+	MOV.W	R1,@R8					; 消すｾｸﾀの先頭ｱﾄﾞﾚｽに消去ｺﾏﾝﾄﾞﾗｲﾄ
+	NOP
+
+	SUB_END
+	M_RTS
+
+
+;	-------------------------------------------------------------------------------------
+;	-----										-----
+;	-----	ＦＲＯＭ消去時のポーリング						-----
+;	-----										-----
+;	-----	Input	: R8 <- 消去先頭ｱﾄﾞﾚｽ						-----
+;	-----										-----
+;	-------------------------------------------------------------------------------------
+	.EXPORT	_FROM_ERASE_POLLINKG
+_FROM_ERASE_POLLINKG:
+	SUB_START
+
+	XOR	R2,R2
+
+_FEP_050:
+	_WDT_CLR					; R0,R10 USED
+
+	MOV.W	@R8,R0
+	MOV	R0,R1
+	AND	#BIT7,R0
+	TST	R0,R0
+	BF	_FEP_END
+
+	MOV	R1,R0
+	AND	#BIT5,R0
+	TST	R0,R0
+;///////	BT	_FEP_050
+	BF	_FEP_100
+
+;//SHIMA02/09/26	PUSH_ALL
+;//SHIMA02/09/26	FAR_JSR	#_SCI0_MAIN,R0				; 常時通信ができるように！！
+;//SHIMA02/09/26	POP_ALL
+	M_BRA	_FEP_050
+
+_FEP_100:
+	MOV.W	@R8,R0
+	AND	#BIT7,R0
+	TST	R0,R0
+	BF	_FEP_END
+
+_FEP_ERR:						; FROM消去ｴﾗｰ
+;//SIT4-MC	_WDT_CLR					; R0,R10 USED
+;//SIT4-MC	M_BRA	_FEP_ERR
+	MOV.L	#1,R0
+	MOV.L	#_VUP_PRG_NG_DAT,R10
+	MOV.W	R0,@R10
+
+_FEP_END:
+	SUB_END
+	M_RTS
+
+
+;	-------------------------------------------------------------------------------------
+;	-----										-----
+;	-----	ＦＲＯＭへ書込みコマンド発行						-----
+;	-----										-----
+;	-----	Input	: R13 <- _from_top						-----
+;	-----										-----
+;	-------------------------------------------------------------------------------------
+	.EXPORT	_FROM_WRITE_CMND
+_FROM_WRITE_CMND:
+	SUB_START
+
+	MOV.W	#FROM_WR_CMND_DAT0,R1
+	MOV.L	#FROM_WR_CMND_ADR0,R2
+	SHLL	R2
+	ADD	R13,R2
+	MOV.W	R1,@R2
+	NOP
+
+	MOV.W	#FROM_WR_CMND_DAT1,R1
+	MOV.L	#FROM_WR_CMND_ADR1,R2
+	SHLL	R2
+	ADD	R13,R2
+	MOV.W	R1,@R2
+	NOP
+
+	MOV.W	#FROM_WR_CMND_DAT2,R1
+	MOV.L	#FROM_WR_CMND_ADR2,R2
+	SHLL	R2
+	ADD	R13,R2
+	MOV.W	R1,@R2
+	NOP
+
+	SUB_END
+	M_RTS
+
+
+;	-------------------------------------------------------------------------------------
+;	-----										-----
+;	-----										-----
+;	-----	ＦＲＯＭ書込み時のポーリング						-----
+;	-----										-----
+;	-----										-----
+;	-------------------------------------------------------------------------------------
+	.EXPORT	_FROM_WRITE_POLLINKG
+_FROM_WRITE_POLLINKG:
+	SUB_START
+
+_FWP_050:
+	_WDT_CLR					; R0,R10 USED
+
+	MOV.L	#H'80,R4
+;///////	MOV.W	@R7,R1
+	MOV.W	@R8,R1
+	MOV	R1,R3
+	AND	R4,R3					; 読んだD7
+
+	MOV	R0,R2
+	AND	R4,R2					; 書込んだD7
+
+	CMP/EQ	R2,R3					; 書込んだD7と読んだD7同じ？
+	BT	_FWP_END				; はい
+
+	MOV.L	#H'20,R4
+	MOV	R1,R3
+	AND	R4,R3					; 読んだD5
+	TST	R3,R3					; 読んだD5が１？
+	BF	_FWP_100				; はい
+
+;//SHIMA02/09/26	PUSH_ALL
+;//SHIMA02/09/26	FAR_JSR	#_SCI0_MAIN,R0				; 常時通信ができるように！！
+;//SHIMA02/09/26	POP_ALL
+	M_BRA	_FWP_050				; いいえ
+
+_FWP_100:
+	MOV.L	#H'80,R4
+;///////	MOV.W	@R7,R1
+	MOV.W	@R8,R1
+	MOV	R1,R3
+	AND	R4,R3					; 読んだD7
+
+	CMP/EQ	R2,R3					; 書込んだD7と読んだD7同じ？（再チェック）
+	BT	_FWP_END				; はい
+
+_FWP_ERR:						; WRITEｴﾗｰ
+;//SIT4-MC	_WDT_CLR					; R0,R10 USED
+;//SIT4-MC	M_BRA	_FWP_ERR
+	MOV.L	#2,R0
+	MOV.L	#_VUP_PRG_NG_DAT,R10
+	MOV.W	R0,@R10
+
+_FWP_END:
+	SUB_END
+	M_RTS
+
+
+;	-------------------------------------------------------------------------------------
+;	-----										-----
+;	-----										-----
+;	-----	ＦＲＯＭセクタテーブル							-----
+;	-----										-----
+;	-----										-----
+;	-------------------------------------------------------------------------------------
+	.ALIGN	4
+	.EXPORT	_FROM_SECT_TBL_SIZE
+_FROM_SECT_TBL_SIZE:
+	.DATA.L		H'4
+
+	.ALIGN	4
+	.EXPORT	_FROM8_SECT_TBL00
+	.EXPORT	_FROM16_SECT_TBL00
+	.EXPORT	_FROM_SECT_TBL_KATA
+	.EXPORT	_FROM_SECT_TBL_SYSB
+	.EXPORT	_FROM_SECT_TBL_SENB
+	.EXPORT	_FROM_SECT_TBL_CHAR
+	.EXPORT	_FROM_SECT_TBL_GAIZ
+	.EXPORT	_FROM_SECT_TBL_GAM2	; V06
+
+
+	.ALIGN	4
+_FROM8_SECT_TBL00:
+        .DATA.L		H'A0000000			; ｾｸﾀ0	16kb
+        .DATA.L		H'A0004000			; ｾｸﾀ1	8kb
+        .DATA.L		H'A0006000			; ｾｸﾀ2	8kb
+        .DATA.L		H'A0008000			; ｾｸﾀ3	32kb
+        .DATA.L		H'A0010000			; ｾｸﾀ4	64kb
+        .DATA.L		H'A0020000			; ｾｸﾀ5	64kb
+        .DATA.L		H'A0030000			; ｾｸﾀ6	64kb
+        .DATA.L		H'A0040000			; ｾｸﾀ7	64kb
+        .DATA.L		H'A0050000			; ｾｸﾀ8	64kb
+        .DATA.L		H'A0060000			; ｾｸﾀ9	64kb
+        .DATA.L		H'A0070000			; ｾｸﾀ10	64kb
+        .DATA.L		H'A0080000			; ｾｸﾀ11	64kb
+        .DATA.L		H'A0090000			; ｾｸﾀ12	64kb
+        .DATA.L		H'A00a0000			; ｾｸﾀ13	64kb
+        .DATA.L		H'A00b0000			; ｾｸﾀ14	64kb
+        .DATA.L		H'A00c0000			; ｾｸﾀ15	64kb
+        .DATA.L		H'A00d0000			; ｾｸﾀ16	64kb
+        .DATA.L		H'A00e0000			; ｾｸﾀ17	64kb
+        .DATA.L		H'A00f0000			; ｾｸﾀ18	64kb
+        .DATA.L		H'A0100000			; DUMMY
+
+
+_FROM16_SECT_TBL00:
+	.DATA.L		H'B9000000			; ｾｸﾀ0	16kb
+	.DATA.L		H'B9004000			; ｾｸﾀ1	8kb
+	.DATA.L		H'B9006000			; ｾｸﾀ2	8kb
+	.DATA.L		H'B9008000			; ｾｸﾀ3	32kb
+	.DATA.L		H'B9010000			; ｾｸﾀ4	64kb
+	.DATA.L		H'B9020000			; ｾｸﾀ5	64kb
+	.DATA.L		H'B9030000			; ｾｸﾀ6	64kb
+_FROM_SECT_TBL_KATA:
+	.DATA.L		H'B9040000			; ｾｸﾀ7	64kb
+	.DATA.L		H'B9050000			; ｾｸﾀ8	64kb
+	.DATA.L		H'B9060000			; ｾｸﾀ9	64kb
+	.DATA.L		H'B9070000			; ｾｸﾀ10	64kb
+_FROM_SECT_TBL_GAIZ:
+	.DATA.L		H'B9080000			; ｾｸﾀ11	64kb
+;;;_FROM_SECT_TBL_CHAR:
+	.DATA.L		H'B9090000			; ｾｸﾀ12	64kb
+	.DATA.L		H'B90a0000			; ｾｸﾀ13	64kb
+_FROM_SECT_TBL_SYSB:
+	.DATA.L		H'B90b0000			; ｾｸﾀ14	64kb
+_FROM_SECT_TBL_SENB:
+	.DATA.L		H'B90c0000			; ｾｸﾀ15	64kb
+	.DATA.L		H'B90d0000			; ｾｸﾀ16	64kb
+	.DATA.L		H'B90e0000			; ｾｸﾀ17	64kb
+	.DATA.L		H'B90f0000			; ｾｸﾀ18	64kb
+;------- 以降V05で拡張 -------
+_FROM_SECT_TBL_CHAR:
+	.DATA.L		H'B9100000			;
+	.DATA.L		H'B9110000			;
+	.DATA.L		H'B9120000			;
+	.DATA.L		H'B9130000			;
+_FROM_SECT_TBL_GAM2:			; V06
+	.DATA.L		H'B9140000			;
+	.DATA.L		H'B9150000			;
+	.DATA.L		H'B9160000			;
+	.DATA.L		H'B9170000			;
+	.DATA.L		H'B9180000			;
+	.DATA.L		H'B9190000			;
+	.DATA.L		H'B91A0000			;
+	.DATA.L		H'B91B0000			;
+	.DATA.L		H'B91C0000			;
+	.DATA.L		H'B91D0000			;
+	.DATA.L		H'B91E0000			;
+	.DATA.L		H'B91F0000			;
+
+
+
+	.END

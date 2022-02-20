@@ -1,0 +1,352 @@
+;	***********************************
+;	***				***
+;	***	１個の工程カム演算	***
+;	***	(位置タイプ)		***
+;	***				***
+;	***********************************
+;	CASE1:開始工程<終了工程
+;	CASE2:開始工程==終了工程
+;	CASE3:開始工程>終了工程
+;	"10msec"
+;
+;
+;	=== R6 :現在角度
+;	=== R7 :BIT
+;	=== R8 :ON/OFF
+;	=== R9 :現在の工程の目標位置の方向
+;	=== R10:現在の工程の目標位置
+;	=== R13:前回工程PV
+;	=== R14:現在工程PV
+;	Input   R7:BIT
+;	Input   R8:ON/OF SIGNAL
+;	Input 	R13<前回工程>
+;	Input 	R14<現在工程>
+;	
+;	(OFF条件はここ以外で処理する)
+;	(現在工程=0ならEXIT)
+
+_CAM_PROC1_POS:
+	SUB_START
+	MOV.W	@(_CAM_ON_STP,GBR),R0	;
+	MOV	R0,R11			;開始工程
+	TST	R11,R11			;
+	TST_BIT_OF CAM_PROC1_POS_0100	;
+
+	MOV.W	@(_CAM_OF_STP,GBR),R0	;
+	MOV	R0,R12			;終了工程
+	TST	R12,R12			;
+	TST_BIT_ON CAM_PROC1_POS_0200	;
+CAM_PROC1_POS_0100:			;
+	FAR_JSR	#_CAM_ONLY1_POS_CHK,R0	;通常の位置ｶﾑ
+	M_BRA	CAM_PROC1_POS_5000	;
+
+CAM_PROC1_POS_0200:			;
+	TST	R14,R14			;
+	TST_BIT_ON CAM_PROC1_POS_0300	;
+	M_BRA	CAM_PROC1_POS_5000	;(演算しない OFFではない)
+
+CAM_PROC1_POS_0300:			;
+	CMP/EQ	R11,R12			;開始ON=終了OFF
+	BF	CAM_PROC1_POS_0500	;
+	M_BRA	CAM_PROC1_POS_3000	;
+CAM_PROC1_POS_0500:
+        CMP/GT  R11,R12                 ;開始ON<終了OFF
+	BT	CAM_PROC1_POS_1000	;
+	M_BRA	CAM_PROC1_POS_2000	;終了ON<開始OFF
+
+;	=== R5 :_CAM_POS_STEP_END_FLG1,R1	;//各工程の位置決め完了
+;	=== R6 :現在角度
+;	=== R7 :BIT
+;	=== R8 :ON/OFF
+;	=== R9 :現在の工程の目標位置の方向
+;	=== R10:現在の工程の目標位置
+;	=== R11:START工程(ON)
+;	=== R12:END工程(OFF)
+;	=== R13:前回工程PV
+;	=== R14:現在工程PV
+;
+;	===========================
+;	===	開始<終了	===
+;	===========================
+CAM_PROC1_POS_1000:
+	CMP/GT	R12,R14			;OFF工程 < 現在工程
+	BT	CAM_PROC1_POS_1900	;"OFF固定" 区間C
+
+	CMP/GT	R14,R11			;
+	BT	CAM_PROC1_POS_1900	;PV < "ON" OFF固定
+
+	CMP/EQ	R11,R14			;ON工程?   区間ONx
+	BT	CAM_PROC1_POS_1050	;
+
+	CMP/EQ	R12,R14			;OFF工程?
+	BT	CAM_PROC1_POS_1100	;YES
+
+	M_BRA	CAM_PROC1_POS_1980	;ON固定-不定扱い
+;;;;;;2014-09-22	M_BRA	CAM_PROC1_POS_1950	;ON固定
+
+CAM_PROC1_POS_1050:
+;	-------2014-09-22----------
+	FAR_JSR	#_CAM_POS_ON_REPPROC_CHK,R0	;ANS R0
+;	R0=0 :同一行程
+;	R0=1 :ON    ON条件がREP_OFFで,現状行程がREP_ON
+;	R0=-1:OFF   ON条件がREP_ONで,現状行程がREP_OF
+	CMP/EQ	#1,R0			;
+	BT	CAM_PROC1_POS_1980	;ON固定:1950
+	CMP/EQ	#-1,R0			;
+	BT	CAM_PROC1_POS_1980	;OFF固定:1900
+
+;	-----------------------------
+;	====== ON位置と目標位置の間に方向を判定して入ればON ===
+;;;;;;2014-09-23	FAR_JSR	#_CAM_POS_ON_PROC_CHK,R0	;
+	FAR_JSR	#_CAM_POSEDG_ON_PROC_CHK,R0	;2014-09-22
+
+	M_BRA	CAM_PROC1_POS_5000	;
+
+CAM_PROC1_POS_1100:
+;	-------2014-09-22----------
+	FAR_JSR	#_CAM_POS_OF_REPPROC_CHK,R0	;
+;	R0=0 :同一行程
+;	R0=1 :ON    OFF条件がREP_ONで,現状行程がREP_OF
+;	R0=-1:OFF   OFF条件がREP_OFで,現状行程がREP_ON
+	CMP/EQ	#1,R0			;
+	BT	CAM_PROC1_POS_1950	;ON固定
+	CMP/EQ	#-1,R0			;
+	BT	CAM_PROC1_POS_1900	;OFF固定
+;	-----------------------------
+	FAR_JSR	#_CAM_POSEDG_OF_PROC_CHK,R0
+;;;;;2014-09-22	FAR_JSR	#_CAM_POS_OF_PROC_CHK,R0	;
+	M_BRA	CAM_PROC1_POS_5000	;
+
+;	===	OFF  ===
+CAM_PROC1_POS_1900:
+	CAM_OF1
+	M_BRA	CAM_PROC1_POS_5000	;
+;	===	ON  ===
+CAM_PROC1_POS_1950:
+	CAM_ON1
+	M_BRA	CAM_PROC1_POS_5000	;
+
+;	=== そのまま ===
+CAM_PROC1_POS_1980:
+	M_BRA	CAM_PROC1_POS_5000	;
+
+
+;	===========================
+;	===	開始>終了	===
+;	===========================
+CAM_PROC1_POS_2000:
+	CMP/GT	R11,R14				;ON工程 < 現在工程
+	BT	CAM_PROC1_POS_2980		;"ON固定行程だが、ONはさせない"
+;;;;2014-09-22	BT	CAM_PROC1_POS_2950	;"ON"
+
+        CMP/GT  R14,R12                 	;OFF工程
+	BF	CAM_PROC1_POS_2100		;OFFより小さい NO
+	M_BRA	CAM_PROC1_POS_2980		;"ON"
+;;;;2014-09-22	M_BRA	CAM_PROC1_POS_2950	;"ON"
+
+;	===OFF=< NOW =< ON ===
+CAM_PROC1_POS_2100:
+	CMP/EQ	R12,R14				;OFF 開始工程
+	BT	CAM_PROC1_POS_2400		;
+	CMP/EQ	R11,R14				;
+	BF	CAM_PROC1_POS_2900		;OFF < NOW(OFF)<ON OFF固定
+
+;	-------2014-09-22----------
+	FAR_JSR	#_CAM_POS_ON_REPPROC_CHK,R0	;ANS R0
+;	R0=0 :同一行程
+;	R0=1 :ON    ON条件がREP_OFFで,現状行程がREP_ON
+;	R0=-1:OFF   ON条件がREP_ONで,現状行程がREP_OF
+
+	CMP/EQ	#1,R0			;
+	BT	CAM_PROC1_POS_2980	;ON固定2950
+	CMP/EQ	#-1,R0			;
+	BT	CAM_PROC1_POS_2980	;OFF固定2900
+;	-----------------------------
+;;;;;;2014-09-23	FAR_JSR	#_CAM_POS_ON_PROC_CHK,R0	;
+	FAR_JSR	#_CAM_POSEDG_ON_PROC_CHK,R0	;2014-09-22
+	M_BRA	CAM_PROC1_POS_5000	;
+
+;	======== OFF開始工程===
+CAM_PROC1_POS_2400:
+;	-------2014-09-22----------
+	FAR_JSR	#_CAM_POS_OF_REPPROC_CHK,R0	;
+;	R0=0 :同一行程
+;	R0=1 :ON    OFF条件がREP_ONで,現状行程がREP_OF
+;	R0=-1:OFF   OFF条件がREP_OFで,現状行程がREP_ON
+	CMP/EQ	#1,R0			;
+	BT	CAM_PROC1_POS_2980	;ON固定:2950
+	CMP/EQ	#-1,R0			;
+	BT	CAM_PROC1_POS_2980	;OFF固定:2900
+;	-----------------------------
+
+	FAR_JSR	#_CAM_POSEDG_OF_PROC_CHK,R0
+;;;;;2014-09-22	FAR_JSR	#_CAM_POS_OF_PROC_CHK,R0	;
+	M_BRA	CAM_PROC1_POS_5000	;
+
+;	===	OFF  ===
+CAM_PROC1_POS_2900:
+	CAM_OF1
+	M_BRA	CAM_PROC1_POS_5000	;
+;	===	ON  ===
+CAM_PROC1_POS_2950:
+	CAM_ON1
+	M_BRA	CAM_PROC1_POS_5000	;
+
+;	=== そのまま ===
+CAM_PROC1_POS_2980:
+	M_BRA	CAM_PROC1_POS_5000	;
+
+;	===========================
+;	===	開始==終了	===
+;	===========================
+;	"位置ｶﾑ的な動作になる"
+;	ON-->OFF-->OBJ:以降OFF
+;	OFF-->ON-->OBJ:以降ON
+CAM_PROC1_POS_3000:
+
+;	-------- 2014-09-22 -------
+	MOV.L	#_SET1_MOTREP_STGE,R1	;//繰り返し終了行程[この工程は停止工程とする]
+	MOV.W	@R1,R0			;
+	CMP/EQ	R11,R0			;R11(ON)=R12(OFF)=繰り返し戻り行程か
+	BF	CAM_PROC1_POS_3200	;
+;	R11=R12=R0(両方繰り返し行程)
+
+	MOV.W	@(_CAM_INF_D1,GBR),R0	;
+	TST	#(BIT1+BIT0),R0		;どちらかに戻り行程が存在するか
+	TST_BIT_OF CAM_PROC1_POS_3200	;両方OFF-OFF 通常の行程
+
+	AND	#(BIT1+BIT0),R0		;
+	CMP/EQ	#(BIT1+BIT0),R0		;両方ON-ONか?
+	BF	CAM_PROC1_POS_3100	;
+
+;	---------ON-ON-------
+	FAR_JSR	#_CAM_POS_REP_AREACMP,R0
+	M_BRA	CAM_PROC1_POS_5000
+
+
+CAM_PROC1_POS_3100:
+	TST	#BIT1,R0		;
+	TST_BIT_ON CAM_PROC1_POS_3150	;
+
+;	BIT0=1:------ ON行程が後------------
+	CMP/HI	R11,R14				;ON行程を越えた
+;;;;	BT	CAM_PROC1_POS_3195		;ON固定
+	BT	CAM_PROC1_POS_3198KEP		;ONだが
+	CMP/EQ	R11,R14				;同じ行程か
+	BF	CAM_PROC1_POS_3198KEP		;前の行程 OFFだが
+	MOV.L	#_MOT_REP_F,R1			;
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON CAM_PROC1_POS_3120		;
+;	---- OFF条件ﾁｪｯｸ[通常の行程]---
+	FAR_JSR	#_CAM_POSEDG_OF_PROC_CHK,R0	;2014-09-22
+	M_BRA	CAM_PROC1_POS_5000		;
+CAM_PROC1_POS_3120:
+;	------- ON条件----------
+	FAR_JSR	#_CAM_POS_REPDIG_CMP1,R0	;
+	M_BRA	CAM_PROC1_POS_5000
+
+
+
+CAM_PROC1_POS_3150:
+;	BIT1=1:------ OFF行程が後------------
+	CMP/HI	R12,R14			;OFF行程を越えた
+	BT	CAM_PROC1_POS_3198KEP	;OFFだが
+	CMP/EQ	R12,R14			;同じ行程か
+	BF	CAM_PROC1_POS_3198KEP	;前の行程 ON
+	MOV.L	#_MOT_REP_F,R1		;
+	MOV.W	@R1,R0			;
+	TST	#BIT0,R0		;
+	TST_BIT_ON CAM_PROC1_POS_3170	;
+;	----- ON条件ﾁｪｯｸ[通常の行程]
+;;;;;;2014-09-23	FAR_JSR	#_CAM_POS_ON_PROC_CHK,R0	;
+	FAR_JSR	#_CAM_POSEDG_ON_PROC_CHK,R0	;2014-09-22
+	M_BRA	CAM_PROC1_POS_5000		;
+CAM_PROC1_POS_3170:
+;	------- OFF条件----------
+	FAR_JSR	#_CAM_POS_REPDIG_CMP2,R0	;
+	M_BRA	CAM_PROC1_POS_5000
+
+
+
+
+CAM_PROC1_POS_3190:
+	M_BRA	CAM_PROC1_POS_3900	;OF
+CAM_PROC1_POS_3195:
+	M_BRA	CAM_PROC1_POS_3950	;ON
+
+CAM_PROC1_POS_3198KEP:
+	M_BRA	CAM_PROC1_POS_3980	;KEP
+
+;	==================== 繰り返し以外 ==============================
+CAM_PROC1_POS_3200:
+
+
+	CMP/EQ	R11,R14				;開始工程=終了工程=NOW
+	BF	CAM_PROC1_POS_3300		;
+	TST	R5,R5				;
+	TST_BIT_ON CAM_PROC1_POS_3300		;工程終了ならON/OFF条件にゆだねる
+	M_BRA	CAM_PROC1_POS_3400		;
+
+CAM_PROC1_POS_3300:
+;	======= 開始=終了で　現在はその工程にない ===
+	MOV	R11,R1				;
+	ADD	#-1,R1				;
+	SHLL2	R1				;
+	MOV.L	#_SET1_OBJ_CAM_DIG_TOP,R0	;
+	ADD	R0,R1				;
+	MOV.W	@R1+,R4				;方向
+	MOV.W	@R1,R3				;目標角度
+
+	MOV.W	@(_CAM_ON_DIG,GBR),R0		;[off-->on-->obJならon固定]
+	MOV	R0,R1				;
+	MOV	R4,R0
+	TST	#BIT1,R0			;
+	TST_BIT_OF CAM_PROC1_POS_3330		;
+	MOV	R1,R0
+	MOV	R3,R1				;
+	MOV	R0,R3				;
+
+CAM_PROC1_POS_3330:
+	MOV.W	@(_CAM_OF_DIG,GBR),R0		;R1
+	MOV	R0,R2				;ON(R1)  OBJ(R3)
+	FAR_JSR	#_DIG_AREA_CHK0,R0		;(ON範囲)
+	TST	R0,R0				;
+	TST_BIT_ON CAM_PROC1_POS_3900		;ON-->OFF-->OBJ (OFFでかならず終わる)
+	M_BRA	CAM_PROC1_POS_3950		;YES:ON
+
+
+;	====== ON/OFFを判定する工程====
+CAM_PROC1_POS_3400:
+	MOV.W	@(_CAM_ON_DIG,GBR),R0		;
+	MOV	R0,R1				;
+	MOV.W	@(_CAM_OF_DIG,GBR),R0		;
+	MOV	R0,R3				;
+	MOV	R9,R0				;
+	TST	#BIT1,R0			;
+	TST_BIT_OF CAM_PROC1_POS_3450		;
+	MOV	R1,R0				;
+	MOV	R3,R1				;
+	MOV	R0,R3				;
+CAM_PROC1_POS_3450:				;
+	MOV	R6,R2				;(ON)
+	FAR_JSR	#_DIG_AREA_CHK0,R0		;(ON範囲)
+	TST	R0,R0				;
+	TST_BIT_ON CAM_PROC1_POS_3950		;
+;	===	OFF  ===
+CAM_PROC1_POS_3900:
+	CAM_OF1
+	M_BRA	CAM_PROC1_POS_5000	;
+;	===	ON  ===
+CAM_PROC1_POS_3950:
+	CAM_ON1
+	M_BRA	CAM_PROC1_POS_5000	;
+
+;	=== そのまま ===
+CAM_PROC1_POS_3980:
+
+CAM_PROC1_POS_5000:
+	SUB_END
+	M_RTS
+
+

@@ -1,0 +1,1313 @@
+;	***********************************
+;	***	ñΩóﬂíuä∑É}ÉNÉç sh2/sh3	***
+;	***********************************
+
+;	***********************************
+;	***	ñ≥èåèºÆ∞ƒJUMP		***
+;	***********************************
+	.MACRO	M_BRA	JMP_LABEL
+	BRA	\JMP_LABEL
+	NOP
+	.ENDM	
+
+;	***********************************
+;	***	ñ≥èåèºÆ∞ƒJUMP		***
+;	***********************************
+	.MACRO	X_BRA	JMP_LABEL
+	BRA	\JMP_LABEL
+	.ENDM	
+
+;	***********************************
+;	***	LONG JUMP		***
+;	***********************************
+	.MACRO	M_JMP	JMP_LABEL,WKREG
+	MOV.L	\JMP_LABEL,\WKREG
+	JMP	@\WKREG
+	NOP
+	.ENDM
+
+	.MACRO	REG_JMP	WKREG
+	JMP	@\WKREG
+	NOP
+	.ENDM
+
+
+
+;	***************************
+;	***	JMP COMMAND	***
+;	***************************
+	.MACRO	JMP_LMEM MEM_ADR,WKREG1
+	MOV.L	\MEM_ADR,\WKREG1			;
+	JMP	@\WKREG1
+	NOP
+	.ENDM
+
+
+;	***************************
+;	***	PUSH REG	***
+;	***************************
+;	REG --->(R15)[STACK]
+;		 R15=R15+4
+
+	.MACRO	PUSH_REG1 	WKREG1
+	MOV.L	\WKREG1,@-R15		;PUSH=SP-4 
+					;REG=>[SP]
+					;"-4" FF,FF,FF,FC
+	.ENDM
+;	***************************
+;	***	POP REG		***
+;	***************************
+	.MACRO	POP_REG1	WKREG1
+				; RE"+4" 00,00,00,04
+	MOV.L	@R15+,\WKREG1        ;
+	.ENDM
+
+
+;	======= SYSTEM REGISTER :PR,MACL,MACH =====
+;	***************************
+;	***	PR-->STACK	***
+;	***************************
+	.MACRO	PUSH_PR
+	STS.L	PR,@-R15
+	.ENDM
+	
+;	***************************
+;	***	PR<--STACK	***
+;	***************************
+	.MACRO	POP_PR
+	LDS.L	@R15+,PR
+	.ENDM
+
+;	***************************
+;	***	PR-->STACK	***
+;	***************************
+	.MACRO	INT_PUSH_PR
+	STS.L	PR,@-R15
+	.ENDM
+	
+;	***************************
+;	***	PR<--STACK	***
+;	***************************
+	.MACRO	INT_POP_PR
+	LDS.L	@R15+,PR
+	.ENDM
+
+;	***************************
+;	***	MACHL-->STACK	***
+;	***************************
+	.MACRO	PUSH_MACHL
+	STS.L	MACH,@-R15
+	STS.L	MACL,@-R15
+	.ENDM
+	
+;	***************************
+;	***	MACHL<--STACK	***
+;	***************************
+	.MACRO	POP_MACHL
+	LDS.L	@R15+,MACL
+	LDS.L	@R15+,MACH
+	.ENDM
+
+
+;	*******************************************
+;	***	PUSH,POP SYSTEM CTRL REG	***
+;	*******************************************
+	.MACRO	PUSH_SYS_REG	WKREG
+	STC.L	\WKREG,@-R15
+	.ENDM
+
+	.MACRO	POP_SYS_REG	WKREG
+	LDC.L	@R15+,\WKREG
+	.ENDM
+
+;	***********************************
+;	***	ªÃﬁŸ∞¡›Ω¿∞ƒ		***
+;	***********************************
+	.MACRO	SUB_START
+	STS.L	PR,@-R15		;[ïKóv]
+;;;;;;;	ADD	#-4,R15			;[ïsóv?]
+	.ENDM
+
+;	***********************************
+;	***	ªÃﬁŸ∞¡›END		***
+;	***********************************
+	.MACRO	SUB_END			;
+;;;;;;;	ADD	#4,R15			;[ïsóv?]
+	LDS.L	@R15+,PR		;[ïKóv]
+	.ENDM
+
+;	***********************************
+;	***	RET			***
+;	***********************************
+	.MACRO	M_RTS
+	RTS				;RTSÇÃå„ÇÎÇÃ
+	NOP				;@R15+,PRÇÕ¿ﬁ“
+	.ENDM	
+
+;	*******************************************
+;	***	FAR CALL ASM-->C COMMAND	***
+;	*******************************************
+	.MACRO	FAR_JSR	MEM_ADR,WKREG1
+	MOV.L	\MEM_ADR,\WKREG1		;√∞ÃﬁŸ±ƒﬁ⁄ΩÇÃì‡óeÇREGÇ÷
+	JSR	@\WKREG1			;
+	NOP					;
+	.ENDM
+
+	.MACRO	JSR_REG WKREG1
+	JSR	@\WKREG1			;
+	NOP					;
+	.ENDM
+
+;	***********************************
+;	***	NEAR CALL COMMAND	***
+;	***********************************
+	.MACRO	NEAR_BSR 	CALL_LABEL		;
+	BSR	\CALL_LABEL				;
+	NOP
+	.ENDM
+
+;	***********************************
+;	***	äÑçûRETUNR		***
+;	***********************************
+	.MACRO	M_RTE
+	RTE
+	NOP
+	.ENDM	
+
+
+
+
+;	***************************
+;	***	DI		***
+;	***************************
+;;;;égópã÷é~	.MACRO	DI_PUSH_SR	WK_REG
+;;;;		MOV	#B'11110000,\WK_REG		;
+;;;;		EXTU.B	\WK_REG,\WK_REG			;0 CLR BIT15~BIT8
+;;;;		STC.L	SR,@-R15			;PUSH SR
+;;;;		LDC	\WK_REG,SR			;äÑçûã÷é~Åi15Åj
+;;;;		.ENDM
+
+;	***************************
+;	***	EI		***
+;	***************************
+;;;;égópã÷é~	.MACRO	EI_POP_SR 			;
+;;;;		LDC.L	@R15+,SR			;POP SR
+;;;;		.ENDM
+
+
+
+;	*******************************************
+;	***	TSTñΩóﬂéûÇÃBT,BFÇÃíuÇ´ä∑Ç¶	***
+;	******************************************
+	.MACRO	TST_BIT_ON	JMP_LABEL
+	BF	\JMP_LABEL
+	.ENDM
+	
+	.MACRO	TST_BIT_OF	JMP_LABEL
+	BT	\JMP_LABEL
+	.ENDM
+
+;	*******************************************
+;	***	TSTñΩóﬂéûÇÃBT,BFÇÃíuÇ´ä∑Ç¶	***
+;	*******************************************
+	.MACRO	TST_BITON_DLY	JMP_LABEL
+	BF/S	\JMP_LABEL
+	.ENDM
+	
+	.MACRO	TST_BITOF_DLY	JMP_LABEL
+	BT/S	\JMP_LABEL
+	.ENDM
+
+;	***********************************
+;	***				***
+;	***	ïÇìÆè¨êîì_push/pop	***
+;	***				***
+;	***				***
+;	***********************************
+	.MACRO	PUSH_SYS_FPU
+	STS.L	FPUL,@-R15
+	STS.L	FPSCR,@-R15
+	.ENDM
+
+	.MACRO	POP_SYS_FPU
+	LDS.L	@R15+,FPSCR
+	LDS.L	@R15+,FPUL
+	.ENDM
+
+
+	.MACRO	PUSH_FPU_REG1 WKREG
+	FMOV.S	\WKREG,@-R15
+	.ENDM
+
+	.MACRO	POP_FPU_REG1 WKREG
+	FMOV.S	@R15+,\WKREG
+	.ENDM
+
+	.MACRO	PUSH_FPU_ALL
+		PUSH_SYS_FPU		;2001-07-08 koma add
+		PUSH_FPU_REG1 FR0	;
+		PUSH_FPU_REG1 FR1	;
+		PUSH_FPU_REG1 FR2	;
+		PUSH_FPU_REG1 FR3	;
+		PUSH_FPU_REG1 FR4	;
+	.ENDM
+
+	.MACRO	POP_FPU_ALL
+		POP_FPU_REG1 FR4	;2001-07-08 koma add
+		POP_FPU_REG1 FR3	;
+		POP_FPU_REG1 FR2	;
+		POP_FPU_REG1 FR1	;
+		POP_FPU_REG1 FR0	;
+		POP_SYS_FPU		;
+	.ENDM
+
+
+
+;	~~~~~~~~~~~~~~~~~~~~~~~~~~~
+;	~~~	êÍópœ∏€		~~~
+;	~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	.MACRO	PUSH_ALL
+	PUSH_REG1	R0	;
+	PUSH_REG1	R1	;
+	PUSH_REG1	R2	;
+	PUSH_REG1	R3	;
+	PUSH_REG1	R4	;
+	PUSH_REG1	R5	;
+	PUSH_REG1	R6	;
+	PUSH_REG1	R7	;
+	PUSH_REG1	R8	;
+	PUSH_REG1	R9	;
+	PUSH_REG1	R10	;
+	PUSH_REG1	R11	;
+	PUSH_REG1	R12	;
+	PUSH_REG1	R13	;
+	PUSH_REG1	R14	;
+	PUSH_MACHL		;
+	PUSH_SYS_REG	GBR	;
+	.AIF	_SIT_CPU_SEL EQ _SIT4_CPUB
+	.AELSE
+	PUSH_FPU_ALL		;2001-07-08
+	.AENDI
+	.ENDM
+
+
+	.MACRO	POP_ALL		;
+	.AIF	_SIT_CPU_SEL EQ _SIT4_CPUB
+	.AELSE
+	POP_FPU_ALL		;2001-07-08
+	.AENDI
+	POP_SYS_REG	GBR	;
+	POP_MACHL		;
+	POP_REG1	R14	;
+	POP_REG1	R13	;
+	POP_REG1	R12	;
+	POP_REG1	R11	;
+	POP_REG1	R10	;
+	POP_REG1	R9	;
+	POP_REG1	R8	;
+	POP_REG1	R7	;
+	POP_REG1	R6	;
+	POP_REG1	R5	;
+	POP_REG1	R4	;
+	POP_REG1	R3	;
+	POP_REG1	R2	;
+	POP_REG1	R1	;
+	POP_REG1	R0	;
+	.ENDM
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***		SH3êÍópœ∏€        	***
+;	***					***
+;	*******************************************
+;	***************************
+;	***	SSR-->STACK	***
+;	***************************
+;	sr-->ssr
+	.MACRO	PUSH_SSR
+	STS.L	SSR,@-R15
+	.ENDM
+
+;	***************************
+;	***	SSR<--STACK	***
+;	***************************
+	.MACRO	POP_SSR
+	LDS.L	@R15+,SSR
+	.ENDM
+
+
+;	***************************
+;	***	SSR-->STACK	***
+;	***************************
+;	sr-->SSR
+	.MACRO	PUSH_SPC
+	STS.L	SPC,@-R15
+	.ENDM
+
+;	***************************
+;	***	SSR<--STACK	***
+;	***************************
+	.MACRO	POP_SPC
+	LDS.L	@R15+,SPC
+	.ENDM
+
+
+;;;égópã÷é~	.MACRO	PUSH_ALL_SH3
+;;;	PUSH_REG1	R0	;
+;;;	PUSH_REG1	R1	;
+;;;	PUSH_REG1	R2	;
+;;;	PUSH_REG1	R3	;
+;;;	PUSH_REG1	R4	;
+;;;	PUSH_REG1	R5	;
+;;;	PUSH_REG1	R6	;
+;;;	PUSH_REG1	R7	;
+;;;	PUSH_REG1	R8	;
+;;;	PUSH_REG1	R9	;
+;;;	PUSH_REG1	R10	;
+;;;	PUSH_REG1	R11	;
+;;;	PUSH_REG1	R12	;
+;;;	PUSH_REG1	R13	;
+;;;	PUSH_REG1	R14	;
+;;;	PUSH_MACHL		;
+;;;	PUSH_SYS_REG	GBR	;
+;;;	.ENDM
+
+
+;;;égópã÷é~	.MACRO	POP_ALL_SH3
+;;;	POP_SYS_REG	GBR	;
+;;;	POP_MACHL		;
+;;;	POP_REG1	R14	;
+;;;	POP_REG1	R13	;
+;;;	POP_REG1	R12	;
+;;;	POP_REG1	R11	;
+;;;	POP_REG1	R10	;
+;;;	POP_REG1	R9	;
+;;;	POP_REG1	R8	;
+;;;	POP_REG1	R7	;
+;;;	POP_REG1	R6	;
+;;;	POP_REG1	R5	;
+;;;	POP_REG1	R4	;
+;;;	POP_REG1	R3	;
+;;;	POP_REG1	R2	;
+;;;	POP_REG1	R1	;
+;;;	POP_REG1	R0	;
+;;;	.ENDM
+
+
+	.MACRO	PUSH_INT_SYSREG			;
+	PUSH_SPC				;PC->SPC->STACK
+	PUSH_SSR				;SR->ssr->STACK
+	PUSH_PR					;RET _ADRESS ->PR->STACK
+	.ENDM					;
+
+	.MACRO	POP_INT_SYSREG			;
+	POP_PR					;PR
+	POP_SSR					;ssr
+	POP_SPC					;SPC
+	.ENDM					;
+
+
+
+
+
+;	***************************
+;	***	DI		***
+;	***************************
+	.MACRO	DI_PUSH_SR_SH3	WK_REG1,WK_REG2
+	STC	SR,\WK_REG1			;
+	MOV.W	#H'000000F0,\WK_REG2		;
+	OR	\WK_REG2,\WK_REG1		;INT15
+	STC.L	SR,@-R15			;PUSH SR
+	LDC	\WK_REG1,SR			;äÑçûã÷é~Åi15Åj
+	.ENDM
+
+;	***************************
+;	***	EI		***
+;	***************************
+	.MACRO	EI_POP_SR_SH3 			;
+	LDC.L	@R15+,SR			;POP SR
+	.ENDM
+
+
+
+
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+;	***************************************************
+;	****	64BIT DATA ÇÃïÑçÜîΩì] WORKïKóv		***
+;	***************************************************
+	.MACRO	NEG1_64	H_REG,L_REG,WKREG
+	NOT	\L_REG,\L_REG				;
+	NOT	\H_REG,\H_REG				;
+	XOR	\WKREG,\WKREG				;
+	SETT	
+	ADDC	\WKREG,\L_REG				;0+1+R2
+	ADDC	\WKREG,\H_REG				;
+	.ENDM
+
+;	***********************************
+;	***	DWORD +MAX~ -MIN CHK	***
+;	***********************************
+;	åãâ ÇÕÿ–Øƒ√ﬁ∞¿ÇÃîΩì]Çï‘Ç∑
+	.MACRO	REG_PMAX_MMIN	DATA_REG,MAX_MIN_REG
+	CMP/GE	\DATA_REG,\MAX_MIN_REG		;
+	BT	JMP01\@				;DATA =< MAX 
+	MOV	\MAX_MIN_REG,\DATA_REG		;MAX LIMIT
+JMP01\@:					;
+	NEG	\MAX_MIN_REG,\MAX_MIN_REG	;
+	CMP/GE	\MAX_MIN_REG,\DATA_REG		;
+	BT	JMP02\@				;MIN =< DATA
+	MOV	\MAX_MIN_REG,\DATA_REG		;MIN LIMIT
+JMP02\@:					;
+	NEG	\MAX_MIN_REG,\MAX_MIN_REG	;
+	.ENDM					;
+
+;	***********************************
+;	***	DWORD +MAX~0 CHK	***
+;	***********************************
+	.MACRO	REG_PMAX_0_LMT	DATA_REG,MAX_REG
+	CMP/PZ	\DATA_REG			;
+	BT	JMP01\@				; data >= 
+	XOR	\DATA_REG,\DATA_REG		;
+JMP01\@:					;
+	CMP/GE	\DATA_REG,\MAX_REG		;
+	BT	JMP02\@				;DATA =< MAX 
+	MOV	\MAX_REG,\DATA_REG		;
+JMP02\@:					;
+	.ENDM
+
+;	***********************************
+;	***	DWORD îÕàÕ¡™Ø∏ LMT	***
+;	***********************************
+;
+	.MACRO	REG_PMAX_MMIN_LMT	DATA_REG,MAX_REG,MIN_REG
+	CMP/GE	\DATA_REG,\MAX_REG		;
+	BT	JMP01\@				;DATA =< MAX 
+	MOV	\MAX_REG,\DATA_REG		;"+" MAX
+	M_BRA	JMP02\@				;
+
+JMP01\@:					;
+	CMP/GE	\MIN_REG,\DATA_REG		;
+	BT	JMP02\@				;MIN =< DATA
+	MOV	\MIN_REG,\DATA_REG		;"-" MAX
+JMP02\@:					;
+	.ENDM
+
+;	***********************************
+;	***	DWORD îÕàÕ¡™Ø∏ CHK	***
+;	***********************************
+;
+;
+	.MACRO	REG_PMAX_MMIN_CHK	ANS_REG,DATA_REG,MAX_REG,MIN_REG
+	XOR	\ANS_REG,\ANS_REG		;
+	CMP/GE	\DATA_REG,\MAX_REG		;
+	BT	JMP01\@				;DATA =< MAX 
+	MOV	#BIT0,\ANS_REG			;"+" MAX
+	M_BRA	JMP02\@				;
+
+JMP01\@:					;
+	CMP/GE	\MIN_REG,\DATA_REG		;
+	BT	JMP02\@				;MIN =< DATA
+	MOV	#BIT1,\ANS_REG			;"-" 
+JMP02\@:					;
+	.ENDM
+;	***********************************
+;	***	IF "-" THEN 0		***
+;	***********************************
+	.MACRO	IF_REG_MINS_THEN_0 DATA_REG
+	CMP/PL	\DATA_REG			;
+	BT	JMP01\@				;
+	XOR	\DATA_REG,\DATA_REG		;
+JMP01\@:					;
+	.ENDM
+
+
+;	*******************************************
+;	***	IF  REG >= MAX THEN MAX LIMIT	***
+;	*******************************************
+;	IF R0 >= R1 THEN LIMIT R0<--R1  //REG1_CMP_REG2_LMT R0,GE,R1,R1,TO,R0	;
+;	IF R0 =< R1 THEN LIMIT R0<--R1  //REG1_CMP_REG2_LMT R1,GE,R0,R1,TO,R0	;
+	.MACRO	REG1_CMP_REG2_LMT REG1,CF,REG2,LMTREG,MEMO,ANSREG
+					;MEMO
+	CMP/\CF \REG2,\REG1		;REG1 >= REG2
+	BF	JMP01\@			;
+	MOV	\LMTREG,\ANSREG		;
+JMP01\@:				;
+					;
+	.ENDM
+
+
+;	***************************************************
+;	***						***
+;	***						***
+;	***						***
+;	***		î‰är ⁄ºﬁΩ¿⁄ÕﬁŸ			***
+;	***						***
+;	***						***
+;	***						***
+;	***************************************************
+;	*******************************************
+;	***		à íu,à≥óÕî‰är		***
+;	*******************************************
+	.MACRO	REG1_CMP_REG2_ROTL REG1,CF,REG2,ANS_REG		;
+	CMP/\CF	\REG2,\REG1					;REG1 >= REG2
+	ROTCL	\ANS_REG					;IF "0" ç∂
+	.ENDM							;
+
+;	*******************************************
+;	***		à íu,à≥óÕî‰är		***
+;	*******************************************
+;	ANS."Tbit"
+	.MACRO	R1_AREA_R2_PV_ROTL  UP_REG,DN_REG,PV_REG			;
+	CMP/GE	\DN_REG,\PV_REG							;PV >= MIN
+	BF	JMPED\@								;"T=0"
+	CMP/GE	\PV_REG,\UP_REG							;
+	BF	JMPED\@								;"T=0"
+JMPED\@:									;
+	.ENDM									;ANS."T"
+
+
+;	***************************************************
+;	***	ÀΩ√ÿºΩïtÇ´î‰är				***
+;	***************************************************
+;	å∏è≠ï˚å¸Ç…ÀΩ√ÿºΩÇì¸ÇÍÇÈ[å^äJäÆóπ,ëùà≥äÆóπ]
+;	data1  å≥ê›íË
+;	data2  [data1-HIS] data
+;	IF data1 < PV THEN "1"
+;	IF data2 > PV THEN "0"
+;	else Keep
+	.MACRO	UP1_HIS_DN_PV_ROTL  UP_REG,DN_REG,PV_REG,CF,OLDSQ,OLDBIT,CHKWKREG	;GE or GT
+	CMP/\CF	\UP_REG,\PV_REG								;PV >= UP THEN 1
+	BT	JMPED\@									;"T=1"
+											;
+	CMP/\CF	\DN_REG,\PV_REG							;PV >= DN NO THEN "0"
+	BF	JMPED\@								;PV < DN
+
+;	--------- KEEP [REG BIT-->TÀﬁØƒ]---------
+	MOV.L	#\OLDBIT,\CHKWKREG						;
+	TST	\CHKWKREG,\OLDSQ						;"1" THEN T=0
+	MOVT	\CHKWKREG							;T-->reg	[îΩì]]
+	TST	\CHKWKREG,\CHKWKREG						;REG=0 THEN T=1	[îΩì]]
+JMPED\@:									;
+	.ENDM									;ANS."T"
+
+
+
+;	ëùâ¡ï˚å¸Ç…ÀΩ√ÿºΩÇì¸ÇÍÇÈ[à≥î≤äÆóπ]
+;	data1  å≥ê›íË
+;	data2  [data1+HIS] data
+;	IF data1 > PV THEN "1"
+;	IF data2 < PV THEN "0"
+;	else Keep
+
+	.MACRO	DN1_HIS_UP_PV_ROTL  UP_REG,DN_REG,PV_REG,CF,OLDSQ,OLDBIT,CHKWKREG	;GE or GT
+	CMP/\CF	\UP_REG,\PV_REG							;PV >= UP THEN 1
+	BT	JMP1\@								;"T=1" ----> neg "0"
+
+	CMP/\CF	\PV_REG,\DN_REG						;DN >= PV  PV < DN
+	BT	JMPED\@							;NO "T=0"  "T=1"
+
+;	--------- KEEP ---------
+	MOV.L	#\OLDBIT,\CHKWKREG					;
+	TST	\CHKWKREG,\OLDSQ					;"1" THEN T=0
+JMP1\@:									;
+;	--------- [TÀﬁØƒÇÃîΩì]]---------
+	MOVT	\CHKWKREG						;T-->reg	[îΩì]]
+	TST	\CHKWKREG,\CHKWKREG					;REG=0 THEN T=1	[îΩì]]
+JMPED\@:								;NO "T=0"  "T=1"
+
+	.ENDM									;ANS."T"
+
+
+
+
+
+
+
+;	***************************************************
+;	***						***
+;	***		î‰är“”ÿ⁄ÕﬁŸ			***
+;	***						***
+;	***************************************************
+
+
+;	***************************************************
+;	***						***
+;	***		à íuî‰är/à≥óÕî‰är		***
+;	***						***
+;	***************************************************
+	.MACRO	MEM_CMP_REG_ROTL1 MEM_ADR,WKMEMRG,LG,REGX,CHG,REG1,CF,REG2,ANS_REG
+	MOV.L	#\MEM_ADR,\WKMEMRG			;
+	MOV.\LG	@\WKMEMRG,\REGX				;
+	.AIF	\CHG EQ	1				;
+	EXTU.W	\REGX,\REGX				;
+	.AENDI						;
+	REG1_CMP_REG2_ROTL \REG1,\CF,\REG2,\ANS_REG	;
+	.ENDM						;
+
+;	***************************************************
+;	***						***
+;	***		à íuî‰är/à≥óÕî‰är		***
+;	***		ê›íËÅ{ADD√ﬁ∞¿			***
+;	***						***
+;	***************************************************
+	.MACRO	MEM_CMP_REG_RL1AD MEM_ADR,WKMEMRG,LG,REGX,CHG,REG1,CF,REG2,ANS_REG,ADD_DT
+	MOV.L	#\MEM_ADR,\WKMEMRG			;
+	MOV.\LG	@\WKMEMRG,\REGX				;
+	.AIF	\CHG EQ	1				;
+	EXTU.W	\REGX,\REGX				;
+	.AENDI						;
+	ADD	\ADD_DT,\REGX				;
+	REG1_CMP_REG2_ROTL \REG1,\CF,\REG2,\ANS_REG	;
+	.ENDM						;
+
+;	***************************************************
+;	***		à íuî‰är/à≥óÕî‰är		***
+;	***************************************************
+;
+;	R0:î‰ärï˚ñ@êÿë÷
+;
+	.MACRO	MEM_CMP_REG_ROTL2 MEM_ADR,WKMEMRG,LG,REGX,CHG,REG1,CF1,REG2,ANS_REG,CHGBIT
+	MOV.L	#\MEM_ADR,\WKMEMRG			;
+	MOV.\LG	@\WKMEMRG,\REGX				;
+	.AIF	\CHG EQ	1				;
+	EXTU.W	\REGX,\REGX				;
+	.AENDI						;
+	TST	#\CHGBIT,R0				;
+	TST_BIT_ON JMP1\@				;
+	REG1_CMP_REG2_ROTL \REG1,\CF1,\REG2,\ANS_REG	;
+	M_BRA	JMP2\@					;
+
+JMP1\@:
+	REG1_CMP_REG2_ROTL \REG2,\CF1,\REG1,\ANS_REG	;
+JMP2\@:							;
+	.ENDM						;
+
+
+
+
+
+
+
+;	***********************************************************
+;	***	SX 2WORD DATA -->LOAD + ON/OFF EDGE ,MAKE	***
+;	***********************************************************
+;	PLC 16+16-->16BIT DATAï¿Ç—ë÷Ç¶óLÇË
+;	R0~R3 USED
+
+	.MACRO	WD_WD_LOAD_EDGE_MK	IN_SX_ADR,SQ_ADR,ON_ADR,OF_ADR
+	MOV.L	#\IN_SX_ADR,R0		;
+	MOV.W	@R0,R2			;NEW LOAD
+	MOV.L	#\SQ_ADR,R3		;
+	MOV.W	@R3,R1			;OLD LOAD
+	MOV.W	R2,@R3			;REFLASH R2:NEW R1:OLD
+
+	MOV	R2,R3			;
+	XOR	R1,R2			;R2:EDGE
+
+	MOV.L	#\ON_ADR,R0		;
+	AND	R2,R3			;ON EDGE
+	MOV.W	R3,@R0			;ON EDGE SAVE
+	AND	R2,R1			;
+	MOV.L	#\OF_ADR,R0		;
+	MOV.W	R1,@R0			;OFF EDGE SAVE
+	.ENDM
+
+
+;	======= INPUT R2:NOW SEQ=======
+	.MACRO	WD_WD_LOAD_EDGE_MKREG	SQ_ADR,ON_ADR,OF_ADR
+	MOV.L	#\SQ_ADR,R3		;
+	MOV.W	@R3,R1			;OLD LOAD
+	MOV.W	R2,@R3			;REFLASH R2:NEW R1:OLD
+
+	MOV	R2,R3			;
+	XOR	R1,R2			;R2:EDGE
+
+	MOV.L	#\ON_ADR,R0		;
+	AND	R2,R3			;ON EDGE
+	MOV.W	R3,@R0			;ON EDGE SAVE
+	AND	R2,R1			;
+	MOV.L	#\OF_ADR,R0		;
+	MOV.W	R1,@R0			;OFF EDGE SAVE
+	.ENDM
+
+
+
+
+
+;	***********************************
+;	***	R32/R16-->R16		***
+;	***	R2/R1-->R1		***
+;	***	REG2/REG1-->REG1	***
+;	***	0CHKóLÇË		***
+;	***	OVER FLOWóLÇË		***
+;	***********************************
+	.MACRO	MAC_DIVU_32REG2_16REG1_16REG2 REG1,REG2
+	SHLL16	\REG1			;BIT0~15-->BIT16~31
+	TST	\REG1,\REG1		;
+	BT	DIVU1_ZERO_DIV\@	;ZERO DIV        ANS.MAX
+	CMP/HS	\REG1,\REG2		;UNSHIN R2[Rn] >= R1[Rm] ANS.0...R1
+	BT	DIVU1_ZERO_DIV\@	;OVER FLOW
+;	============================================
+	DIV0U				;FLAG M=Q=T=0
+
+	.arepeat	16		;åJï‘ìWäJ
+	DIV1	\REG1,\REG2		;SHIFT 1 R1-R2 -->Q
+	.aendr				;
+
+	ROTCL	\REG2			;T<--R2<--T
+	
+	EXTU.W	\REG2,\REG2		;BIT31~BIT16 0 CLR
+	M_BRA	DIVU1_EXT\@		;
+
+;	============================================
+DIVU1_ZERO_DIV\@:
+	MOV.L	#H'0000FFFF,\REG2	;MAX SET
+DIVU1_EXT\@:				;
+	.ENDM
+
+
+
+
+;	***********************************
+;	***	R32/R16-->R16		***
+;	***	R2/R1-->R1		***
+;	***	REG2/REG1-->REG1	***
+;	***	0CHKóLÇË		***
+;	***	OVER FLOWóLÇË		***
+;	***********************************
+;	REG2/REG1-->REG2
+;	***************************************************
+;	***	REG2/REG1-->REG1			***
+;	***************************************************
+;	REG1ï€éù
+;	WKREG1:îjâÛ
+;	WKREG2:îjâÛ
+;	REG2:ANS
+
+	.MACRO	MAC_DIVS_32REG2_32REG1_32REG2 REG1,REG2,WKREG1,WKREG2
+	TST	\REG1,\REG1		;
+	TST_BIT_OF DIVS21_ZERO\@	;
+
+	MOV	\REG2,\WKREG1		;
+	ROTCL	\WKREG1			;
+	SUBC	\WKREG2,\WKREG2		;ïÑçÜägí£64ÀﬁØƒ R4,R2
+	XOR	\WKREG1,\WKREG1		;R3=0
+	SUBC	\WKREG1,\REG2		;
+	DIV0S	\REG1,\WKREG2		;
+	.arepeat	32		;åJï‘ìWäJ
+	ROTCL	\REG2
+	DIV1	\REG1,\WKREG2		;SHIFT 1 R1-R2 -->Q
+	.aendr				;
+	ROTCL	\REG2			;
+	ADDC	\WKREG1,\REG2		;
+	M_BRA	DIVS21_EXT\@		;
+
+DIVS21_ZERO\@:				;R3/R1-->R2 IF R1=0 THEN R2=7FFF FFFF // 8000 0000Ç™ñ{óàÇ©?
+	XOR	\REG2,\REG2		;
+DIVS21_EXT\@:				;
+	.ENDM
+
+;	***********************************************************
+;	***							***
+;	***		REG2[32]/REG1[16]-->REG2[16]		***
+;	***							***
+;	***********************************************************
+;	REG1:KEEP
+;	REG2:ANS
+;	========== REG1 KEEP =====
+	.MACRO	MAC_DIVS_32REG2_16REG1_16REG2 REG1,REG2
+	PUSH_REG1	\REG1			;
+	PUSH_REG1	\REG2			;
+	EXTS.W	\REG1,\REG1			;
+	CMP/PZ	\REG1				;
+	BT	DIVS1_020\@			;
+	NEG	\REG1,\REG1			;
+DIVS1_020\@:
+	CMP/PZ	\REG2				;
+	BT	DIVS1_040\@			;
+	NEG	\REG2,\REG2			;
+DIVS1_040\@:
+
+	MAC_DIVU_32REG2_16REG1_16REG2 \REG1,\REG2
+
+
+	MOV.W	#H'7FFF,\REG1			;
+	CMP/HS	\REG2,\REG1			;7FFF >= data
+	BT	DIVS1_060\@			;
+	MOV	\REG1,\REG2			;7FFF >= data
+DIVS1_060\@:					;
+
+	POP_REG1 \REG1				;
+	CMP/PZ	\REG1				;
+	BT	DIVS1_080\@			;
+	NEG	\REG2,\REG2			;
+DIVS1_080\@:					;
+	POP_REG1 \REG1				;
+	CMP/PZ	\REG1				;
+	BT	DIVS1_100\@			;
+	NEG	\REG2,\REG2			;
+DIVS1_100\@:					;
+
+	.ENDM
+
+
+;	*******************************************
+;	***					***
+;	***		Ãﬁ€Ø∏ì]ëó		***
+;	***					***
+;	*******************************************
+	.MACRO	BLOCK_MOV1	LG,AD_DT,SRC_REG,DST_REG,DATA_REG,CNT_REG
+JMP0\@:					;
+	TST	\CNT_REG,\CNT_REG	;
+	TST_BIT_OF JMP1\@		;
+	MOV.\LG	@\SRC_REG+,\DATA_REG	;
+	MOV.\LG	\DATA_REG,@\DST_REG	;
+	ADD	#\AD_DT,\DST_REG	;
+	ADD	#H'FF,\CNT_REG		;
+	M_BRA	JMP0\@			;
+JMP1\@:					;
+	.ENDM
+
+
+;	***************************************************
+;	***		ÉfÅ[É^ïœä∑	2001-07-08	***
+;	***************************************************
+	.MACRO	INTEL_WORD REG1,REG2
+	SWAP.B	\REG1,\REG2
+	.ENDM
+
+
+;	***************************************************
+;	***		4byte read	2001-07-08	***
+;	***************************************************
+	.MACRO	plc_2w_rd ADR_REG1,ANSREG,WKREG1
+	MOV.W	@\ADR_REG1+,\ANSREG		;ML(56).LL(78) R2
+	MOV.W	@\ADR_REG1+,\WKREG1		;HH(12).MH(34) R3
+	SWAP.W	\ANSREG,\ANSREG			;
+	XTRCT	\WKREG1,\ANSREG			;
+	.ENDM
+
+;	***************************************************
+;	***		2byte read	2001-07-08	***
+;	***************************************************
+	.MACRO	plc_1w_rd ADR_REG1,ANSREG
+	MOV.W	@\ADR_REG1+,\ANSREG		;
+;;;;;;;	SWAP.B	\ANSREG,\ANSREG			;ML.LL
+;;;;;;;	EXTS.W	\ANSREG,\ANSREG			;ïÑçÜägí£
+	.ENDM
+
+
+
+;	***************************************************
+;	***		4byte write	2001-07-08	***
+;	***************************************************
+;	ansreg:-->adr_reg
+	.MACRO	plc_2w_wr ADR_REG1,ANSREG,WKREG1	;HH,MH,ML,LL 
+	MOV.W	\ANSREG,@\ADR_REG1			;
+	SWAP.W	\ANSREG,\WKREG1				;
+	ADD	#2,\ADR_REG1				;
+	MOV.W	\WKREG1,@\ADR_REG1			;
+	ADD	#2,\ADR_REG1				;
+	.ENDM
+
+;	***************************************************
+;	***		2byte write	2001-07-08	***
+;	***************************************************
+;	ansreg:-->adr_reg
+	.MACRO	plc_1w_wr ADR_REG1,ANSREG		;
+;;;;;;	SWAP.B	\ANSREG,\ANSREG			;
+	MOV.W	\ANSREG,@\ADR_REG1		;
+	ADD	#2,\ADR_REG1			;
+	.ENDM
+
+
+;	*******************************************
+;	***					***
+;	***	⁄ºﬁΩ¿->“”ÿ√ﬁÃ´ŸƒæØƒ		***
+;	***					***
+;	*******************************************
+	.MACRO	BLOCK_SET1	LG,AD_DT,DST_REG,DATA_REG,CNT_REG
+JMP0\@:					;
+	TST	\CNT_REG,\CNT_REG	;
+	TST_BIT_OF JMP1\@		;
+	MOV.\LG	\DATA_REG,@\DST_REG	;
+	ADD	#\AD_DT,\DST_REG	;
+	ADD	#H'FF,\CNT_REG		;
+	M_BRA	JMP0\@			;
+JMP1\@:					;
+	.ENDM
+
+;	*******************************************
+;	***					***
+;	***		MEM BLOCK		***
+;	***					***
+;	*******************************************
+	.MACRO	MEM_WORD_BLOCK_MOV1	SRC_ADR,DST_ADR,CNT_DAT,DT_REG,CNT_REG
+	MOV.L	#\SRC_ADR,R10			;
+	MOV.L	#\DST_ADR,R11			;
+	MOV.W	#\CNT_DAT,\CNT_REG		;
+	BLOCK_MOV1	W,2,R10,R11,\DT_REG,\CNT_REG
+	.ENDM
+
+
+	.MACRO	MEM_LONG_BLOCK_MOV1	SRC_ADR,DST_ADR,CNT_DAT,DT_REG,CNT_REG
+	MOV.L	#\SRC_ADR,R10			;
+	MOV.L	#\DST_ADR,R11			;
+	MOV.W	#\CNT_DAT,\CNT_REG		;
+	BLOCK_MOV1	L,4,R10,R11,\DT_REG,\CNT_REG
+	.ENDM
+
+;	***********************************
+;	***	MEM => MEM MOV		***
+;	***********************************
+	.MACRO	MEM_MOV_TO_MEM	SRC_ADR,L1,DST_ADR,L2,WKREG1,WKREG2,WKREG3
+	MOV.L	#\SRC_ADR,\WKREG1
+	MOV.\L1	@\WKREG1,\WKREG2	;WK1=SRC_ADR WK2=data
+	MOV.L	#\DST_ADR,\WKREG3	;DST_ADR
+	MOV.\L2	\WKREG2,@\WKREG3	;DST_ADR
+	.ENDM
+
+
+;	***********************************
+;	***	REG => MEM MOV		***
+;	***********************************
+	.MACRO	REG_MOV_TO_MEM	DST_ADR,L1,DT_REG,WKREG1
+	MOV.L	#\DST_ADR,\WKREG1	;DST_ADR
+	MOV.\L1	\DT_REG,@\WKREG1	;DST_ADR
+	.ENDM
+	
+
+;	***********************************
+;	***	MEM => MEM MOV		***
+;	***********************************
+	.MACRO	MEM_MOV_TO_MEM_ALMT	SRC_ADR,L1,DST_ADR,L2,WKREG1,WKREG2,WKREG3,ANDLMT
+	MOV.L	#\SRC_ADR,\WKREG1
+	MOV.\L1	@\WKREG1,\WKREG2	;WK1=SRC_ADR WK2=data
+	MOV.L	#\ANDLMT,\WKREG1	;
+	AND	\WKREG1,\WKREG2		;
+	MOV.L	#\DST_ADR,\WKREG3	;DST_ADR
+	MOV.\L2	\WKREG2,@\WKREG3	;DST_ADR
+	.ENDM
+
+;	***********************************
+;	***	MEM => CALL=>MEM MOV	***
+;	***	2008-10-15		***
+;	***********************************
+	.MACRO	MEM_MOV_TO_MEM_CALL	SRC_ADR,L1,DST_ADR,L2,WKREG1,WKREG2,WKREG3,CALL
+	MOV.L	#\SRC_ADR,\WKREG1
+	MOV.\L1	@\WKREG1,\WKREG2	;WK1=SRC_ADR WK2=data
+	FAR_JSR	#\CALL,\WKREG3
+	MOV.L	#\DST_ADR,\WKREG3	;DST_ADR
+	MOV.\L2	\WKREG2,@\WKREG3	;DST_ADR
+	.ENDM
+
+;	***********************************
+;	***				***
+;	***	DOWN TIMER		***
+;	***	TIME USED MACRO		***
+;	***				***
+;	***********************************
+	.MACRO	DN_TIME LG,MEM_ADR,WKREG1,WKREG2
+	MOV.L	#\MEM_ADR,\WKREG1		;SORCE ADRESS SET
+	MOV.\LG	@\WKREG1,\WKREG2		;
+	TST	\WKREG2,\WKREG2			;
+	BT	JMP_01\@			;ZERO THEN JUMP
+	DT	\WKREG2				;
+	MOV.\LG	\WKREG2,@\WKREG1		;STORE
+JMP_01\@:
+	.ENDM
+
+;	***********************************
+;	***				***
+;	***	UP TIME USED MACRO	***
+;	***	0~FFFF(0~FFFFFFFF)	***
+;	***********************************
+	.MACRO	UP_TIME LG,MEM_ADR,WKREG1,WKREG2
+	MOV.L	#\MEM_ADR,\WKREG1		;SORCE ADRESS SET
+	MOV.\LG	@\WKREG1,\WKREG2		;
+	ADD	#1,\WKREG2			;
+	TST	\WKREG2,\WKREG2			;
+	TST_BIT_OF JMP_01\@			;ZERO THEN JUMP
+	MOV.\LG	\WKREG2,@\WKREG1		;STORE
+JMP_01\@:					;
+	.ENDM					;
+
+	.MACRO	SCAN_TIM_REF_4B SCAN_TIM1,OLDCNT,CNTDLT
+	MOV.L	#\SCAN_TIM1,R10			;
+	MOV.L	#\OLDCNT,R11			;
+	MOV.L	@R10,R0				;R2,R0 NEW
+	MOV	R0,R2				;
+	MOV.L	@R11,R1				;R1:OLD
+	MOV.L	#\CNTDLT,R10			;
+	MOV.L	R0,@R11				;REFLASH
+	SUB	R1,R2				;
+	MOV.L	R2,@R10				;
+	.ENDM
+
+;	***********************************
+;	***				***
+;	***	ÿ›∏ﬁ¿ﬁ≥›CNT		***
+;	***	DEBUG USED		***
+;	***				***
+;	***********************************
+;	***********************************
+;	***				***
+;	***	ÿ›∏ﬁUP-CNT		***
+;	***	DEBUG USED		***
+;	***				***
+;	***********************************
+;	LATE=1~127,-1~-128
+	.MACRO	UP_DN_LATE_CNT LG,MEM_ADR,WKREG1,WKREG2,LATE
+	MOV.L	#\MEM_ADR,\WKREG1		;SORCE ADRESS SET
+	MOV.\LG	@\WKREG1,\WKREG2		;
+	ADD	#\LATE,\WKREG2			;
+	MOV.\LG	\WKREG2,@\WKREG1		;STORE
+	.ENDM					;
+
+;	***********************************
+;	***	DWORD --> CHG1 CHANGE	***
+;	***********************************
+;	0~31
+;	DT_REG KEEP
+;
+	.MACRO	DWORD_TBL_CHG1	DT_REG,WKREG,TBL_ADR
+	MOV.L	#\TBL_ADR,\WKREG		;*4
+	SHLL2	\DT_REG				;
+	ADD	\DT_REG,\WKREG			;
+	SHLR2	\DT_REG				;
+	.ENDM
+
+;	***********************************
+;	***	TABLE CALL		***
+;	***	Input NO. REG		***
+;	***********************************
+;;	.MACRO TABLE_JUMP_MEM	NUMBER_REG,TABLE_MEM,WKREG1
+;;	SHLL2	\NUMBER_REG		;*2
+;;	MOV.L	#\TABLE_MEM,\WKREG1	;
+;;	ADD	\WKREG1,\NUMBER_REG	;
+;;	MOV.L	@\NUMBER_REG,\WKREG1	;
+;;	JSR_REG \WKREG1			;
+;;	.ENDM
+
+	.MACRO TABLE_CALL_MEM	NUMBER_REG,TABLE_MEM,WKREG1
+	SHLL2	\NUMBER_REG		;*2
+	MOV.L	#\TABLE_MEM,\WKREG1	;
+	ADD	\WKREG1,\NUMBER_REG	;
+	MOV.L	@\NUMBER_REG,\WKREG1	;
+	JSR_REG \WKREG1			;
+	.ENDM
+
+
+
+;	***************************************************
+;	***		í èÌêßå‰Å{ÉpÅ[ÉWêßå‰		***
+;	***************************************************
+;	R0,R4,R10,R11
+;	ACTFLG=1WORD íAÇµ BIT7~BIT0Ç‹Ç≈ÇµÇ©égópïsâ¬:í èÌBIT0
+
+	.MACRO	PAT_LEVEL_CTL1 STRSB,DATSB,ACTSB,ENDSB,ELSESB,ACTFLG,SEQ_DT,FLGTBT,SQBIT,FLGSBT
+	MOV.L	#\ACTFLG,R10			;
+	MOV.L	#\SEQ_DT,R11			;
+	MOV.W	@R10,R0				;FLAG LOAD
+	TST	#\FLGTBT,R0			;ENABLE?
+	TST_BIT_ON JMP_ACT01\@			;ON THEN FLAG ACTIVE JUMP
+
+;	------- FLAG OFF ---------
+	MOV.W	@R11,R0				;SEQ
+	MOV.W	#\SQBIT,R4			;
+	TST	R4,R0				;
+	TST_BIT_OF JMP_EXIT\@			;
+
+;	------- SEQ ON START -----
+	MOV.W	@R10,R0				;
+	OR	#\FLGSBT,R0			;
+	MOV.W	R0,@R10				;FLAG BIT SET
+
+	FAR_JSR	#\STRSB,R10			;ANS.REG_CTL_FLG1
+
+	M_BRA	JMP_ACT02\@			;
+
+;	-----------------------------
+;	---------- ACTIVE -----------
+;	-----------------------------
+	.ALIGN	4				;
+
+JMP_ACT01\@:					;
+
+	MOV.W	@R11,R0				;SEQ
+	MOV.W	#\SQBIT,R4
+	TST	R4,R0				;
+	TST_BIT_ON JMP_ACT02\@			;ACITIVE CONTINUE
+
+	MOV.L	#\ACTFLG,R10			;
+	MOV.W	@R10,R0				;
+	AND	#LOW ~\FLGSBT,R0		;
+	MOV.W	R0,@R10				;FLAG CLR
+
+	FAR_JSR	#\ELSESB,R10			;êœï™STOPìôÇÃELSEªÃﬁŸ∞¡›
+	FAR_JSR	#\ENDSB,R10			;
+	M_BRA	JMP_EXIT\@			;
+
+JMP_ACT02\@:					;
+
+	FAR_JSR	#\DATSB,R10			;data æ⁄∏ƒ
+	FAR_JSR	#\ACTSB,R10			;
+JMP_EXIT\@:					;
+	.ENDM
+
+
+
+;	***********************************
+;	***				***
+;	***				***
+;	***				***
+;	***********************************
+	.MACRO	INT_CTRL_ALL_STOP1 MAIN_CMD,INT_STS_FLG
+	XOR	R0,R0
+	MOV.L	#\MAIN_CMD,R1					;
+	MOV.W	R0,@R1						;
+	MOV.L	#\INT_STS_FLG,R1				;
+	MOV.W	R0,@R1						;
+	.ENDM
+
+
+
+;	===================================
+;	===	äƒéã√ﬁ∞¿∏ÿ±+SAVE	===
+;	===================================
+;	R8,R9ÇÕâÛÇ≥Ç»Ç¢éñÇï€èÿÇ∑ÇÈ
+	.MACRO KS_UP_DN_CLR1 SQ_UP,SQ_DN,CLR_REG
+	MOV.L	#\SQ_UP,R13		;ADR LOAD
+	MOV.W	@R13,R0			;DATA LOAD
+	AND	\CLR_REG,R0		;CLR
+	MOV.W	R0,@R13			;
+
+	MOV.L	#\SQ_DN,R14		;ADR LOAD
+	MOV.W	@R14,R0			;
+	AND	\CLR_REG,R0		;CLR
+	MOV.W	R0,@R14			;
+	.ENDM
+
+;	===================================
+;	===	äƒéã			===
+;	===================================
+
+;	***********************************
+;	***	äƒéãW/Lã§í œ∏€		***
+;	***********************************
+;	äƒéã√ﬁ∞¿ "R1=é¿ë™"
+;	R0,R11~R14,R4,R5,R6 USED
+;
+;	"R7,R8,R9ÇÕâÛÇ≥Ç»Ç¢éñÇï€èÿÇ∑ÇÈ"
+;
+;	LGW_U=1 WORD æﬁ€ägí£
+;
+
+	.MACRO	KS_UP_DN_CHK1	SQ_UP,SQ_DN,SET_BIT,SV_UP,SV_DN,LG,LGW_U
+	MOV.L	\SQ_UP,R13				;221 UP "*"
+	MOV.L	\SQ_DN,R14				;223 DN "*"R0,R13,R14
+	MOV.L	\SV_UP,R11				;
+	MOV.L	\SV_DN,R12				;
+
+	.AIF	\LGW_U 	EQ	0			;‹∞ƒﬁÇÃ0ägí£
+	MOV.\LG	@R11,R4					;
+	EXTU.W	R4,R4					;
+	MOV.\LG	@R12,R5					;
+	EXTU.W	R5,R5					;
+	.AELSE						;
+	MOV.\LG	@R11,R4					;
+	MOV.\LG	@R12,R5					;
+	.AENDI						;
+
+	CMP/GE	R1,R4				;R1[PV] =< R5[SV] UP THEN NOMAL
+	BT	KANSHI_020\@			;
+	MOV.W	#\SET_BIT,R6			;
+	MOV.W	@R13,R0				;R0 WORK
+	OR	R6,R0				;PV > SV UP BIT
+	MOV.W	R0,@R13				;
+
+	NOT	R6,R6				;
+	MOV.W	@R14,R0				;R0 WORK
+	AND	R6,R0				;
+	MOV.W	R0,@R14				;
+	M_BRA	KANSHI_EXT\@			;
+
+KANSHI_020\@:
+	CMP/GE	R5,R1			;LIMIT =< PV
+	BT	KANSHI_040\@		;NOMAL
+
+	MOV.W	#\SET_BIT,R6		;
+	MOV.W	@R14,R0			;R0 WORK
+	OR	R6,R0			;
+	MOV.W	R0,@R14			;
+
+	NOT	R6,R6			;
+	MOV.W	@R13,R0			;R0 WORK
+	AND	R6,R0			;
+	MOV.W	R0,@R13			;
+	M_BRA	KANSHI_EXT\@		;
+
+;	------ NOMAL -----
+KANSHI_040\@:				;
+	MOV.W	#\SET_BIT,R6		;
+	NOT	R6,R6			;
+	
+	MOV.W	@R13,R0			;R0 WORK
+	AND	R6,R0	;
+	MOV.W	R0,@R13			;
+
+	MOV.W	@R14,R0			;R0 WORK
+	AND	R6,R0		;
+	MOV.W	R0,@R14			;
+
+KANSHI_EXT\@:
+	.ENDM						;
+
+;	***********************************************************
+;	***							***
+;	***	10000-->30000 *SH_CALC_LATE/H8_CALC_LATE	***
+;	***	Ç≈ÇÕÇ»Ç≠ÅA10000*3Ç…ïœçX				***
+;	***							***
+;	***********************************************************
+;	IN_OUT_REGÇ∆WKREGÇÕàŸÇ»ÇÈéñ
+	.MACRO	CHG_H8LATE_TO_SHLATE IN_OUT_REG,WKREG
+	MOV	\IN_OUT_REG,\WKREG		;
+	ADD	\WKREG,\WKREG			;*2
+	ADD	\WKREG,\IN_OUT_REG		;+1
+	.ENDM
+
+
+
+
+
+;	***********************************
+;	***				***
+;	***	“”ÿ0∏ÿ±K		***
+;	***	2014-05-30		***
+;	***********************************
+	.MACRO	MEM_0CLR_R0_R1	MEM,LG
+	XOR	R0,R0		;
+	MOV.L	#\MEM,R1	;
+	MOV.\LG	R0,@R1		;
+	.ENDM
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,24 @@
+;//	***************************
+;//	***			***
+;//	***	ﾎﾟｼﾞｼｮﾅ用ﾒﾓﾘ	***
+;//	***			***
+;//	***************************
+	.GLOBAL		_POSINER_PV_POS;
+	.GLOBAL		_POSINER_OLDPV_POS;
+	.GLOBAL		_POSINER_MOSTPV_POS;//指令OFF後のｲﾝﾎﾟｼﾞｼｮﾝにもっとも近い位置
+	.GLOBAL		_POSINER_SV_POS;//目標位置
+	.GLOBAL		_POSINER_SV_OVRPOS;//目標位置+ｵｰﾊﾞ量
+	.GLOBAL		_POSINER_SV_STPPOS;//目標位置+停止量
+	.GLOBAL		_POSINER_FLG;
+	.GLOBAL		_POSINER_STS;
+	.GLOBAL		_POSINER_RETRY_CNT;
+	.GLOBAL		_POSINER_STOPCHK_TIM1;//1000 1秒
+	.GLOBAL		_POSINER_STOPCHK_TIM2;//1000 1秒
+
+;//
+	.GLOBAL		_SET1_ATSLID_BAKLNG	;//スライド自動調節　戻り量   "
+	.GLOBAL		_SET1_ATSLID_DNOBJ1	;//スライド自動調節　下降停止 0~99
+	.GLOBAL		_SET1_ATSLID_UPOBJ1	;//スライド自動調節　上昇停止 "
+	.GLOBAL		_SET1_ATSLID_COEF1	;//スライド自動調節　制御精度 "
+	.GLOBAL		_SET1_ATSLID_COEF2	;//スライド自動調節　制御精度 2021-06-24(2019-11-11)
+	.GLOBAL		_SET1_ATDAT_DOTPOS	;//小数点

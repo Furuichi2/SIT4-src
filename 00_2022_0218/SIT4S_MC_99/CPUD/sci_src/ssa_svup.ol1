@@ -1,0 +1,2857 @@
+;	*************************************************************************************
+;	*****										*****
+;	*****	バージョンＵＰ								*****
+;	*****										*****
+;	*****	(1)PCと通信を行いﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀを受信					*****
+;	*****	(2)PCからの指示によりﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀを外部FROM／SH2内蔵FROMへ書込み	*****
+;	*****										*****
+;	*************************************************************************************
+	.LIST	OFF
+	.include	"vect.inc"
+	.include	"cm_equ1.equ"
+	.include	"SH7055RG.EXT"
+	.include	"shn_cmd1.mac"
+	.include	"ssa_com1.mac"
+	.include	"ssa_svup.equ"
+	.include	"dp_cpuab.ext"
+	.LIST	ON
+
+	.import		_from_top;
+	.import		_GAM_TABLE;
+	.IMPORT		_CB_TABLEX
+
+	.SECTION	PvupsciROM,CODE,ALIGN=4
+
+	.export		_SCI_VUP_MAIN;
+_SCI_VUP_MAIN:
+	SUB_START
+	PUSH_ALL
+
+_SCI_VUP_M000:
+	_WDT_CLR
+
+	FAR_JSR	#_RX0_MAIN,R0
+	FAR_JSR	#_SCI0_MAIN,R0
+	FAR_JSR	#_TX0_MAIN,R0
+	FAR_JSR	#_TE0_MAIN,R0
+	FAR_JSR	#_VUP_MAIN,R0
+
+	MOV.L	#_sci0_wkram+VUP_START,R1
+	MOV.W	@R1,R0					; 
+	TST	R0,R0					; 
+	BF	_SCI_VUP_M000				; 
+
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+	.SECTION	PvupsciROM,CODE,ALIGN=4
+;	*************************************************************************************
+;	*****										*****
+;	*****	通信ＭＡＩＮ								*****
+;	*****										*****
+;	*****	ﾛｰﾀﾞｺﾏﾝﾄﾞを使用し、ﾊﾝﾄﾞｼｪｲｸｴﾘｱ／ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀｴﾘｱへ受信ﾃﾞｰﾀを格納	*****
+;	*****										*****
+;	*************************************************************************************
+;	======= EXTERN宣言=======
+
+;	======= PUBLIC宣言=======
+	.export		_SCI0_MAIN;
+	.export		_ER0_INT;
+	.export		_RX0_INT;
+	.export		_TX0_INT;
+	.export		_TE0_INT;
+
+_SCI0_MAIN:
+	SUB_START
+	PUSH_ALL
+
+	MOV.L	#_sci0_wkram,R0				;
+	LDC.L	R0,GBR					;
+
+	MOV.W	@(RX_END,GBR),R0			; 全ﾃﾞｰﾀ受信完
+	TST	R0,R0
+	BF	_SCI0_M050
+	M_BRA	_SCI0_MEND
+
+_SCI0_M050:
+	XOR	R0,R0
+	MOV.W	R0,@(RX_END,GBR)			; 全ﾃﾞｰﾀ受信完
+
+	MOV.L	#_sci0_rxd_buf+_CMND,R1
+	MOV.B	@R1,R0
+	CMP/EQ	#_LOD_CMND_WR,R0			; ﾗｲﾄｺﾏﾝﾄﾞ?
+	BF	_SCI0_M100				; いいえ
+
+	FAR_JSR	#_LOD_CMND_WR_PRO,R1			; ﾗｲﾄｺﾏﾝﾄﾞ受信時の処理
+
+_SCI0_M100:
+	CMP/EQ	#_LOD_CMND_RD,R0			; ﾘｰﾄﾞｺﾏﾝﾄﾞ?
+	BF	_SCI0_M150				; いいえ
+                                                        
+	FAR_JSR	#_LOD_CMND_RD_PRO,R1			; ﾘｰﾄﾞｺﾏﾝﾄﾞ受信時の処理
+
+_SCI0_M150:
+	M_BRA	_SCI0_MEND
+
+_SCI0_MEND:
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	ライトコマンド受信時の処理						*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_LOD_CMND_WR_PRO:
+	SUB_START
+
+	FAR_JSR	#_SCI0_BCC_CHECK,R10
+
+	MOV.L	#_sci0_rxd_buf+_AREA_SEL,R10
+	MOV.B	@R10+,R0				; 領域選択
+	MOV.B	@R10+,R1				; 領域ｱﾄﾞﾚｽ(L)
+	MOV.B	@R10+,R2				; 領域ｱﾄﾞﾚｽ(M)
+	MOV.B	@R10+,R3				; 領域ｱﾄﾞﾚｽ(H)
+	MOV.B	@R10+,R4				; 実ﾃﾞｰﾀﾜｰﾄﾞ数(L)
+	MOV.B	@R10+,R5				; 実ﾃﾞｰﾀﾜｰﾄﾞ数(H)
+	EXTU.B	R0,R0
+	EXTU.B	R1,R1
+	EXTU.B	R2,R2
+	EXTU.B	R3,R3
+	EXTU.B	R4,R4
+	EXTU.B	R5,R5
+
+	CMP/EQ	#_LOD_AREA0,R0				; ﾊﾝﾄﾞｼｪｲｸ領域にｱｸｾｽ？
+	BF	LOD_CWRP_050				; いいえ
+
+	MOV.L	#_vup_hs_area,R8			; ﾊﾝﾄﾞｼｪｲｸ領域先頭ｱﾄﾞﾚｽ
+	M_BRA	LOD_CWRP_220
+
+LOD_CWRP_050:
+	CMP/EQ	#_LOD_AREA1,R0				; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀ領域にｱｸｾｽ？
+	BF	LOD_CWRP_100				; いいえ
+
+	MOV.L	#_VUP_DATA_AREA_CPUB,R8			; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀ領域先頭ｱﾄﾞﾚｽ
+	M_BRA	LOD_CWRP_200
+
+LOD_CWRP_100:
+	M_BRA	LOD_CWRP_END
+
+LOD_CWRP_200:
+	MOV.L	#_vup_hs_area+VUP_SEL_PC,R6
+	MOV.W	@R6,R0
+
+	CMP/EQ	#1,R0					; 画面ﾃｰﾌﾞﾙ
+	BF	LOD_CWRP_202
+	MOV.W	#H'50,R6				; 50****H
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_202:
+	CMP/EQ	#2,R0					; ｼｰｹﾝｽ
+	BF	LOD_CWRP_204
+	MOV.W	#H'07,R6				; 07****H
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_204:
+	CMP/EQ	#3,R0					; CPUAﾌﾟﾛｸﾞﾗﾑ
+	BF	LOD_CWRP_206
+	MOV.W	#H'00,R6				; 00****H
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_206:
+	CMP/EQ	#4,R0					; CPUBﾌﾟﾛｸﾞﾗﾑ
+	BF	LOD_CWRP_208
+	MOV.W	#H'00,R6				; 00****H
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_208:
+	CMP/EQ	#5,R0					; ｾﾝｻA
+	BF	LOD_CWRP_210
+	MOV.W	#H'00,R6				; 08****H
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_210:
+	CMP/EQ	#6,R0					; ｾﾝｻB
+	BF	LOD_CWRP_212
+	MOV.W	#H'5C,R6				; 5C****H
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_212:
+	CMP/EQ	#7,R0					; CPUAﾌﾟﾛｸﾞﾗﾑ
+	BF	LOD_CWRP_214
+	MOV.W	#H'00,R6				; 00****H
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_214:
+	CMP/EQ	#8,R0					; CPUBﾌﾟﾛｸﾞﾗﾑ
+	BF	LOD_CWRP_216
+	MOV.W	#H'00,R6				; 00****H
+	M_BRA	LOD_CWRP_218
+
+LOD_CWRP_216:
+	M_BRA	LOD_CWRP_END
+
+LOD_CWRP_218:
+	SUB	R6,R3					; 
+
+LOD_CWRP_220:
+	SHLL16	R3
+	SHLL8	R2
+	OR	R2,R1
+	OR	R3,R1					; ｱﾄﾞﾚｽ
+	ADD	R1,R8					; R8 <- 書込み先頭ｱﾄﾞﾚｽ
+
+	SHLL8	R5
+	OR	R5,R4
+	EXTU.W	R4,R9					; R9 <- 書込みﾜｰﾄﾞ数
+
+	MOV.L	#_sci0_rxd_buf+_DATA,R10
+
+LOD_CWRP_250:
+	MOV.B	@R10+,R0
+	MOV.B	@R10+,R1
+	SHLL8	R0
+	EXTU.B	R1,R1
+	OR	R1,R0
+	MOV.W	R0,@R8					; 指定された領域にﾃﾞｰﾀを格納
+	ADD	#2,R8
+	ADD	#H'FF,R9
+	CMP/PL	R9
+	BT	LOD_CWRP_250
+
+	FAR_JSR	#_SCI0_TXDBUF_MAKE1,R10			; ﾗｲﾄｺﾏﾝﾄﾞ後の送信ﾃﾞｰﾀ作成
+	FAR_JSR	#_SCI0_TXI_EI,R10			; 送信ｴﾝﾌﾟﾃｨ割込み許可
+
+LOD_CWRP_END:
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	ライトコマンド受信後の送信データ作成					*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_SCI0_TXDBUF_MAKE1:
+	SUB_START
+
+	MOV.L	#_sci0_txd_buf,R1			;
+	XOR	R2,R2					; ﾃﾞｰﾀ数ｶｳﾝﾄ用
+	XOR	R3,R3					; BCC作成用
+
+	MOV.W	#H'5A,R0				; ｽﾀｰﾄｺｰﾄﾞ		0
+	MOV.B	R0,@R1
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.L	#_sci0_wkram+RX_ERR,R10
+	MOV.W	@R10,R0					; 処理ｽﾃｰﾀｽ		3
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'7A,R0				; 接続方式		4
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 接続ID(L)		5
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 接続ID(H)		6
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'11,R0				; 機種互換ｺｰﾄﾞ		7
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 伝送ｲﾝﾀｰﾛｯｸｺｰﾄﾞ	8
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(LL)		9
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(LH)		10
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(HL)		11
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(HH)		12
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'1,R0					; CMND			13
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; MODE			14
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 終了情報		15
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'01,R0				; ｼｰｹﾝｽ番号		16
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'6,R0					; ﾃﾞｰﾀﾊﾞｲﾄ数(L)		17
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾃﾞｰﾀﾊﾞｲﾄ数(H)		18
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.L	#_sci0_rxd_buf+_AREA_SEL,R10
+	MOV.B	@R10+,R0				; 領域選択		19
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 領域ｱﾄﾞﾚｽ(L)		20
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 領域ｱﾄﾞﾚｽ(M)		21
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 領域ｱﾄﾞﾚｽ(H)		22
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 実ﾃﾞｰﾀﾜｰﾄﾞ数(L)	23
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 実ﾃﾞｰﾀﾜｰﾄﾞ数(H)	24
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1（BCC分）
+
+	MOV.L	#_sci0_txd_buf+_DATA_CNTL,R4		;
+	EXTU.B	R2,R0					; ﾃﾞｰﾀ数ｶｳﾝﾀ(L)
+	MOV.B	R0,@R4
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R4					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV	R2,R0
+	SHLR8	R0					; ﾃﾞｰﾀ数ｶｳﾝﾀ(H)
+	MOV.B	R0,@R4
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R4					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	NEG	R3,R3
+	MOV.B	R3,@R1					; BCC格納
+
+	ADD	#3,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ＋3(伝送ﾍｯﾀﾞ部)＝全送信ﾊﾞｲﾄ数
+	MOV.L	#_sci0_wkram+TXD_CNT,R10
+	MOV.W	R2,@R10					; 全送信ﾊﾞｲﾄ数格納
+
+	XOR	R0,R0
+	MOV.L	#_sci0_wkram+TXD_BUF_POI,R10
+	MOV.W	R0,@R10					; 送信ﾊﾞｯﾌｧ用ﾎﾟｲﾝﾀをｸﾘｱ
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	リードコマンド受信時の処理						*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_LOD_CMND_RD_PRO:
+	SUB_START
+
+	FAR_JSR	#_SCI0_BCC_CHECK,R10
+
+	MOV.L	#_sci0_rxd_buf+_AREA_SEL,R10
+	MOV.B	@R10+,R0				; 領域選択
+	MOV.B	@R10+,R1				; 領域ｱﾄﾞﾚｽ(L)
+	MOV.B	@R10+,R2				; 領域ｱﾄﾞﾚｽ(M)
+	MOV.B	@R10+,R3				; 領域ｱﾄﾞﾚｽ(H)
+	MOV.B	@R10+,R4				; 実ﾃﾞｰﾀﾜｰﾄﾞ数(L)
+	MOV.B	@R10+,R5				; 実ﾃﾞｰﾀﾜｰﾄﾞ数(H)
+
+	CMP/EQ	#_LOD_AREA0,R0				; ﾊﾝﾄﾞｼｪｲｸ領域にｱｸｾｽ？
+	BF	LOD_CRDP_050				; いいえ
+
+	MOV.L	#_vup_hs_area,R8			; ﾊﾝﾄﾞｼｪｲｸ領域先頭ｱﾄﾞﾚｽ
+	M_BRA	LOD_CRDP_200
+
+LOD_CRDP_050:
+	CMP/EQ	#_LOD_AREA1,R0				; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀ領域にｱｸｾｽ？
+	BF	LOD_CRDP_100				; いいえ
+
+	MOV.L	#_VUP_DATA_AREA_CPUB,R8			; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀ領域先頭ｱﾄﾞﾚｽ
+	M_BRA	LOD_CRDP_200
+
+LOD_CRDP_100:
+	M_BRA	LOD_CRDP_200
+
+LOD_CRDP_200:
+	SHLL16	R3
+	SHLL8	R2
+	OR	R2,R1
+	OR	R3,R1					; ｱﾄﾞﾚｽ
+	ADD	R1,R8					; R8 <- 読出し先頭ｱﾄﾞﾚｽ
+
+	SHLL8	R5
+	OR	R5,R4
+	EXTU.W	R4,R9					; R9 <- 読出しﾜｰﾄﾞ数
+
+	FAR_JSR	#_SCI0_TXDBUF_MAKE2,R10			; ﾘｰﾄﾞｺﾏﾝﾄﾞ後の送信ﾃﾞｰﾀ作成	In:R8,R9
+	FAR_JSR	#_SCI0_TXI_EI,R10			; 送信ｴﾝﾌﾟﾃｨ割込み許可
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	リードコマンド受信後の送信データ作成					*****
+;	*****										*****
+;	*****	Input : R8 <- 読出し先頭ｱﾄﾞﾚｽ						*****
+;	*****	Input : R9 <- 読出しﾜｰﾄﾞ数						*****
+;	*****										*****
+;	*************************************************************************************
+_SCI0_TXDBUF_MAKE2:
+	SUB_START
+
+	MOV.L	#_sci0_txd_buf,R1			;
+	XOR	R2,R2					; ﾃﾞｰﾀ数ｶｳﾝﾄ用
+	XOR	R3,R3					; BCC作成用
+
+	MOV.W	#H'5A,R0				; ｽﾀｰﾄｺｰﾄﾞ		0
+	MOV.B	R0,@R1
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.L	#_sci0_wkram+RX_ERR,R10
+	MOV.W	@R10,R0					; 処理ｽﾃｰﾀｽ		3
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'7A,R0				; 接続方式		4
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 接続ID(L)		5
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 接続ID(H)		6
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'11,R0				; 機種互換ｺｰﾄﾞ		7
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 伝送ｲﾝﾀｰﾛｯｸｺｰﾄﾞ	8
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(LL)		9
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(LH)		10
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(HL)		11
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; ﾊﾟｽﾜｰﾄﾞ(HH)		12
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; CMND			13
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; MODE			14
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'0,R0					; 終了情報		15
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.W	#H'01,R0				; ｼｰｹﾝｽ番号		16
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV	R9,R4
+	SHLL	R4					; 読出しﾜｰﾄﾞ数 -> ﾊﾞｲﾄ数
+	ADD	#6,R4					;
+	MOV	R4,R0					; ﾃﾞｰﾀﾊﾞｲﾄ数(L)		17
+	EXTU.B	R0,R0
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV	R4,R0
+	SHLR8	R0					; ﾃﾞｰﾀﾊﾞｲﾄ数(H)		18
+	EXTU.B	R0,R0
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.L	#_sci0_rxd_buf+_AREA_SEL,R10
+	MOV.B	@R10+,R0				; 領域選択
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 領域ｱﾄﾞﾚｽ(L)
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 領域ｱﾄﾞﾚｽ(M)
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 領域ｱﾄﾞﾚｽ(H)
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 実ﾃﾞｰﾀﾜｰﾄﾞ数(L)
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV.B	@R10+,R0				; 実ﾃﾞｰﾀﾜｰﾄﾞ数(H)
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+_SCI0_TB_MK2_100:
+	MOV.W	@R8+,R4
+	MOV	R4,R0
+	SHLR8	R0
+	EXTU.B	R0,R0
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+2
+
+	MOV	R4,R0
+	EXTU.B	R0,R0
+	MOV.B	R0,@R1
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R1					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	ADD	#-1,R9
+	TST	R9,R9
+	BF	_SCI0_TB_MK2_100
+
+	ADD	#1,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ+1（BCC分）
+
+	MOV.L	#_sci0_txd_buf+_DATA_CNTL,R4		;
+	EXTU.B	R2,R0					; ﾃﾞｰﾀ数ｶｳﾝﾀ(L)
+	MOV.B	R0,@R4
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R4					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	MOV	R2,R0
+	SHLR8	R0					; ﾃﾞｰﾀ数ｶｳﾝﾀ(H)
+	MOV.B	R0,@R4
+	ADD	R0,R3					; BCC加算
+	ADD	#1,R4					; ﾊﾞｯﾌｧｱﾄﾞﾚｽ+1
+
+	NEG	R3,R3
+	MOV.B	R3,@R1					; BCC格納
+
+	ADD	#3,R2					; ﾃﾞｰﾀ数ｶｳﾝﾀ＋3(伝送ﾍｯﾀﾞ部)＝全送信ﾊﾞｲﾄ数
+	MOV.L	#_sci0_wkram+TXD_CNT,R10
+	MOV.W	R2,@R10					; 全送信ﾊﾞｲﾄ数格納
+
+	XOR	R0,R0
+	MOV.L	#_sci0_wkram+TXD_BUF_POI,R10
+	MOV.W	R0,@R10					; 送信ﾊﾞｯﾌｧ用ﾎﾟｲﾝﾀをｸﾘｱ
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	受信データのＢＣＣチェック						*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_SCI0_BCC_CHECK:
+	SUB_START
+
+	XOR	R0,R0
+	MOV.L	#_sci0_wkram+RX_ERR,R10
+	MOV.W	R0,@R10					; 異常初期ｸﾘｱ
+
+	MOV.L	#_sci0_rxd_buf+_DATA_CNTL,R10
+	MOV.B	@R10+,R1
+	EXTU.B	R1,R1
+	ADD	R1,R0
+
+	MOV.B	@R10+,R2
+	EXTU.B	R2,R2
+	ADD	R2,R0
+
+	SHLL8	R2
+	OR	R2,R1					; ﾍｯﾀﾞ部を除いた受信ﾃﾞｰﾀﾊﾞｲﾄ数
+	ADD	#-1,R1					; BCC分をﾏｲﾅｽ
+
+SCI0_BCC_CK100:
+	MOV.B	@R10+,R2
+	EXTU.B	R2,R2
+	ADD	R2,R0					; BCC加算
+	ADD	#-1,R1
+	CMP/PL	R1
+	BT	SCI0_BCC_CK100
+
+	NEG	R0,R0
+	EXTU.B	R0,R0
+	MOV.B	@R10+,R2				; 受信したBCC
+	EXTU.B	R2,R2
+	CMP/EQ	R2,R0					; BCCはOK？
+	BT	SCI0_BCC_CKEND				; はい
+
+	MOV.W	#H'60,R0
+	MOV.L	#_sci0_wkram+RX_ERR,R10
+	MOV.W	R0,@R10					; BCC異常0x60
+
+SCI0_BCC_CKEND:
+	SUB_END
+	M_RTS
+
+
+;	-------------------------------------------------------------------------------------
+;	-----										-----
+;	-----										-----
+;	-----	送信エンプティ割込み許可						-----
+;	-----										-----
+;	-----										-----
+;	-------------------------------------------------------------------------------------
+_SCI0_TXI_EI:
+	SUB_START
+
+	MOV.L	#_PADR,R1
+	MOV.W	@R1,R0
+	MOV.W	#BIT13,R2				;
+	OR	R2,R0					; RTS ON !
+	MOV.W	R0,@R1					;
+
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	OR	#(BIT7+BIT5),R0				; BIT5:送信動作許可  BIT7:送信ｴﾝﾌﾟﾃｨ割込み許可
+	MOV.B	R0,@R1
+
+	SUB_END
+	M_RTS
+
+
+;	-------------------------------------------------------------------------------------
+;	-----										-----
+;	-----										-----
+;	-----	送信エンプティ割込み禁止						-----
+;	-----										-----
+;	-----										-----
+;	-------------------------------------------------------------------------------------
+_SCI0_TXI_DI:
+	SUB_START
+
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	AND	#NBIT7,R0
+	MOV.B	R0,@R1
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	汎用通信受信ｴﾗｰ割込み							*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_ER0_INT:
+	SUB_START
+
+	MOV.L	#_sci0_wkram,R0				;
+	LDC.L	R0,GBR					;
+
+	XOR	R0,R0
+	MOV.W	R0,@(RX_END,GBR)			; 全ﾃﾞｰﾀ受信完ｸﾘｱ
+	MOV.W	R0,@(RXD_CNT,GBR)			; 受信回数ｸﾘｱ
+	MOV.W	R0,@(HEAD_END,GBR)			; 伝送ﾍｯﾀﾞ部受信確認ｸﾘｱ
+	MOV.W	R0,@(RXD_BUF_POI,GBR)			; ﾎﾟｲﾝﾀｸﾘｱ
+
+	MOV.W	#(BIT3+BIT4+BIT5),R2
+	NOT	R2,R2
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	AND	R2,R0					; ORER,FER,PERｸﾘｱ
+	MOV.B	R0,@R1
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	汎用通信受信ＭＡＩＮ							*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_RX0_MAIN:
+	SUB_START
+	NOP
+	STC	SR,R0
+	NOP
+	MOV.L	#H'000000F0,R1
+	AND	R1,R0
+	mov.l	#SR_Init_DI,r1
+	CMP/EQ	R1,R0					; 全割込み禁止中？
+	BT	_RX0_M100				; はい
+	SUB_END
+	M_RTS
+
+_RX0_M100:
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	TST	#BIT5,R0				; BIT5:送信動作許可中？
+	BT	_RX0_M150				; いいえ
+	SUB_END
+	M_RTS
+
+_RX0_M150:
+	TST	#BIT4,R0				; BIT4:受信動作許可中？
+	BF	_RX0_M200				; はい
+	SUB_END
+	M_RTS
+
+_RX0_M200:
+	TST	#BIT6,R0				; BIT6:受信完了割込み許可中？
+	BF	_RX0_M250				; はい
+	SUB_END
+	M_RTS
+
+_RX0_M250:
+	_WDT_CLR
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	TST	#BIT6,R0				; RDRF ON?
+	BF	_RX0_M300				; YES
+	M_BRA	_RX0_M250
+
+_RX0_M300:
+	MOV.L	#_sci0_wkram,R0				;
+	LDC.L	R0,GBR					;
+
+	MOV.L	#_RDR0,R1
+	MOV.B	@R1,R2
+	EXTU.B	R2,R2					; R2 <- 受信ﾃﾞｰﾀ
+
+	MOV.L	#_sci0_rxd_buf,R1
+	MOV.W	@(RXD_BUF_POI,GBR),R0			; ﾎﾟｲﾝﾀ
+	MOV	R0,R4					; ﾎﾟｲﾝﾀKEEP
+	ADD	R0,R1					; 受信ﾃﾞｰﾀ格納ｱﾄﾞﾚｽ
+
+	MOV.B	R2,@R1					; 受信ﾃﾞｰﾀ格納
+
+	TST	R4,R4					; ﾎﾟｲﾝﾀ=0？
+	BF	RX0_M020				; いいえ
+
+	MOV.W	#H'5A,R0
+	CMP/EQ	R0,R2					; 最初に受信したﾃﾞｰﾀは0x5A？
+	BT	RX0_M020				; はい
+
+	M_BRA	RX0_M030
+
+RX0_M020:
+	MOV.W	@(HEAD_END,GBR),R0			;
+	TST	R0,R0					; 伝送ﾍｯﾀﾞ部受信済み?
+	BT	RX0_M050				; いいえ
+
+	MOV.W	@(RXD_CNT,GBR),R0			; 受信すべきﾃﾞｰﾀﾊﾞｲﾄ数
+	ADD	#-1,R0
+	MOV.W	R0,@(RXD_CNT,GBR)
+	TST	R0,R0					; 全受信完了？
+	BF	RX0_M400				; いいえ
+
+	MOV.W	#1,R0
+	MOV.W	R0,@(RX_END,GBR)			; 全ﾃﾞｰﾀ受信完
+
+RX0_M030:
+	XOR	R0,R0
+	MOV.W	R0,@(RXD_CNT,GBR)
+	MOV.W	R0,@(HEAD_END,GBR)			; 伝送ﾍｯﾀﾞ部受信確認
+	MOV.W	R0,@(RXD_BUF_POI,GBR)			; ﾎﾟｲﾝﾀを次に更新
+
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	AND	#NBIT6,R0				; RDRFｸﾘｱ
+	MOV.W	R0,@R1
+
+	SUB_END
+	M_RTS
+
+RX0_M050:
+	MOV	R4,R0
+	CMP/EQ	#H'2,R0					; ﾎﾟｲﾝﾀ2？
+	BF	RX0_M400				; いいえ
+
+	MOV.W	#1,R0
+	MOV.W	R0,@(HEAD_END,GBR)			; 伝送ﾍｯﾀﾞ部受信確認
+
+	MOV.L	#_sci0_rxd_buf,R1
+	MOV.W	#1,R0					; 受信ﾊﾞｯﾌｧﾎﾟﾝﾀ＝１
+	ADD	R0,R1
+	MOV.B	@R1+,R0
+	EXTU.B	R0,R0
+	MOV.B	@R1,R3
+	SHLL8	R3
+	OR	R3,R0					; 伝送ﾃﾞｰﾀﾊﾞｲﾄ数
+	MOV.W	R0,@(RXD_CNT,GBR)			; 伝送ﾍｯﾀﾞ部以降の受信すべきﾃﾞｰﾀﾊﾞｲﾄ数格納
+
+RX0_M400:
+	ADD	#1,R4
+	MOV	R4,R0
+	MOV.W	#H'200,R1
+	CMP/HS	R1,R0					; ﾎﾟｲﾝﾀ200H以上になった？
+	BF	RX0_M500				; いいえ
+	XOR	R0,R0
+RX0_M500:
+	MOV.W	R0,@(RXD_BUF_POI,GBR)			; ﾎﾟｲﾝﾀを次に更新
+
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	AND	#NBIT6,R0				; RDRFｸﾘｱ
+	MOV.W	R0,@R1
+	M_BRA	_RX0_M250
+
+RX0_MEND:
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	汎用通信送信ＭＡＩＮ							*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_TX0_MAIN:
+	SUB_START
+	NOP
+	STC	SR,R0
+	NOP
+	MOV.L	#H'000000F0,R1
+	AND	R1,R0
+	mov.l	#SR_Init_DI,r1
+	CMP/EQ	R1,R0					; 全割込み禁止中？
+	BT	_TX0_M100				; はい
+	SUB_END
+	M_RTS
+
+_TX0_M100:
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	TST	#BIT5,R0				; BIT5:送信動作許可中？
+	BF	_TX0_M150				; はい
+	SUB_END
+	M_RTS
+
+_TX0_M150:
+	MOV.W	#BIT7,R2
+	AND	R2,R0
+	TST	R0,R0					; BIT7:送信ｴﾝﾌﾟﾃｨ割込み許可中？
+	BF	_TX0_M200				; はい
+	SUB_END
+	M_RTS
+
+_TX0_M200:
+	_WDT_CLR
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	TST	#BIT7,R0				; TDRF ON?
+	BF	_TX0_M300				; YES
+	M_BRA	_TX0_M200
+
+_TX0_M300:
+	MOV.L	#_sci0_wkram+TXD_BUF_POI,R1
+	MOV.W	@R1,R0					; 送信ﾊﾞｯﾌｧﾎﾟｲﾝﾀ
+	MOV	R0,R2
+	MOV.L	#_sci0_txd_buf,R3
+	ADD	R0,R3					; R3=送信ﾃﾞｰﾀ格納ｱﾄﾞﾚｽ
+
+	MOV.B	@R3,R0
+	MOV.L	#_TDR0,R3
+	MOV.B	R0,@R3					; 送信ﾃﾞｰﾀ格納
+
+	ADD	#1,R2					; 送信ﾊﾞｯﾌｧﾎﾟｲﾝﾀ+1
+	MOV.W	R2,@R1
+
+	MOV.L	#_sci0_wkram+TXD_CNT,R1
+	MOV.W	@R1,R0
+	ADD	#H'FF,R0				; 送信ﾃﾞｰﾀ数-1
+	MOV.W	R0,@R1
+
+	TST	R0,R0					; 全ﾃﾞｰﾀ送信完？
+	BT	_TX0_M400				; はい
+
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	AND	#NBIT7,R0				; TDRFｸﾘｱ
+	MOV.B	R0,@R1
+
+	M_BRA	_TX0_M200
+
+_TX0_M400:
+	FAR_JSR	#_SCI0_TXI_DI,R1			; 送信ｴﾝﾌﾟﾃｨ割込み禁止
+
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	OR	#BIT2,R0
+	MOV.B	R0,@R1					; BIT2:送信終了割込み許可
+
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	AND	#NBIT7,R0				; TDRFｸﾘｱ
+	MOV.B	R0,@R1
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	汎用通信送信ＭＡＩＮ							*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_TE0_MAIN:
+	SUB_START
+	NOP
+	STC	SR,R0
+	NOP
+	MOV.L	#H'000000F0,R1
+	AND	R1,R0
+	mov.l	#SR_Init_DI,r1
+	CMP/EQ	R1,R0					; 全割込み禁止中？
+	BT	_TE0_M100				; はい
+	SUB_END
+	M_RTS
+
+_TE0_M100:
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	TST	#BIT5,R0				; BIT5:送信動作許可中？
+	BF	_TE0_M150				; はい
+	SUB_END
+	M_RTS
+
+_TE0_M150:
+	TST	#BIT2,R0				; BIT2:送信終了割込み許可中？
+	BF	_TE0_M200				; はい
+	SUB_END
+	M_RTS
+
+_TE0_M200:
+	_WDT_CLR
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	TST	#BIT2,R0				; TEND ON?
+	BF	_TE0_M250				; YES
+	M_BRA	_TE0_M200
+
+_TE0_M250:
+	MOV.L	#_PADR,R1
+	MOV.W	@R1,R0
+	MOV.W	#BIT13,R2				;
+	NOT	R2,R2
+	AND	R2,R0					; RTS OFF !
+	MOV.W	R0,@R1					;
+
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	MOV.W	#(BIT2+BIT5),R2
+	NOT	R2,R2
+	AND	R2,R0
+	MOV.B	R0,@R1					; BIT2:送信終了割込み禁止  BIT5:送信動作禁止
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	汎用通信受信割込み							*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_RX0_INT:
+	SUB_START
+
+	MOV.L	#_sci0_wkram,R0				;
+	LDC.L	R0,GBR					;
+
+	MOV.L	#_RDR0,R1
+	MOV.B	@R1,R2
+	EXTU.B	R2,R2					; R2 <- 受信ﾃﾞｰﾀ
+
+	MOV.L	#_sci0_rxd_buf,R1
+	MOV.W	@(RXD_BUF_POI,GBR),R0			; ﾎﾟｲﾝﾀ
+	MOV	R0,R4					; ﾎﾟｲﾝﾀKEEP
+	ADD	R0,R1					; 受信ﾃﾞｰﾀ格納ｱﾄﾞﾚｽ
+
+	MOV.B	R2,@R1					; 受信ﾃﾞｰﾀ格納
+
+	TST	R4,R4					; ﾎﾟｲﾝﾀ=0？
+	BF	RX0I_020				; いいえ
+
+	MOV.W	#H'5A,R0
+	CMP/EQ	R0,R2					; 最初に受信したﾃﾞｰﾀは0x5A？
+	BT	RX0I_020				; はい
+
+	M_BRA	RX0I_030
+
+RX0I_020:
+	MOV.W	@(HEAD_END,GBR),R0			;
+	TST	R0,R0					; 伝送ﾍｯﾀﾞ部受信済み?
+	BT	RX0I_050				; いいえ
+
+	MOV.W	@(RXD_CNT,GBR),R0			; 受信すべきﾃﾞｰﾀﾊﾞｲﾄ数
+	ADD	#-1,R0
+	MOV.W	R0,@(RXD_CNT,GBR)
+	TST	R0,R0					; 全受信完了？
+	BF	RX0I_100				; いいえ
+
+	MOV.W	#1,R0
+	MOV.W	R0,@(RX_END,GBR)			; 全ﾃﾞｰﾀ受信完
+
+RX0I_030:
+	XOR	R0,R0
+	MOV.W	R0,@(RXD_CNT,GBR)
+	MOV.W	R0,@(HEAD_END,GBR)			; 伝送ﾍｯﾀﾞ部受信確認
+	MOV.W	R0,@(RXD_BUF_POI,GBR)			; ﾎﾟｲﾝﾀを次に更新
+	M_BRA	RX0I_300
+
+RX0I_050:
+	MOV	R4,R0
+	CMP/EQ	#H'2,R0					; ﾎﾟｲﾝﾀ2？
+	BF	RX0I_100				; いいえ
+
+	MOV.W	#1,R0
+	MOV.W	R0,@(HEAD_END,GBR)			; 伝送ﾍｯﾀﾞ部受信確認
+
+	MOV.L	#_sci0_rxd_buf,R1
+	MOV.W	#1,R0					; 受信ﾊﾞｯﾌｧﾎﾟﾝﾀ＝１
+	ADD	R0,R1
+	MOV.B	@R1+,R0
+	EXTU.B	R0,R0
+	MOV.B	@R1,R3
+	SHLL8	R3
+	OR	R3,R0					; 伝送ﾃﾞｰﾀﾊﾞｲﾄ数
+	MOV.W	R0,@(RXD_CNT,GBR)			; 伝送ﾍｯﾀﾞ部以降の受信すべきﾃﾞｰﾀﾊﾞｲﾄ数格納
+
+RX0I_100:
+	ADD	#1,R4
+	MOV	R4,R0
+	MOV.W	#H'200,R1
+	CMP/HS	R1,R0					; ﾎﾟｲﾝﾀ200H以上になった？
+	BF	RX0I_200				; いいえ
+	XOR	R0,R0
+RX0I_200:
+	MOV.W	R0,@(RXD_BUF_POI,GBR)			; ﾎﾟｲﾝﾀを次に更新
+
+RX0I_300:
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	AND	#NBIT6,R0				; RDRFｸﾘｱ
+	MOV.W	R0,@R1
+
+RX0I_END:
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	汎用通信送信割込み							*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_TX0_INT:
+	SUB_START
+
+	MOV.L	#_sci0_wkram+TXD_BUF_POI,R1
+	MOV.W	@R1,R0					; 送信ﾊﾞｯﾌｧﾎﾟｲﾝﾀ
+	MOV	R0,R2
+	MOV.L	#_sci0_txd_buf,R3
+	ADD	R0,R3					; R3=送信ﾃﾞｰﾀ格納ｱﾄﾞﾚｽ
+
+	MOV.B	@R3,R0
+	MOV.L	#_TDR0,R3
+	MOV.B	R0,@R3					; 送信ﾃﾞｰﾀ格納
+
+	ADD	#1,R2					; 送信ﾊﾞｯﾌｧﾎﾟｲﾝﾀ+1
+	MOV.W	R2,@R1
+
+	MOV.L	#_sci0_wkram+TXD_CNT,R1
+	MOV.W	@R1,R0
+	ADD	#H'FF,R0				; 送信ﾃﾞｰﾀ数-1
+	MOV.W	R0,@R1
+
+	TST	R0,R0					; 全ﾃﾞｰﾀ送信完？
+	BF	_TX0I_050				; いいえ
+
+	FAR_JSR	#_SCI0_TXI_DI,R1			; 送信ｴﾝﾌﾟﾃｨ割込み禁止
+
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	OR	#BIT2,R0
+	MOV.B	R0,@R1					; BIT2:送信終了割込み許可
+
+_TX0I_050:
+	MOV.L	#_SSR0,R1
+	MOV.B	@R1,R0
+	AND	#NBIT7,R0				; TDRFｸﾘｱ
+	MOV.B	R0,@R1
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	汎用通信送信割込み							*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_TE0_INT:
+	SUB_START
+
+	MOV.L	#_PADR,R1
+	MOV.W	@R1,R0
+	MOV.W	#BIT13,R2				;
+	NOT	R2,R2
+	AND	R2,R0					; RTS OFF !
+	MOV.W	R0,@R1					;
+
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	MOV.W	#(BIT2+BIT5),R2
+	NOT	R2,R2
+	AND	R2,R0
+	MOV.B	R0,@R1					; BIT2:送信終了割込み禁止  BIT5:送信動作禁止
+
+	SUB_END
+	M_RTS
+
+
+
+
+	.SECTION	BvupsciwkRAM, DATA,ALIGN=4			;
+_vup_hs_area		.SRES		2*8*2		; ﾊﾝﾄﾞｼｪｲｸ領域
+_sci0_rxd_buf		.SRES		1*512		; 受信ﾊﾞｯﾌｧ
+_sci0_txd_buf		.SRES		1*512		; 送信ﾊﾞｯﾌｧ
+_sci0_wkram		.SRES		1*16		; SCI0にﾌﾟﾛｸﾞﾗﾑで使用するﾜｰｸRAM
+
+
+;★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+
+	.SECTION	PvupsciROM,CODE,ALIGN=4
+;	*************************************************************************************
+;	*****										*****
+;	*****										*****
+;	*****	バージョンＵＰ監視ＭＡＩＮ						*****
+;	*****										*****
+;	*****	フラッシュ書込み指令が来たら、各バージョンＵＰへ			*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+	.IMPORT	_FROM_ERASE_CMND
+	.IMPORT	_FROM_ERASE_POLLINKG
+	.IMPORT	_FROM_WRITE_CMND
+	.IMPORT	_FROM_WRITE_POLLINKG
+	.IMPORT	_FROM_SECT_TBL_SIZE
+	.IMPORT	_FROM_SECT_TBL
+
+	.MACRO	SH2_WAIT	CNT,REG
+	MOV.L	#\CNT,\REG
+JMP01\@:
+	DT	\REG
+	BF	JMP01\@
+	.ENDM
+
+	.MACRO	SH2_WAIT_REG	REG
+JMP01\@:
+	DT	\REG
+	BF	JMP01\@
+	.ENDM
+
+;	======= EXTERN宣言=======
+
+;	======= PUBLIC宣言=======
+	.export		_VUP_MAIN;
+
+
+_VUP_MAIN:
+	SUB_START
+	PUSH_ALL
+
+	MOV.L	#_vup_hs_area,R0			;
+	LDC.L	R0,GBR					;
+
+_VUP_M000:
+	MOV.W	@(VUP_END_PC,GBR),R0
+	MOV.W	R0,@(VUP_END_SH,GBR)			; ﾊﾞｰｼﾞｮﾝUP完了
+
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別
+	MOV.W	R0,@(VUP_SEL_SH,GBR)			; ﾊﾞｰｼﾞｮﾝUP種別  PCへ
+
+	MOV.W	@(VUP_STR_PC,GBR),R0
+	CMP/EQ	#H'01,R0
+	BT	_VUP_M002
+	MOV.W	R0,@(VUP_STR_SH,GBR)
+_VUP_M002:
+
+	MOV.W	@(VUP_DATA_WR_PC,GBR),R0
+	CMP/EQ	#H'01,R0
+	BT	_VUP_M004
+	MOV.W	R0,@(VUP_DATA_WR_SH,GBR)
+_VUP_M004:
+
+	MOV.W	@(VUP_STR_SH,GBR),R0			;
+	CMP/EQ	#H'01,R0				; ﾊﾞｰｼﾞｮﾝUP開始準備完了済み？
+	BT	_VUP_M550				; はい
+
+	MOV.W	@(VUP_STR_PC,GBR),R0
+	CMP/EQ	#H'01,R0				; ﾊﾞｰｼﾞｮﾝUP開始?
+	BT	_VUP_M020				; はい
+	M_BRA	_VUP_MEND				; いいえ
+
+_VUP_M020:
+	MOV.L	#_sci0_wkram+VUP_START,R1
+	MOV.W	#H'FF,R0
+	MOV.W	R0,@R1					; ﾊﾞｰｼﾞｮﾝUP開始を記憶！！
+
+;	--------------------------------------
+;	-----   FLASH ROM DATA -> SRAM   -----
+;	--------------------------------------
+	mov.l	#SR_Init_SCIEI,r0
+	ldc	r0,sr					; SR set (SCI割込み(E)だけ許可)
+
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別
+	SHLL2	R0
+	SHLL	R0
+	MOV.L	#_FROM_TO_SRAM_TABLE,R1
+	ADD	R0,R1
+	MOV.L	@R1,R0
+	JSR	@R0
+	NOP
+
+	MOV.W	#H'01,R0				; ﾊﾞｰｼﾞｮﾝUP開始
+	MOV.W	R0,@(VUP_STR_SH,GBR)			; ﾊﾞｰｼﾞｮﾝUP開始準備完了  PCへ
+;	---------------------------------------
+
+_VUP_M550:
+	MOV.W	@(VUP_DATA_WR_SH,GBR),R0		;
+	CMP/EQ	#H'01,R0				; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀﾌﾗｯｼｭWRITE完了済み？
+	BT	_VUP_M999				; はい
+
+	MOV.W	@(VUP_DATA_WR_PC,GBR),R0
+	CMP/EQ	#H'01,R0				; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀWRITE指令有り?
+	BF	_VUP_M999				; いいえ
+
+	MOV.L	#_PADR,R1
+	MOV.W	@R1,R0
+	MOV.W	#BIT13,R2				;
+	AND	R2,R0					; 
+	TST	R0,R0					; RTS OFF ?
+	BT	_VUP_M570				; はい
+	M_BRA	_VUP_M999
+
+;	--------------------------------------
+;	-----   FLASH ROM DATA <- SRAM   -----
+;	--------------------------------------
+_VUP_M570:
+	_WDT_CLR
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別
+	SHLL2	R0
+	SHLL	R0
+	ADD	#4,R0
+	MOV.L	#_FROM_TO_SRAM_TABLE,R1
+	ADD	R0,R1
+	MOV.L	@R1,R0
+	JSR	@R0					; OUT:R1=0(準備完)
+	NOP
+
+	TST	R1,R1					; 準備完？
+	BF	_VUP_M999				; いいえ
+
+	MOV.W	#H'01,R0
+	MOV.W	R0,@(VUP_DATA_WR_SH,GBR)		; ﾊﾞｰｼﾞｮﾝUPﾃﾞｰﾀﾌﾗｯｼｭWRITE完了  PCへ
+;	---------------------------------------
+
+_VUP_M999:
+_VUP_MEND:
+	POP_ALL
+	SUB_END
+	M_RTS
+
+
+	.ALIGN	4
+_FROM_TO_SRAM_TABLE:
+;		FROMから読出し時  FROMへ書込み時
+	.DATA.L	_FROM_DUMY_COPY, _FROM_DUMY_REWRITE		; ﾀﾞﾐｰ
+	.DATA.L	_FROM_GAME_COPY, _FROM_GAME_REWRITE		; 画面ﾃｰﾌﾞﾙ
+	.DATA.L	_FROM_SEQA_COPY, _FROM_SEQA_REWRITE		; ﾕｰｻﾞｼｰｹﾝｽ
+	.DATA.L	_FROM_CPUA_COPY, _FROM_CPUA_REWRITE		; CPUAﾌﾟﾛｸﾞﾗﾑ
+	.DATA.L	_FROM_CPUB_COPY, _FROM_CPUB_REWRITE		; CPUBﾌﾟﾛｸﾞﾗﾑ
+	.DATA.L	_FROM_SENA_COPY, _FROM_SENA_REWRITE		; ｾﾝｻAﾃｰﾌﾞﾙ
+	.DATA.L	_FROM_SENB_COPY, _FROM_SENB_REWRITE		; ｾﾝｻBﾃｰﾌﾞﾙ
+	.DATA.L	_FROM_CPUA_COPY, _FROM_CPUA_REWRITE		; CPUAﾌﾟﾛｸﾞﾗﾑ
+	.DATA.L	_FROM_CPUB_COPY, _FROM_CPUB_REWRITE		; CPUBﾌﾟﾛｸﾞﾗﾑ
+
+
+	.ALIGN	4
+_FROM_DUMY_COPY:
+_FROM_DUMY_REWRITE:
+	SUB_START
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****										*****
+;	*****	フラッシュＲＯＭのデータをＳＲＡＭへコピー				*****
+;	*****										*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_FROM_GAME_COPY:
+	SUB_START
+	MOV.L	#_GAM_TABLE,R8				; R8 <- ﾌﾗｯｼｭROM読出し先頭ｱﾄﾞﾚｽ  500000H
+	MOV.L	#_VUP_DATA_AREA_CPUB,R9			; 400000H R9 <- ﾌﾗｯｼｭROMﾃﾞｰﾀ書込み先頭ｱﾄﾞﾚｽ
+	MOV.L	#_GAM_TBL_SIZE/4,R4			; 画面ﾃｰﾌﾞﾙﾜｰﾄﾞ数(40000H/4)
+	M_BRA	_FROM_COPY_LOOP
+
+_FROM_COPY_LOOP:
+	MOV.L	@R8+,R0
+	NOP
+	NOP
+	MOV.L	R0,@R9
+	NOP
+	NOP
+	ADD	#4,R9
+	DT	R4
+	BF	_FROM_COPY_LOOP
+
+	MOV.W	#0,R1					; 全ｺﾋﾟｰ完了
+
+	SUB_END
+	M_RTS
+
+
+_FROM_SEQA_COPY:
+	SUB_START
+	MOV.L	#H'FFFFFFFF,R0
+	MOV.L	#_VUP_DATA_AREA_CPUB,R9			; ﾌﾗｯｼｭROMﾃﾞｰﾀ書込み先頭ｱﾄﾞﾚｽ
+	MOV.L	#_SEQ_PRO_SIZE/4,R4			; SEQﾌﾟﾛｸﾞﾗﾑ数(10000H/4)
+	M_BRA	_FROM_COPY_FF_LOOP
+
+_FROM_SENA_COPY:
+_FROM_SENB_COPY:
+	SUB_START
+	MOV.L	#H'FFFFFFFF,R0
+	MOV.L	#_VUP_DATA_AREA_CPUB,R9			; ﾌﾗｯｼｭROMﾃﾞｰﾀ書込み先頭ｱﾄﾞﾚｽ
+	MOV.L	#_CB_TBL_SIZE/4,R4			; ｾﾝｻﾃｰﾌﾞﾙ数(40000H/4)
+	M_BRA	_FROM_COPY_FF_LOOP
+
+_FROM_CPUA_COPY:
+_FROM_CPUB_COPY:
+	SUB_START
+	MOV.W	#H'FFFFFFFF,R0
+	MOV.L	#_VUP_DATA_AREA_CPUB,R9			; ﾌﾗｯｼｭROMﾃﾞｰﾀ書込み先頭ｱﾄﾞﾚｽ
+	MOV.L	#_CPUB_PRO_SIZE/4,R4			; ﾌﾟﾛｸﾞﾗﾑ数(60000H/4)
+	M_BRA	_FROM_COPY_FF_LOOP
+
+_FROM_COPY_FF_LOOP:
+	MOV.L	R0,@R9
+	NOP
+	NOP
+	ADD	#4,R9
+	DT	R4
+	BF	_FROM_COPY_FF_LOOP
+
+	MOV.W	#0,R1					; 全ｺﾋﾟｰ完了
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****										*****
+;	*****	ＦＲＯＭ消去／書込み							*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+	.IMPORT		_FROM_SECT_TBL00
+	.IMPORT		_FROM_SECT_TBL15
+_FROM_GAME_REWRITE:
+	SUB_START
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	TST	R0,R0					; 書込み／消去スタート済み？
+	BF	_FROM_REWR_COM_100			; はい
+
+	MOV.L	#_GAM_TABLE,R1				; R1 <- 画面ﾃｰﾌﾞﾙの先頭は、必ずｾｸﾀの先頭ｱﾄﾞﾚｽ	500000H
+	MOV.L	#_GAM_TBL_SIZE,R11			; 40000H
+	ADD	R1,R11					; R11 <- 画面ﾃｰﾌﾞﾙの最終ｱﾄﾞﾚｽ		540000H
+	MOV.L	#_FROM_SECT_TBL00,R7			; セクタテーブル
+	M_BRA	_FROM_REWR_COM
+
+_FROM_SENB_REWRITE:
+	SUB_START
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	TST	R0,R0					; 書込み／消去スタート済み？
+	BF	_FROM_REWR_COM_100			; はい
+
+	MOV.L	#_CB_TABLEX,R1				; R1 <- ｾﾝｻﾃｰﾌﾞﾙの先頭は、必ずｾｸﾀの先頭ｱﾄﾞﾚｽ	5C0000H
+	MOV.L	#_CB_TBL_SIZE,R11			; 40000H
+	ADD	R1,R11					; R11 <- 画面ﾃｰﾌﾞﾙの最終ｱﾄﾞﾚｽ+1		600000H
+	MOV.L	#_FROM_SECT_TBL15,R7			; セクタテーブル
+	M_BRA	_FROM_REWR_COM
+
+_FROM_REWR_COM:
+	MOV.L	#_FROM_SCT_TOP_ADR,R6
+	MOV.L	R7,@R6					; 先頭のセクタテーブル
+	MOV.L	#_FROM_REWR_TOP_ADR,R6
+	MOV.L	R1,@R6					; 書込み／消去先頭アドレス格納
+	MOV.L	#_FROM_REWR_END_ADR,R6
+	MOV.L	R11,@R6					; 書込み／消去最終アドレス格納
+	MOV.L	#_VUP_DATA_AREA_CPUB,R9
+	MOV.L	#_VUP_DATA_AREA_ADR,R6
+	MOV.L	R9,@R6					; 転送元先頭ｱﾄﾞﾚｽ
+
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	#BIT0,R0
+	MOV.W	R0,@R6					; 書込み／消去スタートＯＮ！
+
+_FROM_REWR_COM_100:
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	TST	#BIT1,R0				; 消去済み？
+	BF	_FROM_REWR_COM_200			; はい
+
+;	-------------------------------------
+;	-----	ｾｸﾀnの消去		-----
+;	-------------------------------------
+	MOV.L	#_FROM_REWR_TOP_ADR,R6
+	MOV.L	@R6,R8					; 書込み／消去セクタ先頭アドレス格納
+	MOV.L	#_from_top,R13
+
+	FAR_JSR	#_FROM_ERASE_CMND,R10			; FROM消去ｺﾏﾝﾄﾞ発行
+							; In : R13<-_from_top  R0:KEEP
+							; In : R8 <- 消去するｾｸﾀの先頭ｱﾄﾞﾚｽ
+	FAR_JSR	#_FROM_ERASE_POLLINKG,R10		; 消去時のﾎﾟｰﾘﾝｸﾞ
+							; In : R8 <- 消去するｾｸﾀの先頭ｱﾄﾞﾚｽ
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	OR	#BIT1,R0
+	MOV.W	R0,@R6
+
+	MOV.W	#1,R1
+	SUB_END
+	M_RTS
+;	-------------------------------------
+
+_FROM_REWR_COM_200:
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	TST	#BIT2,R0				; 書込み済み？
+	BF	_FROM_REWR_COM_300			; はい
+
+;	-------------------------------------
+;	-----	ｾｸﾀnの書込み		-----
+;	-------------------------------------
+	MOV.L	#_VUP_DATA_AREA_ADR,R6
+	MOV.L	@R6,R9					; 転送元先頭ｱﾄﾞﾚｽ
+	MOV.L	#_FROM_REWR_TOP_ADR,R6
+	MOV.L	@R6,R8					; 書込み／消去セクタ先頭アドレス格納
+	MOV.L	#_from_top,R13
+_FROM_REWR_250:
+	FAR_JSR	#_FROM_WRITE_CMND,R10			; FROM書込みｺﾏﾝﾄﾞ発行
+							; In:R13<-_from_top  R0:KEEP
+	MOV.W	@R9+,R0
+	MOV.W	R0,@R8
+
+	FAR_JSR	#_FROM_WRITE_POLLINKG,R10
+
+	ADD	#2,R8
+
+	MOV.L	#_FROM_SCT_TOP_ADR,R6
+	MOV.L	@R6,R6					; 書込み中の先頭のセクタテーブルアドレス
+	ADD	#4,R6
+	MOV.L	@R6,R1					; 次のﾌﾗｯｼｭROMｾｸﾀの先頭ｱﾄﾞﾚｽ
+	CMP/HS	R1,R8					; 次のｾｸﾀになった？
+	BF	_FROM_REWR_250				; いいえ
+
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	OR	#BIT2,R0
+	MOV.W	R0,@R6
+
+	MOV.W	#1,R1
+	SUB_END
+	M_RTS
+;	-------------------------------------
+
+_FROM_REWR_COM_300:
+;	-------------------------------------
+;	-----	ｾｸﾀnのﾍﾞﾘﾌｧｲ		-----
+;	-------------------------------------
+	MOV.L	#_VUP_DATA_AREA_ADR,R6
+	MOV.L	@R6,R9					; 転送元先頭ｱﾄﾞﾚｽ
+	MOV.L	#_FROM_REWR_TOP_ADR,R6
+	MOV.L	@R6,R8					; 書込み／消去セクタ先頭アドレス格納
+_FROM_REWR_400:
+	_WDT_CLR					; R0,R10 USED
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	MOV.W	@R9+,R0
+	EXTU.W	R0,R0
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	MOV.W	@R8+,R1
+	EXTU.W	R1,R1
+
+	CMP/EQ	R1,R0
+	BT	_FROM_REWR_VEROK
+
+	MOV.W	#H'FF,R1				; エラー有り
+	SUB_END
+	M_RTS
+;	-------------------------------------
+
+_FROM_REWR_VEROK:
+	MOV.L	#_FROM_SCT_TOP_ADR,R6
+	MOV.L	@R6,R6					; 書込み中の先頭のセクタテーブルアドレス
+	ADD	#4,R6
+	MOV.L	@R6,R1					; 次のﾌﾗｯｼｭROMｾｸﾀの先頭ｱﾄﾞﾚｽ
+	CMP/HS	R1,R8					; 次のｾｸﾀになった？
+	BF	_FROM_REWR_400				; いいえ
+
+	MOV.L	#_FROM_SCT_TOP_ADR,R7
+	MOV.L	R6,@R7					; 書込み中の先頭のセクタテーブルアドレス
+	MOV.L	#_VUP_DATA_AREA_ADR,R7
+	MOV.L	R9,@R7					; 転送元先頭ｱﾄﾞﾚｽ
+	MOV.L	#_FROM_REWR_TOP_ADR,R7
+	MOV.L	R8,@R7					; 書込み／消去セクタ先頭アドレス格納
+
+	MOV.L	@R6,R1					; 次のﾌﾗｯｼｭROMｾｸﾀの先頭ｱﾄﾞﾚｽ
+	MOV.L	#_FROM_REWR_END_ADR,R6
+	MOV.L	@R6,R11					; 書込み最終ｱﾄﾞﾚｽ
+	CMP/HS	R11,R1					; このセクタは最後？
+	BF	_FROM_REWR_500				; いいえ
+
+	MOV.L	#_FROM_REWR_STR_FLG,R7
+	MOV.W	#0,R0
+	MOV.W	R0,@R7
+
+	MOV.W	#0,R1					; 正常に全終了
+	SUB_END
+	M_RTS
+
+_FROM_REWR_500:
+	MOV.L	#_FROM_REWR_STR_FLG,R7
+	MOV.W	@R7,R0
+	MOV.W	#(BIT2+BIT1),R1
+	NOT	R1,R1
+	AND	R1,R0					; 消去済み／書き込み済みフラグクリア
+	MOV.W	R0,@R7
+
+	MOV.W	#1,R1					; 正常に１セクタ終了
+	SUB_END
+	M_RTS
+
+;	*************************************************************************************
+;	*****										*****
+;	*****		WORK RAM							*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+	.SECTION	BvupsciwkRAM, DATA,ALIGN=4			;
+_FROM_SCT_TOP_ADR	.SRES		4		;
+_FROM_REWR_TOP_ADR	.SRES		4		;
+_FROM_REWR_END_ADR	.SRES		4		;
+_VUP_DATA_AREA_ADR	.SRES		4		;
+_FROM_REWR_STR_FLG	.SRES		2		;
+
+
+;★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+
+	.SECTION	PvupsciROM,CODE,ALIGN=4
+;	*************************************************************************************
+;	*****										*****
+;	*****										*****
+;	*****	ＳＨ２内蔵ＦＲＯＭ消去／書込み						*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_FROM_CPUB_REWRITE:
+	SUB_START
+
+	mov.l	#SR_Init_DI,r0
+	ldc	r0,sr					; SR set (全割込み禁止)
+
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	MOV.B	#H'50,R2
+	NOT	R2,R2
+	AND	R2,R0					; 受信動作禁止
+	MOV.B	R0,@R1
+
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	TST	R0,R0					; 書込み／消去スタート済み？
+	BF	_FROM_CPUB_REWR_100			; はい
+
+	MOV.L	#_VUP_DATA_AREA_CPUB,R5
+	MOV.L	#_VUP_DATA_AREA_ADR,R6
+	MOV.L	R5,@R6
+
+	MOV.L	#_SH2_FROM_BLOCK_TBL0,R10
+	MOV.L	#_FROM_SCT_TOP_ADR,R6
+	MOV.L	R10,@R6
+
+	MOV.L	#_FROM_REWR_TOP_ADR,R10
+	MOV.L	#0,R6
+	MOV.L	R6,@R10
+
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	#_CPUB_PRO_SIZE,R6
+	MOV.L	R6,@R10
+
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	#BIT0,R0
+	MOV.W	R0,@R6					; 書込み／消去スタートＯＮ！
+
+	M_BRA	_FROM_CPUB_REWR_100
+;	-------------------------------------
+;	-----	最終ｾｸﾀの消去		-----
+;	-------------------------------------
+	MOV.L	#_SH2_FROM_BLOCK_TBL13,R10
+	MOV.L	#_FLASH_REG_TOP,R11
+
+	FAR_JSR	#_SH2_FROM_ERASE,R1			; FROM消去ｺﾏﾝﾄﾞ発行
+							; In : R10 <- _SH2_FROM_BLOCK_TBLn
+	MOV	R0,R2
+
+	MOV.L	#_FROM_REWR_STR_FLG,R6
+	MOV.W	@R6,R0
+	OR	#BIT1,R0
+	MOV.W	R0,@R6
+
+	TST	R2,R2					; 消去エラー？
+	BT	_FROM_CPUB_REWR_100			; いいえ
+
+	MOV.L	#_SH2_FROM_BLOCK_TBL13,R10
+	MOV.L	@(8,R10),R0
+	MOV.W	R0,@(VUP_REV1_SH,GBR)
+	MOV.L	@(12,R10),R0
+	MOV.W	R0,@(VUP_REV2_SH,GBR)
+	MOV.W	#D'3,R0
+	MOV.W	R0,@(VUP_REV3_SH,GBR)			; ERASE ERROR
+	M_BRA	_FROM_CPUB_REWR_400
+
+;	-------------------------------------
+;	-----	ｾｸﾀnの消去		-----
+;	-------------------------------------
+_FROM_CPUB_REWR_100:
+	MOV.L	#_FROM_SCT_TOP_ADR,R6
+	MOV.L	@R6,R10
+	MOV.L	#_FLASH_REG_TOP,R11
+
+;//;	--------  00000H～3FFFFH  ----------
+;//	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+;//	MOV.B	@(R0,R11),R1
+;//	MOV.W	#_SWESET,R2
+;//	OR	R2,R1
+;//	MOV.B	R1,@(R0,R11)				; SWE SET
+;//	SH2_WAIT	_Wait1u, R3
+;//
+;//_FROM_CPUB_REWR_130:
+;//	_WDT_CLR
+;//
+;//	FAR_JSR	#_SH2_FROM_ERASE,R1			; FROM消去ｺﾏﾝﾄﾞ発行
+;//							; In : R10 <- _SH2_FROM_BLOCK_TBLn
+;//	TST	R0,R0					; 消去エラー？
+;//	BT	_FROM_CPUB_REWR_150			; いいえ
+;//
+;//	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+;//	MOV.B	@(R0,R11),R1
+;//	MOV.W	#_SWECLEAR,R2
+;//	AND	R2,R1
+;//	MOV.B	R1,@(R0,R11)				; SWE CLEAR
+;//	SH2_WAIT	_Wait100u, R3
+;//
+;//	MOV.L	@(8,R10),R0
+;//	MOV.W	R0,@(VUP_REV1_SH,GBR)
+;//	MOV.L	@(12,R10),R0
+;//	MOV.W	R0,@(VUP_REV2_SH,GBR)
+;//	MOV.W	#D'1,R0
+;//	MOV.W	R0,@(VUP_REV3_SH,GBR)			; ERASE ERROR
+;//	M_BRA	_FROM_CPUB_REWR_400
+;//
+;//_FROM_CPUB_REWR_150:
+;//	MOV	R10,R1
+;//	ADD	#D'20,R10
+;//	MOV.L	@(0,R10),R0				; 次のセクタ先頭アドレス
+;//	MOV.L	#H'40000,R4
+;//	CMP/HS	R4,R0					; 最終ｱﾄﾞﾚｽまできた？
+;//	BT	_FROM_CPUB_REWR_160			; はい
+;//	M_BRA	_FROM_CPUB_REWR_130
+;//
+;//_FROM_CPUB_REWR_160:
+;//	MOV.L	@(4,R1),R0				; R0 <- _FLMCR ADR
+;//	MOV.B	@(R0,R11),R1
+;//	MOV.W	#_SWECLEAR,R2
+;//	AND	R2,R1
+;//	MOV.B	R1,@(R0,R11)				; SWE CLEAR
+;//	SH2_WAIT	_Wait100u, R3
+;//
+;//;	--------  40000H～7FFFFH  ----------
+;//	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+;//	MOV.B	@(R0,R11),R1
+;//	MOV.W	#_SWESET,R2
+;//	OR	R2,R1
+;//	MOV.B	R1,@(R0,R11)				; SWE SET
+;//	SH2_WAIT	_Wait1u, R3
+
+_FROM_CPUB_REWR_180:
+	_WDT_CLR
+
+	FAR_JSR	#_SH2_FROM_ERASE,R1			; FROM消去ｺﾏﾝﾄﾞ発行
+							; In : R10 <- _SH2_FROM_BLOCK_TBLn
+	TST	R0,R0					; 消去エラー？
+	BT	_FROM_CPUB_REWR_190			; いいえ
+
+;//	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+;//	MOV.B	@(R0,R11),R1
+;//	MOV.W	#_SWECLEAR,R2
+;//	AND	R2,R1
+;//	MOV.B	R1,@(R0,R11)				; SWE CLEAR
+;//	SH2_WAIT	_Wait100u, R3
+
+	MOV.L	@(8,R10),R0
+	MOV.W	R0,@(VUP_REV1_SH,GBR)
+	MOV.L	@(12,R10),R0
+	MOV.W	R0,@(VUP_REV2_SH,GBR)
+	MOV.W	#D'1,R0
+	MOV.W	R0,@(VUP_REV3_SH,GBR)			; ERASE ERROR
+	M_BRA	_FROM_CPUB_REWR_400
+
+_FROM_CPUB_REWR_190:
+;//	MOV	R10,R1
+	ADD	#D'20,R10
+	MOV.L	@(0,R10),R0				; 次のセクタ先頭アドレス
+	MOV.L	#H'80000,R4
+	CMP/HS	R4,R0					; 最終ｱﾄﾞﾚｽまできた？
+	BT	_FROM_CPUB_REWR_195			; はい
+	M_BRA	_FROM_CPUB_REWR_180
+
+_FROM_CPUB_REWR_195:
+;//	MOV.L	@(4,R1),R0				; R0 <- _FLMCR ADR
+;//	MOV.B	@(R0,R11),R1
+;//	MOV.W	#_SWECLEAR,R2
+;//	AND	R2,R1
+;//	MOV.B	R1,@(R0,R11)				; SWE CLEAR
+;//	SH2_WAIT	_Wait100u, R3
+;	-------------------------------------
+
+;	-------------------------------------
+;	-----	ｾｸﾀnの書込み		-----
+;	-------------------------------------
+_FROM_CPUB_REWR_200:
+	_WDT_CLR
+
+	MOV.L	#_FROM_SCT_TOP_ADR,R6
+	MOV.L	@R6,R10
+	MOV.L	#_FLASH_REG_TOP,R11
+	MOV.L	#_VUP_DATA_AREA_ADR,R6
+	MOV.L	@R6,R5
+	MOV.L	#_FROM_REWR_TOP_ADR,R6
+	MOV.L	@R6,R12
+
+	FAR_JSR	#_SH2_FROM_WRITE,R1			; FROM消去ｺﾏﾝﾄﾞ発行
+							; In : R10 <- _SH2_FROM_BLOCK_TBLn
+	TST	R0,R0					; 書込みエラー？
+	BT	_FROM_CPUB_REWR_250			; いいえ
+
+	MOV.L	#_FROM_SCT_TOP_ADR,R6
+	MOV.L	@R6,R10
+	MOV.L	@(8,R10),R0
+	MOV.W	R0,@(VUP_REV1_SH,GBR)
+	MOV.L	@(12,R10),R0
+	MOV.W	R0,@(VUP_REV2_SH,GBR)
+	MOV.W	#D'2,R0
+	MOV.W	R0,@(VUP_REV3_SH,GBR)			; WRITE ERROR
+	M_BRA	_FROM_CPUB_REWR_400
+
+_FROM_CPUB_REWR_250:
+	MOV.L	#_VUP_DATA_AREA_ADR,R6
+	MOV.L	R5,@R6
+	MOV.L	#_FROM_REWR_TOP_ADR,R6
+	ADD	#D'126,R12
+	ADD	#D'2,R12				; +128(80H)
+	MOV.L	R12,@R6
+
+	MOV.L	#_FROM_SCT_TOP_ADR,R6
+	MOV.L	@R6,R10
+	MOV.W	#20,R0
+	ADD	R0,R10
+	MOV.L	@(0,R10),R0				; 次のセクタ先頭アドレス
+	CMP/HS	R0,R12					; 次のセクタに来た？
+	BT	_FROM_CPUB_REWR_300			; はい
+	M_BRA	_FROM_CPUB_REWR_200			; いいえ
+
+_FROM_CPUB_REWR_300:
+	MOV.L	#_FROM_SCT_TOP_ADR,R6
+	MOV.L	R10,@R6
+
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	@R10,R4
+	CMP/HS	R4,R0					; 最終ｱﾄﾞﾚｽまできた？
+	BT	_FROM_CPUB_REWR_400			; はい
+	M_BRA	_FROM_CPUB_REWR_200			; いいえ
+
+_FROM_CPUB_REWR_400:
+	MOV.L	#_FROM_REWR_STR_FLG,R7
+	MOV.W	#0,R0
+	MOV.W	R0,@R7
+
+	MOV.L	#_SCR0,R1				; BIT7    : 0=送信ｴﾝﾌﾟﾃｨ割込み禁止
+							; BIT6    : 1=受信ﾃﾞｰﾀ割込み許可
+							; BIT5    : 0=送信動作を禁止
+							; BIT4    : 1=受信動作を許可
+							; BIT3    : 0=ﾏﾙﾁﾌﾟﾛｾｯｻ割込み禁止
+							; BIT2    : 0=送信終了割込み禁止
+							; BIT1～0 : 0=内部ｸﾛｯｸ／SCK入出力
+	MOV.B	@R1,R0
+	MOV.W	#H'50,R2
+	OR	R2,R0
+	MOV.B	R0,@R1
+
+;//	mov.l	#SR_Init_SCIEI,r0
+;//	ldc	r0,sr					; SR set (全割込み禁止)
+
+	MOV.W	#0,R1					; 正常に全終了
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	ＳＨ２内のＦ－ＲＯＭ消去						*****
+;	*****										*****
+;	*****	INPUT	: R10 <- _SH2_FROM_BLOCK_TBLn					*****
+;	*****										*****
+;	*************************************************************************************
+_SH2_FROM_ERASE:
+	SUB_START
+
+	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+	MOV.B	@(R0,R11),R1
+	MOV.W	#_SWESET,R2
+	OR	R2,R1
+	MOV.B	R1,@(R0,R11)				; SWE SET
+
+	SH2_WAIT	_Wait1u, R3
+	SH2_WAIT	_Wait1u, R3
+
+	MOV.B	@(0,R11),R0				; FLMCR0 ADR READ
+	MOV.W	#_FWESET,R2
+	AND	R2,R0
+	TST	R0,R0					; FWE ON ?
+	BF	_SH2_FROM_ERS_START			; YES
+	NOP
+	M_BRA	_FE_VERFY_NG				; NO
+
+_SH2_FROM_ERS_START:
+	MOV.L	#0,R9
+
+	MOV.L	@(8,R10),R0				; R0 <- _EBR ADR
+	MOV.L	@(12,R10),R2				; R2 <- _EBR BIT
+	MOV.B	R2,@(R0,R11)				; EBR SET
+
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別
+	CMP/EQ	#8,R0					; BOOTﾌﾟﾛｸﾞﾗﾑを含むﾊﾞｰｼﾞｮﾝUP？
+	BT	_SH2_FE_LOOP				; はい
+
+	MOV.L	@(0,R10),R2				; ｾｸﾀ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_SH2_FROM_BLOCK_TBL8,R1		;
+	MOV.L	@(0,R1),R0				; 
+	CMP/HS	R0,R2					; 8000H以上のｱﾄﾞﾚｽになった？
+	BT	_SH2_FE_LOOP				; はい
+	M_BRA	_SH2_FE_END
+
+_SH2_FE_LOOP:
+	_WDT_CLR
+
+	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+	MOV.B	@(R0,R11),R1
+	MOV.W	#_ESUSET,R2
+	OR	R2,R1
+	MOV.B	R1,@(R0,R11)				; ESU SET
+
+	SH2_WAIT	_Wait100u, R3
+	SH2_WAIT	_Wait100u, R3
+
+	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+	MOV.B	@(R0,R11),R1
+	MOV.W	#_ESET,R2
+	OR	R2,R1
+	MOV.B	R1,@(R0,R11)				; E SET
+
+	SH2_WAIT	_Wait10m, R3
+
+	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+	MOV.B	@(R0,R11),R1
+	MOV.W	#_ECLEAR,R2
+	AND	R2,R1
+	MOV.B	R1,@(R0,R11)				; E CLEAR
+
+	SH2_WAIT	_Wait10u, R3
+	SH2_WAIT	_Wait10u, R3
+
+	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+	MOV.B	@(R0,R11),R1
+	MOV.W	#_ESUCLEAR,R2
+	AND	R2,R1
+	MOV.B	R1,@(R0,R11)				; ESU CLEAR
+
+	SH2_WAIT	_Wait10u, R3
+	SH2_WAIT	_Wait10u, R3
+
+	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+	MOV.B	@(R0,R11),R1
+	MOV.W	#_EVSET,R2
+	OR	R2,R1
+	MOV.B	R1,@(R0,R11)				; EV SET
+
+	SH2_WAIT	_Wait6u, R3
+	SH2_WAIT	_Wait6u, R3
+
+	MOV.L	@(0,R10),R4				; R4 <- ﾌﾞﾛｯｸ先頭ｱﾄﾞﾚｽ
+	MOV.L	@(20,R10),R8				; R8 <- ﾌﾞﾛｯｸ最終ｱﾄﾞﾚｽ
+	MOV.L	#H'FFFFFFFF,R6
+
+_SH2_FE_VERFY_1:					; << ERASE VERIFY >>
+	MOV.L	R6,@R4					; FF DUMMY WIRITE
+
+	SH2_WAIT	_Wait2u, R3
+	SH2_WAIT	_Wait2u, R3
+
+	MOV.L	@R4+,R1
+	CMP/EQ	R6,R1					; VERIFY OK ?
+	BT	_SH2_FE_VERFY_OK			; はい
+	NOP
+
+;	----------------------------------------
+;	-----	VERIFY NG	----------------
+;	----------------------------------------
+	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+	MOV.B	@(R0,R11),R1
+	MOV.W	#_EVCLEAR,R2
+	AND	R2,R1
+	MOV.B	R1,@(R0,R11)				; EV CLEAR
+
+	SH2_WAIT	_Wait4u, R3
+	SH2_WAIT	_Wait4u, R3
+
+	ADD	#1,R9
+	MOV.L	#_MAXErase,R7
+	CMP/HS	R7,R9
+	BF	_SH2_FE_LOOP
+
+;	----------------------------------------
+;	-----	ERASE RETRY OVER	--------
+;	----------------------------------------
+_FE_VERFY_NG:
+	MOV.W	#H'FF,R0
+	M_BRA	_SH2_ORG_FEV_END
+
+;	----------------------------------------
+;	-----	VERIFY OK	----------------
+;	----------------------------------------
+_SH2_FE_VERFY_OK:
+	CMP/EQ	R8,R4					; 最終ｱﾄﾞﾚｽ？
+	BF	_SH2_FE_VERFY_1				; いいえ
+
+	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+	MOV.B	@(R0,R11),R1
+	MOV.W	#_EVCLEAR,R2
+	AND	R2,R1
+	MOV.B	R1,@(R0,R11)				; EV CLEAR
+
+	SH2_WAIT	_Wait4u, R3
+	SH2_WAIT	_Wait4u, R3
+
+_SH2_FE_END:
+	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+	MOV.B	@(R0,R11),R1
+	MOV.W	#_SWECLEAR,R2
+	AND	R2,R1
+	MOV.B	R1,@(R0,R11)				; SWE CLEAR
+
+	SH2_WAIT	_Wait100u, R3
+	SH2_WAIT	_Wait100u, R3
+
+	MOV.W	#0,R0
+	M_BRA	_SH2_ORG_FEV_END
+
+;	※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
+;	以下でﾌﾗｯｼｭからﾃﾞｰﾀを読んでもFFFFFFFFHは読めない？
+;	ﾌﾟﾛｸﾞﾗﾑを書き込みできるから実際はFFFFFFFFHになっていると思う
+;	※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
+;	----------------------------------------
+;	-----	ORGINAL VERIFY	----------------
+;	----------------------------------------
+	MOV.L	@(0,R10),R4				; R4 <- ﾌﾞﾛｯｸ先頭ｱﾄﾞﾚｽ
+	MOV.L	@(20,R10),R8				; R8 <- ﾌﾞﾛｯｸ最終ｱﾄﾞﾚｽ
+	MOV.L	#H'FFFFFFFF,R6
+_SH2_ORG_FEV_LOOP:
+	MOV.L	@R4,R1
+	CMP/EQ	R1,R6
+	BF	_SH2_ORG_FEV_NG
+
+	ADD	#4,R4
+	CMP/EQ	R8,R4					; 最終ｱﾄﾞﾚｽ？
+	BF	_SH2_ORG_FEV_LOOP			; いいえ
+	M_BRA	_SH2_ORG_FEV_END
+
+_SH2_ORG_FEV_NG:
+;;	MOV.L	#H'C0000000,R0
+;;	ADD	R4,R0
+;;	MOV.L	R0,@(RETURN_STS,GBR)
+;;	M_BRA	_FE_VERFY_NG_LOOP
+
+_SH2_ORG_FEV_END:
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	ＳＨ２内のＦ－ＲＯＭへの書込み						*****
+;	*****										*****
+;	*****	Input	: R10 <- _SH2_FROM_BLOCK_TBLn					*****
+;	*****	Input	: R5 <- _VUP_DATA_AREA						*****
+;	*****										*****
+;	*************************************************************************************
+_SH2_FROM_WRITE:
+	SUB_START
+
+	MOV.L	#_FLASH_REG_TOP,R11			; R11 <- ﾌﾗｯｼｭﾚｼﾞｽﾀ先頭ｱﾄﾞﾚｽ
+
+	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+	MOV.W	#_SWESET,R2
+	OR	R2,R1
+	MOV.B	R1,@(R0,R11)				; SWE SET
+
+	SH2_WAIT	_Wait1u, R3
+
+_SH2_FW_128B_LOOP:
+;	------ 書込みデータ128バイトをワークエリアへ -----
+	MOV.L	#_PdataBuff1,R6				; 書込みﾃﾞｰﾀ格納ｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_PdataBuff2,R7				; 再書込みﾃﾞｰﾀ格納ｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.W	#128/2,R3
+_SH2_FW_100:
+	MOV.W	@R5+,R2
+	MOV.W	R2,@R6
+	MOV.W	R2,@R7
+	ADD	#2,R6
+	ADD	#2,R7
+	ADD	#-1,R3
+	TST	R3,R3					; 128ﾊﾞｲﾄ完了？
+	BF	_SH2_FW_100				; いいえ
+
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別
+	CMP/EQ	#8,R0					; BOOTﾌﾟﾛｸﾞﾗﾑを含むﾊﾞｰｼﾞｮﾝUP？
+	BT	_SH2_FW_150				; はい
+
+	MOV.L	@(0,R10),R2				; ｾｸﾀ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_SH2_FROM_BLOCK_TBL8,R1		;
+	MOV.L	@(0,R1),R0				; 
+	CMP/HS	R0,R2					; 8000H以上のｱﾄﾞﾚｽになった？
+	BT	_SH2_FW_150				; はい
+	M_BRA	_SH2_FW_OK				; いいえ
+
+_SH2_FW_150:
+	MOV.L	#_SH2_VERIFY_CNTn,R13
+	MOV.W	#1,R2
+	MOV.W	R2,@R13					; n=1
+
+_SH2_FW_LOOP:
+	_WDT_CLR
+
+	MOV.L	#_Wait30u,R4
+	MOV.L	#_SH2_VERIFY_CNTn,R13
+	MOV.W	@R13,R1					;
+	MOV.W	#6,R2
+	CMP/HI	R2,R1					; nは6以下？
+	BF	_SH2_FW_120				; はい
+	MOV.L	#_Wait200u,R4
+_SH2_FW_120:
+
+	MOV.L	#_SH2_NGm,R13
+	MOV.W	#0,R2
+	MOV.W	R2,@R13					; m=0
+
+;	================================
+;		128BYTE WRITE
+;	================================
+	MOV.L	#_PdataBuff2,R7				; 再書込みﾃﾞｰﾀ格納ｴﾘｱ先頭ｱﾄﾞﾚｽ
+	FAR_JSR	#_SH2_FROM_128B_WRITE,R2		; ﾌﾗｯｼｭへ128ﾊﾞｲﾄ連続書込み
+
+	FAR_JSR	#_SH2_FW_PLS,R2				; SH2へ書込みﾊﾟﾙｽ発行
+
+;	================================
+;		128BYTE VERIFY
+;	================================
+	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+	MOV.B	@(R0,R11),R1				;
+	MOV.W	#_PVSET,R2
+	OR	R2,R1
+	MOV.B	R1,@(R0,R11)				; PV SET
+
+	SH2_WAIT	_Wait4u, R3
+
+	MOV.L	#128/4,R4				; LONGでﾍﾞﾘﾌｧｲ
+	MOV	R12,R1					; ﾌﾗｯｼｭの書込み先頭ｱﾄﾞﾚｽ
+	MOV.L	#H'FFFFFFFF,R2
+	MOV.L	#_PdataBuff1,R6				; 書込みﾃﾞｰﾀ格納ｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_PdataBuff2,R7				; 再書込みﾃﾞｰﾀ格納ｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_PdataBuff3,R8				; 追加書込みﾃﾞｰﾀ格納ｴﾘｱ先頭ｱﾄﾞﾚｽ
+
+_SH2_FW_VERIFY_LOOP:
+	MOV.L	R2,@R1					; ﾌﾗｯｼｭへﾀﾞﾐｰFFﾗｲﾄ
+
+	SH2_WAIT	_Wait2u, R3
+
+	MOV.L	@R1+,R9					; R9 ﾌﾗｯｼｭのﾃﾞｰﾀ読出し
+	MOV.L	@R6+,R3					; R3 書込みたいﾃﾞｰﾀ
+	MOV.L	@R7,R14					; R14 再書込みﾃﾞｰﾀ
+
+	CMP/EQ	R9,R3					; ﾍﾞﾘﾌｧｲ OK ?
+	BT	_SH2_FW_200				; はい
+	NOP
+
+	MOV.L	#_SH2_NGm,R13
+	MOV.W	#1,R2
+	MOV.W	R2,@R13					; m=1
+_SH2_FW_200:
+
+;//	MOV.L	#_SH2_VERIFY_CNTn,R13
+;//	MOV.W	@R13,R13					;
+;//	MOV.W	#6,R2
+;//	CMP/HI	R2,R13					; nは6以下？
+;//	BT	_SH2_FW_250				; いいえ
+
+	OR	R9,R14					; 読出しﾃﾞｰﾀ | 再書込みﾃﾞｰﾀ
+	MOV.L	R14,@R8					; 追加書込みﾃﾞｰﾀ格納
+	ADD	#4,R8
+
+;//_SH2_FW_250:
+	NOT	R9,R9					; *読出しﾃﾞｰﾀ
+	OR	R9,R3					; *読出しﾃﾞｰﾀ | 書込みﾃﾞｰﾀ
+	MOV.L	R3,@R7					; 再書込みﾃﾞｰﾀ格納
+	ADD	#4,R7
+
+	MOV.L	#H'FFFFFFFF,R2
+	ADD	#-1,R4
+	TST	R4,R4					; 128ﾊﾞｲﾄﾍﾞﾘﾌｧｲ完？
+	BF	_SH2_FW_VERIFY_LOOP			; いいえ
+
+	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+	MOV.B	@(R0,R11),R1				;
+	MOV.W	#_PVCLEAR,R2
+	AND	R2,R1
+	MOV.B	R1,@(R0,R11)				; PV CLEAR
+
+	SH2_WAIT	_Wait2u, R3
+
+	MOV.L	#_SH2_VERIFY_CNTn,R13
+	MOV.W	@R13,R13					;
+	MOV.W	#6,R2
+	CMP/HI	R2,R13					; nは6以下？
+	BT	_SH2_FW_350				; いいえ
+
+;	------ 追加書込みデータエリアをフラッシュへ -----
+	MOV.L	#_PdataBuff3,R7				; 追加書込みﾃﾞｰﾀ格納ｴﾘｱ先頭ｱﾄﾞﾚｽ
+	FAR_JSR	#_SH2_FROM_128B_WRITE,R2		; ﾌﾗｯｼｭへ128ﾊﾞｲﾄ連続書込み
+
+	MOV.L	#_Wait10u,R4
+	FAR_JSR	#_SH2_FW_PLS,R2
+
+_SH2_FW_350:
+	MOV.L	#_SH2_NGm,R13
+	MOV.W	@R13,R2
+	TST	R2,R2					; m≠0?（ﾍﾞﾘﾌｧｲ異常はあった？）
+	BT	_SH2_FW_OK				; はい
+
+	MOV.L	#_SH2_VERIFY_CNTn,R13
+	MOV.W	@R13,R2
+	ADD	#1,R2
+	MOV.W	R2,@R13
+	MOV.L	#1000,R1
+	CMP/HS	R1,R2					; nは1000以上？
+	BT	_SH2_FW_NG
+	M_BRA	_SH2_FW_LOOP
+
+;	================================
+;		WRITE RETRY OVER
+;	================================
+_SH2_FW_NG:
+	MOV.W	#H'FF,R0
+	M_BRA	_SH2_FW_END
+
+;	================================
+;		128BYTE WRITE OK
+;	================================
+_SH2_FW_OK:
+	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+	MOV.B	@(R0,R11),R1
+	MOV.W	#_SWECLEAR,R2
+	AND	R2,R1
+	MOV.B	R1,@(R0,R11)				; SWE CLEAR
+
+	SH2_WAIT	_Wait100u, R3
+
+	MOV.W	#H'0,R0
+
+_SH2_FW_END:
+	SUB_END
+	M_RTS
+
+
+;	-------------------------------------------------------------------------------------
+;	-----										-----
+;	-----	SH2ﾌﾗｯｼｭへ128ﾊﾞｲﾄ連続書込み						-----
+;	-----										-----
+;	-----	Input	: R7 <- 再書込みor追加書込みﾃﾞｰﾀ格納ｴﾘｱ先頭ｱﾄﾞﾚｽ		-----
+;	-----										-----
+;	-------------------------------------------------------------------------------------
+_SH2_FROM_128B_WRITE:
+	SUB_START
+
+	MOV.L	#_PdataBuff2,R7				; 再書込みﾃﾞｰﾀ格納ｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.W	#128,R3					; ﾊﾞｲﾄで書込み
+	MOV	R12,R1					; ﾌﾗｯｼｭの書込み先頭ｱﾄﾞﾚｽ
+_SH2_128FW_150:
+	MOV.B	@R7+,R2
+	MOV.B	R2,@R1
+	ADD	#1,R1
+	ADD	#-1,R3
+	TST	R3,R3					; 128ﾊﾞｲﾄ完了？
+	BF	_SH2_128FW_150				; いいえ
+
+	SUB_END
+	M_RTS
+
+;	-------------------------------------------------------------------------------------
+;	-----										-----
+;	-----	SH2 FROM WRITE PALSE							-----
+;	-----										-----
+;	-----	Input	: R4 <- Pﾋﾞｯﾄｾｯﾄ後のWAITﾙｰﾌﾟ回数				-----
+;	-----										-----
+;	-------------------------------------------------------------------------------------
+_SH2_FW_PLS:
+	SUB_START
+
+;///////WDTは起動しなくても良いのでは？
+;///////	MOV.L	#_WDT_TCSR,R1
+;///////	MOV.W	#_WDT_573u,R3
+;///////	MOV.W	R3,@R1					; WDT ENABLE
+
+	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+	MOV.B	@(R0,R11),R1				;
+	MOV.W	#_PSUSET,R2
+	OR	R2,R1
+	MOV.B	R1,@(R0,R11)				; PSU SET
+
+	SH2_WAIT	_Wait50u, R3
+
+	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+	MOV.B	@(R0,R11),R1				;
+	MOV.W	#_PSET,R2
+	OR	R2,R1
+	MOV.B	R1,@(R0,R11)				; P SET
+
+	SH2_WAIT_REG	R4
+
+	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+	MOV.B	@(R0,R11),R1				;
+	MOV.W	#_PCLEAR,R2
+	AND	R2,R1
+	MOV.B	R1,@(R0,R11)				; P CLEAR
+
+	SH2_WAIT	_Wait5u, R3
+
+	MOV.L	@(4,R10),R0				; R0 <- _FLMCR ADR
+	MOV.B	@(R0,R11),R1				;
+	MOV.W	#_PSUCLEAR,R2
+	AND	R2,R1
+	MOV.B	R1,@(R0,R11)				; PSU CLEAR
+
+	SH2_WAIT	_Wait5u, R3
+
+;///////WDTは起動しなくても良いのでは？
+;///////	MOV.L	#_WDT_TCSR,R1
+;///////	MOV.W	#H'A55F,R3
+;///////	MOV.W	R3,@R1					; WDT DISENABLE
+
+	SUB_END
+	M_RTS
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	SH2 FLASH ROM ERASE/WRITE TABLE						*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+	.ALIGN	4
+;			TOP ADR     FLMCR REG ADR  EBR REG ADR  EBR BIT     END ADR
+_SH2_FROM_BLOCK_TBL0:                                
+	.DATA.L		H'00000000, _FLMCR1_FE800, _EBR1_FE800, H'00000001, H'00000FFC
+_SH2_FROM_BLOCK_TBL1:                                
+	.DATA.L		H'00001000, _FLMCR1_FE800, _EBR1_FE800, H'00000002, H'00001FFC
+_SH2_FROM_BLOCK_TBL2:                                
+	.DATA.L		H'00002000, _FLMCR1_FE800, _EBR1_FE800, H'00000004, H'00002FFC
+_SH2_FROM_BLOCK_TBL3:                                
+	.DATA.L		H'00003000, _FLMCR1_FE800, _EBR1_FE800, H'00000008, H'00003FFC
+_SH2_FROM_BLOCK_TBL4:                                
+	.DATA.L		H'00004000, _FLMCR1_FE800, _EBR1_FE800, H'00000010, H'00004FFC
+_SH2_FROM_BLOCK_TBL5:                                
+	.DATA.L		H'00005000, _FLMCR1_FE800, _EBR1_FE800, H'00000020, H'00005FFC
+_SH2_FROM_BLOCK_TBL6:                                
+	.DATA.L		H'00006000, _FLMCR1_FE800, _EBR1_FE800, H'00000040, H'00006FFC
+_SH2_FROM_BLOCK_TBL7:                                
+	.DATA.L		H'00007000, _FLMCR1_FE800, _EBR1_FE800, H'00000080, H'00007FFC
+_SH2_FROM_BLOCK_TBL8:                                
+	.DATA.L		H'00008000, _FLMCR1_FE800, _EBR2_FE800, H'00000001, H'0000FFFC
+_SH2_FROM_BLOCK_TBL9:                               
+	.DATA.L		H'00010000, _FLMCR1_FE800, _EBR2_FE800, H'00000002, H'0001FFFC
+_SH2_FROM_BLOCK_TBL10:                               
+	.DATA.L		H'00020000, _FLMCR1_FE800, _EBR2_FE800, H'00000004, H'0002FFFC
+_SH2_FROM_BLOCK_TBL11:                               
+	.DATA.L		H'00030000, _FLMCR1_FE800, _EBR2_FE800, H'00000008, H'0003FFFC
+_SH2_FROM_BLOCK_TBL12:                               
+	.DATA.L		H'00040000, _FLMCR2_FE800, _EBR2_FE800, H'00000010, H'0004FFFC
+_SH2_FROM_BLOCK_TBL13:                               
+	.DATA.L		H'00050000, _FLMCR2_FE800, _EBR2_FE800, H'00000020, H'0005FFFC
+_SH2_FROM_BLOCK_TBL14:                               
+	.DATA.L		H'00060000, _FLMCR2_FE800, _EBR2_FE800, H'00000040, H'0006FFFC
+_SH2_FROM_BLOCK_TBL15:                               
+	.DATA.L		H'00070000, _FLMCR2_FE800, _EBR2_FE800, H'00000080, H'0007FFFC
+_SH2_FROM_BLOCK_TBL16:                               
+	.DATA.L		H'00080000
+
+
+;	*************************************************************************************
+;	*****										*****
+;	*****	SH2 FLASH ROM WRITE WORK RAM						*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+	.SECTION	BvupsciwkRAM, DATA,ALIGN=4			;
+	.ALIGN 4
+_PdataBuff1		.SRES		128		; 書込みﾃﾞｰﾀ格納ｴﾘｱ
+_PdataBuff2		.SRES		128		; 再書込みﾃﾞｰﾀ格納ｴﾘｱ
+_PdataBuff3		.SRES		128		; 追加書込みﾃﾞｰﾀ格納ｴﾘｱ
+_SH2_VERIFY_CNTn	.SRES		2		; ﾍﾞﾘﾌｧｲ回数
+_SH2_NGm		.SRES		2		; 1=ﾍﾞﾘﾌｧｲNG
+
+
+;★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+
+	.SECTION	PvupsciROM,CODE,ALIGN=4
+;	*************************************************************************************
+;	*****										*****
+;	*****										*****
+;	*****	ＳＨ４へＦＲＯＭデータを渡し、書かせる					*****
+;	*****										*****
+;	*****										*****
+;	*************************************************************************************
+_FROM_SEQA_REWRITE:
+	SUB_START
+
+	MOV.L	#_VUP_HSAREA_B_TO_A,R8			; ﾊﾝﾄﾞｼｪｲｸ領域CPUB書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_HSAREA_A_TO_B,R9			; ﾊﾝﾄﾞｼｪｲｸ領域CPUA書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT0,R0				; ＣＰＵＡへスタート開始済み？
+	BF	_FROM_CPUA_REWR_100			; はい
+
+	MOV.L	#_VUP_DATA_AREA_CPUB,R0			; 400000H
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.L	#_SEQ_PRO_SIZE,R10
+	ADD	R10,R0					; 410000H
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別CPUAへ
+
+	M_BRA	_FROM_CPUA_REWR_COM
+
+_FROM_CPUA_REWRITE:
+	SUB_START
+
+	MOV.L	#_VUP_HSAREA_B_TO_A,R8			; ﾊﾝﾄﾞｼｪｲｸ領域CPUB書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_HSAREA_A_TO_B,R9			; ﾊﾝﾄﾞｼｪｲｸ領域CPUA書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT0,R0				; ＣＰＵＡへスタート開始済み？
+	BF	_FROM_CPUA_REWR_100			; はい
+
+	MOV.L	#_VUP_DATA_AREA_CPUB,R0			; 400000H
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.L	#_CPUB_PRO_SIZE,R10
+	ADD	R10,R0					; 460000H
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別CPUAへ
+
+	M_BRA	_FROM_CPUA_REWR_COM
+
+_FROM_SENA_REWRITE:
+	SUB_START
+
+	MOV.L	#_VUP_HSAREA_B_TO_A,R8			; ﾊﾝﾄﾞｼｪｲｸ領域CPUB書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+	MOV.L	#_VUP_HSAREA_A_TO_B,R9			; ﾊﾝﾄﾞｼｪｲｸ領域CPUA書込みｴﾘｱ先頭ｱﾄﾞﾚｽ
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT0,R0				; ＣＰＵＡへスタート開始済み？
+	BF	_FROM_CPUA_REWR_100			; はい
+
+	MOV.L	#_VUP_DATA_AREA_CPUB,R0			; 400000H
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.L	#_CB_TBL_SIZE,R10
+	ADD	R10,R0					; 440000H
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	R0,@R10
+
+	MOV.W	@(VUP_SEL_PC,GBR),R0			; ﾊﾞｰｼﾞｮﾝUP種別CPUAへ
+
+	M_BRA	_FROM_CPUA_REWR_COM
+
+_FROM_CPUA_REWR_COM:
+	MOV.W	R0,@(VUP_SEL_PC,R8)			; ﾊﾞｰｼﾞｮﾝUP種別CPUAへ
+	MOV.L	#1,R0
+	MOV.W	R0,@(VUP_STR_PC,R8)			; ﾊﾞｰｼﾞｮﾝUPｽﾀｰﾄCPUAへ
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	#BIT0,R0
+	MOV.W	R0,@R10					; ＣＰＵＡへスタート開始済みＯＮ！
+
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+;	-------------------------------------------------
+;		CPUAからのｽﾀｰﾄｺｰﾄﾞ応答待ち
+;	-------------------------------------------------
+_FROM_CPUA_REWR_100:
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT1,R0				; ＣＰＵＡからスタート開始応答済み？
+	BF	_FROM_CPUA_REWR_150			; はい
+
+	MOV.W	@(VUP_STR_PC,R8),R0			; ﾊﾞｰｼﾞｮﾝUPｽﾀｰﾄCPUAへ
+	MOV	R0,R1
+	MOV.W	@(VUP_STR_PC,R9),R0			; ﾊﾞｰｼﾞｮﾝUPｽﾀｰﾄCPUAから
+	CMP/EQ	R0,R1					; CPUAから応答有り？
+	BF	_FROM_CPUA_REWR_120			; いいえ
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	OR	#BIT1,R0				; ｽﾀｰﾄ応答済みＯＮ！
+	MOV.W	R0,@R10
+
+_FROM_CPUA_REWR_120:
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+;	-------------------------------------------------
+;		CPUAへ2000Hづつ転送
+;	-------------------------------------------------
+_FROM_CPUA_REWR_150:
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT2,R0				; ＣＰＵＡへ2000Ｈ転送完了済み？
+	BF	_FROM_CPUA_REWR_200			; はい
+
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	@R10,R11
+	MOV.L	#_VUP_DATA_ADR_OP1,R12
+	MOV.W	#(H'2000/4),R4
+
+_FROM_CPUA_REWR_170:
+	MOV.L	@R11+,R0
+	NOP
+	MOV.L	R0,@R12
+	ADD	#4,R12
+	DT	R4
+	BF	_FROM_CPUA_REWR_170
+
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	R11,@R10
+
+	MOV.W	@(VUP_REV2_PC,R8),R0
+	ADD	#1,R0
+	MOV.W	R0,@(VUP_REV2_PC,R8)			; データブロック番号
+	MOV.W	#1,R0
+	MOV.W	R0,@(VUP_REV1_PC,R8)			; 2000H転送完了
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	OR	#BIT2,R0				; ＣＰＵＡへ2000Ｈ転送完了ＯＮ！
+	MOV.W	R0,@R10
+
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+;	-------------------------------------------------
+;		CPUAから2000H受信完了応答待ち
+;	-------------------------------------------------
+_FROM_CPUA_REWR_200:
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT3,R0				; ＣＰＵＡから2000Ｈ受信完了応答済み？
+	BF	_FROM_CPUA_REWR_250			; はい
+
+	MOV.W	@(VUP_REV1_PC,R8),R0			;
+	MOV	R0,R1
+	MOV.W	@(VUP_REV1_PC,R9),R0			;
+	CMP/EQ	R0,R1					; CPUAから応答有り？
+	BF	_FROM_CPUA_REWR_240			; いいえ
+
+	MOV.W	#0,R0
+	MOV.W	R0,@(VUP_REV1_PC,R8)			; ＣＰＵＡへ2000H転送完了ＯＦＦ
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	OR	#BIT3,R0				; 応答済みＯＮ！
+	MOV.W	R0,@R10
+
+_FROM_CPUA_REWR_240:
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+;	-------------------------------------------------
+;		CPUAから2000H受信完了信号OFF待ち
+;	-------------------------------------------------
+_FROM_CPUA_REWR_250:
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT4,R0				; ＣＰＵＡから2000Ｈ受信完了応答済み？
+	BF	_FROM_CPUA_REWR_300			; はい
+
+	MOV.W	@(VUP_REV1_PC,R8),R0			;
+	MOV	R0,R1
+	MOV.W	@(VUP_REV1_PC,R9),R0			;
+	CMP/EQ	R0,R1					; CPUAから応答有り？
+	BF	_FROM_CPUA_REWR_290			; いいえ
+
+	MOV.L	#_VUP_DATA_AREA_ADR,R10
+	MOV.L	@R10,R0
+	MOV.L	#_FROM_REWR_END_ADR,R10
+	MOV.L	@R10,R1
+	CMP/HS	R1,R0					; 転送最終アドレス？
+	BT	_FROM_CPUA_REWR_270			; はい
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	MOV.W	#(BIT3+BIT2),R1
+	NOT	R1,R1
+	AND	R1,R0					; 転送完了／応答済みＯＦＦ！
+	MOV.W	R0,@R10
+	M_BRA	_FROM_CPUA_REWR_290
+
+_FROM_CPUA_REWR_270:
+	MOV.W	#0,R0
+	MOV.W	R0,@(VUP_REV2_PC,R8)			; データブロック番号クリア
+	MOV.W	#1,R0
+	MOV.W	R0,@(VUP_DATA_WR_PC,R8)			; フラッシュへデータ書けＯＮ！
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	OR	#BIT4,R0				; 全データ送信完ＯＮ！
+	MOV.W	R0,@R10
+
+_FROM_CPUA_REWR_290:
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+;	-------------------------------------------------
+;		CPUAからﾌﾗｯｼｭ書込み完了応答待ち
+;	-------------------------------------------------
+_FROM_CPUA_REWR_300:
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	TST	#BIT5,R0				; ＣＰＵＡから2000Ｈ受信完了応答済み？
+	BF	_FROM_CPUA_REWR_350			; はい
+
+	MOV.W	@(VUP_DATA_WR_PC,R8),R0			;
+	MOV	R0,R1
+	MOV.W	@(VUP_DATA_WR_PC,R9),R0			;
+	CMP/EQ	R0,R1					; CPUAから応答有り？
+	BF	_FROM_CPUA_REWR_340			; いいえ
+
+	MOV.W	#0,R0
+	MOV.W	R0,@(VUP_DATA_WR_PC,R8)			; ＣＰＵＡへ書込み指令ＯＦＦ
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	@R10,R0
+	OR	#BIT5,R0				; 書込み完了ＯＮ！
+	MOV.W	R0,@R10
+
+_FROM_CPUA_REWR_340:
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+;	-------------------------------------------------
+;		CPUAからﾌﾗｯｼｭ書込み完了応答OFF待ち
+;	-------------------------------------------------
+_FROM_CPUA_REWR_350:
+	MOV.W	@(VUP_DATA_WR_PC,R8),R0			;
+	MOV	R0,R1
+	MOV.W	@(VUP_DATA_WR_PC,R9),R0			;
+	CMP/EQ	R0,R1					; CPUAから応答有り？
+	BF	_FROM_CPUA_REWR_390			; いいえ
+
+	MOV.W	#0,R0
+	MOV.W	R0,@(VUP_STR_PC,R8)
+
+	MOV.L	#_FROM_REWR_STR_FLG,R10
+	MOV.W	R0,@R10
+
+	MOV	#0,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+_FROM_CPUA_REWR_390:
+	MOV	#1,R1
+	M_BRA	_FROM_CPUA_REWR_END
+
+_FROM_CPUA_REWR_END:
+	SUB_END
+	M_RTS
+
+
+;★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+	.SECTION	PvupsciRAM,CODE,ALIGN=4
+
+
+	.END

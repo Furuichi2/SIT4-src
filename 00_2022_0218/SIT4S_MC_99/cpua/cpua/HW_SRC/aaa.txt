@@ -1,0 +1,22 @@
+ƒtƒ@ƒCƒ‹ ssa_had1.src ‚Æ D:\SITS_HE1\CPUA\CPUA\HW_SRC\SSA_HAD1.SRC ‚ð”äŠr‚µ‚Ä‚¢‚Ü‚·
+***** ssa_had1.src
+        .include        "sh7750rg.EXT"
+        .include        "ssa_ver1.equ"
+        .include        "cm_equ1.equ"
+***** D:\SITS_HE1\CPUA\CPUA\HW_SRC\SSA_HAD1.SRC
+        .include        "sh7750rg.EXT"
+        .include        "cm_equ1.equ"
+*****
+
+***** ssa_had1.src
+;_SDRAM_SIZE    .EQU    H'0FFFFF
+;;;;_SDRAM_SIZE .EQU    H'11FFFF
+_SDRAM_SIZE     .EQU    H'3FFFFF
+
+***** D:\SITS_HE1\CPUA\CPUA\HW_SRC\SSA_HAD1.SRC
+;_SDRAM_SIZE    .EQU    H'0FFFFF
+;;_SDRAM_SIZE   .EQU    H'11FFFF
+_SDRAM_SIZE     .EQU    H'1BFFFF
+
+*****
+

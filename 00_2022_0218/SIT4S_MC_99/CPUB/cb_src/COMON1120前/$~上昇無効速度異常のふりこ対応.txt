@@ -1,0 +1,121 @@
+　電源投入時に以下の処理を行う。			
+　　・CPUCはメインシャフト軸PGの機械座標を読込み、DPRAMを介してCPUAに渡す。			
+　　・CPUAはCPUCから渡されたメインシャフト軸PGの機械座標をDPRAMを介してCPUBに渡す。			
+			
+　CPUA、CPUBは1msec周期で以下の処理を行う。			
+　　・メインシャフト軸PGの二相パルス信号をカウントし、PG値を更新する。			
+　　・信号からカウントしたPG値とDPRAMを介してCPUCから受け取ったPG値を比較し、			
+　　　PG値の差＞PG不一致許容値であればPG不一致異常（218.13＝１）とする。			
+　　　（CPUCでカウントしたPG値はCPUAを経由してCPUBに渡される。CPUC→CPUA→CPUB）			
+　　・PG不一致異常中は非常停止状態（ブレーキ作動、動力遮断）とする。			
+データ方向		名称				
+CPUA→CPUC		CPUA書込領域　（CPUC監視用）				
+CPUA←CPUC		CPUC応答領域　（CPUC監視用）				
+CPUC→CPUA		CPUC書込領域　（CPUA監視用）				
+CPUC←CPUA		CPUA応答領域　（CPUA監視用）				
+
+_ACCERR_SPD_HAB_MAKE
+	SUB_START
+
+	MOV.L	#_BBN_MESURE_DLY_SSPD,R1		;
+	MOV.L	@R1,R2					;DLY SAVE 速度
+	CMP/PZ	R2
+	BT	ACCERR_SPD_HABMK100			;
+;;;;2015-08-19	XOR	R2,R2				;回転だけだから
+	NEG	R2,R2					;2015-08-19　回転・反転・ふりこに対応しておく
+ACCERR_SPD_HABMK100					;
+
+
+
+
+
+;	------------------ 反転:_DMATH_REVRSE-------------
+	MOV.L	#_BBN_MESURE_DLY_SSPD,R1		;
+	MOV.L	@R1,R4					;DLY SAVE 速度
+	CMP/PZ	R4					;
+	BT	BIBUN_ERRDATMAK_1390			;正転中(逆転のみ)
+
+	MOV.L	#_SETX_UPAREA_DIG,R4			;
+	MOV.W	@R4,R1					;
+	MOV.L	#_INC_ENC360,R4				;
+	MOV.W	@R4,R2					;R1(開始～終了)~R3の範囲か？
+	MOV.L	#_UP_HOLD_DIG,R4			;195(180-165+180)
+	MOV.W	@R4,R3					;
+	FAR_JSR	#_DIG_AREA_CHK1,R0			;
+	CMP/PZ	R5					;
+	BF	BIBUN_ERRDATMAK_1390			;範囲外
+	MOV.L	#_SETX_ACCERR_ERR3DAT,R5		;BK.実測の速度が遅くなる方向
+;;;2015-08-19	M_BRA	BIBUN_ERRDATMAK_3000		;
+	M_BRA	BIBUN_ERRDATMAK_3100			;2015-08-19逆転方向でのﾁｪｯｸ
+
+
+
+BIBUN_ERRDATMAK_1390:
+	M_BRA	BIBUN_ERRDATMAK_2100			;
+
+
+
+
+
+
+
+
+;	------------------ ふりこ  -------------------
+BIBUN_ERRDATMAK_1400:
+	MOV.L	#_DNM_DIR_NOW_FLG,R1			;//
+	MOV.W	@R1,R0					;
+	TST	R0,R0					;
+	TST_BIT_ON BIBUN_ERRDATMAK_1450			;復路(逆転)
+	M_BRA	BIBUN_ERRDATMAK_1500			;往路(回転と同じ)
+
+;復路(反転と同じ)
+BIBUN_ERRDATMAK_1450:
+	MOV.L	#_DNM_SETX_UPAREA_DIG,R4		;
+	MOV.W	@R4,R1					;
+	MOV.L	#_INC_ENC360,R4				;
+	MOV.W	@R4,R2					;R1(開始～終了)~R3の範囲か？
+	MOV.L	#_DNM_SETX_HOLD_CMP1_DEG,R4		;195(180-165+180)
+	MOV.W	@R4,R3					;
+	FAR_JSR	#_DIG_AREA_CHK1,R0			;
+	CMP/PZ	R5					;
+	BF	BIBUN_ERRDATMAK_1490			;
+	MOV.L	#_SETX_ACCERR_ERR3DAT,R5		;BK.実測の速度が遅くなる方向
+;;;2015-08-19	M_BRA	BIBUN_ERRDATMAK_3000		;
+	M_BRA	BIBUN_ERRDATMAK_3100			;2015-08-19逆転方向でのﾁｪｯｸ
+
+
+BIBUN_ERRDATMAK_1490:
+	M_BRA	BIBUN_ERRDATMAK_2100			;
+
+
+
+
+
+;;;;;;;;;;;;2015-08-19	MOV.L	#_ACCERR_ACC_HENSA,R1			;
+;;;;;;;;;;;;2015-08-19	MOV.L	@R1,R2					;
+;;;;;;;;;;;;2015-08-19	CMP/PL	R2
+;;;;;;;;;;;;2015-08-19;;;;2015-07-14	CMP/PZ	R2					;
+;;;;;;;;;;;;2015-08-19	BT	UPHOLD_ACCERRCHK_130			;
+;;;;;;;;;;;;2015-08-19;;;;2015-07-14	NEG	R2,R2					;
+;;;;;;;;;;;;2015-08-19	M_BRA	UPHOLD_ACCERRCHK_200			;2015-07-14:逆転した 回転だけだからERRにしてしまう
+
+;;	------------逆転も考慮する[2015-08-19]----------
+	FAR_JSR	#_UPHOLD_DIR_CHECK,R0			;
+	TST	R0,R0					;
+	TST_BIT_ON UPHOLD_ACCERRCHK_125			;逆転
+
+	XOR	R7,R7					;DIR-FLG
+	MOV.L	#_ACCERR_ACC_HENSA,R1			;
+	MOV.L	@R1,R2					;
+	CMP/PZ	R2					;[PZが正解]
+	BT	UPHOLD_ACCERRCHK_130			;OBJ-PV>0 OBJ-PV<0[既にはじいている]
+	M_BRA	UPHOLD_ACCERRCHK_200			;ここにはこない
+
+;	------------- 逆転での評価--------
+UPHOLD_ACCERRCHK_125:
+	MOV.L	#_ACCERR_ACC_HENSA,R1			;-50 - -40 = -10
+	MOV.L	@R1,R2					;
+	CMP/PL	R2
+	BT	UPHOLD_ACCERRCHK_200			;
+	NEG	R2,R2					;
+

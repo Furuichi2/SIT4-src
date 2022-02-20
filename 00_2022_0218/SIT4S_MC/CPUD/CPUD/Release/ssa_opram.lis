@@ -1,0 +1,1048 @@
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:22                                                  PAGE     1
+PROGRAM NAME =
+
+    1                               1     ;/***********************************************************************/
+    2                               2     ;/*                                                             */
+    3                               3     ;/*     コマツ産機㈱殿向け      ＳＩＴ－Ｓコントローラ          */
+    4                               4     ;/*                                                             */
+    5                               5     ;/*                             オプションＲＡＭ　データ定義    */
+    6                               6     ;/*                                                             */
+    7                               7     ;/***********************************************************************/
+    8                               8     ;*      変更履歴
+    9                               9     ;*              原本(asm)               ：Katsushige Mamada at '00-09-04
+   10                              10     ;*              改版(asm -> c)  ：FIT)田端                              ON:2002-08-01
+   11                              11     ;*
+   12                              12     
+   13                              13     
+   14                              14     ;;;;2013-12-17 MC       .SECTION        Bopram,DATA
+   15 00000000                     15             .SECTION        Bopram,DATA,ALIGN=4                     ;
+   16                              16     
+   17                              17     ;       ******************************************
+   18                              18     ;       **********      EQU TABLE                       **********
+   19                              19     ;       ******************************************
+   20          00000000            20     OP_RAM_TOP      .EQU    H'00000                 ; OPTION DP_RAM TOP ADR.
+   21          00000800            21     OP_STS_TOP      .EQU    H'00800                 ; OPTION STATUS TOP ADR.
+   22                              22     
+   23                              23     ;       ******************************************
+   24                              24     ;       **********      PUBLIC TABLE            **********
+   25                              25     ;       ******************************************
+   26                              26             .GLOBAL         OP_RAM_TOP
+   27                              27             .GLOBAL         OP_STS_TOP
+   28                              28     ;
+   29                              29             .GLOBAL         _CLO_TOP
+   30                              30             .GLOBAL         _CLO_TRK_L
+   31                              31             .GLOBAL         _CLO_TRK_R
+   32                              32             .GLOBAL         _CLO_TRK_T
+   33                              33             .GLOBAL         _CLO_GAIN_BAK1L
+   34                              34             .GLOBAL         _CLO_GAIN_BAK1R
+   35                              35             .GLOBAL         _CLO_GAIN_BAK2L
+   36                              36             .GLOBAL         _CLO_GAIN_BAK2R
+   37                              37             .GLOBAL         _CLO_GAIN_BAK3L
+   38                              38             .GLOBAL         _CLO_GAIN_BAK3R
+   39                              39             .GLOBAL         _CLO_GAIN_BAK4L
+   40                              40             .GLOBAL         _CLO_GAIN_BAK4R
+   41                              41             .GLOBAL         _CLO_GAIN_BAK5L
+   42                              42             .GLOBAL         _CLO_GAIN_BAK5R
+   43                              43             .GLOBAL         _CLO_OF_BAKL
+   44                              44             .GLOBAL         _CLO_OF_BAKR
+   45                              45             .GLOBAL         _CLO_OF_AVE_BAKL
+   46                              46             .GLOBAL         _CLO_OF_AVE_BAKR
+   47                              47             .GLOBAL         _CLO_OF_AVE_BAKT
+   48                              48             .GLOBAL         _CLO_STRAIN_L
+   49                              49             .GLOBAL         _CLO_STRAIN_R
+   50                              50             .GLOBAL         _CLO_STRAIN_T
+   51                              51             .GLOBAL         _CLO_MAXLD_L
+   52                              52             .GLOBAL         _CLO_MAXLD_R
+   53                              53             .GLOBAL         _CLO_MAXLD_T
+   54                              54             .GLOBAL         _CLO_PROOF_L
+   55                              55             .GLOBAL         _CLO_PROOF_R
+   56                              56             .GLOBAL         _CLO_PROOF_T
+   57                              57             .GLOBAL         _CLO_PROOF_SEI
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:22                                                  PAGE     2
+PROGRAM NAME =
+
+   58                              58             .GLOBAL         _CLO_OVER_L
+   59                              59             .GLOBAL         _CLO_OVER_R
+   60                              60             .GLOBAL         _CLO_OVER_T
+   61                              61             .GLOBAL         _CLO_LOWER_L
+   62                              62             .GLOBAL         _CLO_LOWER_R
+   63                              63             .GLOBAL         _CLO_LOWER_T
+   64                              64             .GLOBAL         _CSET_SET
+   65                              65     
+   66                              66     ;-------------------------------------------------------------------------------------2014
+                                          /03/17
+   67                              67             .GLOBAL         _CLO_OVER2_L            ; OVER LOAD LEFT        最小値
+   68                              68             .GLOBAL         _CLO_OVER2_R            ; OVER LOAD RIGHT       最小値
+   69                              69             .GLOBAL         _CLO_OVER2_T            ; OVER LOAD TOTAL       最小値
+   70                              70     ;
+   71                              71             .GLOBAL         _CLO_LOWER2_L           ; LOWER LIMIT LEFT      最小値
+   72                              72             .GLOBAL         _CLO_LOWER2_R           ; LOWER LIMIT RIGHT     最小値
+   73                              73             .GLOBAL         _CLO_LOWER2_T           ; LOWER LIMIT TOTAL     最小値
+   74                              74     
+   75                              75             .GLOBAL         _CLO_OVER3_L            ; OVER LOAD LEFT        振幅
+   76                              76             .GLOBAL         _CLO_OVER3_R            ; OVER LOAD RIGHT       振幅
+   77                              77             .GLOBAL         _CLO_OVER3_T            ; OVER LOAD TOTAL       振幅
+   78                              78     ;
+   79                              79             .GLOBAL         _CLO_LOWER3_L           ; LOWER LIMIT LEFT      振幅
+   80                              80             .GLOBAL         _CLO_LOWER3_R           ; LOWER LIMIT RIGHT     振幅
+   81                              81             .GLOBAL         _CLO_LOWER3_T           ; LOWER LIMIT TOTAL     振幅
+   82                              82     ;-------------------------------------------------------------------------------------
+   83                              83     
+   84                              84             .GLOBAL         CPOS_TOP
+   85                              85             .GLOBAL         _CPOS_SET_TOPL
+   86                              86             .GLOBAL         _CPOS_SET_LOWL
+   87                              87             .GLOBAL         _CPOS_SET_MRE
+   88                              88             .GLOBAL         _CPOS_SET_POSI
+   89                              89             .GLOBAL         _CPOS_SET_UNIT
+   90                              90             .GLOBAL         _CPOS_SET_ALFA
+   91                              91             .GLOBAL         _CPOS_SET_BETA
+   92                              92             .GLOBAL         _CPOS_SET_DELTA
+   93                              93             .GLOBAL         _CPOS_SET_GANMA
+   94                              94             .GLOBAL         _CPOS_STD_BAK
+   95                              95             .GLOBAL         _CPOS_SET_STD
+   96                              96     
+   97                              97             .GLOBAL         CCALE_TOP
+   98                              98             .GLOBAL         _CCALE_IN
+   99                              99     
+  100                             100             .GLOBAL         SEQ_360_371_TOP
+  101                             101             .GLOBAL         _CPOS_RQE
+  102                             102             .GLOBAL         _CLO_RQE
+  103                             103     
+  104                             104             .GLOBAL         _SEQ_384_447_TOP
+  105                             105             .GLOBAL         _CTLINK_C_OP
+  106                             106     
+  107                             107             .GLOBAL         CSTATUS_TOP
+  108                             108             .GLOBAL         _CSTATUS_C
+  109                             109     
+  110                             110             .GLOBAL         OPLO_TOP
+  111                             111             .GLOBAL         _CLO_DEG_L
+  112                             112             .GLOBAL         _CLO_DEG_R
+  113                             113             .GLOBAL         _CLO_DEG_T
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:22                                                  PAGE     3
+PROGRAM NAME =
+
+  114                             114             .GLOBAL         _CLO_GAIN_SET1L
+  115                             115             .GLOBAL         _CLO_GAIN_SET1R
+  116                             116             .GLOBAL         _CLO_GAIN_SET2L
+  117                             117             .GLOBAL         _CLO_GAIN_SET2R
+  118                             118             .GLOBAL         _CLO_GAIN_SET3L
+  119                             119             .GLOBAL         _CLO_GAIN_SET3R
+  120                             120             .GLOBAL         _CLO_GAIN_SET4L
+  121                             121             .GLOBAL         _CLO_GAIN_SET4R
+  122                             122             .GLOBAL         _CLO_GAIN_SET5L
+  123                             123             .GLOBAL         _CLO_GAIN_SET5R
+  124                             124             .GLOBAL         _CLO_OF_SETL
+  125                             125             .GLOBAL         _CLO_OF_SETR
+  126                             126             .GLOBAL         _CLO_OF_AVE_SETL
+  127                             127             .GLOBAL         _CLO_OF_AVE_SETR
+  128                             128             .GLOBAL         _CLO_OF_AVE_SETT
+  129                             129             .GLOBAL         _CLO_OFAD_L
+  130                             130             .GLOBAL         _CLO_OFAD_R
+  131                             131             .GLOBAL         _CLO_OFAD_T
+  132                             132             .GLOBAL         _CLO_LOAD_L
+  133                             133             .GLOBAL         _CLO_LOAD_R
+  134                             134             .GLOBAL         _CLO_LOAD_T
+  135                             135             .GLOBAL         _CLO_LOAD_KEEP_L
+  136                             136             .GLOBAL         _CLO_LOAD_KEEP_R
+  137                             137             .GLOBAL         _CLO_LOAD_KEEP_T
+  138                             138             .GLOBAL         _CLO_LOAD_LIVE_L
+  139                             139             .GLOBAL         _CLO_LOAD_LIVE_R
+  140                             140             .GLOBAL         _CLO_LOAD_LIVE_T
+  141                             141             .GLOBAL         _CLO_LOAD_L2
+  142                             142             .GLOBAL         _CLO_LOAD_R2
+  143                             143             .GLOBAL         _CLO_LOAD_T2
+  144                             144             .GLOBAL         _CPOS_NOW_MM
+  145                             145             .GLOBAL         _CPOS_STD
+  146                             146             .GLOBAL         _CCALE_OUT
+  147                             147     
+  148                             148             .GLOBAL         SEQ_372_383_TOP
+  149                             149             .GLOBAL         _CPOS_CONDI
+  150                             150             .GLOBAL         _CPOS_ORDER
+  151                             151             .GLOBAL         _CLO_CONDI
+  152                             152             .GLOBAL         _CLO_LIMERR
+  153                             153             .GLOBAL         _CLO_SATURATE
+  154                             154     
+  155                             155             .GLOBAL         _SEQ_448_511_TOP
+  156                             156             .GLOBAL         _CTLINK_OP_C
+  157                             157             .GLOBAL         _CCTRL_OP_LO
+  158                             158             .GLOBAL         _CCTRL_OP_PO
+  159                             159             .GLOBAL         _CCTRL_OP_CALE
+  160                             160             .GLOBAL         _CCTRL_OP_GAMEN
+  161                             161             .GLOBAL         _CCTRL_OP_TLINK
+  162                             162             .GLOBAL         _CERROR_C
+  163                             163             .GLOBAL         _CPUC_ROM_ER
+  164                             164             .GLOBAL         _CPUC_RAM_ER
+  165                             165             .GLOBAL         _CPUC_CB1_ER
+  166                             166             .GLOBAL         _CPUC_CB2_ER
+  167                             167             .GLOBAL         _CPUC_OP_ER
+  168                             168             .GLOBAL         _CPUC_CMP_ER
+  169                             169             .GLOBAL         _CPUC_PDN_ER
+  170                             170             .GLOBAL         _CPUC_079_ER
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:22                                                  PAGE     4
+PROGRAM NAME =
+
+  171                             171             .GLOBAL         _CPUC_077_ER
+  172                             172             .GLOBAL         _CPUC_160_DT
+  173                             173     ;--------------------------------------------------------------- '94-10-31 [H]
+  174                             174             .GLOBAL         _V25_OP_0
+  175                             175             .GLOBAL         _V25_OP_1
+  176                             176             .GLOBAL         _V25_OP_2
+  177                             177             .GLOBAL         _V25_OP_3
+  178                             178             .GLOBAL         _V25_OP_4
+  179                             179             .GLOBAL         _V25_OP_5
+  180                             180             .GLOBAL         _V25_OP_6
+  181                             181             .GLOBAL         _V25_OP_7
+  182                             182             .GLOBAL         _V25_OP_10
+  183                             183             .GLOBAL         _V25_OP_11
+  184                             184             .GLOBAL         _V25_OP_12
+  185                             185     
+  186                             186     ;---------------------------------------------------------------
+  187                             187             .GLOBAL         _CERROR_OP
+  188                             188             .GLOBAL         _OP_ERROR1
+  189                             189             .GLOBAL         _OP_ERROR2
+  190                             190     ;--------------------------------------------------------------- '94-10-31 [H]
+  191                             191             .GLOBAL         _OP_VER
+  192                             192             .GLOBAL         _OP_V25_0
+  193                             193             .GLOBAL         _OP_V25_1
+  194                             194             .GLOBAL         _OP_V25_2
+  195                             195             .GLOBAL         _OP_V25_3
+  196                             196             .GLOBAL         _OP_V25_4
+  197                             197             .GLOBAL         _OP_V25_5
+  198                             198             .GLOBAL         _OP_V25_6
+  199                             199             .GLOBAL         _OP_V25_7
+  200                             200     ;---------------------------------------------------------------
+  201                             201             .GLOBAL         _CENC_DEG
+  202                             202             .GLOBAL         _RAMOP_C_INT
+  203                             203             .GLOBAL         _RAMC_OP_INT
+  204                             204     ;
+  205                             205     ;;V01e  .GLOBAL         _OP_STATUS
+  206                             206             .GLOBAL         _OP_STATUS_REAL
+  207                             207     ;
+  208                             208     
+  209                             209     ;       ---------------------2013-12-18 KOMA -
+  210                             210             .GLOBAL         _CLO_BLKMV_END01
+  211                             211             .GLOBAL         _CLO_BLKMV_END02
+  212                             212             .GLOBAL         _CLO_BLKMV_END03
+  213                             213             .GLOBAL         _CLO_BLKMV_END04
+  214                             214     
+  215                             215     ;       *********************************************************
+  216                             216     ;       **********      Option CARD DP_RAM TABLE                        *********
+  217                             217     ;       *********************************************************
+  218                             218     ;
+  219 00000000                    219             .ORG    OP_RAM_TOP+H'0000
+  220                             220     ;
+  221                             221     ;       ***     LOAD MONITOR IN ***
+  222                             222     ;
+  223 00000000                    223     _CLO_TOP:
+  224                             224     ;
+  225 00000000 00000048           225     _CLO_TRK_L                      .SRES   72                      ;DW     36      DUP(?)
+                                          ; OVER TORUKU LEFT
+  226 00000048 00000048           226     _CLO_TRK_R                      .SRES   72                      ;DW     36      DUP(?)
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:22                                                  PAGE     5
+PROGRAM NAME =
+
+                                          ; OVER TORUKU RIGHT
+  227 00000090 00000048           227     _CLO_TRK_T                      .SRES   72                      ;DW     36      DUP(?)
+                                          ; OVER TORUKU TOTAL
+  228                             228     
+  229                             229     
+  230                             230     ;
+  231 000000E0                    231             .ORG    OP_RAM_TOP+H'00E0
+  232                             232     ;
+  233 000000E0 00000002           233     _CLO_GAIN_BAK1L         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LEFT GAIN 2000
+  234 000000E2 00000002           234     _CLO_GAIN_BAK1R         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          RIGHT GAIN 2000
+  235 000000E4 00000002           235     _CLO_GAIN_BAK2L         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LEFT GAIN 1500
+  236 000000E6 00000002           236     _CLO_GAIN_BAK2R         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          RIGHT GAIN 1500
+  237 000000E8 00000002           237     _CLO_GAIN_BAK3L         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LEFT GAIN 800
+  238 000000EA 00000002           238     _CLO_GAIN_BAK3R         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          RIGHT GAIN 800
+  239 000000EC 00000002           239     _CLO_GAIN_BAK4L         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LEFT GAIN 400
+  240 000000EE 00000002           240     _CLO_GAIN_BAK4R         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          RIGHT GAIN 400
+  241 000000F0 00000002           241     _CLO_GAIN_BAK5L         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LEFT GAIN 200
+  242 000000F2 00000002           242     _CLO_GAIN_BAK5R         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          RIGHT GAIN 200
+  243 000000F4 00000001           243     _CLO_OF_BAKL            .SRES   1                       ;DB     1       DUP(?)          ;
+                                          LEFT OFFSET
+  244 000000F5 00000001           244     _CLO_OF_BAKR            .SRES   1                       ;DB     1       DUP(?)          ;
+                                          RIGHT OFFSET
+  245 000000F6 00000002           245     _CLO_OF_AVE_BAKL        .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LEFT OFFSET A/D AVERAGE
+  246 000000F8 00000002           246     _CLO_OF_AVE_BAKR        .SRES   2                       ;DW     1       DUP(?)          ;
+                                          RIGHT OFFSET A/D AVERAGE
+  247 000000FA 00000002           247     _CLO_OF_AVE_BAKT        .SRES   2                       ;DW     1       DUP(?)          ;
+                                          TOTAL OFFSET A/D AVERAGE
+  248                             248     ;
+  249 00000100                    249             .ORG    OP_RAM_TOP+H'0100
+  250                             250     ;
+  251 00000100 00000002           251     _CLO_STRAIN_L           .SRES   2                       ;DW     1       DUP(?)          ;
+                                          MAX STRAIN LEFT
+  252 00000102 00000002           252     _CLO_STRAIN_R           .SRES   2                       ;DW     1       DUP(?)          ;
+                                          MAX STRAIN RIGHT
+  253 00000104 00000002           253     _CLO_STRAIN_T           .SRES   2                       ;DW     1       DUP(?)          ;
+                                          MAX STRAIN TOTAL (NO USE)
+  254                             254     ;
+  255 00000106 00000002           255     _CLO_MAXLD_L            .SRES   2                       ;DW     1       DUP(?)          ;
+                                          最大荷重MAX LOAD LEFT
+  256 00000108 00000002           256     _CLO_MAXLD_R            .SRES   2                       ;DW     1       DUP(?)          ;
+                                          MAX LOAD RIGHT
+  257 0000010A 00000002           257     _CLO_MAXLD_T            .SRES   2                       ;DW     1       DUP(?)          ;
+                                          MAX LOAD TOTAL
+  258                             258     ;
+  259 0000010C 00000002           259     _CLO_PROOF_L            .SRES   2                       ;DW     1       DUP(?)          ;
+                                          校正荷重MAX PROOF LEFT
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:22                                                  PAGE     6
+PROGRAM NAME =
+
+  260 0000010E 00000002           260     _CLO_PROOF_R            .SRES   2                       ;DW     1       DUP(?)          ;
+                                          MAX PROOF RIGHT
+  261 00000110 00000002           261     _CLO_PROOF_T            .SRES   2                       ;DW     1       DUP(?)          ;
+                                          MAX PROOF TOTAL
+  262                             262     ;
+  263 00000112 00000001           263     _CLO_PROOF_SEI          .SRES   1                       ;DB     1       DUP(?)          ;
+                                          校正精度PROOF SEIDO
+  264                             264     ;                                       .SRES   1                       ;2002-08-02(ｱﾄﾞﾚｽｴ
+                                          ﾗｰ解消)
+  265                             265     ;
+  266 00000113 00000002           266     _CLO_OVER_L                     .SRES   2                       ;DW     1       DUP(?)
+                                          ; OVER LOAD LEFT
+  267 00000115 00000002           267     _CLO_OVER_R                     .SRES   2                       ;DW     1       DUP(?)
+                                          ; OVER LOAD RIGHT
+  268 00000117 00000002           268     _CLO_OVER_T                     .SRES   2                       ;DW     1       DUP(?)
+                                          ; OVER LOAD TOTAL
+  269                             269     ;
+  270 00000119 00000002           270     _CLO_LOWER_L            .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LOWER LIMIT LEFT
+  271 0000011B 00000002           271     _CLO_LOWER_R            .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LOWER LIMIT RIGHT
+  272 0000011D 00000002           272     _CLO_LOWER_T            .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LOWER LIMIT TOTAL
+  273                             273     ;
+  274 0000011F 00000001           274     _CSET_SET                       .SRES   1                       ;DB     1       DUP(?)
+                                          ; SYOKI SETTEITI
+  275                             275     
+  276                             276     ;-------------------------------------------------------------------------------------2014
+                                          /03/17
+  277 00000120 00000001           277                                             .SRES   1
+  278 00000121 00000002           278     _CLO_OVER2_L            .SRES   2                       ;DW     1       DUP(?)          ;
+                                          OVER LOAD LEFT  最小値
+  279 00000123 00000002           279     _CLO_OVER2_R            .SRES   2                       ;DW     1       DUP(?)          ;
+                                          OVER LOAD RIGHT 最小値
+  280 00000125 00000002           280     _CLO_OVER2_T            .SRES   2                       ;DW     1       DUP(?)          ;
+                                          OVER LOAD TOTAL 最小値
+  281                             281     ;
+  282 00000127 00000002           282     _CLO_LOWER2_L           .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LOWER LIMIT LEFT        最小値
+  283 00000129 00000002           283     _CLO_LOWER2_R           .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LOWER LIMIT RIGHT       最小値
+  284 0000012B 00000002           284     _CLO_LOWER2_T           .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LOWER LIMIT TOTAL       最小値
+  285                             285     
+  286 0000012D 00000002           286     _CLO_OVER3_L            .SRES   2                       ;DW     1       DUP(?)          ;
+                                          OVER LOAD LEFT  振幅
+  287 0000012F 00000002           287     _CLO_OVER3_R            .SRES   2                       ;DW     1       DUP(?)          ;
+                                          OVER LOAD RIGHT 振幅
+  288 00000131 00000002           288     _CLO_OVER3_T            .SRES   2                       ;DW     1       DUP(?)          ;
+                                          OVER LOAD TOTAL 振幅
+  289                             289     ;
+  290 00000133 00000002           290     _CLO_LOWER3_L           .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LOWER LIMIT LEFT        振幅
+  291 00000135 00000002           291     _CLO_LOWER3_R           .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LOWER LIMIT RIGHT       振幅
+  292 00000137 00000002           292     _CLO_LOWER3_T           .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LOWER LIMIT TOTAL       振幅
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:22                                                  PAGE     7
+PROGRAM NAME =
+
+  293                             293     ;-------------------------------------------------------------------------------------
+  294                             294     ;
+  295                             295     ;       ***     POSITINER IN    ***
+  296                             296     ;
+  297 00000140                    297             .ORG    OP_RAM_TOP+H'0140
+  298                             298     ;
+  299 00000140                    299     CPOS_TOP:
+  300                             300     ;
+  301 00000140 00000004           301     _CPOS_SET_POSI          .SRES   4                       ;DW     2       DUP(?)          ;
+                                          PO ITIGIME SET DATA
+  302 00000144 00000004           302     _CPOS_SET_TOPL          .SRES   4                       ;DW     2       DUP(?)          ;
+                                          TOP LIMIT SET DATA
+  303 00000148 00000004           303     _CPOS_SET_LOWL          .SRES   4                       ;DW     2       DUP(?)          ;
+                                          LOW LIMIT SET DATA
+  304 0000014C 00000004           304     _CPOS_SET_MRE           .SRES   4                       ;DW     2       DUP(?)          ;
+                                          PO MRE SET DATA
+  305 00000150 00000004           305     _CPOS_SET_STD           .SRES   4                       ;DW     2       DUP(?)          ;
+                                          PO GENITI SET DATA
+  306 00000154 00000001           306     _CPOS_SET_UNIT          .SRES   1                       ;DB     1       DUP(?)          ;
+                                          PO UNIT SET DATA
+  307 00000155 00000001           307     _CPOS_SET_ALFA          .SRES   1                       ;DB     1       DUP(?)          ;
+                                          PO ALFA SET DATA
+  308 00000156 00000001           308     _CPOS_SET_BETA          .SRES   1                       ;DB     1       DUP(?)          ;
+                                          PO BETA SET DATA
+  309 00000157 00000001           309     _CPOS_SET_DELTA         .SRES   1                       ;DB     1       DUP(?)          ;
+                                          PO DELTA SET DATA
+  310 00000158 00000001           310     _CPOS_SET_GANMA         .SRES   1                       ;DB     1       DUP(?)          ;
+                                          PO GANMA SET DATA
+  311 00000159 00000004           311     _CPOS_STD_BAK           .SRES   4                       ;DD     1       DUP(?)
+  312                             312     
+  313                             313     ;
+  314                             314     ;       ***     CALENDAR IN     ***
+  315                             315     ;
+  316 00000160                    316             .ORG    OP_RAM_TOP+H'0160
+  317                             317     ;
+  318 00000160                    318     CCALE_TOP:
+  319                             319     ;
+  320 00000160 00000010           320     _CCALE_IN                       .SRES   16                      ;DB     16      DUP(?)
+                                          ; CALENDAR
+  321                             321     
+  322                             322     
+  323                             323     ;       ***     GAMEN IN        ***
+  324                             324     ;
+  325 00000180                    325             .ORG    OP_RAM_TOP+H'0180
+  326                             326     ;
+  327 00000180                    327     SEQ_360_371_TOP:
+  328                             328     ;
+  329 00000180 00000001           329     _CPOS_RQE                       .SRES   1                       ;DB     1       DUP(?)
+                                          ; SET RQE
+  330 00000181 00000001           330     _CLO_RQE                        .SRES   1                       ;DB     1       DUP(?)
+                                          ; RQE
+  331                             331     
+  332                             332     ;       ===<<<<<<<>>>>>>>===
+  333                             333             .GLOBAL _CLO_ZERO
+  334 00000182 00000001           334     _CLO_ZERO                       .SRES   1                       ;
+  335                             335     
+  336                             336     ;----------------------
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:22                                                  PAGE     8
+PROGRAM NAME =
+
+  337 00000184                    337             .ALIGN  2
+  338 00000184                    338     _CLO_BLKMV_END01
+  339                             339     ;---------------------
+  340                             340     ;       ====== 2003-01-31 ============
+  341                             341             .GLOBAL _CLO_EXT_SMPSIG                 ;
+  342 0000018E                    342             .ORG    OP_RAM_TOP+H'018E
+  343 0000018E 00000001           343     _CLO_EXT_SMPSIG                 .SRES   1                       ;SIT-S 荷重計ｻﾝﾌﾟﾘﾝﾝｸﾞ信号
+  344                             344                                                                     ;BIT0=0 SMPSIG無効 BIT0=1S
+                                          MPSIG有効
+  345                             345                                                                     ;BIT1=1 ｵｰﾄｾﾞﾛ調開始 BIT1=
+                                          0 STOP
+  346                             346                                                                     ;BIT2=1 荷重測定開始 BIT2=
+                                          0 STOP
+  347                             347     ;       ======2003-01-31 END==================
+  348                             348     
+  349                             349     
+  350                             350     ;       ***     SEQ IN  ***
+  351                             351     ;
+  352 00000190                    352             .ORG    OP_RAM_TOP+H'0190
+  353                             353     ;
+  354 00000190                    354     _SEQ_384_447_TOP:
+  355                             355     ;
+  356 00000190 00000040           356     _CTLINK_C_OP            .SRES   64                      ;DB     64      DUP(?)          ;
+                                          T LINK DATA
+  357                             357     ;
+  358                             358     
+  359                             359     
+  360                             360     ;----------------------
+  361 000001D0                    361             .ALIGN  2
+  362 000001D0                    362     _CLO_BLKMV_END02
+  363                             363     ;---------------------
+  364                             364     
+  365                             365     ;       *******************************************
+  366                             366     ;       ***                                     ***
+  367                             367     ;       ***     ﾊﾞｰｼﾞｮﾝｱｯﾌﾟﾌﾗｸﾞ領域 SH2-->COP2  ***     2006/10/12
+  368                             368     ;       ***                                     ***
+  369                             369     ;       *******************************************
+  370 000001F0                    370             .ORG    OP_RAM_TOP+H'01F0
+  371                             371             .EXPORT         _VUP_HSAREA_B_TO_COP2
+  372 000001F0 00000040           372     _VUP_HSAREA_B_TO_COP2           .SRES   64
+  373                             373     
+  374                             374     ;       *******************************************
+  375                             375     ;       ***                                     ***
+  376                             376     ;       ***     ﾊﾞｰｼﾞｮﾝｱｯﾌﾟﾌﾗｸﾞ領域 SH2<--COP2  ***     2006/10/12
+  377                             377     ;       ***                                     ***
+  378                             378     ;       *******************************************
+  379 00000230                    379             .ORG    OP_RAM_TOP+H'0230
+  380                             380             .EXPORT         _VUP_HSAREA_COP2_TO_B
+  381 00000230 00000040           381     _VUP_HSAREA_COP2_TO_B           .SRES   64
+  382                             382     
+  383                             383     
+  384                             384     
+  385                             385     ;       ***     STATUS IN       ***
+  386                             386     ;
+  387 00000270                    387             .ORG    OP_RAM_TOP+H'0270
+  388                             388     ;
+  389 00000270                    389     CSTATUS_TOP:
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:22                                                  PAGE     9
+PROGRAM NAME =
+
+  390                             390     ;
+  391 00000270 00000001           391     _CSTATUS_C                      .SRES   1                       ;DB     1       DUP(?)
+                                          ; LOAD MONITOR STATUS
+  392                             392     ;
+  393                             393             .GLOBAL         _CLO_DEG_MRD                    ;2000-09-04
+  394 00000271 00000001           394     _CLO_DEG_MRD            .SRES   1                       ;DB     1       DUP(?)          ;
+                                          CPU-B LOAD DEG DATA READING FLAG 2000-09-04
+  395                             395     ;
+  396                             396     ;       ***     LOAD MONITOR OUT        ***
+  397                             397     ;
+  398 00000290                    398             .ORG    OP_RAM_TOP+H'0290
+  399                             399     
+  400                             400             .EXPORT         _VUP_DATA_ADR_COP2
+  401 00000290                    401     _VUP_DATA_ADR_COP2:                                     ; COP2ﾌﾟﾛｸﾞﾗﾑ転送領域先頭ｱﾄﾞﾚｽ  20
+                                          06/10/12
+  402                             402     
+  403                             403     ;[[[[[[[[[[[[[ 302dot*3CH 1DIG当たりの描画用　SIT3,SIT4では未使用]]]]]]]]]]]]]]]
+  404 00000290                    404     OPLO_TOP:
+  405                             405     ;
+  406 00000290 0000012E           406     _CLO_DEG_L                      .SRES   302                     ;DW     151     DUP(?)
+                                          ; DEG(50~200) GOTO LOAD LEFT
+  407 000003BE 0000012E           407     _CLO_DEG_R                      .SRES   302                     ;DW     151     DUP(?)
+                                          ; DEG(50~200) GOTO LOAD RIGHT
+  408 000004EC 0000012E           408     _CLO_DEG_T                      .SRES   302                     ;DW     151     DUP(?)
+                                          ; DEG(50~200) GOTO LOAD TOTAL
+  409                             409     ;
+  410 00000670                    410             .ORG    OP_RAM_TOP+H'0670
+  411                             411     ;
+  412 00000670 00000002           412     _CLO_GAIN_SET1L         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LEFT GAIN 2000
+  413 00000672 00000002           413     _CLO_GAIN_SET1R         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          RIGHT GAIN 2000
+  414 00000674 00000002           414     _CLO_GAIN_SET2L         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LEFT GAIN 1500
+  415 00000676 00000002           415     _CLO_GAIN_SET2R         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          RIGHT GAIN 1500
+  416 00000678 00000002           416     _CLO_GAIN_SET3L         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LEFT GAIN 800
+  417 0000067A 00000002           417     _CLO_GAIN_SET3R         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          RIGHT GAIN 800
+  418 0000067C 00000002           418     _CLO_GAIN_SET4L         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LEFT GAIN 400
+  419 0000067E 00000002           419     _CLO_GAIN_SET4R         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          RIGHT GAIN 400
+  420 00000680 00000002           420     _CLO_GAIN_SET5L         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LEFT GAIN 200
+  421 00000682 00000002           421     _CLO_GAIN_SET5R         .SRES   2                       ;DW     1       DUP(?)          ;
+                                          RIGHT GAIN 200
+  422 00000684 00000001           422     _CLO_OF_SETL            .SRES   1                       ;DB     1       DUP(?)          ;
+                                          LEFT OFFSET
+  423 00000685 00000001           423     _CLO_OF_SETR            .SRES   1                       ;DB     1       DUP(?)          ;
+                                          RIGHT OFFSET
+  424 00000686 00000002           424     _CLO_OF_AVE_SETL        .SRES   2                       ;DW     1       DUP(?)          ;
+                                          LEFT OFFSET A/D AVERAGE
+  425 00000688 00000002           425     _CLO_OF_AVE_SETR        .SRES   2                       ;DW     1       DUP(?)          ;
+                                          RIGHT OFFSET A/D AVERAGE
+  426 0000068A 00000002           426     _CLO_OF_AVE_SETT        .SRES   2                       ;DW     1       DUP(?)          ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:22                                                  PAGE    10
+PROGRAM NAME =
+
+                                          TOTAL OFFSET A/D AVERAGE
+  427                             427     ;
+  428 00000690                    428             .ORG    OP_RAM_TOP+H'0690
+  429                             429     ;
+  430 00000690 00000002           430     _CLO_OFAD_L                     .SRES   2                       ;DW     1       DUP(?)
+                                          ; OFFSET DURING A/D DATA LEFT
+  431 00000692 00000002           431     _CLO_OFAD_R                     .SRES   2                       ;DW     1       DUP(?)
+                                          ; OFFSET DURING A/D DATA RIGHT
+  432 00000694 00000002           432     _CLO_OFAD_T                     .SRES   2                       ;DW     1       DUP(?)
+                                          ; OFFSET DURING A/D DATA TOTAL
+  433                             433     ;
+  434 00000696 00000002           434     _CLO_LOAD_L                     .SRES   2                       ;DW     1       DUP(?)
+                                          ; LOAD LEFT
+  435 00000698 00000002           435     _CLO_LOAD_R                     .SRES   2                       ;DW     1       DUP(?)
+                                          ; LOAD RIGHT
+  436 0000069A 00000002           436     _CLO_LOAD_T                     .SRES   2                       ;DW     1       DUP(?)
+                                          ; LOAD TOTAL
+  437                             437     ;
+  438 0000069C 00000002           438     _CLO_LOAD_KEEP_L                .SRES   2                       ;左             /* V01o */
+  439 0000069E 00000002           439     _CLO_LOAD_KEEP_R                .SRES   2                       ;右             /* V01o */
+  440 000006A0 00000002           440     _CLO_LOAD_KEEP_T                .SRES   2                       ;合計           /* V01o */
+  441                             441     
+  442 000006A2 00000002           442     _CLO_LOAD_LIVE_L                .SRES   2                       ;左(生)         /* V01v */
+  443 000006A4 00000002           443     _CLO_LOAD_LIVE_R                .SRES   2                       ;右(生)         /* V01v */
+  444 000006A6 00000002           444     _CLO_LOAD_LIVE_T                .SRES   2                       ;合計(生)       /* V01v */
+  445                             445     
+  446 000006A8 00000002           446     _CLO_LOAD_L2                    .SRES   2                       ;左             /* V01w */
+  447 000006AA 00000002           447     _CLO_LOAD_R2                    .SRES   2                       ;右             /* V01w */
+  448 000006AC 00000002           448     _CLO_LOAD_T2                    .SRES   2                       ;合計           /* V01w */
+  449                             449     
+  450                             450     
+  451                             451     ;----------------------
+  452 000006AE                    452             .ALIGN  2
+  453 000006AE                    453     _CLO_BLKMV_END03
+  454                             454     ;---------------------
+  455                             455     
+  456                             456     ;       ***     POSITINER OUT   ***
+  457                             457     ;
+  458 000006B0                    458             .ORG    OP_RAM_TOP+H'06B0
+  459                             459     ;
+  460 000006B0 00000004           460     _CPOS_NOW_MM            .SRES   4                       ;DW     2       DUP(?)          ;
+                                          CPU <= NOW POSITION DATA
+  461                             461     ;
+  462 000006B4 00000004           462     _CPOS_STD                       .SRES   4                       ;DW     2       DUP(?)
+                                          ; CPU <= PO GENITI DATA
+  463                             463     ;
+  464                             464     ;       ***     CALENDAR OUT    ***
+  465                             465     ;
+  466 000006D0                    466             .ORG    OP_RAM_TOP+H'06D0
+  467                             467     ;
+  468 000006D0 00000010           468     _CCALE_OUT                      .SRES   16                      ;DB     16      DUP(?)
+                                          ;
+  469                             469     ;
+  470                             470     ;       ***     GAMEN OUT       ***
+  471                             471     ;
+  472 000006F0                    472             .ORG    OP_RAM_TOP+H'06F0
+  473                             473     ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:22                                                  PAGE    11
+PROGRAM NAME =
+
+  474 000006F0                    474     SEQ_372_383_TOP:
+  475                             475     ;
+  476 000006F0 00000001           476     _CPOS_CONDI                     .SRES   1                       ;DB     1       DUP(?)
+                                          ; CPU <= PO CONDITION FLG
+  477 000006F1 00000001           477     _CPOS_ORDER                     .SRES   1                       ;DB     1       DUP(?)
+                                          ; CPU <= PO TOP,LOW ORDER
+  478                             478     ;
+  479 000006F2 00000001           479     _CLO_CONDI                      .SRES   1                       ;DB     1       DUP(?)
+                                          ; LOAD MONITOR CONDITION
+  480 000006F3 00000001           480     _CLO_LIMERR                     .SRES   1                       ;DB     1       DUP(?)
+                                          ; OVER LOAD,LOWER LIMIT ERROR
+  481 000006F4 00000001           481     _CLO_SATURATE                   .SRES   1                       ;DB     1       DUP(?)
+                                          ; VOLTAGE SATURATE
+  482 000006F5 00000001           482                                     .SRES   1
+  483 000006F6 00000001           483                                     .SRES   1
+  484 000006F7 00000001           484                                     .SRES   1
+  485 000006F8 00000001           485                                     .SRES   1
+  486 000006F9 00000001           486                                     .SRES   1
+  487 000006FA 00000001           487                                     .SRES   1
+  488                             488     ;       ===<<<<<<<>>>>>>>===
+  489                             489             .GLOBAL _CLO_END_FLG
+  490 000006FB 00000001           490     _CLO_END_FLG                    .SRES   1
+  491                             491     
+  492                             492     ;
+  493                             493     ;       ***     SEQ OUT ***
+  494                             494     ;
+  495 00000700                    495             .ORG    OP_RAM_TOP+H'0700
+  496                             496     ;
+  497 00000700                    497     _SEQ_448_511_TOP:
+  498                             498     ;
+  499 00000700 00000040           499     _CTLINK_OP_C            .SRES   64                      ;DB     64      DUP(?)          ;
+                                          T LINK DATA OP => CPU
+  500                             500     ;
+  501                             501     ;       ***     STATUS OUT      ***
+  502                             502     ;
+  503 00000780                    503             .ORG    OP_RAM_TOP+H'0780
+  504                             504     ;
+  505 00000780 00000001           505     _CCTRL_OP_LO            .SRES   1                       ;DB     1       DUP(?)          ;
+                                          LOAD MONITOR STATUS
+  506 00000781 00000001           506     _CCTRL_OP_PO            .SRES   1                       ;DB     1       DUP(?)          ;
+                                          POSITIONER STATUS
+  507 00000782 00000001           507     _CCTRL_OP_CALE          .SRES   1                       ;DB     1       DUP(?)          ;
+                                          CALENDER STATUS
+  508 00000783 00000001           508     _CCTRL_OP_GAMEN         .SRES   1                       ;DB     1       DUP(?)          ;
+                                          GAMEN STATUS
+  509 00000784 00000001           509     _CCTRL_OP_TLINK         .SRES   1                       ;DB     1       DUP(?)          ;
+                                          TLINK STATUS
+  510                             510     ;
+  511                             511             .GLOBAL         _OP_GENITI_READ
+  512 00000785 00000001           512     _OP_GENITI_READ         .SRES   1                       ;DB     1       DUP(?)          ;'
+                                          98-07-13/* 現位置データ読込完了フラグ　０ＦＦＨ＝完了 */
+  513                             513     ;
+  514                             514             .GLOBAL         _CLO_DEG_CNT,_CLO_DEG_OPWR      ;2000-09-04
+  515 00000786 00000002           515     _CLO_DEG_CNT            .SRES   2                       ;DW     1       DUP(?)          ;L
+                                          OAD CHANGE CNT 2000-09-04
+  516 00000788 00000001           516     _CLO_DEG_OPWR           .SRES   1                       ;DB     1       DUP(?)          ;O
+                                          P LOAD DEG DATA WRITEING FLAG 2000-09-04
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:22                                                  PAGE    12
+PROGRAM NAME =
+
+  517                             517     ;
+  518                             518     
+  519                             519     ;----------------------
+  520 0000078A                    520             .ALIGN  2
+  521 0000078A                    521     _CLO_BLKMV_END04
+  522                             522     ;---------------------
+  523                             523     ;       ***     ERROR DATA      ***
+  524                             524     ;
+  525 000007A0                    525             .ORG    OP_RAM_TOP+H'07A0
+  526                             526     ;
+  527 000007A0                    527     _CERROR_C:                                                              ;EQU    THIS    BY
+                                          TE
+  528 000007A0 00000001           528     _CPUC_ROM_ER            .SRES   1                       ;DB     1       DUP(?)          ;
+                                          CPU-C ROM err       (00=OK)
+  529 000007A1 00000001           529     _CPUC_RAM_ER            .SRES   1                       ;DB     1       DUP(?)          ;
+                                          CPU-C RAM err       (00=OK)
+  530 000007A2 00000001           530     _CPUC_CB1_ER            .SRES   1                       ;DB     1       DUP(?)          ;
+                                          CPU-C DPRAM1 err    (00=OK)
+  531 000007A3 00000001           531     _CPUC_CB2_ER            .SRES   1                       ;DB     1       DUP(?)          ;
+                                          CPU-C DPRAM2 err    (00=OK)
+  532 000007A4 00000001           532     _CPUC_OP_ER                     .SRES   1                       ;DB     1       DUP(?)
+                                          ; CPU-C OP-DPRAM err  (00=OK)
+  533 000007A5 00000001           533     _CPUC_CMP_ER            .SRES   1                       ;DB     1       DUP(?)          ;
+                                          CPU-C COMPILE err   (00=OK)
+  534 000007A6 00000001           534     _CPUC_PDN_ER            .SRES   1                       ;DB     1       DUP(?)          ;
+                                          CPU-C POWER DOWN err(00=OK)
+  535 000007A7 00000001           535     _CPUC_079_ER            .SRES   1                       ;DB     1       DUP(?)          ;
+                                          CPU-C SEQ_079       (00=OK)
+  536 000007A8 00000001           536     _CPUC_077_ER            .SRES   1                       ;DB     1       DUP(?)          ;
+                                          CPU-C SEQ_077       (00=OK)
+  537 000007A9 00000001           537     _CPUC_160_DT            .SRES   1                       ;DB     1       DUP(?)          ;
+                                          CPU-C SEQ_160
+  538                             538     ;--------------------------------------------------------------- '94-10-31 [H]
+  539 000007AA 00000001           539     _V25_OP_0                       .SRES   1                       ;DB     1       DUP(?)
+                                          ; V25 -> Option(0)
+  540 000007AB 00000001           540     _V25_OP_1                       .SRES   1                       ;DB     1       DUP(?)
+                                          ; V25 -> Option(1)
+  541 000007AC 00000001           541     _V25_OP_2                       .SRES   1                       ;DB     1       DUP(?)
+                                          ; V25 -> Option(2)
+  542 000007AD 00000001           542     _V25_OP_3                       .SRES   1                       ;DB     1       DUP(?)
+                                          ; V25 -> Option(3)
+  543 000007AE 00000001           543     _V25_OP_4                       .SRES   1                       ;DB     1       DUP(?)
+                                          ; V25 -> Option(4)
+  544 000007AF 00000001           544     _V25_OP_5                       .SRES   1                       ;DB     1       DUP(?)
+                                          ; V25 -> Option(5)
+  545 000007B0 00000001           545     _V25_OP_6                       .SRES   1                       ;DB     1       DUP(?)
+                                          ; V25 -> Option(6)
+  546 000007B1 00000001           546     _V25_OP_7                       .SRES   1                       ;DB     1       DUP(?)
+                                          ; V25 -> Option(7)
+  547                             547     ;---------------------------------------------------------------
+  548 000007B2 00000002           548     _V25_OP_10                      .SRES   2                       ;DW     1       DUP(?)
+                                          ;V07 /* スライド自動調節　異常検知　一定時間 */
+  549 000007B4 00000002           549     _V25_OP_11                      .SRES   2                       ;DW     1       DUP(?)
+                                          ;V07 /* スライド自動調節　異常検知　一定距離 */
+  550 000007B6 00000002           550     _V25_OP_12                      .SRES   2                       ;DW     1       DUP(?)
+                                          ;V07 /* スライド自動調節　異常検知　一定予備 */
+  551                             551     
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:22                                                  PAGE    13
+PROGRAM NAME =
+
+  552                             552     
+  553                             553     ;
+  554 000007C0                    554             .ORG    OP_RAM_TOP+H'07C0
+  555                             555     ;
+  556 000007C0                    556     _CERROR_OP:                                                             ;EQU    THIS    BY
+                                          TE
+  557 000007C0 00000001           557     _OP_ERROR1                      .SRES   1                       ;DB     1       DUP(?)
+                                          ; Option ERROR1       (00=OK)
+  558 000007C1 00000001           558     _OP_ERROR2                      .SRES   1                       ;DB     1       DUP(?)
+                                          ; Option ERROR2       (00=OK)
+  559                             559     ;--------------------------------------------------------------- '94-10-31 [H]
+  560 000007C2 00000001           560     _OP_VER                         .SRES   1                       ;DB     1       DUP(?)
+                                          ; Option Ver
+  561 000007C3 00000001           561     _OP_V25_0                       .SRES   1                       ;DB     1       DUP(?)
+                                          ; Option -> V25(0)
+  562 000007C4 00000001           562     _OP_V25_1                       .SRES   1                       ;DB     1       DUP(?)
+                                          ; Option -> V25(1)
+  563 000007C5 00000001           563     _OP_V25_2                       .SRES   1                       ;DB     1       DUP(?)
+                                          ; Option -> V25(2)
+  564 000007C6 00000001           564     _OP_V25_3                       .SRES   1                       ;DB     1       DUP(?)
+                                          ; Option -> V25(3)
+  565 000007C7 00000001           565     _OP_V25_4                       .SRES   1                       ;DB     1       DUP(?)
+                                          ; Option -> V25(4)
+  566 000007C8 00000001           566     _OP_V25_5                       .SRES   1                       ;DB     1       DUP(?)
+                                          ; Option -> V25(5)
+  567 000007C9 00000001           567     _OP_V25_6                       .SRES   1                       ;DB     1       DUP(?)
+                                          ; Option -> V25(6)
+  568 000007CA 00000001           568     _OP_V25_7                       .SRES   1                       ;DB     1       DUP(?)
+                                          ; Option -> V25(7)
+  569                             569     ;---------------------------------------------------------------
+  570                             570     ;
+  571                             571     ;       ***     ENCORDER DEG DATA       ***
+  572                             572     ;
+  573 000007FC                    573             .ORG    OP_RAM_TOP+H'07FC
+  574                             574     ;
+  575 000007FC 00000002           575     _CENC_DEG                       .SRES   2                       ;DW     1       DUP(?)
+                                          ; ENCORDER DEG DATA
+  576                             576     ;
+  577                             577     ;       ***     INTERRUPT       ***
+  578                             578     ;
+  579 000007FE                    579             .ORG    OP_RAM_TOP+H'07FE
+  580                             580     ;
+  581 000007FE 00000001           581     _RAMOP_C_INT            .SRES   1                       ;DB     1       DUP(?)          ;
+                                          NO USE
+  582                             582     ;
+  583 000007FF                    583             .ORG    OP_RAM_TOP+H'07FF
+  584                             584     ;
+  585 000007FF 00000001           585     _RAMC_OP_INT            .SRES   1                       ;DB     1       DUP(?)          ;
+                                          CPU CARD => OP INT ADR
+  586                             586     ;
+  587                             587     ;
+  588                             588     ;       ***************************************************
+  589                             589     ;       **********      Option CARD STATUS       **********
+  590                             590     ;       ***************************************************
+  591                             591     ;
+  592 00000800                    592             .ORG    OP_STS_TOP+H'0000
+  593                             593     ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:22                                                  PAGE    14
+PROGRAM NAME =
+
+  594                             594     ;       ***     Option status area      ***
+  595                             595     ;
+  596                             596     ;;V01d  _OP_STATUS                      .SRES   1                       ;DB     1       DU
+                                          P(?)    ; OPﾅｼ:00H,OPｱﾘ(OK):55H,OPｱﾘ(WDTup):54H
+  597 00000800 00000001           597     _OP_STATUS_REAL                 .SRES   1                       ;DB     1       DUP(?)  ;
+                                          OPﾅｼ:00H,OPｱﾘ(OK):55H,OPｱﾘ(WDTup):54H
+  598                             598     ;
+                                                          ; Bit7~1:0101010,Bit0:*WDUP
+  599                             599     ;
+  600                             600     ;
+  601                             601     ;
+  602                             602     ;       ===================================
+  603                             603     ;       ===                             ===
+  604                             604     ;       ===     ET1(旧ﾒﾓﾘｶｰﾄﾞ空間)      ===
+  605                             605     ;       ===     2006-10-30              ===
+  606                             606     ;       ===                             ===
+  607                             607     ;       ===================================
+  608 00000840                    608             .ORG    OP_RAM_TOP+H'840
+  609                             609     ;
+  610                             610     ;;V05h          .GLOBAL         _MEM_ARI
+  611                             611     ;;V05h  _MEM_ARI                        .SRES   1                       ;DB ?
+                                          ;
+  612                             612             .GLOBAL         _MEM_ARI_REAL
+  613 00000840 00000001           613     _MEM_ARI_REAL                   .SRES   1                       ;DB ?                   ;
+  614                             614     
+  615                             615     
+  616 00000900                    616             .ORG    OP_RAM_TOP+H'900
+  617                             617             .GLOBAL         _MEM_BNK_ADR1
+  618 00000900 00000001           618     _MEM_BNK_ADR1           .SRES   1                       ;DB ?                   ;/*  */
+  619                             619     ;
+  620 00000940                    620             .ORG    OP_RAM_TOP+H'940
+  621                             621             .GLOBAL         _MEM_BNK_ADR2
+  622 00000940 00000001           622     _MEM_BNK_ADR2           .SRES   1                       ;DB ?                   ;/*  */
+  623                             623     ;
+  624                             624     
+  625 00000A00                    625             .ORG    OP_RAM_TOP+H'0A00
+  626                             626             .GLOBAL         _MEM_DAT_ADR1
+  627 00000A00 00000200           627     _MEM_DAT_ADR1           .SRES   512                     ;DB 512 DUP(?)          ;/*  */
+  628                             628     ;
+  629                             629     ;
+  630                             630     
+  631                             631     ;;;;;;2013-12-12[MC]    .INCLUDE        "dp_et1.ext"            ; //
+  632                             632     ;;;;;;2013-12-12[MC]    .INCLUDE        "com_et1.equ"           ; //
+  633                             633     ;;;;;;2013-12-12[MC]
+  634                             634     ;;;;;;2013-12-12[MC]    .ORG    OP_RAM_TOP+H'0C00
+  635                             635     ;;;;;;2013-12-12[MC]    .INCLUDE        "dp_et1.inc"            ; //
+  636                             636     
+  637                             637     
+  638                             638     ;
+  639                             639     ;
+  640                             640     
+  641                             641             .END
+  *****TOTAL ERRORS       0
+  *****TOTAL WARNINGS     0
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:22                                                  PAGE    15
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+Bopram                           Bopram   SCT  00000000     15*
+CCALE_TOP                        Bopram   EXPT 00000160     97   318*
+CPOS_TOP                         Bopram   EXPT 00000140     84   299*
+CSTATUS_TOP                      Bopram   EXPT 00000270    107   389*
+OPLO_TOP                         Bopram   EXPT 00000290    110   404*
+OP_RAM_TOP                                EXPT 00000000     20*   26   219   231   249   297   316   325   342   352   370   379 
+                                                           387   398   410   428   458   466   472   495   503   525   554   573 
+                                                           579   583   608   616   620   625 
+OP_STS_TOP                                EXPT 00000800     21*   27   592 
+SEQ_360_371_TOP                  Bopram   EXPT 00000180    100   327*
+SEQ_372_383_TOP                  Bopram   EXPT 000006F0    148   474*
+_CCALE_IN                        Bopram   EXPT 00000160     98   320*
+_CCALE_OUT                       Bopram   EXPT 000006D0    146   468*
+_CCTRL_OP_CALE                   Bopram   EXPT 00000782    159   507*
+_CCTRL_OP_GAMEN                  Bopram   EXPT 00000783    160   508*
+_CCTRL_OP_LO                     Bopram   EXPT 00000780    157   505*
+_CCTRL_OP_PO                     Bopram   EXPT 00000781    158   506*
+_CCTRL_OP_TLINK                  Bopram   EXPT 00000784    161   509*
+_CENC_DEG                        Bopram   EXPT 000007FC    201   575*
+_CERROR_C                        Bopram   EXPT 000007A0    162   527*
+_CERROR_OP                       Bopram   EXPT 000007C0    187   556*
+_CLO_BLKMV_END01                 Bopram   EXPT 00000184    210   338*
+_CLO_BLKMV_END02                 Bopram   EXPT 000001D0    211   362*
+_CLO_BLKMV_END03                 Bopram   EXPT 000006AE    212   453*
+_CLO_BLKMV_END04                 Bopram   EXPT 0000078A    213   521*
+_CLO_CONDI                       Bopram   EXPT 000006F2    151   479*
+_CLO_DEG_CNT                     Bopram   EXPT 00000786    514   515*
+_CLO_DEG_L                       Bopram   EXPT 00000290    111   406*
+_CLO_DEG_MRD                     Bopram   EXPT 00000271    393   394*
+_CLO_DEG_OPWR                    Bopram   EXPT 00000788    514   516*
+_CLO_DEG_R                       Bopram   EXPT 000003BE    112   407*
+_CLO_DEG_T                       Bopram   EXPT 000004EC    113   408*
+_CLO_END_FLG                     Bopram   EXPT 000006FB    489   490*
+_CLO_EXT_SMPSIG                  Bopram   EXPT 0000018E    341   343*
+_CLO_GAIN_BAK1L                  Bopram   EXPT 000000E0     33   233*
+_CLO_GAIN_BAK1R                  Bopram   EXPT 000000E2     34   234*
+_CLO_GAIN_BAK2L                  Bopram   EXPT 000000E4     35   235*
+_CLO_GAIN_BAK2R                  Bopram   EXPT 000000E6     36   236*
+_CLO_GAIN_BAK3L                  Bopram   EXPT 000000E8     37   237*
+_CLO_GAIN_BAK3R                  Bopram   EXPT 000000EA     38   238*
+_CLO_GAIN_BAK4L                  Bopram   EXPT 000000EC     39   239*
+_CLO_GAIN_BAK4R                  Bopram   EXPT 000000EE     40   240*
+_CLO_GAIN_BAK5L                  Bopram   EXPT 000000F0     41   241*
+_CLO_GAIN_BAK5R                  Bopram   EXPT 000000F2     42   242*
+_CLO_GAIN_SET1L                  Bopram   EXPT 00000670    114   412*
+_CLO_GAIN_SET1R                  Bopram   EXPT 00000672    115   413*
+_CLO_GAIN_SET2L                  Bopram   EXPT 00000674    116   414*
+_CLO_GAIN_SET2R                  Bopram   EXPT 00000676    117   415*
+_CLO_GAIN_SET3L                  Bopram   EXPT 00000678    118   416*
+_CLO_GAIN_SET3R                  Bopram   EXPT 0000067A    119   417*
+_CLO_GAIN_SET4L                  Bopram   EXPT 0000067C    120   418*
+_CLO_GAIN_SET4R                  Bopram   EXPT 0000067E    121   419*
+_CLO_GAIN_SET5L                  Bopram   EXPT 00000680    122   420*
+_CLO_GAIN_SET5R                  Bopram   EXPT 00000682    123   421*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:22                                                  PAGE    16
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_CLO_LIMERR                      Bopram   EXPT 000006F3    152   480*
+_CLO_LOAD_KEEP_L                 Bopram   EXPT 0000069C    135   438*
+_CLO_LOAD_KEEP_R                 Bopram   EXPT 0000069E    136   439*
+_CLO_LOAD_KEEP_T                 Bopram   EXPT 000006A0    137   440*
+_CLO_LOAD_L                      Bopram   EXPT 00000696    132   434*
+_CLO_LOAD_L2                     Bopram   EXPT 000006A8    141   446*
+_CLO_LOAD_LIVE_L                 Bopram   EXPT 000006A2    138   442*
+_CLO_LOAD_LIVE_R                 Bopram   EXPT 000006A4    139   443*
+_CLO_LOAD_LIVE_T                 Bopram   EXPT 000006A6    140   444*
+_CLO_LOAD_R                      Bopram   EXPT 00000698    133   435*
+_CLO_LOAD_R2                     Bopram   EXPT 000006AA    142   447*
+_CLO_LOAD_T                      Bopram   EXPT 0000069A    134   436*
+_CLO_LOAD_T2                     Bopram   EXPT 000006AC    143   448*
+_CLO_LOWER2_L                    Bopram   EXPT 00000127     71   282*
+_CLO_LOWER2_R                    Bopram   EXPT 00000129     72   283*
+_CLO_LOWER2_T                    Bopram   EXPT 0000012B     73   284*
+_CLO_LOWER3_L                    Bopram   EXPT 00000133     79   290*
+_CLO_LOWER3_R                    Bopram   EXPT 00000135     80   291*
+_CLO_LOWER3_T                    Bopram   EXPT 00000137     81   292*
+_CLO_LOWER_L                     Bopram   EXPT 00000119     61   270*
+_CLO_LOWER_R                     Bopram   EXPT 0000011B     62   271*
+_CLO_LOWER_T                     Bopram   EXPT 0000011D     63   272*
+_CLO_MAXLD_L                     Bopram   EXPT 00000106     51   255*
+_CLO_MAXLD_R                     Bopram   EXPT 00000108     52   256*
+_CLO_MAXLD_T                     Bopram   EXPT 0000010A     53   257*
+_CLO_OFAD_L                      Bopram   EXPT 00000690    129   430*
+_CLO_OFAD_R                      Bopram   EXPT 00000692    130   431*
+_CLO_OFAD_T                      Bopram   EXPT 00000694    131   432*
+_CLO_OF_AVE_BAKL                 Bopram   EXPT 000000F6     45   245*
+_CLO_OF_AVE_BAKR                 Bopram   EXPT 000000F8     46   246*
+_CLO_OF_AVE_BAKT                 Bopram   EXPT 000000FA     47   247*
+_CLO_OF_AVE_SETL                 Bopram   EXPT 00000686    126   424*
+_CLO_OF_AVE_SETR                 Bopram   EXPT 00000688    127   425*
+_CLO_OF_AVE_SETT                 Bopram   EXPT 0000068A    128   426*
+_CLO_OF_BAKL                     Bopram   EXPT 000000F4     43   243*
+_CLO_OF_BAKR                     Bopram   EXPT 000000F5     44   244*
+_CLO_OF_SETL                     Bopram   EXPT 00000684    124   422*
+_CLO_OF_SETR                     Bopram   EXPT 00000685    125   423*
+_CLO_OVER2_L                     Bopram   EXPT 00000121     67   278*
+_CLO_OVER2_R                     Bopram   EXPT 00000123     68   279*
+_CLO_OVER2_T                     Bopram   EXPT 00000125     69   280*
+_CLO_OVER3_L                     Bopram   EXPT 0000012D     75   286*
+_CLO_OVER3_R                     Bopram   EXPT 0000012F     76   287*
+_CLO_OVER3_T                     Bopram   EXPT 00000131     77   288*
+_CLO_OVER_L                      Bopram   EXPT 00000113     58   266*
+_CLO_OVER_R                      Bopram   EXPT 00000115     59   267*
+_CLO_OVER_T                      Bopram   EXPT 00000117     60   268*
+_CLO_PROOF_L                     Bopram   EXPT 0000010C     54   259*
+_CLO_PROOF_R                     Bopram   EXPT 0000010E     55   260*
+_CLO_PROOF_SEI                   Bopram   EXPT 00000112     57   263*
+_CLO_PROOF_T                     Bopram   EXPT 00000110     56   261*
+_CLO_RQE                         Bopram   EXPT 00000181    102   330*
+_CLO_SATURATE                    Bopram   EXPT 000006F4    153   481*
+_CLO_STRAIN_L                    Bopram   EXPT 00000100     48   251*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:22                                                  PAGE    17
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_CLO_STRAIN_R                    Bopram   EXPT 00000102     49   252*
+_CLO_STRAIN_T                    Bopram   EXPT 00000104     50   253*
+_CLO_TOP                         Bopram   EXPT 00000000     29   223*
+_CLO_TRK_L                       Bopram   EXPT 00000000     30   225*
+_CLO_TRK_R                       Bopram   EXPT 00000048     31   226*
+_CLO_TRK_T                       Bopram   EXPT 00000090     32   227*
+_CLO_ZERO                        Bopram   EXPT 00000182    333   334*
+_CPOS_CONDI                      Bopram   EXPT 000006F0    149   476*
+_CPOS_NOW_MM                     Bopram   EXPT 000006B0    144   460*
+_CPOS_ORDER                      Bopram   EXPT 000006F1    150   477*
+_CPOS_RQE                        Bopram   EXPT 00000180    101   329*
+_CPOS_SET_ALFA                   Bopram   EXPT 00000155     90   307*
+_CPOS_SET_BETA                   Bopram   EXPT 00000156     91   308*
+_CPOS_SET_DELTA                  Bopram   EXPT 00000157     92   309*
+_CPOS_SET_GANMA                  Bopram   EXPT 00000158     93   310*
+_CPOS_SET_LOWL                   Bopram   EXPT 00000148     86   303*
+_CPOS_SET_MRE                    Bopram   EXPT 0000014C     87   304*
+_CPOS_SET_POSI                   Bopram   EXPT 00000140     88   301*
+_CPOS_SET_STD                    Bopram   EXPT 00000150     95   305*
+_CPOS_SET_TOPL                   Bopram   EXPT 00000144     85   302*
+_CPOS_SET_UNIT                   Bopram   EXPT 00000154     89   306*
+_CPOS_STD                        Bopram   EXPT 000006B4    145   462*
+_CPOS_STD_BAK                    Bopram   EXPT 00000159     94   311*
+_CPUC_077_ER                     Bopram   EXPT 000007A8    171   536*
+_CPUC_079_ER                     Bopram   EXPT 000007A7    170   535*
+_CPUC_160_DT                     Bopram   EXPT 000007A9    172   537*
+_CPUC_CB1_ER                     Bopram   EXPT 000007A2    165   530*
+_CPUC_CB2_ER                     Bopram   EXPT 000007A3    166   531*
+_CPUC_CMP_ER                     Bopram   EXPT 000007A5    168   533*
+_CPUC_OP_ER                      Bopram   EXPT 000007A4    167   532*
+_CPUC_PDN_ER                     Bopram   EXPT 000007A6    169   534*
+_CPUC_RAM_ER                     Bopram   EXPT 000007A1    164   529*
+_CPUC_ROM_ER                     Bopram   EXPT 000007A0    163   528*
+_CSET_SET                        Bopram   EXPT 0000011F     64   274*
+_CSTATUS_C                       Bopram   EXPT 00000270    108   391*
+_CTLINK_C_OP                     Bopram   EXPT 00000190    105   356*
+_CTLINK_OP_C                     Bopram   EXPT 00000700    156   499*
+_MEM_ARI_REAL                    Bopram   EXPT 00000840    612   613*
+_MEM_BNK_ADR1                    Bopram   EXPT 00000900    617   618*
+_MEM_BNK_ADR2                    Bopram   EXPT 00000940    621   622*
+_MEM_DAT_ADR1                    Bopram   EXPT 00000A00    626   627*
+_OP_ERROR1                       Bopram   EXPT 000007C0    188   557*
+_OP_ERROR2                       Bopram   EXPT 000007C1    189   558*
+_OP_GENITI_READ                  Bopram   EXPT 00000785    511   512*
+_OP_STATUS_REAL                  Bopram   EXPT 00000800    206   597*
+_OP_V25_0                        Bopram   EXPT 000007C3    192   561*
+_OP_V25_1                        Bopram   EXPT 000007C4    193   562*
+_OP_V25_2                        Bopram   EXPT 000007C5    194   563*
+_OP_V25_3                        Bopram   EXPT 000007C6    195   564*
+_OP_V25_4                        Bopram   EXPT 000007C7    196   565*
+_OP_V25_5                        Bopram   EXPT 000007C8    197   566*
+_OP_V25_6                        Bopram   EXPT 000007C9    198   567*
+_OP_V25_7                        Bopram   EXPT 000007CA    199   568*
+_OP_VER                          Bopram   EXPT 000007C2    191   560*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:22                                                  PAGE    18
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_RAMC_OP_INT                     Bopram   EXPT 000007FF    203   585*
+_RAMOP_C_INT                     Bopram   EXPT 000007FE    202   581*
+_SEQ_384_447_TOP                 Bopram   EXPT 00000190    104   354*
+_SEQ_448_511_TOP                 Bopram   EXPT 00000700    155   497*
+_V25_OP_0                        Bopram   EXPT 000007AA    174   539*
+_V25_OP_1                        Bopram   EXPT 000007AB    175   540*
+_V25_OP_10                       Bopram   EXPT 000007B2    182   548*
+_V25_OP_11                       Bopram   EXPT 000007B4    183   549*
+_V25_OP_12                       Bopram   EXPT 000007B6    184   550*
+_V25_OP_2                        Bopram   EXPT 000007AC    176   541*
+_V25_OP_3                        Bopram   EXPT 000007AD    177   542*
+_V25_OP_4                        Bopram   EXPT 000007AE    178   543*
+_V25_OP_5                        Bopram   EXPT 000007AF    179   544*
+_V25_OP_6                        Bopram   EXPT 000007B0    180   545*
+_V25_OP_7                        Bopram   EXPT 000007B1    181   546*
+_VUP_DATA_ADR_COP2               Bopram   EXPT 00000290    400   401*
+_VUP_HSAREA_B_TO_COP2            Bopram   EXPT 000001F0    371   372*
+_VUP_HSAREA_COP2_TO_B            Bopram   EXPT 00000230    380   381*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:22                                                  PAGE    19
+
+*** SECTION DATA LIST
+
+SECTION                          ATTRIBUTE    SIZE             START
+
+Bopram                           REL-DATA    000000C00        

@@ -1,0 +1,1708 @@
+;****************************************************************************************
+;* File Name	: ssa_CmdProc.src
+;* Function	: シーケンスコード毎実処理
+;* Author	: Designed by T.Akiba, Coded by T.Akiba
+;* Date		: 2009-11-20 Akiba
+;* Update	: 2010-08-11 Y.Kobayashi(コード整理)
+;****************************************************************************************
+
+;********************************************************************
+;* INCLUDE
+;********************************************************************
+	.LIST	OFF
+	.INCLUDE	"cm_equ1.equ"
+	.INCLUDE	"shn_cmd1.mac" 
+	.INCLUDE	"sqa_MemDef.ext" 
+	.INCLUDE	"sqa_CmdDef.ext" 
+	.INCLUDE	"sqa_Config.equ"
+	.LIST	ON
+
+	.SECTION	P,CODE
+
+;********************************************************************
+;* EXTERN 宣言 PROGRAM
+;********************************************************************
+	.IMPORT	_DIVS_32REG2_32REG1_R4_32REG2_R2
+
+;********************************************************************
+;* DEFINE定義
+;********************************************************************
+; 実行シーケンス置換用
+_SEQ_KND_T_TOP		.DEFINE		"_SEQ_CARD_RAM+_MKIND_T_ADR"	;
+_SEQ_KND_TD_TOP		.DEFINE		"_SEQ_CARD_RAM+_MKIND_TD_ADR"	; 
+_SEQ_KND_C_TOP		.DEFINE		"_SEQ_CARD_RAM+_MKIND_C_ADR"	;
+_SEQ_KND_CD_TOP		.DEFINE		"_SEQ_CARD_RAM+_MKIND_CD_ADR"	;
+
+;命令で置き換える対象で数値は最大値を記述してる
+CHG_SQ_ADR		.EQU		H'7F		; Xに置き換える WORD-MEM/256=X...Y
+CHG_SQ_OFS		.EQU		H'FF		; Yに置き換える WORD-MEM/256=X...Y
+CHG_SQ_BIT		.EQU		H'FF		; BIT0~BIT7に置き換える 
+CHG_SQ_BTD		.EQU		H'0F		; BIT0～BIT15を"0~F"に置き換える
+CHG_HHDATA		.EQU		H'FF		; 数値に置き換える
+CHG_HLDATA		.EQU		H'FF		; 数値
+CHG_LHDATA		.EQU		H'FF		; 数値
+CHG_LLDATA		.EQU		H'FF		; 数値
+CHG_UNIT_H		.EQU		H'7F		; ﾀｲﾏ・ｶｳﾝﾀのﾕﾆｯﾄ番号H
+CHG_UNIT_L		.EQU		H'FF		; ﾀｲﾏ・ｶｳﾝﾀのﾕﾆｯﾄ番号L
+CHG_DGT_SL		.EQU		H'0F		; ﾀｲﾏ変換方法(単位)
+
+;********************************************************************
+;* シーケンス関係テーブル
+;********************************************************************
+	.ALIGN	4
+	
+_BIT_DATA_TBL1		.DATA.L		0
+_BIT_DATA_TBL2		.DATA.L		BIT0		; 0
+			.DATA.L		BIT1		; 1
+			.DATA.L		BIT2		; 2
+			.DATA.L		BIT3		; 3
+			.DATA.L		BIT4		; 4
+			.DATA.L		BIT5		; 5
+			.DATA.L		BIT6		; 6
+			.DATA.L		BIT7		; 7
+			.DATA.L		BIT8		; 8
+			.DATA.L		BIT9		; 9
+			.DATA.L		BIT10		; A
+			.DATA.L		BIT11		; B
+			.DATA.L		BIT12		; C
+			.DATA.L		BIT13		; D
+			.DATA.L		BIT14		; E
+			.DATA.L		BIT15		; F
+
+;********************************************************************
+;* CALLテーブル
+;*
+;* 実行側ｿﾌﾄのみ使用
+;* ラベル参照なので並ぶ順番はどうでもいい
+;* CTBL_REG = _SEQ_CALL_TBL1
+;********************************************************************
+	
+	.EXPORT	_SEQ_CALL_TBL1
+	.ALIGN	4
+	
+_SEQ_CALL_TBL1						; CALL TABLEは127個まで
+DSETLI_CALL		.DATA.L		_DSETLI_SUB	; 直接数値の4BYTE読出
+PLS_CALL		.DATA.L		_PLS_SUB	; ON EDGE 1PLS命令 ｻﾌﾞﾙｰﾁﾝｱﾄﾞﾚｽ	1
+PLF_CALL		.DATA.L		_PLF_SUB	; OF EDGE 1PLS命令 ｻﾌﾞﾙｰﾁﾝｱﾄﾞﾚｽ	2
+WTMR_CALL		.DATA.L		_WTMR_SUB	; ﾀｲﾏ命令 ｻﾌﾞﾙｰﾁﾝｱﾄﾞﾚｽ		4
+WCTR_CALL		.DATA.L		_WCTR_SUB	; ｶｳﾝﾀ命令 ｻﾌﾞﾙｰﾁﾝｱﾄﾞﾚｽ		5
+WSC_CALL		.DATA.L		_WSC_SUB	; ｽﾃｯﾌﾟｺﾝﾄﾛｰﾙ命令 ｻﾌﾞﾙｰﾁﾝｱﾄﾞﾚｽ	6
+WSR_CALL		.DATA.L		_WSR_SUB	; ｼﾌﾄﾚｼﾞｽﾀ命令 ｻﾌﾞﾙｰﾁﾝｱﾄﾞﾚｽ	7
+
+;********************************************************************
+;* 特殊データ領域TBL
+;*
+;* DTBL_REG = _SEQ_DATA_TBL1
+;* SR、タイマ、カウンタ
+;********************************************************************
+	.EXPORT	_SEQ_DATA_TBL1		;
+	.ALIGN	4
+	
+_SEQ_DATA_TBL1
+SR_STCT_TOP	.DATA.L		_SEQ_SR_FLG		; USED
+TM_STCT_TOP	.DATA.L		_SEQ_TMR_DATA		; USED
+TM_KND_T_TOP	.DATA.L		_SEQ_KND_T_TOP		; USED
+TM_KND_TD_TOP	.DATA.L		_SEQ_KND_TD_TOP		; USED
+TM_LAT_CG_TOP	.DATA.L		_TM_LATE_CHGTOP		; USED
+CT_STCT_TOP	.DATA.L		_SEQ_CTR_DATA		; USED
+CT_KDN_C_TOP	.DATA.L		_SEQ_KND_C_TOP		; USED
+CT_KND_CD_TOP	.DATA.L		_SEQ_KND_CD_TOP		; USED
+
+
+;********************************************************************
+;* シーケンス命令用
+;* マクロ
+;********************************************************************
+
+;	*******************************************
+;	***					***
+;	***	LD命令時のMﾚｼﾞへのｽﾀｯｸ		***
+;	***	[3]				***
+;	*******************************************
+	.MACRO	LD_M_STACK			;
+		SHLL	M_REG				; MRG ｼﾌﾄ
+		OR	A_REG,M_REG			; NEW Mreg SAVE
+	.ENDM
+
+;	*******************************************
+;	***					***
+;	***	ADR.BIT命令時のADRESS作成	***
+;	***	byteｱﾄﾞﾚｽ･･･+0/+1処理有り	***
+;	***	ANS ADR=R0 USED R1		***
+;	***	[5]				***
+;	*******************************************
+	.MACRO	ADR_MAKE1_BIT	LBEL1,LBEL2
+\LBEL1:		MOV.B	#CHG_SQ_ADR,R1			; [命令書換用ラベル]H_BYTE(0~7Fまで)
+\LBEL2:		MOV.B	#CHG_SQ_OFS,R0			; [命令書換用ラベル];L_BYTE
+		SHLL8	R1
+		EXTU.B	R0,R0				;
+		OR	R1,R0				; adress
+	.ENDM
+
+;	*******************************************
+;	***					***
+;	***	WORD命令時のADRESS作成		***
+;	***	byteｱﾄﾞﾚｽ 但し偶数(+0)のみ	***
+;	***	ANS ADR=R0 USED R1		***
+;	***	[5]				***
+;	*******************************************
+	.MACRO	ADR_MAKE1_WORD LBEL1,LBEL2
+		ADR_MAKE1_BIT \LBEL1,\LBEL2
+	.ENDM
+
+;	*******************************************
+;	***					***
+;	***	WORD命令時の直接数値作成	***
+;	***	byteｱﾄﾞﾚｽ 但し偶数(+0)のみ	***
+;	***	ANS data=R2 USED R1,R2		***
+;	***	[5]				***
+;	*******************************************
+	.MACRO	IMD_MAKE1_WORD LBEL1,LBEL2		;
+\LBEL1:		MOV.B	#CHG_LHDATA,R1			; H_BYTE
+\LBEL2:		MOV.B	#CHG_LLDATA,R2			; L_BYTE
+		SHLL8	R1				; 符号をそのまま
+		EXTU.B	R2,R2				;
+		OR	R1,R2				; data
+	.ENDM
+
+;	*******************************************
+;	***					***
+;	***	WORD命令時の直接数値作成	***
+;	***	byteｱﾄﾞﾚｽ 但し偶数(+0)のみ	***
+;	***	ANS data=R2 USED R1,R2		***
+;	***	[5]				***
+;	*******************************************
+	.MACRO	IMD_MAKE1_LONG LBEL1,LBEL2,LBEL3,LBEL4
+\LBEL1:		MOV.B	#CHG_HHDATA,R3			; H_BYTE
+\LBEL2:		MOV.B	#CHG_HLDATA,R4			; L_BYTE
+\LBEL3:		MOV.B	#CHG_LHDATA,R1			; H_BYTE
+\LBEL4:		MOV.B	#CHG_LLDATA,R2			; L_BYTE
+
+		EXTU.B	R3,R3				; 000x
+		SHLL8	R3				; 00x0
+		SWAP.W	R3,R3				; x000 HH,0,0,0
+							; 16bitｼﾌﾄ+下位WORD0ｸﾘｱ
+
+		EXTU.B	R4,R4				; 000x
+		SWAP.W	R4,R4				; 0x00 0,HL,0,0
+
+		EXTU.B	R1,R1				; 000x
+		SHLL8	R1				; 00x0 0,0,LH,0
+
+		EXTU.B	R2,R2				; LL
+		OR	R3,R2				;
+		OR	R4,R2				;
+		OR	R1,R2				;
+	.ENDM
+
+;	***************************************************
+;	***						***
+;	***	ADR.BIT命令時のBIT→R0作成		***
+;	***	[3]	LD,AND,OR			***
+;	***************************************************
+	.MACRO	BIT_LD_R0 LBEL1
+\LBEL1:		TST.B	#CHG_SQ_BIT,@(R0,GBR)		; [命令書換用ラベル] BIT=OFFならTBIT=1
+		MOVT	R0				; T-BIT==>R0
+		XOR	#BIT0,R0			;
+	.ENDM
+
+;	***************************************************
+;	***						***
+;	***	ADR.BIT命令時のBITの反転→R0作成	***
+;	***	[2]	LDN,ANDN,ORN			***
+;	***************************************************
+	.MACRO	BIT_LD_NOT_R0 LBEL1
+\LBEL1:		TST.B	#CHG_SQ_BIT,@(R0,GBR)		; [命令書換用ラベル];BIT=OFFならTBIT=1
+		MOVT	R0				; T-BIT==>R0
+	.ENDM
+
+	
+;********************************************************************
+;* シーケンス命令
+;* BIT操作
+;********************************************************************
+;	  ------------------------------
+;	+0|	  命令CODE	(  )   |
+;	  ------------------------------
+;	+1|	ﾒﾓﾘ種別/BIT 	(  )   |
+;	  ------------------------------
+;	+2|	  MEM_ADR上位	(  )   |
+;	  ------------------------------
+;	+3|	  MEM_ADR下位 	(  )   |
+;	  ------------------------------
+
+;	*********************************************************************
+;	*****	常時ON					4*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_LDON_CODE:
+	LD_M_STACK					; A->Mｽﾀｯｸ	ARG and NRGを削除 091105AKIBA
+	MOV.B	#BIT0,R0				;
+	MOV	R0,A_REG				; R0→Areg
+_LDON_CODE_END:
+;	
+;	*********************************************************************
+;	*****	Read command				11*2		*****
+;	*********************************************************************
+;	USED DESTROY REG R0
+;	USED 	     R5,R6,R7,GBR
+;
+	.ALIGN	4
+_LD_CODE:
+	LD_M_STACK					; A->Mｽﾀｯｸ	ARG and NRGを削除 091105AKIBA
+	ADR_MAKE1_BIT LBEL1=LD_ADR,LBEL2=LD_OFS
+	BIT_LD_R0 LBEL1=LD_BIT				;
+	MOV	R0,A_REG				; R0→Areg
+_LD_CODE_END:
+
+;	*********************************************************************
+;	*****	Read Not command			10*2		*****
+;	*********************************************************************
+;	USED DESTROY REG R0
+;	USED 	     R5,R6,R7,GBR
+;
+	.ALIGN	4
+_LDN_CODE:
+	LD_M_STACK					; A->Mｽﾀｯｸ	ARG and NRGを削除 091105AKIBA
+	ADR_MAKE1_BIT LBEL1=LDN_ADR,LBEL2=LDN_OFS
+	BIT_LD_NOT_R0 LBEL1=LDN_BIT			;
+	MOV	R0,A_REG				;
+_LDN_CODE_END:
+
+;	*********************************************************************
+;	*****	And command				9*2		*****
+;	*********************************************************************
+;	USED DESTROY REG R0
+;	USED 	     R5,R6,R7,GBR
+;
+	.ALIGN	4
+_AND_CODE:
+	ADR_MAKE1_BIT LBEL1=AND_ADR,LBEL2=AND_OFS	;
+	BIT_LD_R0 LBEL1=AND_BIT				;
+	AND	R0,A_REG				; ARG and DATA(T) -> ARG
+_AND_CODE_END:
+
+;	*********************************************************************
+;	*****	And Not command				8*2		*****
+;	*********************************************************************
+;	USE REG R0
+;
+	.ALIGN	4
+_ANDN_CODE:
+	ADR_MAKE1_BIT LBEL1=ANDN_ADR,LBEL2=ANDN_OFS	;
+	BIT_LD_NOT_R0 LBEL1=ANDN_BIT			;
+	AND	R0,A_REG				; ARG and DATA(T) -> ARG
+_ANDN_CODE_END:
+
+;	*********************************************************************
+;	*****	Or command				 9*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_OR_CODE:
+	ADR_MAKE1_BIT LBEL1=OR_ADR,LBEL2=OR_OFS		;
+	BIT_LD_R0 LBEL1=OR_BIT				;
+	OR	R0,A_REG				; ARG or DATA(T) -> ARG
+_OR_CODE_END:
+
+;	*********************************************************************
+;	*****	Or command				 8*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_ORN_CODE:
+	ADR_MAKE1_BIT LBEL1=ORN_ADR,LBEL2=ORN_OFS	;
+	BIT_LD_NOT_R0 LBEL1=ORN_BIT			;
+	OR	R0,A_REG				; ARG or DATA(T) -> ARG
+_ORN_CODE_END:
+
+;	*********************************************************************
+;	*****	Write command				9*2		*****
+;	*********************************************************************
+;	Areg & Nreg--->Areg-->MEM
+	.ALIGN	4
+_ST_CODE:
+	ADR_MAKE1_BIT LBEL1=ST_ADR,LBEL2=ST_OFS	;5
+	TST	A_REG,A_REG				;
+	TST_BIT_OF STCD_CLRBIT				;
+
+STCD_SETBIT:						; [命令書換用ラベル]
+	OR.B	#CHG_SQ_BIT,@(R0,GBR)			; OR-BIT  B'00001000
+	M_BRA	_ST_CODE_END				;
+
+STCD_CLRBIT:						; [命令書換用ラベル]
+	AND.B	#CHG_SQ_BIT,@(R0,GBR)			; AND-BIT  B'11110111
+_ST_CODE_END:						;
+
+;	***********************************************************
+;	***	SET BIT CODE CHANGE ROUTINE 		8*2	***
+;	***********************************************************
+;	Areg & Nreg--->AregがONならMEM:ON
+	.ALIGN	4
+_SET_CODE:						; 00001110B	E
+	ADR_MAKE1_BIT LBEL1=SET_ADR,LBEL2=SET_OFS	;
+	TST	A_REG,A_REG				;
+	TST_BIT_OF _SET_CODE_END			;
+
+SETCD_SETBIT:						; [命令書換用ラベル]
+	OR.B	#CHG_SQ_BIT,@(R0,GBR)			; OR-BIT  B'00001000
+_SET_CODE_END:
+
+;	***********************************************************
+;	***	RESET BIT CODE CHANGE ROUTINE 		8*2	***
+;	***********************************************************
+	.ALIGN	4
+_RST_CODE:						; 00001110B	E
+	ADR_MAKE1_BIT LBEL1=RST_ADR,LBEL2=RST_OFS	;							;
+	TST	A_REG,A_REG				;
+	TST_BIT_OF _RST_CODE_END			;
+	
+RSTCD_SETBIT:						; [命令書換用ラベル]
+	AND.B	#CHG_SQ_BIT,@(R0,GBR)			; AND-BIT  B'111101111
+_RST_CODE_END:
+
+
+;********************************************************************
+;* シーケンス命令
+;* BIT制御命令
+;********************************************************************
+;	  ------------------------------
+;	+0|	  命令CODE	(  )   |
+;	  ------------------------------
+;	+1|		 	(  )   |
+;	  ------------------------------
+;	+2|		 	(  )   |
+;	  ------------------------------
+;	+3|			(  )   |
+;	  ------------------------------
+
+;	***********************************************************
+;	***	And MRG command			2*2		***
+;	***********************************************************
+	.ALIGN	4
+_AMRG_CODE:
+	AND	M_REG,A_REG				; ARG and MRG
+	SHLR	M_REG					; shift old MRG
+_AMRG_CODE_END:
+
+;	***********************************************************
+;	***	Or MRG command			2*2		***
+;	***********************************************************
+	.ALIGN	4
+_OMRG_CODE:
+	SHLR	M_REG					; shift old MRG(POP M_REG)
+	MOVT	R0					;
+	OR	R0,A_REG				; ARG or MRG
+_OMRG_CODE_END:
+;
+;	***********************************************************
+;	***	Write NRG command		3*2		***
+;	***********************************************************
+	.ALIGN	4
+_PUSH_CODE:
+	SHLL	N_REG					; NRGｽﾀｯｸ
+	OR	A_REG,N_REG				; ARG store to NRG
+_PUSH_CODE_END:
+
+;	***********************************************************
+;	***	Write Not NRG command		1*2		***
+;	***********************************************************
+	.ALIGN	4
+_POP_CODE:
+	XOR	A_REG,A_REG				; ARGｸﾘｱ
+	CLRT						; Tﾋﾞｯﾄｸﾘｱ
+	ROTCR	N_REG					; 右ｼﾌﾄ(Tﾋﾞｯﾄ付)
+	ROTCL	A_REG					; 左ｼﾌﾄ(Tﾋﾞｯﾄ付)
+_POP_CODE_END:
+
+;	***********************************************************
+;	***	LEAD NRG command		3*2		***
+;	***********************************************************
+	.ALIGN	4
+_LDNRG_CODE:
+	MOV	N_REG,R0				; N_REG LOAD
+	AND	#H'0001,R0				; BIT0以外CLR
+	MOV	R0,A_REG				;
+_LDNRG_CODE_END:
+
+;	***********************************************************
+;	***	END NRG command			1*2		***
+;	***********************************************************
+	.ALIGN	4
+_ENDNRG_CODE:
+	MOV.B	#BIT0,N_REG				; N_REG CLR
+_ENDNRG_CODE_END:
+
+
+;********************************************************************
+;* シーケンス応用命令
+;* 
+;********************************************************************
+
+;	***********************************************************
+;	***							***
+;	***	Clear Card command		9*2		***
+;	***	AregがON時に指定されたﾒﾓﾘﾜｰﾄﾞをｸﾘｱする		***
+;	***							***
+;	***********************************************************
+	.ALIGN	4
+_CLR_CODE:
+	TST	A_REG,A_REG				;
+	TST_BIT_OF _CLR_CODE_END			;
+	ADR_MAKE1_WORD LBEL1=CLR_ADR,LBEL2=CLR_OFS	; R0=WORDｱﾄﾞﾚｽ
+	XOR	R2,R2					;
+	MOV.W	R2,@(R0,TOP_REG)			;
+_CLR_CODE_END:
+
+;	***********************************************************
+;	***	ON EDGE 1PULSE ON CODE CHANGE ROUTINE		***
+;	***	AregのONｴｯｼﾞ時に1ｽｷｬﾝAregをonする		***
+;	***	割り込み禁止が必要				***
+;	***********************************************************
+;	byte adr
+	.ALIGN	4
+_PLS_CODE:							;
+		ADR_MAKE1_BIT LBEL1=PLS_ADR,LBEL2=PLS_OFS	; R0:adr
+PLS_BIT:	MOV.B	#CHG_SQ_BIT,R2				; [命令書換用ラベル]
+		MOV.L	@(PLS_CALL-_SEQ_CALL_TBL1,CTBL_REG),R1	;
+		JSR	@R1					;
+		NOP						;
+_PLS_CODE_END:
+
+;	***************************************************
+;	***	ON EDGE 1PULSE ON CODE CHANGE SUB	***
+;	***************************************************
+;	INPUT R2:BIT,R0:ADR
+	.ALIGN	4
+_PLS_SUB:
+	SUB_START
+	EXTU.B	R2,R2						; SET用(BIT7~BIT0)
+	MOV	R2,R9						; PUSH
+
+	NOT	R2,R3						; AND用
+	TST	A_REG,A_REG					;
+	TST_BIT_ON PLS_SB100					;
+	XOR	R2,R2						;
+	
+PLS_SB100:
+	DI_PUSH_SR_SH3	WK_REG1=R1,WK_REG2=R4			; 割込みマスク
+	MOV.B	@(R0,TOP_REG),R1				; OLD情報読出
+	MOV	R1,R4						; old push
+	AND	R3,R1						; OLD BIT情報をCLR
+	OR	R2,R1						; NEW BIT情報SET
+	MOV.B	R1,@(R0,TOP_REG)				; new save
+	EI_POP_SR_SH3 						; 割込みマスク解除
+	XOR	R1,R4						; R1 XOR R4 = R4(変化)
+	AND	R4,R1						; R4 and R1 = ON ｴｯｼﾞ
+	TST	R9,R1						;
+	MOVT	R0						; 0
+	XOR	#BIT0,R0
+	MOV	R0,A_REG					; Tの反転 -> ARG
+	
+_PLS_SUB_END:
+	SUB_END
+	M_RTS
+
+
+;--------ﾘﾚﾗﾙﾌﾟｰﾙが存在する FFFFFF00(割込禁止)----
+
+;	***********************************************************
+;	***	OFF EDGE 1PULSE ON CODE CHANGE ROUTINE	16byte	***
+;	***	AregのOffｴｯｼﾞ時に1ｽｷｬﾝAregをonする		***
+;	***	割り込み禁止が必要				***
+;	***********************************************************
+	.ALIGN	4
+_PLF_CODE:							;
+		ADR_MAKE1_BIT LBEL1=PLF_ADR,LBEL2=PLF_OFS	; R0:adr
+PLF_BIT:	MOV.B	#CHG_SQ_BIT,R2				; [命令書換用ラベル]
+								;
+		MOV.L	@(PLF_CALL-_SEQ_CALL_TBL1,CTBL_REG),R1	;
+		JSR	@R1					;
+		NOP						;
+_PLF_CODE_END:
+
+;	***************************************************
+;	***	OFF EDGE 1PULSE ON CODE CHANGE SUB	***
+;	***************************************************
+;	INPUT R2:BIT,R3,ADR
+
+	.ALIGN	4
+_PLF_SUB:
+	SUB_START
+	EXTU.B	R2,R2						; SET用(BIT7~BIT0)
+	MOV	R2,R9						; PUSH
+	NOT	R2,R3						; AND用
+	TST	A_REG,A_REG					;
+	TST_BIT_ON PLF_SB100					;
+	XOR	R2,R2						;
+PLF_SB100:
+	DI_PUSH_SR_SH3	WK_REG1=R1,WK_REG2=R4			;
+	MOV.B	@(R0,TOP_REG),R1				;
+	MOV	R1,R4						; old push
+	AND	R3,R1						;
+	OR	R2,R1						;
+	MOV.B	R1,@(R0,TOP_REG)				; new save
+	EI_POP_SR_SH3 						;
+	XOR	R4,R1						; R1 XOR R4 = R1(変化)
+	AND	R1,R4						; R1 and R4(前回) = OFF ｴｯｼﾞ
+	TST	R9,R4						;
+	MOVT	R0						; 0
+	XOR	#BIT0,R0					;
+	MOV	R0,A_REG					; Tの反転 -> ARG
+
+_PLF_SUB_END:
+	SUB_END
+	M_RTS
+
+;--------ﾘﾚﾗﾙﾌﾟｰﾙが存在する FFFFFF00(割込禁止)----
+
+;	***********************************************************
+;	*****	Write Skip Controlor command 		9*2	***
+;	***	AregのON時に指定されたBITをonし			***
+;	***	それ以外の15bitはoffする			***
+;	***	割り込み禁止は不要(禁止と同じ命令を使用)	***
+;	***							***
+;	***********************************************************
+	.ALIGN	4
+_WSC_CODE:							;
+		ADR_MAKE1_BIT LBEL1=WSC_ADR,LBEL2=WSC_OFS	; R0:adr
+WSC_BTD:	MOV.B	#CHG_SQ_BTD,R2				; [命令書換用ラベル]"0~F"
+								;
+		MOV.L	@(WSC_CALL-_SEQ_CALL_TBL1,CTBL_REG),R1	; R0:adr R2:bit
+		JSR	@R1					;
+		NOP						;
+_WSC_CODE_END:
+
+;	*************************************************************
+;	*****	Write Skip Controlor command subroutine		*****
+;	*************************************************************
+;	Input R0 ADR ,R2 BITCOD(0~F)注意
+	.ALIGN	4
+_WSC_SUB:
+	SUB_START
+
+	TST	A_REG,A_REG					;
+	TST_BIT_OF WSC_S10					; if ARG = 0  then jump
+
+	MOV.L	#_BIT_DATA_TBL2,R1				;
+	SHLL2	R2						; *4
+	ADD	R2,R1						;
+	MOV.L	@R1,R2						; (R2=BIT0~BIT15)
+
+	MOV.W	R2,@(R0,TOP_REG)				; 指定されたBITをON、それ以外OFF割込み禁止いらなかった
+
+WSC_S10:
+	SUB_END
+	M_RTS
+
+;	------ﾘﾃﾗﾙﾌﾟｰﾙあり BIT_DATA_TBL2----
+
+;	***********************************************************
+;	***	Shift Register commnd 			8*2	***
+;	***	CLK入力 Aregの立ち上がりで　Data(Mreg）でｼﾌﾄ	***
+;	***	全ﾒﾓﾘ領域に相当するWORK-RAMあり			***
+;	***********************************************************
+;	Mreg:data
+;	Areg:clk
+	.ALIGN	4
+_WSR_CODE:							;
+	ADR_MAKE1_BIT LBEL1=WSR_ADR,LBEL2=WSR_OFS		; R0:adr
+
+	MOV.L	@(WSR_CALL-_SEQ_CALL_TBL1,CTBL_REG),R1		; R0:adr R2:bit
+	JSR	@R1						;
+	NOP							;
+_WSR_CODE_END:
+
+;	***********************************************************
+;	***	Shift Register CODE CHANGE ROUTINE		***
+;	***********************************************************
+;	INPUT	R0 SHIFT CARD ADDRESS
+;	1word --1bitのﾜｰｸRAMを使用
+;	Mreg:data
+;	Areg:clk
+_WSR_SUB:
+	SUB_START
+
+	MOV.L	@(SR_STCT_TOP-_SEQ_DATA_TBL1,DTBL_REG),R10	; R10=_SEQ_SR_FLG
+								; SHIFT (OLD ARG) CARD ADDRESS TOP
+	MOV.W	@(R0,R10),R1					; load old ARG
+	MOV.W	A_REG,@(R0,R10)					; store new ARG 1word 1bit
+
+	XOR	A_REG,R1					; (old ARG) xor (new ARG)
+	AND	A_REG,R1					; and (new ARG)
+	TST	R1,R1						; ON EGDE CHECK
+	TST_BIT_OF WSR_S10					; if ARG not 0-->1 then jump
+
+	MOV	M_REG,R2					;
+	DI_PUSH_SR_SH3	WK_REG1=R1,WK_REG2=R4			;
+	MOV.W	@(R0,TOP_REG),R1				;
+	ROTCR	R2						; BIT_LOAD
+	ROTCL	R1						;
+
+	MOV.W	R1,@(R0,TOP_REG)				;
+	EI_POP_SR_SH3 						;
+
+WSR_S10:
+	SUB_END
+	M_RTS
+
+
+;********************************************************************
+;* タイマ、カウンタ
+;* 
+;********************************************************************
+;__TMCT_ST_CNT	.EQU	12	;12byte占有
+;__TMCT_PV	.EQU	0*4	;
+;__TMCT_SV	.EQU	1*4	;
+;__TMCT_FLG	.EQU	2*4	;
+
+;	***************************************************
+;	***						***
+;	***	ﾀｲﾏ・ｶｳﾝﾀ構造				***
+;	***	*12(3data*4byte)			***
+;	***************************************************
+	.MACRO	TMR_CNT_STRCT_ADR UNIT_REG,WKREG1
+		SHLL2	\UNIT_REG				; *4
+		MOV	\UNIT_REG,\WKREG1			;
+		SHLL	\UNIT_REG				; *8
+		ADD	\UNIT_REG,\WKREG1			;
+	.ENDM
+
+;0: 1ms		=1ms*1
+;1: 10ms	=10ms*1
+;2: 100ms	=10ms*10
+;3: 1000ms	=100ms*10
+;4: 60s		=1sec*60
+;5: 3600s	=1sec*3600
+
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***	Write Timmer command			6*2		***
+;	***								***
+;	*******************************************************************
+;	Mreg:1:ﾀｲﾏﾓｼﾞｭ-ﾙｽﾀｰﾄ　0:停止 0->1設定ﾛｰﾄﾞ
+;	Areg:1:ﾀｲﾏ計測 0:一旦停止
+;
+	.ALIGN	4
+_WTMR_CODE:
+WTMR_UNH:	MOV.B	#CHG_UNIT_H,R2				; TMR-H 番号
+WTMR_UNL:	MOV.B	#CHG_UNIT_L,R0				; TMR-L 番号
+WTMR_DGT:	MOV.B	#CHG_DGT_SL,R3				; (0~5)ﾀｲﾏ領域より決定
+	MOV.L	@(WTMR_CALL-_SEQ_CALL_TBL1,CTBL_REG),R1		; R0:adr R2:bit
+	JSR	@R1						;
+	NOP							;
+_WTMR_CODE_END:
+
+;	*************************************************************
+;	*****	Write Timmer command subroutine			*****
+;	*************************************************************
+;	Mreg:1:ﾀｲﾏﾓｼﾞｭ-ﾙｽﾀｰﾄ　0:停止 0->1設定ﾛｰﾄﾞ
+;	Areg:1:ﾀｲﾏ計測 0:一旦停止
+;
+;	R2:H
+;	R0:L
+;	R3:LATE
+
+	.ALIGN	4
+_TM_LATE_CHGTOP
+	.DATA.L		1		; 0:1ms    1MS*1
+	.DATA.L		1		; 1:10ms   10MS*1
+	.DATA.L		10		; 2:100ms  10MS*10
+	.DATA.L		10		; 3:1000   100MS*10
+	.DATA.L		60		; 4:1min    60S*1S
+	.DATA.L		3600		; 5:1h	  3600S*1S
+	.DATA.L		1		; 6
+	.DATA.L		1		; 7
+
+	.ALIGN	4
+_WTMR_SUB:
+	SUB_START
+;;;	AND	N_REG,A_REG					; ARG and NRG	ARG and NRGを削除 091105AKIBA
+
+	SHLL8	R2						; R2は0か1(ﾀｲﾏは500個　多くて1000個 3E8)EXTUは不要
+	EXTU.B	R0,R0						;
+	OR	R0,R2						; R2:ﾀｲﾏ番号
+	MOV	R2,R9_REG					; ﾀｲﾏ番号PUSH
+
+;	----- ﾀｲﾏ構造体読出 -----
+	MOV.L	@(TM_STCT_TOP-_SEQ_DATA_TBL1,DTBL_REG),R10_REG	; R10=_SEQ_TMR_DATA　ﾀｲﾏ演算ﾜｰｸram-top
+	TMR_CNT_STRCT_ADR UNIT_REG=R2,WKREG1=R1			; R2*12=R1
+	ADD	R1,R10						; *12(R1)+TOP//////ﾀｲﾏ構造TOP
+
+;	----- ﾀｲﾏ番号(計測ﾀｲﾏ)選択 -----
+	MOV.B	#(BIT2+BIT1+BIT0),R0				;
+	AND	R0,R3						; 変換LATE 0~7
+	MOV.L	@(TM_LAT_CG_TOP-_SEQ_DATA_TBL1,DTBL_REG),R0	; R10=_SEQ_TMR_DATA
+;	MOV.W	@R0,R1_REG					; 演算LATE(1,10,60,3600のいずれか)
+	SHLL2	R3						; *4 (LONGﾃﾞｰﾀの為)
+	ADD	R3,R0						; TOPｱﾄﾞﾚｽ + LATE
+	MOV.L	@R0,R1_REG					; 演算LATE(1,10,60,3600のいずれか)
+
+;	----- ﾀｲﾑｱｯﾌﾟ,一旦停止,起動情報確認 -----
+	MOV.L	@(__TMCT_FLG,R10_REG),R0			; FLAG領域
+	TST	#BIT0,R0					; ACTIVE?
+	TST_BIT_ON WTMR_S30					; YES ACTIVE JUMP
+
+;	-------- ILDE -------
+	MOV	M_REG,R4					; Mreg読出
+	ROTCR	R4						; 右ｼﾌﾄ(Tﾋﾞｯﾄ付)
+	BF	WTMR_S98					; Mreg(ｽﾀｰﾄ指令OFF)
+
+;	----- Mreg ON(有効)-------
+	XOR	R0,R0						; ｸﾘｱ
+	MOV.L	R0,@(__TMCT_FLG,R10_REG)			; FLAG領域ｸﾘｱ BIT0(処理ﾌﾗｸﾞ),1(計測指令),2(up) 計測条件 ****,*011
+	MOV.L	R0,@(__TMCT_PV,R10_REG)				; 実測PV=0
+
+;	----- ﾀｲﾏ設定値SET -----
+;	設定LOAD data*1,10,(100),(1000),60,3600
+	MOV	D_REG,R2					; ﾀｲﾏ設定(R2)*late R1
+	EXTU.W	R2,R2						; 符号なし
+	DMULS.L	R1_REG,R2					; R1 * R2 → MACH,MACL
+	STS.L	MACL,R0						; 3600*FFFF 1*FFFF
+	MOV.L	R0,@(__TMCT_SV,R10_REG)				; SV:SET
+
+;	----- ﾀｲﾏ起動 -----
+	MOV.B	#BIT0,R0					;
+	MOV.L	R0,@(__TMCT_FLG,R10_REG)			; 起動中SET(ﾀｲﾏ計測指令BIT1=0のままで起動しない)
+
+;	------- 測定中 -----------------
+WTMR_S30:
+;	----- ﾀｲﾑｱｯﾌﾟ確認 -----
+	MOV.L	@(__TMCT_FLG,R10_REG),R0			; FLAG領域
+	TST	#BIT2,R0					; ﾀｲﾑｱｯﾌﾟ確認
+	TST_BIT_ON WTMR_S70					; ﾀｲﾑｱｯﾌﾟでｼﾞｬﾝﾌﾟ
+								;
+
+;	-----ﾀｲﾏ一旦停止CHECK---
+	MOV.L	@(__TMCT_FLG,R10_REG),R0			; FLAG領域
+	TST	A_REG,A_REG					; 一旦停止情報確認
+	TST_BIT_ON WTMR_S40					; 継続でｼﾞｬﾝﾌﾟ
+	AND	#LOW ~BIT1,R0					; 0:一旦停止
+	M_BRA	WTMR_S45					;
+WTMR_S40:
+	OR	#BIT1,R0					; 1:継続
+WTMR_S45:
+	MOV.L	R0,@(__TMCT_FLG,R10_REG)			; FLAG領域
+
+;	-------------実測比較・ﾘﾌﾚｯｼｭ-----------------
+	MOV.L	@(__TMCT_PV,R10_REG),R0				; PV LOAD
+	MOV	R0,R2						; PV=R2
+
+	MOV.L	@(__TMCT_SV,R10_REG),R0				; SV LOAD
+	CMP/HS	R0,R2						; R0=<R2 
+	BF	WTMR_S50					; NO R2 < R0 ﾀｲﾏ計測 ﾀｲﾑｱｯﾌﾟで無い時ｼﾞｬﾝﾌﾟ
+
+	MOV	R0,R2						; 実測はﾀｲﾑｱｯﾌﾟで設定を表示する
+								; 実測は端数,処理時間を表すものではない
+;	--------- ﾀｲﾏﾀｲﾑｱｯﾌﾟ-----
+	MOV.B	#(BIT2+BIT0),R0					; ﾀｲﾏ停止(ﾀｲﾑｱｯﾌﾟ,起動ﾋﾞｯﾄ初期化)
+	MOV.L	R0,@(__TMCT_FLG,R10_REG)			; FLAG領域
+
+	PUSH_REG1 R1_REG
+	PUSH_REG1 R2						; ﾀｲﾏPV
+;	--------------ﾀｲﾑｱｯﾌﾟﾋﾞﾄｾｯﾄ(ﾀｲﾏ,ｶｳﾝﾀ同じ)-------
+	MOV.L	@(TM_KND_T_TOP-_SEQ_DATA_TBL1,DTBL_REG),R0	; ﾒﾓﾘ種別「T」TOPｱﾄﾞﾚｽLOAD
+;;;	MOV.L	@R0,R1_REG					; R1=_SEQ_KND_T_TOP
+	MOV.L	R0,R1_REG					; R1=_SEQ_KND_T_TOP 値ではなくｱﾄﾞﾚｽをSET AKIBA
+	MOV	R9_REG,R2_REG					; ﾀｲﾏ番号PUSH
+	FAR_JSR	#_TMR_CNT_ADR_BIT_MAKE,R0			; input R1,R2 /ANS=R1:ADR R0:BIT
+
+	DI_PUSH_SR_SH3	WK_REG1=R2,WK_REG2=R4			; 割込ﾏｽｸ
+	MOV.B	@R1,R3						; ﾒﾓﾘ内情報LOAD
+	OR	R0,R3						; BIT-SET
+	MOV.B	R3,@R1						; ﾒﾓﾘ情報更新
+	EI_POP_SR_SH3 						; 割込ﾏｽｸ解除
+;	-------------------------------------------------
+	POP_REG1 R2						; ﾀｲﾏPV
+	POP_REG1 R1_REG
+WTMR_S50:
+
+	MOV.B	#2,R4						;
+	CMP/HS	R1_REG,R4					; R2(2)=< R1
+	BT	WTMR_S60					; R1=0,1 =< R4 YES(演算ない)
+	MOV	R1_REG,R4					;
+	FAR_JSR	#_DIVS_32REG2_32REG1_R4_32REG2_R2,R0		; R2/R4=R2
+WTMR_S60:
+;	--------------実測の転送(ﾀｲﾏ,ｶｳﾝﾀ同じ)-------
+	MOV.L	@(TM_KND_TD_TOP-_SEQ_DATA_TBL1,DTBL_REG),R0	; ﾒﾓﾘ種別「Td」TOPｱﾄﾞﾚｽLOAD
+;;;	MOV.L	@R0,R1						; R1=_SEQ_KND_TD_TOP
+	MOV.L	R0,R1						; R1=_SEQ_KND_TD_TOP
+	ADD	R9_REG,R1					;
+	ADD	R9_REG,R1					;
+	MOV.W	R2,@R1						; TD_TOP+UNIT*2 PV SAVE
+
+WTMR_S70:
+	MOV	M_REG,R4					; M_REG情報LOAD
+	ROTCR	R4						; Mreg[起動指令]
+	BF	WTMR_S95					; (終了・中断)
+
+	MOV.L	@(__TMCT_FLG,R10_REG),R0			; FLAG領域
+	TST	#BIT2,R0					; 内部ﾀｲﾑｱｯﾌﾟ?
+	TST_BIT_OF WTMR_S98					; NO
+
+;	------ TIME UP -------------------
+WTMR_S90:
+	MOV.B	#BIT0,A_REG					; A_REG ON
+	M_BRA	WTMR_SEND					;
+
+
+;	------ 中断/ﾀｲﾑｱｯﾌﾟ後の終了 ------
+WTMR_S95:
+	XOR	R0,R0						; ｸﾘｱ
+	MOV.L	R0,@(__TMCT_FLG,R10_REG)			; FLAG領域ｸﾘｱ BIT0(処理ﾌﾗｸﾞ),1(計測指令),2(up)
+
+;	--------------ﾀｲﾑｱｯﾌﾟﾋﾞﾄｸﾘｱ(ﾀｲﾏ,ｶｳﾝﾀ同じ)-------
+	MOV.L	@(TM_KND_T_TOP-_SEQ_DATA_TBL1,DTBL_REG),R0	; ﾒﾓﾘ種別「T」 TOPｱﾄﾞﾚｽLOAD
+;;;	MOV.L	@R0,R1_REG					; R1=_SEQ_KND_T_TOP
+	MOV.L	R0,R1_REG					; R1=_SEQ_KND_T_TOP 値ではなくｱﾄﾞﾚｽをSET AKIBA
+	MOV	R9_REG,R2_REG					; ﾀｲﾏ番号PUSH
+	FAR_JSR	#_TMR_CNT_ADR_BIT_MAKE,R0			; input R1,R2 /ANS=R1:ADR R0:BIT
+
+	DI_PUSH_SR_SH3	WK_REG1=R2,WK_REG2=R4			; 割込ﾏｽｸ
+	NOT	R0,R0						; R0反転
+	MOV.B	@R1,R3						; ﾒﾓﾘ内情報LOAD
+	AND	R0,R3						; BIT--CLR
+	MOV.B	R3,@R1						; ﾒﾓﾘ情報更新
+	EI_POP_SR_SH3 						; 割込ﾏｽｸ解除
+
+;	------ IDEL ------
+WTMR_S98							; Mreg(ｽﾀｰﾄ指令OFF)
+	XOR	A_REG,A_REG					; A_REGｸﾘｱ
+
+WTMR_SEND:
+	SUB_END
+	M_RTS
+
+;	*************************************************************
+;	*****	Write Counter command			5*2	*****
+;	*************************************************************
+	.ALIGN	4
+_WCTR_CODE:
+
+WCTR_UNH:	MOV.B	#CHG_UNIT_H,R2				; CNT-H 番号
+WCTR_UNL:	MOV.B	#CHG_UNIT_L,R0				; CNT-L 番号
+	MOV.L	@(WCTR_CALL-_SEQ_CALL_TBL1,CTBL_REG),R1		; R0:adr R2:bit
+	JSR	@R1						;
+	NOP							;
+_WCTR_CODE_END:
+
+;	*************************************************************
+;	*****	Write Counter command subroutine		*****
+;	*************************************************************
+;	Mreg ENABLE
+;	Areg CLK
+;
+	.ALIGN	4
+_WCTR_SUB:
+	SUB_START
+
+	SHLL8	R2						; R2は0か1(ﾀｲﾏは500個　多くて1000個 3E8)EXTUは不要
+	EXTU.B	R0,R0						;
+	OR	R0,R2						; R2:ｶｳﾝﾀ番号
+	MOV	R2,R9_REG					; ｶｳﾝﾀ番号PUSH
+
+	MOV.L	@(CT_STCT_TOP-_SEQ_DATA_TBL1,DTBL_REG),R10_REG	; R10=_SEQ_CTR_DATA ｶｳﾝﾀ演算ﾜｰｸram-top
+	TMR_CNT_STRCT_ADR UNIT_REG=R2,WKREG1=R1			; R2*12=R1
+	ADD	R1,R10						; *12(R1)+TOP//////ｶｳﾝﾀ構造TOP
+
+;	========= 内部的には前回値のリフレッシュとカウントを常時行う====
+;	---------- CLK(A_REG) REFLASH ------
+	XOR	R1,R1						; 前回値格納ﾚｼﾞｽﾀｸﾘｱ
+	TST	A_REG,A_REG					; 今回値確認
+	TST_BIT_OF WCTR_S10					;
+	MOV	#BIT1,R1					; CLK(今回値格納)
+WCTR_S10:
+	MOV.L	@(__TMCT_FLG,R10_REG),R0			; FLAG領域ｸﾘｱ BIT0(処理ﾌﾗｸﾞ),BIT1:CLK-前回値
+	MOV	R0,R3						; OLD
+	AND	#LOW ~BIT1,R0					; BIT1ｸﾘｱ
+	OR	R1,R0						; NEW A_REG SAVE
+	MOV.L	R0,@(__TMCT_FLG,R10_REG)			; FLAG領域更新
+
+;	-------- ON-EDGE なら+1 0000,FFFFでﾘﾐｯﾄ-----
+	XOR	R0,R3						; NEW XOR OLD->R3
+	AND	R3,R0						; EDGE(R3) AND R0 ->R0
+	TST	#BIT1,R0					;
+	TST_BIT_OF WCTR_S20					;
+
+	MOV.L	@(__TMCT_PV,R10_REG),R0				; PV LOAD
+	ADD	#1,R0						;
+	MOV.L	#H'FFFF0000,R4					; PV=0000,FFFFまで
+	TST	R4,R0						;
+	TST_BIT_ON WCTR_S20					;
+	MOV.L	R0,@(__TMCT_PV,R10_REG)				;
+WCTR_S20:
+
+;	=========処理開始==============
+	MOV.L	@(__TMCT_FLG,R10_REG),R0			; FLAG領域
+	TST	#BIT0,R0					; ACTIVE?
+	TST_BIT_ON WCTR_S30					; YES ACTIVE JUMP
+
+;	-------- ILDE -------
+	MOV	M_REG,R4
+	ROTCR	R4						;
+	BF	WCTR_S98					; Mreg(ｽﾀｰﾄ指令OFF)
+
+;	----- Mreg ON(有効)-------
+	MOV.L	@(__TMCT_FLG,R10_REG),R0			; FLAG領域ｸﾘｱ BIT0(処理ﾌﾗｸﾞ),BIT1:CLK-前回値
+	AND	#LOW ~BIT0,R0
+	MOV.L	R0,@(__TMCT_FLG,R10_REG)			; FLAG領域ｸﾘｱ BIT0(処理ﾌﾗｸﾞ),BIT1:CLK-前回値
+
+	XOR	R0,R0
+	MOV.L	R0,@(__TMCT_PV,R10_REG)				; 実測PV=0
+
+;	----- ｶｳﾝﾀ起動 -----
+	MOV.B	#BIT0,R0					;
+	MOV.L	R0,@(__TMCT_FLG,R10_REG)			; 起動中SET(ﾀｲﾏ計測指令BIT1=0のままで起動しない)
+
+;	------- 測定中 -----------------
+WCTR_S30:
+	MOV	M_REG,R4
+	ROTCR	R4						;
+	BF	WCTR_S95					; Mreg(ｽﾀｰﾄ指令OFF)
+
+;	---------- 実測転送------------
+	MOV.L	@(__TMCT_PV,R10_REG),R0				; PV LOAD
+	MOV	R0,R2
+
+	MOV.L	@(CT_KND_CD_TOP-_SEQ_DATA_TBL1,DTBL_REG),R0	;
+;;;	MOV.L	@R0,R1						; R1=_SEQ_KND_CD_TOP
+	MOV.L	R0,R1						; R1=_SEQ_KND_CD_TOP
+	ADD	R9_REG,R1					;
+	ADD	R9_REG,R1					;
+	MOV.W	R2,@R1						; TD_TOP+UNIT*2 PV SAVE
+
+;	--------- 比較--------------
+	CMP/HS	D_REG,R2					; SV =< PV?
+	BF	WCTR_S97					; NO PV < SV
+
+WCTR_S90:
+;	--------------ｶｳﾝﾄｱｯﾌﾟﾋﾞﾄｾｯﾄ(ﾀｲﾏ,ｶｳﾝﾀ同じ)-------
+	MOV.L	@(CT_KDN_C_TOP-_SEQ_DATA_TBL1,DTBL_REG),R0	;
+;;;	MOV.L	@R0,R1_REG					; R1=_SEQ_KND_T_TOP
+	MOV.L	R0,R1_REG					; R1=_SEQ_KND_T_TOP
+	MOV	R9_REG,R2_REG					; ｶｳﾝﾀ番号PUSH
+	FAR_JSR	#_TMR_CNT_ADR_BIT_MAKE,R0			; input R1,R2 /ANS=R1:ADR R0:BIT
+
+	DI_PUSH_SR_SH3	WK_REG1=R2,WK_REG2=R4			;
+	MOV.B	@R1,R3						;
+	OR	R0,R3						; BIT-SET
+	MOV.B	R3,@R1						;
+	EI_POP_SR_SH3 						;
+;	-------------------------------------------------
+	MOV.B	#BIT0,A_REG					;
+	M_BRA	WCTR_SEND					;
+
+;	==== ﾀｲﾏﾕﾆｯﾄ中断/終了===
+WCTR_S95:
+	MOV.L	@(__TMCT_FLG,R10_REG),R0			; FLAG領域ｸﾘｱ BIT0(処理ﾌﾗｸﾞ),BIT1:CLK-前回値
+	AND	#LOW ~BIT0,R0
+	MOV.L	R0,@(__TMCT_FLG,R10_REG)			; FLAG領域ｸﾘｱ BIT0(処理ﾌﾗｸﾞ),BIT1:CLK-前回値
+
+WCTR_S97:
+;	--------------ﾀｲﾑｱｯﾌﾟﾋﾞﾄｸﾘｱ(ﾀｲﾏ,ｶｳﾝﾀ同じ)-------
+	MOV.L	@(CT_KDN_C_TOP-_SEQ_DATA_TBL1,DTBL_REG),R0	;
+;;;	MOV.L	@R0,R1_REG					; R1=_SEQ_KND_T_TOP
+	MOV.L	R0,R1_REG					; R1=_SEQ_KND_T_TOP
+	MOV	R9_REG,R2_REG					; ﾀｲﾏ番号PUSH
+	FAR_JSR	#_TMR_CNT_ADR_BIT_MAKE,R0			; input R1,R2 /ANS=R1:ADR R0:BIT
+
+	DI_PUSH_SR_SH3	WK_REG1=R2,WK_REG2=R4			;
+	NOT	R0,R0						;
+	MOV.B	@R1,R3						;
+	AND	R0,R3						; BIT--CLR
+	MOV.B	R3,@R1						;
+	EI_POP_SR_SH3 						;
+
+;	------ IDEL ------
+WCTR_S98							; Mreg(ｽﾀｰﾄ指令OFF)
+	XOR	A_REG,A_REG
+
+WCTR_SEND:
+	SUB_END
+	M_RTS
+
+;	***************************************************
+;	***						***
+;	***	ﾀｲﾏ,ｶｳﾝﾀ番号からのｱﾄﾞﾚｽ,ﾋﾞｯﾄ作成	***
+;	***						***
+;	***************************************************
+;	MOV.L	@(TM_KND_T_TOP-_SEQ_DATA_TBL1,DTBL_REG),R0	;
+;	MOV.L	@R0,R1						; R1=_SEQ_KND_T_TOP
+;	MOV	R9,R2						; ﾀｲﾏ番号PUSH
+;	Input R1(TOP_ADR),R2(ﾀｲﾏ番号)
+;	ANS R1:byte adr
+;	ANS R0:bit0~7
+;
+;	USED R0,R1,R2,R4
+;
+_TMR_CNT_ADR_BIT_MAKE
+	SUB_START
+
+	MOV	R2_REG,R0					;
+
+;	---- R0 NO.-->BIT0~7変換----
+	AND	#(BIT3+BIT2+BIT1+BIT0),R0			; ADD 100112 AKIBA
+	MOV.L	#_BIT_DATA_TBL2,R4				;
+	SHLL2	R0						;
+	ADD	R0,R4						;
+	MOV.L	@R4,R0_REG					; (R0=BIT0~BIT7)
+
+	MOV.L	#H'00FF,R4					; ADD 100112 AKIBA
+	CMP/GE	R0,R4						; BIT DATAﾁｪｯｸ IF OVER THEN ERR R4 >= R0
+	BT	_TMR_CNT_ADR_BIT_L				; R4>=R0 JUMP
+	SHLR8	R0						;
+	M_BRA	_TMR_CNT_ADR_BIT_H				;
+	
+_TMR_CNT_ADR_BIT_L
+	MOV.L	#H'0001,R4					; 
+	ADD	R4,R1						; MEM ADR L + 1
+
+_TMR_CNT_ADR_BIT_H
+	SHLR2	R2						; ﾀｲﾏ番号/8
+	SHLR2	R2						; ﾀｲﾏ番号/16 X(R2)...Y(R0)
+	SHLL	R2						; ﾀｲﾏ番号/8 X(R2)...Y(R0) ADD 100112 AKIBA
+	ADD	R2,R1_REG					; TOP+ adr
+
+	SUB_END
+	M_RTS
+
+;********************************************************************
+;* シーケンス応用命令
+;* データ命令
+;********************************************************************
+;	  ------------------------------
+;	+0|	  命令CODE	(  )   |
+;	  ------------------------------
+;	+1|	    空き 	(  )   |
+;	  ------------------------------
+;	+2|	  ﾃﾞｰﾀ上位LH	(  )   |
+;	  ------------------------------
+;	+3|	  ﾃﾞｰﾀ下位LL	(  )   |
+;	  ------------------------------
+
+;	  ------------------------------
+;	+0|	  命令CODE	(  )   |
+;	  ------------------------------
+;	+1|	    空き 	(  )   |
+;	  ------------------------------
+;	+2|	    空き 	(  )   |
+;	  ------------------------------
+;	+3|	    空き 	(  )   |
+;	  ------------------------------
+;	+4|	  ﾃﾞｰﾀHH	(  )   |
+;	  ------------------------------
+;	+5|	  ﾃﾞｰﾀHL 	(  )   |
+;	  ------------------------------
+;	+6|	  ﾃﾞｰﾀLH	(  )   |
+;	  ------------------------------
+;	+7|	  ﾃﾞｰﾀLL 	(  )   |
+;	  ------------------------------
+;
+;	  ------------------------------
+;	+0|	  命令CODE	(  )   |
+;	  ------------------------------
+;	+1|	 ﾒﾓﾘ種別 	(  )   |
+;	  ------------------------------
+;	+2|	  ｱﾄﾞﾚｽ上位	(  )   |
+;	  ------------------------------
+;	+3|	  ｱﾄﾞﾚｽ下位 	(  )   |
+;	  ------------------------------
+;
+;	*********************************************************************
+;	*****	Data Set command			8*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_DSETWI_CODE:
+	TST	A_REG,A_REG					; 変更 091105AKIBA
+	TST_BIT_OF _DSETWI_CODE_END				; Areg=OFF
+
+	IMD_MAKE1_WORD LBEL1=DSETWI_DT_LH,LBEL2=DSETWI_DT_LL	; ANS.R2
+	MOV	R2,D_REG
+_DSETWI_CODE_END:
+
+;	*********************************************************************
+;	*****	Data Set command			9*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_DSETLI_CODE:
+	TST	A_REG,A_REG					; 変更 091105AKIBA
+	TST_BIT_OF _DSETLI_CODE_END				; Areg=OFF ADD 100114 AKIBA
+
+DSETLI_DT_HH:	MOV.B	#CHG_HHDATA,R3				; HH_BYTE
+DSETLI_DT_HL:	MOV.B	#CHG_HLDATA,R4				; HL_BYTE
+DSETLI_DT_LH:	MOV.B	#CHG_LHDATA,R1				; LH_BYTE
+DSETLI_DT_LL:	MOV.B	#CHG_LLDATA,R2				; LL_BYTE
+
+	MOV.L	@(DSETLI_CALL-_SEQ_CALL_TBL1,CTBL_REG),R0	;
+	JSR	@R0						;
+	NOP							;
+_DSETLI_CODE_END:
+
+;	------------------------------------
+;	----	DSETLI ｻﾌﾞﾙｰﾁﾝ		----
+;	------------------------------------
+;	----------- Input　R3,R4,R1,R2:4byte　data　----------
+	.ALIGN	4
+_DSETLI_SUB:
+	SUB_START
+
+	EXTU.B	R3,R3						; 000x
+	SHLL8	R3						; 00x0
+	SWAP.W	R3,R3						; x000 HHﾃﾞｰﾀ抽出
+								; 16bitｼﾌﾄ+下位WORD0ｸﾘｱ
+	EXTU.B	R4,R4						; 000x
+	SWAP.W	R4,R4						; 0x00 HLﾃﾞｰﾀ抽出
+
+	EXTU.B	R1,R1						; 000x
+	SHLL8	R1						; 00x0 LHﾃﾞｰﾀ抽出
+
+	EXTU.B	R2,R2						; 000x		LLﾃﾞｰﾀ抽出
+	OR	R3,R2						; HH,0,0,LL	HHﾃﾞｰﾀ格納
+	OR	R4,R2						; HH,HL,0,LL	HLﾃﾞｰﾀ格納
+	OR	R1,R2						; HH,HL,LH,LL	LLﾃﾞｰﾀ格納
+
+	MOV.L	R2,D_REG  					; ----4byteALIGN-----
+
+	SUB_END
+	M_RTS
+
+;	*********************************************************************
+;	*****	LDW command				8*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_LDW_CODE:
+	TST	A_REG,A_REG					; 変更 091105AKIBA
+	TST_BIT_OF _LDW_CODE_END				;
+
+	ADR_MAKE1_WORD LBEL1=LDW_ADR,LBEL2=LDW_OFS		; R0=WORDｱﾄﾞﾚｽ
+	MOV.W	@(R0,TOP_REG),D_REG				;
+
+_LDW_CODE_END:
+
+;	*********************************************************************
+;	*****	LDL command				8*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_LDL_CODE:
+	TST	A_REG,A_REG					; 変更 091105AKIBA
+	TST_BIT_OF _LDL_CODE_END				;
+
+	ADR_MAKE1_WORD LBEL1=LDL_ADR,LBEL2=LDL_OFS		; R0=4byte　ALIGNｱﾄﾞﾚｽ
+
+	MOV.L	@(R0,TOP_REG),D_REG  				; ----4byteALIGN-----
+
+_LDL_CODE_END:
+
+;	*********************************************************************
+;	*****	STW command				8*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_STW_CODE:
+	TST	A_REG,A_REG					; 変更 091105AKIBA
+	TST_BIT_OF _STW_CODE_END				;
+
+	ADR_MAKE1_WORD LBEL1=STW_ADR,LBEL2=STW_OFS		; R0=WORDｱﾄﾞﾚｽ
+	MOV.W	D_REG,@(R0,TOP_REG)				;
+_STW_CODE_END:
+
+;	*********************************************************************
+;	*****	STL command				8*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_STL_CODE:
+	TST	A_REG,A_REG					; 変更 091105AKIBA
+	TST_BIT_OF _STL_CODE_END				; 誤記修正 091105AKIBA
+
+	ADR_MAKE1_WORD LBEL1=STL_ADR,LBEL2=STL_OFS		; R0=WORDｱﾄﾞﾚｽ
+	MOV.L	D_REG,@(R0,TOP_REG)				; ----4byteALIGN-----
+_STL_CODE_END:
+
+
+;********************************************************************
+;* シーケンス応用命令
+;* データ演算命令
+;********************************************************************
+
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***		CMP/GT,GE,EQ  Dreg,(MEMword,MEMlong,IMIword )	***
+;	***								***
+;	***		[MEM11,IMI10]					***
+;	*******************************************************************
+;	--------- メモリ------
+	.MACRO	CMPCMD_MEM1 EXIT,LBEL1,LBEL2,LG,CMPCMD,OP1,OP2
+		TST	A_REG,A_REG				;
+		TST_BIT_OF \EXIT				; Areg=0 jump(比較しないときはAreg=0を返す)
+
+		ADR_MAKE1_WORD LBEL1=\LBEL1,LBEL2=\LBEL2	; R0=WORDｱﾄﾞﾚｽ
+		MOV.\LG	@(R0,TOP_REG),R2			; [[W/L]]
+		CMP/\CMPCMD	\OP1,\OP2			; R2 < D_REG THEN T=1
+		MOVT	A_REG					; Areg<= T
+	.ENDM
+
+;	--------- 直接数値----
+	.MACRO	CMPCMD_IMI1 EXIT,LBEL1,LBEL2,LG,CMPCMD,OP1,OP2
+		TST	A_REG,A_REG				;
+		TST_BIT_OF \EXIT				; Areg=0 jump(比較しないときはAreg=0を返す)
+
+		IMD_MAKE1_WORD LBEL1=\LBEL1,LBEL2=\LBEL2	; R2
+		CMP/\CMPCMD	\OP1,\OP2			; R2 < D_REG THEN T=1
+		MOVT	A_REG					; Areg<= T
+	.ENDM
+
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***		NE  Dreg,(MEMword,MEMlong,IMIword )		***
+;	***		(SHの持つ命令の論理が反対)			***
+;	***		[MEM13,IMI12]					***
+;	*******************************************************************
+;	--------- メモリ------
+	.MACRO	CMPCMD_MEM2 EXIT,LBEL1,LBEL2,LG,CMPCMD,OP1,OP2
+		TST	A_REG,A_REG				;
+		TST_BIT_OF \EXIT				; Areg=0 jump(比較しないときはAreg=0を返す)
+
+		ADR_MAKE1_WORD LBEL1=\LBEL1,LBEL2=\LBEL2	; R0=WORDｱﾄﾞﾚｽ
+		MOV.\LG	@(R0,TOP_REG),R2			; [[W/L]]
+		CMP/\CMPCMD	\OP1,\OP2			; R2 < D_REG THEN T=1
+		MOVT	R0					;
+		XOR	#BIT0,R0
+		MOV	R0,A_REG				; Areg<= T
+	.ENDM
+
+;	--------- 直接数値----
+	.MACRO	CMPCMD_IMI2 EXIT,LBEL1,LBEL2,LG,CMPCMD,OP1,OP2
+		TST	A_REG,A_REG				;
+		TST_BIT_OF \EXIT				; Areg=0 jump(比較しないときはAreg=0を返す)
+
+		IMD_MAKE1_WORD LBEL1=\LBEL1,LBEL2=\LBEL2	; R2
+		CMP/\CMPCMD	\OP1,\OP2			; R2 < D_REG THEN T=1
+		MOVT	R0					;
+		XOR	#BIT0,R0
+		MOV	R0,A_REG				; Areg<= T
+	.ENDM
+
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***	ADD,SUB,ANDL,ORL,XORL  (MEMword,MEMlong,IMIword ),Dreg	***
+;	***								***
+;	***		[MEM9,IMI8]					***
+;	*******************************************************************
+;	--------- メモリ------
+	.MACRO	CALCMD_MEM1 EXIT,LBEL1,LBEL2,LG,CALCMD
+		TST	A_REG,A_REG				; 変更 091105AKIBA
+		TST_BIT_OF \EXIT				; Areg=0 jump(比較しないときはAreg=0を返す)
+
+		ADR_MAKE1_WORD LBEL1=\LBEL1,LBEL2=\LBEL2	; R0=WORDｱﾄﾞﾚｽ
+		MOV.\LG	@(R0,TOP_REG),R2			; [[W/L]]
+		\CALCMD	R2,D_REG				; D_REG-R2=D_REG 
+	.ENDM
+
+;	--------- 直接数値----
+	.MACRO	CALCMD_IMI1 EXIT,LBEL1,LBEL2,LG,CALCMD
+		TST	A_REG,A_REG				; 変更 091105AKIBA
+		TST_BIT_OF \EXIT				; Areg=0 jump(比較しないときはAreg=0を返す)
+
+		IMD_MAKE1_WORD LBEL1=\LBEL1,LBEL2=\LBEL2	; R2
+		\CALCMD	R2,D_REG				; D_REG-R2=D_REG 
+	.ENDM
+
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***	AND,XOR,ORのWORD  (MEMword,MEMlong,IMIword ),Dreg	***
+;	***								***
+;	***		[MEM10,IMI9]					***
+;	*******************************************************************
+;	--------- メモリ------
+	.MACRO	CALCMD_MEM1_U EXIT,LBEL1,LBEL2,LG,CALCMD
+		TST	A_REG,A_REG				; 変更 091105AKIBA
+		TST_BIT_OF \EXIT				; Areg=0 jump(比較しないときはAreg=0を返す)
+
+		ADR_MAKE1_WORD LBEL1=\LBEL1,LBEL2=\LBEL2	; R0=WORDｱﾄﾞﾚｽ
+		MOV.\LG	@(R0,TOP_REG),R2			; [[W/L]]
+		EXTU.W	R2,R2
+		\CALCMD	R2,D_REG				; D_REG-R2=D_REG 
+	.ENDM
+
+;	--------- 直接数値----
+	.MACRO	CALCMD_IMI1_U EXIT,LBEL1,LBEL2,LG,CALCMD
+		TST	A_REG,A_REG				; 変更 091105AKIBA
+		TST_BIT_OF \EXIT				; Areg=0 jump(比較しないときはAreg=0を返す)
+
+		IMD_MAKE1_WORD LBEL1=\LBEL1,LBEL2=\LBEL2	; R2
+		EXTU.W	R2,R2
+		\CALCMD	R2,D_REG				; D_REG-R2=D_REG 
+	.ENDM
+
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***		CMP/EQ Dreg,(MEMword,MEMlong,IMIword )		***
+;	***								***
+;	***								***
+;	*******************************************************************
+
+;	*********************************************************************
+;	*****	CMP EQW command				10*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_EQW_CODE:
+	CMPCMD_MEM1 EXIT=_EQW_CODE_END,LBEL1=EQW_ADR,LBEL2=EQW_OFS,LG=W,CMPCMD=EQ,OP1=R2,OP2=D_REG
+_EQW_CODE_END:
+
+;	*********************************************************************
+;	*****	CMP EQL command				10*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_EQL_CODE:
+	CMPCMD_MEM1 EXIT=_EQL_CODE_END,LBEL1=EQL_ADR,LBEL2=EQL_OFS,LG=L,CMPCMD=EQ,OP1=R2,OP2=D_REG
+_EQL_CODE_END:
+
+;	*********************************************************************
+;	*****	CMP EQI command				9*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_EQWI_CODE:
+	CMPCMD_IMI1 EXIT=_EQWI_CODE_END,LBEL1=EQWI_DT_LH,LBEL2=EQWI_DT_LL,LG=NOUSE,CMPCMD=EQ,OP1=R2,OP2=D_REG
+
+_EQWI_CODE_END:
+
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***		CMP/EQの反転 Dreg,(MEMword,MEMlong,IMIword )	***
+;	***								***
+;	***								***
+;	*******************************************************************
+;	*********************************************************************
+;	*****	CMP NEW command				12*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_NEW_CODE:
+	CMPCMD_MEM2 EXIT=_NEW_CODE_END,LBEL1=NEW_ADR,LBEL2=NEW_OFS,LG=W,CMPCMD=EQ,OP1=R2,OP2=D_REG
+_NEW_CODE_END:
+
+;	*********************************************************************
+;	*****	CMP NEL command				12*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_NEL_CODE:
+	CMPCMD_MEM2 EXIT=_NEL_CODE_END,LBEL1=NEL_ADR,LBEL2=NEL_OFS,LG=L,CMPCMD=EQ,OP1=R2,OP2=D_REG
+_NEL_CODE_END:
+
+;	*********************************************************************
+;	*****	CMP NEI command				11*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_NEWI_CODE:
+	CMPCMD_IMI2 EXIT=_NEWI_CODE_END,LBEL1=NEWI_DT_LH,LBEL2=NEWI_DT_LL,LG=NOUSE,CMPCMD=EQ,OP1=R2,OP2=D_REG
+_NEWI_CODE_END:
+
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***		CMP/GT	Dreg,(MEMword,MEMlong,IMIword )		***
+;	***								***
+;	***								***
+;	*******************************************************************
+;	*********************************************************************
+;	*****	CMP GTW command				10*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_GTW_CODE:
+	CMPCMD_MEM1 EXIT=_GTW_CODE_END,LBEL1=GTW_ADR,LBEL2=GTW_OFS,LG=W,CMPCMD=GT,OP1=R2,OP2=D_REG
+_GTW_CODE_END:
+
+;;	ﾏｸﾛ展開の結果
+;;_GTW_CODE:
+;;	AND	N_REG,A_REG					; ARG and NRG
+;;	TST	A_REG,A_REG					;
+;;	TST_BIT_OF _GTW_CODE_END				; Areg=0 jump(比較しないときはAreg=0を返す)
+;;
+;;	ADR_MAKE1_WORD LBEL1=GTW_ADR,LBEL2=GTW_OFS		; R0=WORDｱﾄﾞﾚｽ
+;;	MOV.W	@(R0,TOP_REG),R2				; [[W]]
+;;	CMP/GT	R2,D_REG					; R2 < D_REG THEN T=1
+;;	MOVT	A_REG						; Areg<= T
+;;
+;;_GTW_CODE_END:
+
+;	*********************************************************************
+;	*****	CMP GTL command				10*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_GTL_CODE:
+	CMPCMD_MEM1 EXIT=_GTL_CODE_END,LBEL1=GTL_ADR,LBEL2=GTL_OFS,LG=L,CMPCMD=GT,OP1=R2,OP2=D_REG
+_GTL_CODE_END:
+
+;	*********************************************************************
+;	*****	CMP GTWI command			9*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_GTWI_CODE:
+	CMPCMD_IMI1 EXIT=_GTWI_CODE_END,LBEL1=GTWI_DT_LH,LBEL2=GTWI_DT_LL,LG=NOUSE,CMPCMD=GT,OP1=R2,OP2=D_REG
+_GTWI_CODE_END:
+
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***		CMP/GE	Dreg,(MEMword,MEMlong,IMIword )		***
+;	***								***
+;	***								***
+;	*******************************************************************
+;	*********************************************************************
+;	*****	CMP GEW command				10*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_GEW_CODE:
+	CMPCMD_MEM1 EXIT=_GEW_CODE_END,LBEL1=GEW_ADR,LBEL2=GEW_OFS,LG=W,CMPCMD=GE,OP1=R2,OP2=D_REG
+_GEW_CODE_END:
+
+;	*********************************************************************
+;	*****	CMP GEL command				10*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_GEL_CODE:
+	CMPCMD_MEM1 EXIT=_GEL_CODE_END,LBEL1=GEL_ADR,LBEL2=GEL_OFS,LG=L,CMPCMD=GE,OP1=R2,OP2=D_REG
+_GEL_CODE_END:
+
+;	*********************************************************************
+;	*****	CMP GEWI command			9*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_GEWI_CODE:
+	CMPCMD_IMI1 EXIT=_GEWI_CODE_END,LBEL1=GEWI_DT_LH,LBEL2=GEWI_DT_LL,LG=NOUSE,CMPCMD=GE,OP1=R2,OP2=D_REG
+_GEWI_CODE_END:
+
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***		CMP/LT	Dreg,(MEMword,MEMlong,IMIword )		***
+;	***		=>CMP/GE MEM,DREGで結果BIT反転			***
+;	***								***
+;	*******************************************************************
+;	*********************************************************************
+;	*****	CMP LTW command				10*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_LTW_CODE:
+	CMPCMD_MEM1 EXIT=_LTW_CODE_END,LBEL1=LTW_ADR,LBEL2=LTW_OFS,LG=W,CMPCMD=GT,OP1=D_REG,OP2=R2	; add akiba
+_LTW_CODE_END:
+
+;	*********************************************************************
+;	*****	CMP LTL command				10*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_LTL_CODE:
+	CMPCMD_MEM1 EXIT=_LTL_CODE_END,LBEL1=LTL_ADR,LBEL2=LTL_OFS,LG=L,CMPCMD=GT,OP1=D_REG,OP2=R2	; add akiba
+_LTL_CODE_END:
+
+;	*********************************************************************
+;	*****	CMP LTWI command			9*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_LTWI_CODE:
+	CMPCMD_IMI1 EXIT=_LTWI_CODE_END,LBEL1=LTWI_DT_LH,LBEL2=LTWI_DT_LL,LG=NOUSE,CMPCMD=GT,OP1=D_REG,OP2=R2	; add akiba
+_LTWI_CODE_END:
+
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***		CMP/LE	Dreg,(MEMword,MEMlong,IMIword )		***
+;	***		=>CMP/GT MEM,DREGで結果BIT反転			***
+;	***								***
+;	*******************************************************************
+;	*********************************************************************
+;	*****	CMP LEW command				10*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_LEW_CODE:
+	CMPCMD_MEM1 EXIT=_LEW_CODE_END,LBEL1=LEW_ADR,LBEL2=LEW_OFS,LG=W,CMPCMD=GE,OP1=D_REG,OP2=R2	; add akiba
+_LEW_CODE_END:
+
+;	*********************************************************************
+;	*****	CMP LEL command				10*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_LEL_CODE:
+	CMPCMD_MEM1 EXIT=_LEL_CODE_END,LBEL1=LEL_ADR,LBEL2=LEL_OFS,LG=L,CMPCMD=GE,OP1=D_REG,OP2=R2	; add akiba
+_LEL_CODE_END:
+
+;	*********************************************************************
+;	*****	CMP LEWI command			9*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_LEWI_CODE:
+	CMPCMD_IMI1 EXIT=_LEWI_CODE_END,LBEL1=LEWI_DT_LH,LBEL2=LEWI_DT_LL,LG=NOUSE,CMPCMD=GE,OP1=D_REG,OP2=R2	; add akiba
+_LEWI_CODE_END:
+
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***	AND  (MEMword,MEMlong,IMIword ),Dreg=>Dreg		***
+;	***								***
+;	*******************************************************************
+;	*********************************************************************
+;	*****	ANDW command				10*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_ANDW_CODE:
+	CALCMD_MEM1_U EXIT=_ANDW_CODE_END,LBEL1=ANDW_ADR,LBEL2=ANDW_OFS,LG=W,CALCMD=AND
+_ANDW_CODE_END:
+
+;	*********************************************************************
+;	*****	ANDL command				10*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_ANDL_CODE:
+	CALCMD_MEM1 EXIT=_ANDL_CODE_END,LBEL1=ANDL_ADR,LBEL2=ANDL_OFS,LG=L,CALCMD=AND
+_ANDL_CODE_END:
+
+;	*********************************************************************
+;	*****	ANDWI command				9*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_ANDWI_CODE:
+	CALCMD_IMI1_U EXIT=_ANDWI_CODE_END,LBEL1=ANDWI_DT_LH,LBEL2=ANDWI_DT_LL,LG=NOUSE,CALCMD=AND
+_ANDWI_CODE_END:
+
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***	OR  (MEMword,MEMlong,IMIword ),Dreg=>Dreg		***
+;	***								***
+;	*******************************************************************
+;	*********************************************************************
+;	*****	ORW command				10*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_ORW_CODE:
+	CALCMD_MEM1_U EXIT=_ORW_CODE_END,LBEL1=ORW_ADR,LBEL2=ORW_OFS,LG=W,CALCMD=OR
+_ORW_CODE_END:
+
+;	*********************************************************************
+;	***	ORL command				10*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_ORL_CODE:
+	CALCMD_MEM1 EXIT=_ORL_CODE_END,LBEL1=ORL_ADR,LBEL2=ORL_OFS,LG=L,CALCMD=OR
+_ORL_CODE_END:
+
+;	*********************************************************************
+;	*****	ORWI command				9*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_ORWI_CODE:
+	CALCMD_IMI1_U EXIT=_ORWI_CODE_END,LBEL1=ORWI_DT_LH,LBEL2=ORWI_DT_LL,LG=NOUSE,CALCMD=OR
+_ORWI_CODE_END:
+
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***	XOR  (MEMword,MEMlong,IMIword ),Dreg=>Dreg		***
+;	***								***
+;	*******************************************************************
+;	*********************************************************************
+;	*****	XORW command				10*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_XORW_CODE:
+	CALCMD_MEM1_U EXIT=_XORW_CODE_END,LBEL1=XORW_ADR,LBEL2=XORW_OFS,LG=W,CALCMD=XOR
+_XORW_CODE_END:
+
+;	*********************************************************************
+;	***	XORL command				10*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_XORL_CODE:
+	CALCMD_MEM1 EXIT=_XORL_CODE_END,LBEL1=XORL_ADR,LBEL2=XORL_OFS,LG=L,CALCMD=XOR
+_XORL_CODE_END:
+
+;	*********************************************************************
+;	*****	XORWI command				9*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_XORWI_CODE:
+	CALCMD_IMI1_U EXIT=_XORWI_CODE_END,LBEL1=XORWI_DT_LH,LBEL2=XORWI_DT_LL,LG=NOUSE,CALCMD=XOR
+_XORWI_CODE_END:
+
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***	ADD  (MEMword,MEMlong,IMIword ),Dreg=>Dreg		***
+;	***								***
+;	*******************************************************************
+;	*********************************************************************
+;	*****	ADDW command				9*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_ADDW_CODE:
+	CALCMD_MEM1 EXIT=_ADDW_CODE_END,LBEL1=ADDW_ADR,LBEL2=ADDW_OFS,LG=W,CALCMD=ADD
+_ADDW_CODE_END:
+
+;	*********************************************************************
+;	*****	ADDL command				10*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_ADDL_CODE:
+	CALCMD_MEM1 EXIT=_ADDL_CODE_END,LBEL1=ADDL_ADR,LBEL2=ADDL_OFS,LG=L,CALCMD=ADD
+_ADDL_CODE_END:
+
+;	*********************************************************************
+;	*****	ADDWI command				8*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_ADDWI_CODE:
+	CALCMD_IMI1 EXIT=_ADDWI_CODE_END,LBEL1=ADDWI_DT_LH,LBEL2=ADDWI_DT_LL,LG=NOUSE,CALCMD=ADD
+_ADDWI_CODE_END:
+
+;	*******************************************************************
+;	***								***
+;	***								***
+;	***	SUB  (MEMword,MEMlong,IMIword ),Dreg=>Dreg		***
+;	***								***
+;	*******************************************************************
+;	*********************************************************************
+;	*****	SUBW command				9*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_SUBW_CODE:
+	CALCMD_MEM1 EXIT=_SUBW_CODE_END,LBEL1=SUBW_ADR,LBEL2=SUBW_OFS,LG=W,CALCMD=SUB
+_SUBW_CODE_END:
+
+;	*********************************************************************
+;	*****	SUBL command				10*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_SUBL_CODE:
+	CALCMD_MEM1 EXIT=_SUBL_CODE_END,LBEL1=SUBL_ADR,LBEL2=SUBL_OFS,LG=L,CALCMD=SUB
+_SUBL_CODE_END:
+
+;	*********************************************************************
+;	*****	SUBWI command				8*2		*****
+;	*********************************************************************
+	.ALIGN	4
+_SUBWI_CODE:
+	CALCMD_IMI1 EXIT=_SUBWI_CODE_END,LBEL1=SUBWI_DT_LH,LBEL2=SUBWI_DT_LL,LG=NOUSE,CALCMD=SUB
+_SUBWI_CODE_END:
+
+;	*********************************************************************
+;	*****	End command				8byte		*****
+;	*********************************************************************
+	.ALIGN	4
+_END_CODE:
+	SUB_END					; END命令の中身
+	M_RTS					; 
+_END_CODE_END:
+
+;	*********************************************************************
+;	*****	No Operation command		1step	 4clocks	*****
+;	*********************************************************************
+	.ALIGN	4
+_NOP_CODE:
+	NOP					; no operation
+_NOP_CODE_END:
+
+	.END
+

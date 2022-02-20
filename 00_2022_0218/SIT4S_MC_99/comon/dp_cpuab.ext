@@ -1,0 +1,382 @@
+
+;	========== 2013-12-11[MC]================
+	.GLOBAL		_CPUB_START_COD		;2013-12-11[mc]
+
+
+	.GLOBAL		_DP_COP_CB_LD_MONI_SIG		;SH4-->SH2へ渡す
+	.GLOBAL		_SH4_ORG_DIR_REV		;EC 原点復帰方向(2014-08-09)
+	.GLOBAL		_DP_DBG_CPUAB_DRV_START		;201500408(2015-03-31):運転TEST用[]出荷時はﾌﾟﾛｸﾞﾗﾑ側をはずす
+
+;	--- 2015-07-14[ﾊﾝﾄﾞｲｪｲｸ WDT] ----
+	.GLOBAL		_WDT_A_TO_B_REQ		;
+	.GLOBAL		_WDT_A_TO_B_ANS		;
+	.GLOBAL		_WDT_B_TO_A_REQ		;
+	.GLOBAL		_WDT_B_TO_A_ANS		;
+
+	.GLOBAL		_CPUA_PLS_OUTF		;
+	.GLOBAL		_CPUB_PLS_OUTF		;
+
+	.GLOBAL		_HD_CMP_PLS_A1		;0:00CC=0:0204
+	.GLOBAL		_HD_CMP_PLS_B1		;0:00D0=0:0208
+
+
+	.GLOBAL		_SH4_GPOINT_LNG		;減速距離をCPU-Bに教えるCPU-Bはこれにあわせる(連続時)
+	.GLOBAL		_SH2_GPOINT_LNG		;減速距離をCPU-Bに教えるCPU-Bはこれにあわせる(連続時)
+	.GLOBAL		_SH4_GPOINT_LNGDSP	;表示用 2004-12-20
+	.GLOBAL		_SH2_GPOINT_LNGDSP	;表示用 2004-12-20
+	.GLOBAL		_SH4_GPOINT_SPDDSP	;表示用2004-12-20
+	.GLOBAL		_SH2_GPOINT_SPDDSP	;表示用
+;	----- 2013-06-19----------
+	.GLOBAL		_SH4toSH2_TEPSIG	;
+	.GLOBAL		_SH2toSH4_TEPSIG	;
+	
+;	============== 20060919 DBG=====================
+	.GLOBAL		_SH_POSCTL_SV_SPD	;.SRES	4*2	;[+0:SH4 +4:SH2]
+	.GLOBAL		_SH_POSCTL_RL_SPD	;.SRES	4*2	;[+0:SH4 +4:SH2]
+	.GLOBAL		_SH_POSCTL_ACC		;.SRES	4*2	;
+	.GLOBAL		_SH_POSCTL_OFS		;.SRES	4*2	;
+	.GLOBAL		_SH_POSCTL_SV_ABSPLS	;.SRES	8*2	;
+	.GLOBAL		_SH_POSCTL_RL_ABSPLS	;.SRES	8*2	;
+	.GLOBAL		_SH_POSCTL_PV_ABSPLS	;.SRES	8*2	;
+	.GLOBAL		_SH_POSCTL_REST_PLS	;.SRES	4*2	;
+	.GLOBAL		_SH_POSCTL_CAL_REST	;.SRES	4*2	;演算(SV-PV)
+	.GLOBAL		_SH_POSCTL_HENSA	;.SRES	4*2	;演算(SV-PV)
+	.GLOBAL		_SH_POSCTL_LSIFREQ	;.SRES	4*2	;LSI
+
+;	===========  20070302	===============
+	.GLOBAL		_SH_SQ200_IN		;
+	.GLOBAL		_SH_CNTSTOP_FLG		;
+	.GLOBAL		_SH_OUTPLS_DELT		;
+;	*******************************************
+;	***					***
+;	***	SH2←SH4　ﾊﾝﾄﾞｼｪｲｸ		***
+;	***					***
+;	*******************************************
+	.GLOBAL		_PVX_RNA_INDAT		;生	SH4-->SH2 生
+	.GLOBAL		_PVX_RNA_POSD1		;変換	SH4-->SH2 極性・ｵﾌｾｯﾄ分
+	.GLOBAL		_PVX_RNA_POSD2		;変換	SH4-->SH2 0.5um->1mm+原点
+	.GLOBAL		_PVX_RNA_POSDT		;制御用
+	.GLOBAL		_PVX_RNA_DIGDT		;角度	360.000度程度
+	.GLOBAL		_PVX_SH4_SFTY_IN	;
+	.GLOBAL		_PVX_RNA_PLS_P		;RNAｾﾝｻから求まるｵﾌｾｯﾄﾊﾟﾙｽP
+	.GLOBAL		_EMG_SH4_TO_SH2		;
+	.GLOBAL		_EMG_SH2_TO_SH4		;
+
+	.GLOBAL		_EXQ_SH4_TO_SH2		;2015-07-14
+	.GLOBAL		_EXQ_SH2_TO_SH4		;2015-07-14
+	
+	.GLOBAL		_PVX_SH4_OUTPLS		;
+	.GLOBAL		_SH4_STEP_NO		;工程二重回路ﾁｪｯｸ用
+	.GLOBAL		_SH2_STEP_NO		;工程二重回路ﾁｪｯｸ用
+;;	.GLOBAL		_SH4_NEAR_ZERO		;SH4-->SH2 NEAR ZERO 1:NEAR ZERO
+;;	.GLOBAL		_SH4_CTRL_REDY		;SH4-->SH2 RDY       1:準備完了 0:準備未完
+;;	.GLOBAL		_SH2_NEAR_ZERO		;SH2-->"ACK" SH4ﾏｽﾀ これは使用しない
+;;	.GLOBAL		_SH2_CTRL_REDY		;SH2-->RDY(平等)
+
+	.GLOBAL		_SH4_POS_STS1		;上記信号 SH4==> WRITE SH2 ==>BIT7 CLR
+	.GLOBAL		_SH2_POS_STS1		;上記信号 SH2==> WRITE SH4 ==>BIT7 CLR
+	.GLOBAL		_SH4_CMP_STS1		;(二重化異常信号 203同様      生)
+	.GLOBAL		_SH2_CMP_STS1		;(二重化異常信号 273同様      生)
+	.GLOBAL		_SH4_CMP_STS2		;(二重化異常信号 BIT0位置決中 生)
+	.GLOBAL		_SH2_CMP_STS2		;(二重化異常信号 BIT0位置決中 生)
+
+;	====================================
+	.GLOBAL		_SH4_HD_CTRL_REDY	;準備完了にしたい
+	.GLOBAL		_SH2_HD_CTRL_REDY	;準備完了にしたい
+	.GLOBAL		_SH4_HD_CTRL_BUSY	;準備未完了にしたい
+	.GLOBAL		_SH2_HD_CTRL_BUSY	;準備未完了にしたい
+	.GLOBAL		_SH4_HD_POS_START	;起動したい
+	.GLOBAL		_SH2_HD_POS_START	;起動したい
+	.GLOBAL		_SH4_HD_SFTY_AUTO	;AUTOにしたい/安全一工程,連続ｶｳﾝﾀ
+	.GLOBAL		_SH2_HD_SFTY_AUTO	;AUTOにしたい/安全一工程,連続ｶｳﾝﾀ
+	.GLOBAL		_SH4_HD_NEAR_ZERO	;ﾆｱｾﾞﾛ処理を行いたい
+	.GLOBAL		_SH2_HD_NEAR_ZERO	;ﾆｱｾﾞﾛ処理を行いたい
+	.GLOBAL		_SH4_HD_CNT_STOP	;連続停止<工夫必要>
+	.GLOBAL		_SH2_HD_CNT_STOP	;連続停止<工夫必要>
+	.GLOBAL		_SH4_HD_STEP_END	;位置決め完了としたい
+	.GLOBAL		_SH2_HD_STEP_END	;位置決め完了としたい
+	.GLOBAL		_SH4_HD_CNT_CNT		;連続停止しないで次へいくぞ
+	.GLOBAL		_SH2_HD_CNT_CNT		;連続停止しないで次へいくぞ
+
+;	===== 2002-09-12 SAITO =====
+;	SELF CHECK HAND SHAKE FLG
+	.GLOBAL		_CPUA_SELF_HAND_FLG	; CPUAの状態ﾌﾗｸﾞ
+	.GLOBAL		_CPUB_SELF_HAND_FLG	; CPUBの状態ﾌﾗｸﾞ
+
+;	==== 2004-03-01 同期ｽﾞﾚ測定用時間 =====
+	.GLOBAL		_CPU_CTRL_CLK		;(同期ｽﾞﾚ測定ﾀｲﾑｽﾀﾝﾌﾟ)
+;	***********************************
+;	***				***
+;	***	残りパルス関連		***
+;	***				***
+;	***********************************
+	.GLOBAL		_SH4_CNT_REST_PLS	;連続の切替時残りパルス
+	.GLOBAL		_SH4_LNGH_ADD_SR	;安全一行程,一行程 起動時移動量
+	.GLOBAL		_SH4_REST_PLS_SR	;安全一行程,一行程 起動時残ﾊﾟﾙｽ
+	.GLOBAL		_SH4_REST_PLS_RL	;安全一行程,一行程 REAL-TIME残ﾊﾟﾙｽ
+	.GLOBAL		_SH4_BAS_FRQ_SV		;ﾍﾞｰｽ周波数設定
+	.GLOBAL		_SH4_TOP_FRQ_SV		;TOP周波数設定
+	.GLOBAL		_SH4_NOW_FRQ_PV		;TOP周波数実測
+	
+	.GLOBAL		_SH4_PLSI_ACCS		;加減速度
+	.GLOBAL		_SH4_PLSI_LATE		;24
+	
+	.GLOBAL		_SH4_LOT_CNT_A		;上記のﾃﾞｰﾀ書き込み時の回転ロット数
+	.GLOBAL		_SH4_LOT_STEP_A		;上記のﾃﾞｰﾀ書き込み時のｽﾃｯﾌﾟ数
+	.GLOBAL		_SH4_REST_SR_HF		;ﾊﾝﾄﾞｼｪｲｸﾌﾗｸﾞ SH4=>SH2 書いたぞ!起動時移動量
+	.GLOBAL		_SH4_REST_RL_HF		;ﾊﾝﾄﾞｼｪｲｸﾌﾗｸﾞ SH4=>SH2 書いたぞ!起動時残りﾊﾟﾙｽ
+	.GLOBAL		_SH4_CNT_REST_HF	;連続の切り替え時残りﾊﾟﾙｽかいたぞ!ﾌﾗｸﾞ
+	
+	.GLOBAL		_SH4_STEP1_SV_PLS	;
+	.GLOBAL		_SH4_STEP2_SV_PLS	;
+	.GLOBAL		_SH4_STEP3_SV_PLS	;
+	.GLOBAL		_SH4_STEP4_SV_PLS	;
+	.GLOBAL		_SH4_STEP5_SV_PLS	;
+	.GLOBAL		_SH4_STEP1_PV_PLS	;
+	.GLOBAL		_SH4_STEP2_PV_PLS	;
+	.GLOBAL		_SH4_STEP3_PV_PLS	;
+	.GLOBAL		_SH4_STEP4_PV_PLS	;
+	.GLOBAL		_SH4_STEP5_PV_PLS	;
+	.GLOBAL		_SH4_STEP1_REST_P	;
+	.GLOBAL		_SH4_STEP2_REST_P	;
+	.GLOBAL		_SH4_STEP3_REST_P	;
+	.GLOBAL		_SH4_STEP4_REST_P	;
+	.GLOBAL		_SH4_STEP5_REST_P	;
+	.GLOBAL		_SH4_STEP1_FRQ		;
+	.GLOBAL		_SH4_STEP2_FRQ		;
+	.GLOBAL		_SH4_STEP3_FRQ		;
+	.GLOBAL		_SH4_STEP4_FRQ		;
+	.GLOBAL		_SH4_STEP5_FRQ		;
+	.GLOBAL		_SH4_STEP1_TIM		;
+	.GLOBAL		_SH4_STEP2_TIM		;
+	.GLOBAL		_SH4_STEP3_TIM		;
+	.GLOBAL		_SH4_STEP4_TIM		;
+	.GLOBAL		_SH4_STEP5_TIM		;
+	.GLOBAL		_SH4_TOTAL_PLS		;
+	.GLOBAL		_SH4_ADD_PLS		;
+	.GLOBAL		_SH4_STEP_SV_PLS	;
+	.GLOBAL		_SH4_STEP_PV_PLS	;
+	.GLOBAL		_SH4_STEP_REST_P	;
+	.GLOBAL		_SH4_STEP_FRQ		;
+	.GLOBAL		_SH4_STEP_TIM		;
+	.GLOBAL		_SH4_NOW_STEP		;
+
+	.GLOBAL		_SH2_CNT_REST_PLS	;(未使用 参考)
+	.GLOBAL		_SH2_LNGH_ADD_SR	;安全一行程,一行程 起動時移動量
+	.GLOBAL		_SH2_REST_PLS_SR	;安全一行程,一行程 起動時残ﾊﾟﾙｽ
+	.GLOBAL		_SH2_REST_PLS_RL	;安全一行程,一行程 REAL-TIME残ﾊﾟﾙｽ
+
+	.GLOBAL		_SH2_BAS_FRQ_SV		;ﾍﾞｰｽ周波数設定
+	.GLOBAL		_SH2_TOP_FRQ_SV		;TOP周波数設定
+	.GLOBAL		_SH2_NOW_FRQ_PV		;TOP周波数実測
+
+	.GLOBAL		_SH2_PLSI_ACCS		;加減速度
+	.GLOBAL		_SH2_PLSI_LATE		;24
+
+	.GLOBAL		_SH2_LOT_CNT_A		;上記のﾃﾞｰﾀ書き込み時の回転ロット数
+	.GLOBAL		_SH2_LOT_STEP_A		;上記のﾃﾞｰﾀ書き込み時のｽﾃｯﾌﾟ数
+	.GLOBAL		_SH2_REST_SR_HF		;ﾊﾝﾄﾞｼｪｲｸﾌﾗｸﾞ SH4=>SH2 書いたぞ!起動時移動量
+	.GLOBAL		_SH2_REST_RL_HF		;ﾊﾝﾄﾞｼｪｲｸﾌﾗｸﾞ SH4=>SH2 書いたぞ!起動時残りﾊﾟﾙｽ
+	.GLOBAL		_SH2_CNT_REST_HF	;(未使用　ｸﾘｱのみ)
+
+	.GLOBAL		_SH2_STEP1_SV_PLS	;
+	.GLOBAL		_SH2_STEP2_SV_PLS	;
+	.GLOBAL		_SH2_STEP3_SV_PLS	;
+	.GLOBAL		_SH2_STEP4_SV_PLS	;
+	.GLOBAL		_SH2_STEP5_SV_PLS	;
+	.GLOBAL		_SH2_STEP1_PV_PLS	;
+	.GLOBAL		_SH2_STEP2_PV_PLS	;
+	.GLOBAL		_SH2_STEP3_PV_PLS	;
+	.GLOBAL		_SH2_STEP4_PV_PLS	;
+	.GLOBAL		_SH2_STEP5_PV_PLS	;
+	.GLOBAL		_SH2_STEP1_REST_P	;
+	.GLOBAL		_SH2_STEP2_REST_P	;
+	.GLOBAL		_SH2_STEP3_REST_P	;
+	.GLOBAL		_SH2_STEP4_REST_P	;
+	.GLOBAL		_SH2_STEP5_REST_P	;
+	.GLOBAL		_SH2_STEP1_FRQ		;
+	.GLOBAL		_SH2_STEP2_FRQ		;
+	.GLOBAL		_SH2_STEP3_FRQ		;
+	.GLOBAL		_SH2_STEP4_FRQ		;
+	.GLOBAL		_SH2_STEP5_FRQ		;
+	.GLOBAL		_SH2_STEP1_TIM		;
+	.GLOBAL		_SH2_STEP2_TIM		;
+	.GLOBAL		_SH2_STEP3_TIM		;
+	.GLOBAL		_SH2_STEP4_TIM		;
+	.GLOBAL		_SH2_STEP5_TIM		;
+	.GLOBAL		_SH2_TOTAL_PLS		;
+	.GLOBAL		_SH2_ADD_PLS		;
+
+	.GLOBAL		_SH2_STEP_SV_PLS	;
+	.GLOBAL		_SH2_STEP_PV_PLS	;
+	.GLOBAL		_SH2_STEP_REST_P	;
+	.GLOBAL		_SH2_STEP_FRQ		;
+	.GLOBAL		_SH2_STEP_TIM		;
+	.GLOBAL		_SH2_NOW_STEP		;
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+	.GLOBAL		_CPUA_IRQ_ERR_INT_CNT1	;
+	.GLOBAL		_CPUA_IRQ_ERR_INT_CNT2	;
+	.GLOBAL		_CPUA_IRQ_ERR_INT_CNT3	;
+	.GLOBAL		_CPUA_IRQ_ERR_INT_CNT4	;
+	.GLOBAL		_CPUA_IRQ_ERR_INT_CNT5	;
+	.GLOBAL		_CPUA_IRQ_ERR_INT_CNT6	;
+	.GLOBAL		_CPUA_IRQ_ERR_INT_CNT7	;
+	.GLOBAL		_CPUA_IRQ_ERR_INT_CNT8	;
+	.GLOBAL		_CPUA_IRQ_ERR_INT_CNT9	;
+	.GLOBAL		_CPUB_IRQ_ERR_INT_CNT1	;
+	.GLOBAL		_CPUB_IRQ_ERR_INT_CNT2	;
+	.GLOBAL		_CPUB_IRQ_ERR_INT_CNT3	;
+	.GLOBAL		_CPUB_IRQ_ERR_INT_CNT4	;
+	.GLOBAL		_CPUB_IRQ_ERR_INT_CNT5	;
+	.GLOBAL		_CPUB_IRQ_ERR_INT_CNT6	;
+	.GLOBAL		_CPUB_IRQ_ERR_INT_CNT7	;
+	.GLOBAL		_CPUB_IRQ_ERR_INT_CNT8	;
+	.GLOBAL		_CPUB_IRQ_ERR_INT_CNT9	;
+
+;	=========== 2006-04-10 =========
+	.GLOBAL		_CPUA_SELF2_STR	;
+	.GLOBAL		_CPUA_SELF2_END	;
+	.GLOBAL		_CPUA_SELF2_CD1	;
+	.GLOBAL		_CPUA_SELF2_CD2	;
+	.GLOBAL		_CPUA_SELF2_CD3	;
+	.GLOBAL		_CPUA_SELF2_CD4	;
+
+	.GLOBAL		_CPUB_SELF2_STR	;
+	.GLOBAL		_CPUB_SELF2_END	;
+	.GLOBAL		_CPUB_SELF2_CD1	;
+	.GLOBAL		_CPUB_SELF2_CD2	;
+	.GLOBAL		_CPUB_SELF2_CD3	;
+	.GLOBAL		_CPUB_SELF2_CD4	;
+
+;	**********************COP2対応*************
+	.GLOBAL		_CPUA_OP_PG1_PLS	;
+	.GLOBAL		_CPUA_OP_OUT1_PLS	;
+	.GLOBAL		_PVOP2_WAIT_CODA		;OP->CPUA
+	.GLOBAL		_PVOP2_WAIT_CODB		;OP->CPUB
+	.GLOBAL		_SVOP2_WAIT_ANSA		;CPUA->OP
+	.GLOBAL		_SVOP2_WAIT_ANSB		;CPUB->OP
+	
+
+;	=============== 2014-05-30===============
+	.GLOBAL		_PVPAB_SH2_AD_DATA	;2013-12-18→2014-02-15→2014-05-30
+	.GLOBAL		_PVPAB_SH2_AD_DAT2	
+	.GLOBAL		_PVPAB_SH2_AD_DAT3	
+	.GLOBAL		_PVPAB_SH2_AD_DAT4	
+	.GLOBAL		_PVPAB_DBG_KYUIN1	
+	.GLOBAL		_PVPAB_DBG_KYUIN2	
+	.GLOBAL		_PVPAB_DBG_KYUIN3	
+
+
+;	---------- 2014-02-05-------------
+;	CPUBが常に最小荷重をｻﾝﾌﾟﾘﾝｸﾞ
+;	CPUAは更新及び必要なﾀｲﾐﾝｸﾞをCPUBに教える
+;	H'336
+;
+;	------------- 全区間(ｵｰﾊﾞﾛｰﾄﾞ,ﾛｱﾘﾐｯﾄ用)---------------
+	.GLOBAL		_ATOB_KJYUALL_SMPCLR	;CPUA=>CPUB 1: CPUB=0CLR CPUBは0ｸﾘｱする
+	.GLOBAL		_ATOB_KJYUALL_SMPSTART	;CPUA= 0->1 1->0         CPUBは参照のみ
+
+;	------------- 区間 ﾄﾚﾝﾄﾞ用---------------
+	.GLOBAL		_ATOB_KJYUTRD_SMPCLR	;CPUA=>CPUB 1: CPUB=0CLR CPUBは0ｸﾘｱする
+	.GLOBAL		_ATOB_KJYUTRD_SMPSTART	;CPUA= 0->1 1->0         CPUBは参照のみ
+
+;	-----------------区間最大荷重(COP1Z)荷重補正用---------------
+
+	.GLOBAL		_PVPAB_KAJLIV_LFT	
+	.GLOBAL		_PVPAB_KAJLIV_RIH	
+	.GLOBAL		_PVPAB_KAJLIV_TTL	
+
+;	----------------- 生荷重符号付き(COP1Z)--------------
+	.GLOBAL		_PVPAB_ARA1_KAJ_L	
+	.GLOBAL		_PVPAB_ARA1_KAJ_R	
+	.GLOBAL		_PVPAB_ARA1_KAJ_T	
+
+;	--------全区間(ｵｰﾊﾞﾛｰﾄﾞ,ﾛﾘﾐｯﾄ用)-------------------
+	.GLOBAL		_BTOA_LFT_MAX		;()
+	.GLOBAL		_BTOA_LFT_MIN		;
+	.GLOBAL		_BTOA_LFT_HAB		;
+
+	.GLOBAL		_BTOA_RIH_MAX		;
+	.GLOBAL		_BTOA_RIH_MIN		;
+	.GLOBAL		_BTOA_RIH_HAB		;
+
+	.GLOBAL		_BTOA_TTL_MAX		;
+	.GLOBAL		_BTOA_TTL_MIN		;
+	.GLOBAL		_BTOA_TTL_HAB		;
+
+;	--------   トレンド用-------------------
+	.GLOBAL		_BTOA_LFT_TRDMAX	;()
+	.GLOBAL		_BTOA_LFT_TRDMIN	;
+	.GLOBAL		_BTOA_LFT_TRDHAB	;
+
+	.GLOBAL		_BTOA_RIH_TRDMAX	;
+	.GLOBAL		_BTOA_RIH_TRDMIN	;
+	.GLOBAL		_BTOA_RIH_TRDHAB	;
+
+	.GLOBAL		_BTOA_TTL_TRDMAX	;
+	.GLOBAL		_BTOA_TTL_TRDMIN	;
+	.GLOBAL		_BTOA_TTL_TRDHAB	;
+	
+;	-------------下に追加----------
+	.GLOBAL		_SH4_HD_HLDSTOP1	;1:ｽﾗｲﾄﾞ待機指令で停止にする 1→0:再起動する /exq,emg 通常時は0
+	.GLOBAL		_SH2_HD_HLDSTOP1	;1:ｽﾗｲﾄﾞ待機指令で停止にする 1→0:再起動する /exq,emg 通常時は0
+
+	.GLOBAL		_SH4_HD_HLDSTOP2	;
+	.GLOBAL		_SH2_HD_HLDSTOP2	;
+
+						;2014-09-13
+	.GLOBAL		_SH4_VLV_SIG		;209.6(ﾊﾟﾙｽ動作),206.0(ACT)
+	.GLOBAL		_SH2_VLV_SIG		;209.6(ﾊﾟﾙｽ動作),206.0(ACT)
+
+
+	.GLOBAL		_SH2_OBJ_ENC360		;ﾓﾆﾀ 2015-03-15
+	.GLOBAL		_SH2_PV_OUT_SPD_PER	;
+	.GLOBAL		_SH2_PV_ENC_SPD_PER	;
+
+;	------- 2015-03-15 ふりこ演算------
+	.GLOBAL		_SH4_DNM_CALC_INFO	;SH4 TO SH2
+	.GLOBAL		_SH2_DNM_CALC_INFO	;SH2 TO SH4
+
+;	------- 2016-04-16-----------------
+	.GLOBAL		_CPUA_SV_STEP		;
+	.GLOBAL		_CPUB_SV_STEP		;
+	.GLOBAL		_CPUA_DNM_DIR_SET	;
+	.GLOBAL		_CPUA_DNM_DIR_NOW	;
+	.GLOBAL		_CPUB_DNM_DIR_SET	;
+	.GLOBAL		_CPUB_DNM_DIR_NOW	;
+
+;
+;_PROC_CMPERR_CHG2016
+;	------2016-10-31---------
+	.GLOBAL		_CPUA_LOT_CHK_FLG	;2016-07-18CHECK
+	.GLOBAL		_CPUB_LOT_CHK_FLG	;2016-07-18CHECK
+	.GLOBAL		_CPUA_LOT_CNT_FLG	;
+	.GLOBAL		_CPUB_LOT_CNT_FLG	;
+	.GLOBAL		_CPUA_CONT_MOD_CNT_PV	;
+	.GLOBAL		_CPUB_CONT_MOD_CNT_PV	;
+	.GLOBAL		_CPUB_DBG_MONI_STP	;2016-08-12
+	.GLOBAL		_CPUB_DBG_MONI_CNT	;2016-08-22
+;	----------------------------------------
+
+;	*******************************************
+;	***		2013-12-02MC追加	***
+;	*******************************************
+	.GLOBAL		_SEQAB_DP_TOP
+	
+;	*******************************************
+;	***					***
+;	***	CPUB=>CPUA			***
+;	***	ROMﾊﾟﾗ:KIND=1			***
+;	***					***
+;	*******************************************
+	.GLOBAL		_CPUBTOA_DAT1_REQADR	;TOP-ADR
+	.GLOBAL		_CPUBTOA_DAT1_REQKND	;種別
+	.GLOBAL		_CPUBTOA_DAT1_REQCNT	;個数
+	.GLOBAL		_CPUBTOA_DAT1_REQCOD	;WR
+	.GLOBAL		_CPUBTOA_DAT1_ACKCOD	;ACK
+	.GLOBAL		_CPUBTOA_DAT1_DATTOP	;256BYTE(128W)

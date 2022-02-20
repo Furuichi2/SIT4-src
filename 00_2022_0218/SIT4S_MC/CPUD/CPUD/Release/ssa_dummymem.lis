@@ -1,0 +1,1678 @@
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE     1
+PROGRAM NAME =
+
+    1                               1     ;       ***************************************************
+    2                               2     ;       ***                                             ***
+    3                               3     ;       ***     ram定義                                 ***
+    4                               4     ;       ***     不要だがｺﾝﾊﾟｲﾙ異常回避のためのmem       ***
+    5                               5     ;       ***                                             ***
+    6                               6     ;       ***************************************************
+    7                               7             .include        "cm_equ1.equ"
+    8                               1 I1  ;       ***************************
+    9                               2 I1  ;       ***     CONST           ***
+   10                               3 I1  ;       ***************************
+   11                               4 I1  
+   12                               5 I1  ;       *****   ビット   *****
+   13          00000001             6 I1  BIT0            .EQU    B'00000001      ;01H
+   14          00000002             7 I1  BIT1            .EQU    B'00000010      ;02H
+   15          00000004             8 I1  BIT2            .EQU    B'00000100      ;04H
+   16          00000008             9 I1  BIT3            .EQU    B'00001000      ;08H
+   17          00000010            10 I1  BIT4            .EQU    B'00010000      ;10H
+   18          00000020            11 I1  BIT5            .EQU    B'00100000      ;20H
+   19          00000040            12 I1  BIT6            .EQU    B'01000000      ;40H
+   20          00000080            13 I1  BIT7            .EQU    B'10000000      ;80H
+   21          00000100            14 I1  BIT8            .EQU    B'0000000100000000      ;0100H
+   22          00000200            15 I1  BIT9            .EQU    B'0000001000000000      ;0200H
+   23          00000400            16 I1  BIT10           .EQU    B'0000010000000000      ;0400H
+   24          00000800            17 I1  BIT11           .EQU    B'0000100000000000      ;0800H
+   25          00001000            18 I1  BIT12           .EQU    B'0001000000000000      ;1000H
+   26          00002000            19 I1  BIT13           .EQU    B'0010000000000000      ;2000H
+   27          00004000            20 I1  BIT14           .EQU    B'0100000000000000      ;4000H
+   28          00008000            21 I1  BIT15           .EQU    B'1000000000000000      ;8000H
+   29          00010000            22 I1  BIT16           .EQU    H'00010000
+   30          00020000            23 I1  BIT17           .EQU    H'00020000
+   31          00040000            24 I1  BIT18           .EQU    H'00040000
+   32          00080000            25 I1  BIT19           .EQU    H'00080000
+   33          00100000            26 I1  BIT20           .EQU    H'00100000
+   34          00200000            27 I1  BIT21           .EQU    H'00200000
+   35          00400000            28 I1  BIT22           .EQU    H'00400000
+   36          00800000            29 I1  BIT23           .EQU    H'00800000
+   37          01000000            30 I1  BIT24           .EQU    H'01000000
+   38          02000000            31 I1  BIT25           .EQU    H'02000000
+   39          04000000            32 I1  BIT26           .EQU    H'04000000
+   40          08000000            33 I1  BIT27           .EQU    H'08000000
+   41          10000000            34 I1  BIT28           .EQU    H'10000000
+   42          20000000            35 I1  BIT29           .EQU    H'20000000
+   43          40000000            36 I1  BIT30           .EQU    H'40000000
+   44          80000000            37 I1  BIT31           .EQU    H'80000000
+   45                              38 I1  
+   46                              39 I1  ;       *****   ビット   *****
+   47          000000FE            40 I1  NBIT0           .EQU    B'11111110              ;NOT 01H
+   48          000000FD            41 I1  NBIT1           .EQU    B'11111101              ;02H
+   49          000000FB            42 I1  NBIT2           .EQU    B'11111011              ;04H
+   50          000000F7            43 I1  NBIT3           .EQU    B'11110111              ;08H
+   51          000000EF            44 I1  NBIT4           .EQU    B'11101111              ;10H
+   52          000000DF            45 I1  NBIT5           .EQU    B'11011111              ;20H
+   53          000000BF            46 I1  NBIT6           .EQU    B'10111111              ;40H
+   54          0000007F            47 I1  NBIT7           .EQU    B'01111111              ;80H
+   55                              48 I1  
+   56          0000FEFF            49 I1  NBIT8           .EQU    B'1111111011111111      ;NOT 01H
+   57          0000FDFF            50 I1  NBIT9           .EQU    B'1111110111111111      ;02H
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE     2
+PROGRAM NAME =
+
+   58          0000FBFF            51 I1  NBIT10          .EQU    B'1111101111111111      ;04H
+   59          0000F7FF            52 I1  NBIT11          .EQU    B'1111011111111111      ;08H
+   60          0000EFFF            53 I1  NBIT12          .EQU    B'1110111111111111      ;10H
+   61          0000DFFF            54 I1  NBIT13          .EQU    B'1101111111111111      ;20H
+   62          0000BFFF            55 I1  NBIT14          .EQU    B'1011111111111111      ;40H
+   63          00007FFF            56 I1  NBIT15          .EQU    B'0111111111111111      ;80H
+   64                              57 I1  
+   65                              58 I1  ;       **** ビット操作命令 *****
+   66          00000000            59 I1  XBIT0           .EQU    D'0             ;
+   67          00000001            60 I1  XBIT1           .EQU    D'1             ;
+   68          00000002            61 I1  XBIT2           .EQU    D'2             ;
+   69          00000003            62 I1  XBIT3           .EQU    D'3             ;
+   70          00000004            63 I1  XBIT4           .EQU    D'4             ;
+   71          00000005            64 I1  XBIT5           .EQU    D'5             ;
+   72          00000006            65 I1  XBIT6           .EQU    D'6             ;
+   73          00000007            66 I1  XBIT7           .EQU    D'7             ;
+   74                              67 I1  
+   75                              68 I1  ;       *******************************************
+   76                              69 I1  ;       ***             sh2/sh3                 ***
+   77                              70 I1  ;       *******************************************
+   78                              71 I1  ;       ================ WORD ｱｸｾｽ//ﾊﾞｲﾄｱｸｾｽ切替 =========
+   79          00000001            72 I1  L_BYTE          .EQU    1               ;
+   80          00000000            73 I1  H_BYTE          .EQU    0               ;
+   81                              74 I1  
+   82                              75 I1  ;/*     =================================       */
+   83                              76 I1  
+   84                              77 I1  _CMPILE_YES     .DEFINE         "1"
+   85                              78 I1  _CMPILE_NO      .DEFINE         "0"
+   86                              79 I1  
+   87                              80 I1  _Debug_YES      .DEFINE         "1"     ;"_Debug_NO"
+   88                              81 I1  _Debug_NO       .DEFINE         "0"     ;yes then abs //no then inc "_Debug_NO"
+   89                              82 I1  
+   90                              83 I1  
+   91                              84 I1  ;       ***************************************************
+   92                              85 I1  ;       ***                                             ***
+   93                              86 I1  ;       ***             ﾊﾞｰｼﾞｮﾝUP完了ﾁｪｯｸﾃﾞｰﾀ           ***
+   94                              87 I1  ;       ***                                             ***
+   95                              88 I1  ;       ***************************************************
+   96          11AB3739            89 I1  _VUPCHECK_EQU           .EQU    D'0296433465
+   97                              90 I1  
+   98                              91 I1  ;/*     ***********************************     */
+   99                              92 I1  ;/*     ***                             ***     */
+  100                              93 I1  ;/*     ***     ROM SUM_CODE            ***     */
+  101                              94 I1  ;/*     ***                             ***     */
+  102                              95 I1  ;/*     ***********************************     */
+  103          5AA53CC3            96 I1  _DUMMY_SUM_CODE         .EQU    H'5AA53CC3
+  104                              97 I1  
+  105                              98 I1  
+  106                              99 I1  
+  107                             100 I1  ;       *******************************************
+  108                             101 I1  ;       ***     2003-07-01 C/B BAKUP            ***
+  109                             102 I1  ;       *******************************************
+  110          5AA51234           103 I1  _CB_BAK_SUM_COD1        .EQU    H'5AA51234
+  111          A55A4321           104 I1  _CB_BAK_SUM_COD2        .EQU    H'A55A4321
+  112          00005678           105 I1  _CB_BAKUP_CMD1          .EQU    H'5678  ;BAKUP
+  113          00001234           106 I1  _CB_BAKUP_CMD2          .EQU    H'1234  ;1BLK MOVE
+  114                             107 I1  
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE     3
+PROGRAM NAME =
+
+  115          00000040           108 I1  _CB_STS_BUF_1BLK        .EQU    64                                      ;1BLK=64byte
+  116          00000008           109 I1  _CB_STS_BUF_BLKMAX      .EQU    8                                       ;8BLK
+  117          00000200           110 I1  _CB_STS_BUF_MAX         .EQU    _CB_STS_BUF_1BLK*_CB_STS_BUF_BLKMAX     ;512byte 64*8
+  118                             111 I1  
+  119                             112 I1  
+  120                             113 I1  ;;_CB_TRD_DT_LNG                .EQU    4               ;DATA LENGTH
+  121          00000004           114 I1  _CB_TRD_DP_CH                   .EQU    4               ;
+  122                             115 I1  
+  123                             116 I1  
+  124          00000080           117 I1  _CB_TRD_SMP_CNT         .EQU    128             ;個数
+  125          00000060           118 I1  _CB_TRD_BEFORE          .EQU    96              ;96点が前
+  126          00000800           119 I1  _CB_TRD_BUF_MAX         .EQU    4*4*128         ;2048byte 4byte*4ch*128個
+  127                             120 I1  
+  128          00000008           121 I1  _CB_TRD_DP_1CNT         .EQU    8               ;8個 128/16
+  129          00000080           122 I1  _CB_TRD_BUF_DP_MAX      .EQU    4*4*8           ;128byte 4byte*4CH*8個
+  130                             123 I1  
+  131                             124 I1  ;       === 2003-07-14 ===
+  132                             125 I1  ;;;_TRD_WORK_1CH_BUF    .EQU    _CB_TRD_BUF_MAX ;1CH で2048ﾊﾞｲﾄまで確保
+  133                             126 I1  
+  134                             127 I1  ;       ==== 2004-01-27 ===
+  135                             128 I1  ;;2018-11-11 _CB_ERR_INFO_MEM   .EQU    64              ;64byte
+  136          00000080           129 I1  _CB_ERR_INFO_MEM        .EQU    128             ;2018-11-11 128byte
+  137          00000008           130 I1  _CB_ERR_INFO_PSIZE      .EQU    8               ;8 PAGE 2018-11-11
+  138                             131 I1  
+  139                             132 I1  ;       ***************************
+  140                             133 I1  ;       ***     2004-02-19      ***
+  141                             134 I1  ;       ***************************
+  142                             135 I1  ;       製品出荷時はYESにすること
+  143                             136 I1  ;       不具合再現試験用にNOにする
+  144                             137 I1  ;
+  145                             138 I1  ;;;;_PLSI_WR_WT_CHG             .DEFINE         "0"     ;YES:WR WAIT 4CLK(NO 3CLK)
+  146                             139 I1  
+  147                             140 I1  ;       ===== 出荷YES =====
+  148                             141 I1  _PLSI_WR_WT_CHG         .DEFINE         "1"     ;YES:WR WAIT 4CLK(NO 3CLK)
+  149                             142 I1  _PLSI_WRITE_WORD        .DEFINE         "1"     ;YES:LSI WORD(NO LONG)
+  150                             143 I1  _PLSI_ERR_CHK1          .DEFINE         "1"     ;YES:位置決めLSI異常検知有効
+  151                             144 I1  _PLSI_ERR_CHK2          .DEFINE         "1"     ;YES:位置決め演算異常検知有効
+  152                             145 I1  _PLSI_ERR_STOP1         .DEFINE         "1"     ;YES:新規異常検知有効(OVER RUN)
+  153                             146 I1  
+  154                             147 I1  
+  155                             148 I1  ;       ====    出荷時YES 2004-03-29====
+  156                             149 I1  _REST_PLS_MODFY         .DEFINE         "1"     ;YES:CPUAに残ﾊﾟﾙｽをあわせる,異常
+  157                             150 I1  ;;;;;_MOTION_ERR_CPU_B  .DEFINE         "1"     ;YES:CPU-Bのﾓｰｼｮﾝ異常関連(1対1にする)
+  158                             151 I1  
+  159                             152 I1  
+  160                             153 I1  
+  161                             154 I1  ;       ====    出荷時必ず・絶対 "NO" 2004-04-14(絶対NOで出荷)====
+  162                             155 I1  _CPU_A_ERR_STOP         .DEFINE         "0"     ;YES:CPU-A異常検出をやめる。Bのﾃﾞﾊﾞｯｸ用
+  163                             156 I1  ;;;;;0          .DEFINE         "1"     ;YES:CPU-A異常検出をやめる。Bのﾃﾞﾊﾞｯｸ用
+  164                             157 I1  
+  165                             158 I1  
+  166                             159 I1  ;       ====    出荷時必ず・絶対 "NO" 2004-12-20(絶対NOで出荷)====
+  167                             160 I1  _CPU_B_ERR_STOP         .DEFINE         "0"     ;YES:CPU-B異常検出をやめる。Aのﾃﾞﾊﾞｯｸ用
+  168                             161 I1  _CPU_B_CTRL_STOP        .DEFINE         "0"     ;YES:CPU-B制御をやめる。Aのﾃﾞﾊﾞｯｸ用
+  169                             162 I1  
+  170                             163 I1  ;       ==== どうしても回避できない異常====
+  171                             164 I1  _CPUAB_ERR_STOP_CNT     .DEFINE         "1"     ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE     4
+PROGRAM NAME =
+
+  172                             165 I1  
+  173                             166 I1  ;       ***************************
+  174                             167 I1  ;       ***                     ***
+  175                             168 I1  ;       ***     2006-09-19      ***
+  176                             169 I1  ;       ***                     ***
+  177                             170 I1  ;       ***************************
+  178                             171 I1  _LSI_SOFT_CAL_ENB       .DEFINE         "1"
+  179                             172 I1  ;;1     .DEFINE         "0"
+  180                             173 I1  
+  181                             174 I1  
+  182                             175 I1  
+  183                             176 I1  ;       ***************************
+  184                             177 I1  ;       ***                     ***
+  185                             178 I1  ;       ***     2008-09-16      ***
+  186                             179 I1  ;       ***                     ***
+  187                             180 I1  ;       ***************************
+  188                             181 I1  _EMG_MINI               .DEFINE         "1"     ;YES:EMG処理の簡略化
+  189                             182 I1  
+  190                             183 I1  
+  191                             184 I1  ;       ***************************
+  192                             185 I1  ;       ***                     ***
+  193                             186 I1  ;       ***                     ***
+  194                             187 I1  ;       ***                     ***
+  195                             188 I1  ;       ***************************
+  196                             189 I1  _CPUB_TBLCURV           .DEFINE         "1"     ;YES:曲線ﾃｰﾌﾞﾙ(CPUAと同じ) NO:直線タイプ
+  197                             190 I1  ;;1             .DEFINE         "0"     ;YES:曲線ﾃｰﾌﾞﾙ(CPUAと同じ) NO:直線タイプ
+  198                             191 I1  
+  199                             192 I1  
+  200                             193 I1  
+  201                             194 I1  
+  202                             195 I1  ;       ***************************
+  203                             196 I1  ;       ***                     ***
+  204                             197 I1  ;       ***     2013-12-05      ***
+  205                             198 I1  ;       ***                     ***
+  206                             199 I1  ;       ***************************
+  207                             200 I1  _MC_FUNC1_NO            .DEFINE         "0"     ;NO!:異常等の機能をはずす
+  208                             201 I1  
+  209                             202 I1  
+  210          00009876           203 I1  _START_REQ_COD          .EQU    H'9876  ;CPUD=>CPUA
+  211          00004321           204 I1  _START_ACK_COD          .EQU    H'4321  ;
+  212                             205 I1  
+  213                             206 I1  
+  214                             207 I1  
+  215                             208 I1  
+  216                             209 I1  ;       ***************************
+  217                             210 I1  ;       ***                     ***
+  218                             211 I1  ;       ***     2014-03-20      ***
+  219                             212 I1  ;       ***                     ***
+  220                             213 I1  ;       ***************************
+  221                             214 I1  _KJYU_CLS               .DEFINE         "1"     ;YES:反転ﾓｰﾄﾞで荷重でのｸﾛｰｽﾞを行う
+  222                             215 I1  
+  223                             216 I1  
+  224                             217 I1  
+  225                             218 I1  
+  226                             219 I1  
+  227                             220 I1  
+  228                             221 I1  
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE     5
+PROGRAM NAME =
+
+  229                             222 I1  
+  230                             223 I1  
+  231                             224 I1  ;//     ***************************
+  232                             225 I1  ;//     ***     2016-10-31      ***
+  233                             226 I1  ;//     ***************************
+  234                             227 I1  ;//     変更箇所確認用  CE2の2重回路対策の修正箇所のMCへの移植
+  235                             228 I1  _PROC_CMPERR_CHG2016    .DEFINE         "1"
+  236                             229 I1  
+  237                             230 I1  ;//     ***********************************
+  238                             231 I1  ;//     ***     2016-10-31(2016-07-28)  ***
+  239                             232 I1  ;//     ***********************************
+  240                             233 I1  ;       [行程異常検知による二重回路異常　早めの検知]
+  241                             234 I1  ;;;_DEBUG_CMPERR_DEBUG  .DEFINE         "1"     ;出荷時は必ずNO!
+  242                             235 I1  _DEBUG_CMPERR_DEBUG     .DEFINE         "0"     ;出荷時は必ずNO!
+  243                             236 I1  
+  244                             237 I1  ;//     ***********************************
+  245                             238 I1  ;//     ***     2016-10-31(2016-07-28)  ***
+  246                             239 I1  ;//     ***********************************
+  247                             240 I1  ;;;_DEBUG_AUTO_START    .DEFINE         "1"     ;出荷時はできればnoとする
+  248                             241 I1  _DEBUG_AUTO_START       .DEFINE         "0"     ;出荷時はできればnoとする
+  249                             242 I1  
+  250                             243 I1  ;//     ***************************
+  251                             244 I1  ;//     ***     2015-07-08      ***
+  252                             245 I1  ;//     ***************************
+  253                             246 I1  ;;_DEBUG_SERVO_PLS_OFF  .DEFINE         "1"     ;出荷時は必ずNO!
+  254                             247 I1  _DEBUG_SERVO_PLS_OFF    .DEFINE         "0"     ;出荷時は必ずNO!
+  255                             248 I1  
+  256                             249 I1  
+  257                             250 I1  
+  258                             251 I1  ;       ***************************************************
+  259                             252 I1  ;       ***     出荷してはいけないデバック情報          ***
+  260                             253 I1  ;       ***     バージョン表示をわざと変にする          ***
+  261                             254 I1  ;       ***************************************************
+  262                             255 I1  ;       MC:S01a ->X
+  263                             256 I1  
+  264                             257 I1   .AIF   0 EQ 1  ;出荷時は必ずNO!
+  265                             258     _DEBUG_SET_ERR_VER      .DEFINE         "1"
+  266                             259      .AELSE
+  267                             260 C       .AIF        0 EQ 1  ;出荷時はできればno
+  268                             261     _DEBUG_SET_ERR_VER      .DEFINE         "1"
+  269                             262         .AELSE
+  270                             263 C   _DEBUG_SET_ERR_VER      .DEFINE         "0"
+  271                             264 C       .AENDI
+  272                             265 C   
+  273                             266 C   
+  274                             267 I1   .AENDI
+  275                               8             .include        "com_et1.equ"
+  276                               1 I1  ;       *******************************************
+  277                               2 I1  ;       ***                                     ***
+  278                               3 I1  ;       ***             ET1関連                 ***
+  279                               4 I1  ;       ***                                     ***
+  280                               5 I1  ;       *******************************************
+  281                               6 I1  ;       ***************************
+  282                               7 I1  ;       ***                     ***
+  283                               8 I1  ;       ***     2006-10-30      ***
+  284                               9 I1  ;       ***                     ***
+  285                              10 I1  ;       ***************************
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE     6
+PROGRAM NAME =
+
+  286          00000100            11 I1  _ET1_CPUAB_BUF_MAX      .EQU    256             ;256byte et1参照
+  287          00008000            12 I1  _ET1_CPUB_ADR_MAX       .EQU    32*1024         ;MEM 32K(0~32767)
+  288                              13 I1  ;;_ET1_CPUA_ADR_MAX     .EQU    256*1024        ;MEM
+  289          00060000            14 I1  _ET1_CPUA_ADR_MAX       .EQU    384*1024        ;MEM 2008-10-18 512K対応??どこで使用してい
+                                          るか不明
+  290                              15 I1                                                  ;et1はmonDにタ言うsる固定値で使っている
+  291          12345678            16 I1  _ET1_INIT_REQ           .EQU    H'12345678      ;CPUB-->ET1
+  292          56789ABC            17 I1  _ET1_INIT_ACK           .EQU    H'56789ABC      ;ET1 -->CPUB
+  293          5A3CC3A5            18 I1  _ET1_DATA_COD           .EQU    H'5A3CC3A5      ;CPUA-->ET1/CPUB-->ET1
+  294                              19 I1  
+  295                              20 I1  
+  296                              21 I1  ;       ======= 2008-10-20========
+  297          00000020            22 I1  _ET1_RDWR2_BUFMAX       .EQU    32              ;32byte
+  298          00001234            23 I1  _ET1_WD_HAND_COD        .EQU    H'1234          ;
+  299                              24 I1  
+  300                              25 I1  
+  301                               9     
+  302 00000000                     10             .SECTION        B,DATA                  ;
+  303                              11             .INCLUDE        "ssa_dummymem.ext"      ;
+  304                               1 I1  ;       ***************************************************
+  305                               2 I1  ;       ***                                             ***
+  306                               3 I1  ;       ***     ram定義                                 ***
+  307                               4 I1  ;       ***     不要だがｺﾝﾊﾟｲﾙ異常回避のためのmem       ***
+  308                               5 I1  ;       ***                                             ***
+  309                               6 I1  ;       ***************************************************
+  310                               7 I1          .GLOBAL         _ITIZI_MEM
+  311                               8 I1  
+  312 00000000                     12             .ALIGN  4                               ;
+  313 00000000 00000004            13     _ITIZI_MEM      .SRES   4                       ;
+  314                              14     
+  315                              15     
+  316                              16             .include        "dp_cpuab.ext"
+  317                               1 I1  
+  318                               2 I1  ;       ========== 2013-12-11[MC]================
+  319                               3 I1          .GLOBAL         _CPUB_START_COD         ;2013-12-11[mc]
+  320                               4 I1  
+  321                               5 I1  
+  322                               6 I1          .GLOBAL         _DP_COP_CB_LD_MONI_SIG          ;SH4-->SH2へ渡す
+  323                               7 I1          .GLOBAL         _SH4_ORG_DIR_REV                ;EC 原点復帰方向(2014-08-09)
+  324                               8 I1          .GLOBAL         _DP_DBG_CPUAB_DRV_START         ;201500408(2015-03-31):運転TEST用[
+                                          ]出荷時はﾌﾟﾛｸﾞﾗﾑ側をはずす
+  325                               9 I1  
+  326                              10 I1  ;       --- 2015-07-14[ﾊﾝﾄﾞｲｪｲｸ WDT] ----
+  327                              11 I1          .GLOBAL         _WDT_A_TO_B_REQ         ;
+  328                              12 I1          .GLOBAL         _WDT_A_TO_B_ANS         ;
+  329                              13 I1          .GLOBAL         _WDT_B_TO_A_REQ         ;
+  330                              14 I1          .GLOBAL         _WDT_B_TO_A_ANS         ;
+  331                              15 I1  
+  332                              16 I1          .GLOBAL         _CPUA_PLS_OUTF          ;
+  333                              17 I1          .GLOBAL         _CPUB_PLS_OUTF          ;
+  334                              18 I1  
+  335                              19 I1          .GLOBAL         _HD_CMP_PLS_A1          ;0:00CC=0:0204
+  336                              20 I1          .GLOBAL         _HD_CMP_PLS_B1          ;0:00D0=0:0208
+  337                              21 I1  
+  338                              22 I1  
+  339                              23 I1          .GLOBAL         _SH4_GPOINT_LNG         ;減速距離をCPU-Bに教えるCPU-Bはこれにあわ
+                                          せる(連続時)
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE     7
+PROGRAM NAME =
+
+  340                              24 I1          .GLOBAL         _SH2_GPOINT_LNG         ;減速距離をCPU-Bに教えるCPU-Bはこれにあわ
+                                          せる(連続時)
+  341                              25 I1          .GLOBAL         _SH4_GPOINT_LNGDSP      ;表示用 2004-12-20
+  342                              26 I1          .GLOBAL         _SH2_GPOINT_LNGDSP      ;表示用 2004-12-20
+  343                              27 I1          .GLOBAL         _SH4_GPOINT_SPDDSP      ;表示用2004-12-20
+  344                              28 I1          .GLOBAL         _SH2_GPOINT_SPDDSP      ;表示用
+  345                              29 I1  ;       ----- 2013-06-19----------
+  346                              30 I1          .GLOBAL         _SH4toSH2_TEPSIG        ;
+  347                              31 I1          .GLOBAL         _SH2toSH4_TEPSIG        ;
+  348                              32 I1  
+  349                              33 I1  ;       ============== 20060919 DBG=====================
+  350                              34 I1          .GLOBAL         _SH_POSCTL_SV_SPD       ;.SRES  4*2     ;[+0:SH4 +4:SH2]
+  351                              35 I1          .GLOBAL         _SH_POSCTL_RL_SPD       ;.SRES  4*2     ;[+0:SH4 +4:SH2]
+  352                              36 I1          .GLOBAL         _SH_POSCTL_ACC          ;.SRES  4*2     ;
+  353                              37 I1          .GLOBAL         _SH_POSCTL_OFS          ;.SRES  4*2     ;
+  354                              38 I1          .GLOBAL         _SH_POSCTL_SV_ABSPLS    ;.SRES  8*2     ;
+  355                              39 I1          .GLOBAL         _SH_POSCTL_RL_ABSPLS    ;.SRES  8*2     ;
+  356                              40 I1          .GLOBAL         _SH_POSCTL_PV_ABSPLS    ;.SRES  8*2     ;
+  357                              41 I1          .GLOBAL         _SH_POSCTL_REST_PLS     ;.SRES  4*2     ;
+  358                              42 I1          .GLOBAL         _SH_POSCTL_CAL_REST     ;.SRES  4*2     ;演算(SV-PV)
+  359                              43 I1          .GLOBAL         _SH_POSCTL_HENSA        ;.SRES  4*2     ;演算(SV-PV)
+  360                              44 I1          .GLOBAL         _SH_POSCTL_LSIFREQ      ;.SRES  4*2     ;LSI
+  361                              45 I1  
+  362                              46 I1  ;       ===========  20070302   ===============
+  363                              47 I1          .GLOBAL         _SH_SQ200_IN            ;
+  364                              48 I1          .GLOBAL         _SH_CNTSTOP_FLG         ;
+  365                              49 I1          .GLOBAL         _SH_OUTPLS_DELT         ;
+  366                              50 I1  ;       *******************************************
+  367                              51 I1  ;       ***                                     ***
+  368                              52 I1  ;       ***     SH2←SH4　ﾊﾝﾄﾞｼｪｲｸ              ***
+  369                              53 I1  ;       ***                                     ***
+  370                              54 I1  ;       *******************************************
+  371                              55 I1          .GLOBAL         _PVX_RNA_INDAT          ;生     SH4-->SH2 生
+  372                              56 I1          .GLOBAL         _PVX_RNA_POSD1          ;変換   SH4-->SH2 極性・ｵﾌｾｯﾄ分
+  373                              57 I1          .GLOBAL         _PVX_RNA_POSD2          ;変換   SH4-->SH2 0.5um->1mm+原点
+  374                              58 I1          .GLOBAL         _PVX_RNA_POSDT          ;制御用
+  375                              59 I1          .GLOBAL         _PVX_RNA_DIGDT          ;角度   360.000度程度
+  376                              60 I1          .GLOBAL         _PVX_SH4_SFTY_IN        ;
+  377                              61 I1          .GLOBAL         _PVX_RNA_PLS_P          ;RNAｾﾝｻから求まるｵﾌｾｯﾄﾊﾟﾙｽP
+  378                              62 I1          .GLOBAL         _EMG_SH4_TO_SH2         ;
+  379                              63 I1          .GLOBAL         _EMG_SH2_TO_SH4         ;
+  380                              64 I1  
+  381                              65 I1          .GLOBAL         _EXQ_SH4_TO_SH2         ;2015-07-14
+  382                              66 I1          .GLOBAL         _EXQ_SH2_TO_SH4         ;2015-07-14
+  383                              67 I1  
+  384                              68 I1          .GLOBAL         _PVX_SH4_OUTPLS         ;
+  385                              69 I1          .GLOBAL         _SH4_STEP_NO            ;工程二重回路ﾁｪｯｸ用
+  386                              70 I1          .GLOBAL         _SH2_STEP_NO            ;工程二重回路ﾁｪｯｸ用
+  387                              71 I1  ;;      .GLOBAL         _SH4_NEAR_ZERO          ;SH4-->SH2 NEAR ZERO 1:NEAR ZERO
+  388                              72 I1  ;;      .GLOBAL         _SH4_CTRL_REDY          ;SH4-->SH2 RDY       1:準備完了 0:準備未完
+  389                              73 I1  ;;      .GLOBAL         _SH2_NEAR_ZERO          ;SH2-->"ACK" SH4ﾏｽﾀ これは使用しない
+  390                              74 I1  ;;      .GLOBAL         _SH2_CTRL_REDY          ;SH2-->RDY(平等)
+  391                              75 I1  
+  392                              76 I1          .GLOBAL         _SH4_POS_STS1           ;上記信号 SH4==> WRITE SH2 ==>BIT7 CLR
+  393                              77 I1          .GLOBAL         _SH2_POS_STS1           ;上記信号 SH2==> WRITE SH4 ==>BIT7 CLR
+  394                              78 I1          .GLOBAL         _SH4_CMP_STS1           ;(二重化異常信号 203同様      生)
+  395                              79 I1          .GLOBAL         _SH2_CMP_STS1           ;(二重化異常信号 273同様      生)
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE     8
+PROGRAM NAME =
+
+  396                              80 I1          .GLOBAL         _SH4_CMP_STS2           ;(二重化異常信号 BIT0位置決中 生)
+  397                              81 I1          .GLOBAL         _SH2_CMP_STS2           ;(二重化異常信号 BIT0位置決中 生)
+  398                              82 I1  
+  399                              83 I1  ;       ====================================
+  400                              84 I1          .GLOBAL         _SH4_HD_CTRL_REDY       ;準備完了にしたい
+  401                              85 I1          .GLOBAL         _SH2_HD_CTRL_REDY       ;準備完了にしたい
+  402                              86 I1          .GLOBAL         _SH4_HD_CTRL_BUSY       ;準備未完了にしたい
+  403                              87 I1          .GLOBAL         _SH2_HD_CTRL_BUSY       ;準備未完了にしたい
+  404                              88 I1          .GLOBAL         _SH4_HD_POS_START       ;起動したい
+  405                              89 I1          .GLOBAL         _SH2_HD_POS_START       ;起動したい
+  406                              90 I1          .GLOBAL         _SH4_HD_SFTY_AUTO       ;AUTOにしたい/安全一工程,連続ｶｳﾝﾀ
+  407                              91 I1          .GLOBAL         _SH2_HD_SFTY_AUTO       ;AUTOにしたい/安全一工程,連続ｶｳﾝﾀ
+  408                              92 I1          .GLOBAL         _SH4_HD_NEAR_ZERO       ;ﾆｱｾﾞﾛ処理を行いたい
+  409                              93 I1          .GLOBAL         _SH2_HD_NEAR_ZERO       ;ﾆｱｾﾞﾛ処理を行いたい
+  410                              94 I1          .GLOBAL         _SH4_HD_CNT_STOP        ;連続停止<工夫必要>
+  411                              95 I1          .GLOBAL         _SH2_HD_CNT_STOP        ;連続停止<工夫必要>
+  412                              96 I1          .GLOBAL         _SH4_HD_STEP_END        ;位置決め完了としたい
+  413                              97 I1          .GLOBAL         _SH2_HD_STEP_END        ;位置決め完了としたい
+  414                              98 I1          .GLOBAL         _SH4_HD_CNT_CNT         ;連続停止しないで次へいくぞ
+  415                              99 I1          .GLOBAL         _SH2_HD_CNT_CNT         ;連続停止しないで次へいくぞ
+  416                             100 I1  
+  417                             101 I1  ;       ===== 2002-09-12 SAITO =====
+  418                             102 I1  ;       SELF CHECK HAND SHAKE FLG
+  419                             103 I1          .GLOBAL         _CPUA_SELF_HAND_FLG     ; CPUAの状態ﾌﾗｸﾞ
+  420                             104 I1          .GLOBAL         _CPUB_SELF_HAND_FLG     ; CPUBの状態ﾌﾗｸﾞ
+  421                             105 I1  
+  422                             106 I1  ;       ==== 2004-03-01 同期ｽﾞﾚ測定用時間 =====
+  423                             107 I1          .GLOBAL         _CPU_CTRL_CLK           ;(同期ｽﾞﾚ測定ﾀｲﾑｽﾀﾝﾌﾟ)
+  424                             108 I1  ;       ***********************************
+  425                             109 I1  ;       ***                             ***
+  426                             110 I1  ;       ***     残りパルス関連          ***
+  427                             111 I1  ;       ***                             ***
+  428                             112 I1  ;       ***********************************
+  429                             113 I1          .GLOBAL         _SH4_CNT_REST_PLS       ;連続の切替時残りパルス
+  430                             114 I1          .GLOBAL         _SH4_LNGH_ADD_SR        ;安全一行程,一行程 起動時移動量
+  431                             115 I1          .GLOBAL         _SH4_REST_PLS_SR        ;安全一行程,一行程 起動時残ﾊﾟﾙｽ
+  432                             116 I1          .GLOBAL         _SH4_REST_PLS_RL        ;安全一行程,一行程 REAL-TIME残ﾊﾟﾙｽ
+  433                             117 I1          .GLOBAL         _SH4_BAS_FRQ_SV         ;ﾍﾞｰｽ周波数設定
+  434                             118 I1          .GLOBAL         _SH4_TOP_FRQ_SV         ;TOP周波数設定
+  435                             119 I1          .GLOBAL         _SH4_NOW_FRQ_PV         ;TOP周波数実測
+  436                             120 I1  
+  437                             121 I1          .GLOBAL         _SH4_PLSI_ACCS          ;加減速度
+  438                             122 I1          .GLOBAL         _SH4_PLSI_LATE          ;24
+  439                             123 I1  
+  440                             124 I1          .GLOBAL         _SH4_LOT_CNT_A          ;上記のﾃﾞｰﾀ書き込み時の回転ロット数
+  441                             125 I1          .GLOBAL         _SH4_LOT_STEP_A         ;上記のﾃﾞｰﾀ書き込み時のｽﾃｯﾌﾟ数
+  442                             126 I1          .GLOBAL         _SH4_REST_SR_HF         ;ﾊﾝﾄﾞｼｪｲｸﾌﾗｸﾞ SH4=>SH2 書いたぞ!起動時移動
+                                          量
+  443                             127 I1          .GLOBAL         _SH4_REST_RL_HF         ;ﾊﾝﾄﾞｼｪｲｸﾌﾗｸﾞ SH4=>SH2 書いたぞ!起動時残り
+                                          ﾊﾟﾙｽ
+  444                             128 I1          .GLOBAL         _SH4_CNT_REST_HF        ;連続の切り替え時残りﾊﾟﾙｽかいたぞ!ﾌﾗｸﾞ
+  445                             129 I1  
+  446                             130 I1          .GLOBAL         _SH4_STEP1_SV_PLS       ;
+  447                             131 I1          .GLOBAL         _SH4_STEP2_SV_PLS       ;
+  448                             132 I1          .GLOBAL         _SH4_STEP3_SV_PLS       ;
+  449                             133 I1          .GLOBAL         _SH4_STEP4_SV_PLS       ;
+  450                             134 I1          .GLOBAL         _SH4_STEP5_SV_PLS       ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE     9
+PROGRAM NAME =
+
+  451                             135 I1          .GLOBAL         _SH4_STEP1_PV_PLS       ;
+  452                             136 I1          .GLOBAL         _SH4_STEP2_PV_PLS       ;
+  453                             137 I1          .GLOBAL         _SH4_STEP3_PV_PLS       ;
+  454                             138 I1          .GLOBAL         _SH4_STEP4_PV_PLS       ;
+  455                             139 I1          .GLOBAL         _SH4_STEP5_PV_PLS       ;
+  456                             140 I1          .GLOBAL         _SH4_STEP1_REST_P       ;
+  457                             141 I1          .GLOBAL         _SH4_STEP2_REST_P       ;
+  458                             142 I1          .GLOBAL         _SH4_STEP3_REST_P       ;
+  459                             143 I1          .GLOBAL         _SH4_STEP4_REST_P       ;
+  460                             144 I1          .GLOBAL         _SH4_STEP5_REST_P       ;
+  461                             145 I1          .GLOBAL         _SH4_STEP1_FRQ          ;
+  462                             146 I1          .GLOBAL         _SH4_STEP2_FRQ          ;
+  463                             147 I1          .GLOBAL         _SH4_STEP3_FRQ          ;
+  464                             148 I1          .GLOBAL         _SH4_STEP4_FRQ          ;
+  465                             149 I1          .GLOBAL         _SH4_STEP5_FRQ          ;
+  466                             150 I1          .GLOBAL         _SH4_STEP1_TIM          ;
+  467                             151 I1          .GLOBAL         _SH4_STEP2_TIM          ;
+  468                             152 I1          .GLOBAL         _SH4_STEP3_TIM          ;
+  469                             153 I1          .GLOBAL         _SH4_STEP4_TIM          ;
+  470                             154 I1          .GLOBAL         _SH4_STEP5_TIM          ;
+  471                             155 I1          .GLOBAL         _SH4_TOTAL_PLS          ;
+  472                             156 I1          .GLOBAL         _SH4_ADD_PLS            ;
+  473                             157 I1          .GLOBAL         _SH4_STEP_SV_PLS        ;
+  474                             158 I1          .GLOBAL         _SH4_STEP_PV_PLS        ;
+  475                             159 I1          .GLOBAL         _SH4_STEP_REST_P        ;
+  476                             160 I1          .GLOBAL         _SH4_STEP_FRQ           ;
+  477                             161 I1          .GLOBAL         _SH4_STEP_TIM           ;
+  478                             162 I1          .GLOBAL         _SH4_NOW_STEP           ;
+  479                             163 I1  
+  480                             164 I1          .GLOBAL         _SH2_CNT_REST_PLS       ;(未使用 参考)
+  481                             165 I1          .GLOBAL         _SH2_LNGH_ADD_SR        ;安全一行程,一行程 起動時移動量
+  482                             166 I1          .GLOBAL         _SH2_REST_PLS_SR        ;安全一行程,一行程 起動時残ﾊﾟﾙｽ
+  483                             167 I1          .GLOBAL         _SH2_REST_PLS_RL        ;安全一行程,一行程 REAL-TIME残ﾊﾟﾙｽ
+  484                             168 I1  
+  485                             169 I1          .GLOBAL         _SH2_BAS_FRQ_SV         ;ﾍﾞｰｽ周波数設定
+  486                             170 I1          .GLOBAL         _SH2_TOP_FRQ_SV         ;TOP周波数設定
+  487                             171 I1          .GLOBAL         _SH2_NOW_FRQ_PV         ;TOP周波数実測
+  488                             172 I1  
+  489                             173 I1          .GLOBAL         _SH2_PLSI_ACCS          ;加減速度
+  490                             174 I1          .GLOBAL         _SH2_PLSI_LATE          ;24
+  491                             175 I1  
+  492                             176 I1          .GLOBAL         _SH2_LOT_CNT_A          ;上記のﾃﾞｰﾀ書き込み時の回転ロット数
+  493                             177 I1          .GLOBAL         _SH2_LOT_STEP_A         ;上記のﾃﾞｰﾀ書き込み時のｽﾃｯﾌﾟ数
+  494                             178 I1          .GLOBAL         _SH2_REST_SR_HF         ;ﾊﾝﾄﾞｼｪｲｸﾌﾗｸﾞ SH4=>SH2 書いたぞ!起動時移動
+                                          量
+  495                             179 I1          .GLOBAL         _SH2_REST_RL_HF         ;ﾊﾝﾄﾞｼｪｲｸﾌﾗｸﾞ SH4=>SH2 書いたぞ!起動時残り
+                                          ﾊﾟﾙｽ
+  496                             180 I1          .GLOBAL         _SH2_CNT_REST_HF        ;(未使用　ｸﾘｱのみ)
+  497                             181 I1  
+  498                             182 I1          .GLOBAL         _SH2_STEP1_SV_PLS       ;
+  499                             183 I1          .GLOBAL         _SH2_STEP2_SV_PLS       ;
+  500                             184 I1          .GLOBAL         _SH2_STEP3_SV_PLS       ;
+  501                             185 I1          .GLOBAL         _SH2_STEP4_SV_PLS       ;
+  502                             186 I1          .GLOBAL         _SH2_STEP5_SV_PLS       ;
+  503                             187 I1          .GLOBAL         _SH2_STEP1_PV_PLS       ;
+  504                             188 I1          .GLOBAL         _SH2_STEP2_PV_PLS       ;
+  505                             189 I1          .GLOBAL         _SH2_STEP3_PV_PLS       ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    10
+PROGRAM NAME =
+
+  506                             190 I1          .GLOBAL         _SH2_STEP4_PV_PLS       ;
+  507                             191 I1          .GLOBAL         _SH2_STEP5_PV_PLS       ;
+  508                             192 I1          .GLOBAL         _SH2_STEP1_REST_P       ;
+  509                             193 I1          .GLOBAL         _SH2_STEP2_REST_P       ;
+  510                             194 I1          .GLOBAL         _SH2_STEP3_REST_P       ;
+  511                             195 I1          .GLOBAL         _SH2_STEP4_REST_P       ;
+  512                             196 I1          .GLOBAL         _SH2_STEP5_REST_P       ;
+  513                             197 I1          .GLOBAL         _SH2_STEP1_FRQ          ;
+  514                             198 I1          .GLOBAL         _SH2_STEP2_FRQ          ;
+  515                             199 I1          .GLOBAL         _SH2_STEP3_FRQ          ;
+  516                             200 I1          .GLOBAL         _SH2_STEP4_FRQ          ;
+  517                             201 I1          .GLOBAL         _SH2_STEP5_FRQ          ;
+  518                             202 I1          .GLOBAL         _SH2_STEP1_TIM          ;
+  519                             203 I1          .GLOBAL         _SH2_STEP2_TIM          ;
+  520                             204 I1          .GLOBAL         _SH2_STEP3_TIM          ;
+  521                             205 I1          .GLOBAL         _SH2_STEP4_TIM          ;
+  522                             206 I1          .GLOBAL         _SH2_STEP5_TIM          ;
+  523                             207 I1          .GLOBAL         _SH2_TOTAL_PLS          ;
+  524                             208 I1          .GLOBAL         _SH2_ADD_PLS            ;
+  525                             209 I1  
+  526                             210 I1          .GLOBAL         _SH2_STEP_SV_PLS        ;
+  527                             211 I1          .GLOBAL         _SH2_STEP_PV_PLS        ;
+  528                             212 I1          .GLOBAL         _SH2_STEP_REST_P        ;
+  529                             213 I1          .GLOBAL         _SH2_STEP_FRQ           ;
+  530                             214 I1          .GLOBAL         _SH2_STEP_TIM           ;
+  531                             215 I1          .GLOBAL         _SH2_NOW_STEP           ;
+  532                             216 I1  
+  533                             217 I1  ;       *******************************************
+  534                             218 I1  ;       ***                                     ***
+  535                             219 I1  ;       ***                                     ***
+  536                             220 I1  ;       ***                                     ***
+  537                             221 I1  ;       *******************************************
+  538                             222 I1          .GLOBAL         _CPUA_IRQ_ERR_INT_CNT1  ;
+  539                             223 I1          .GLOBAL         _CPUA_IRQ_ERR_INT_CNT2  ;
+  540                             224 I1          .GLOBAL         _CPUA_IRQ_ERR_INT_CNT3  ;
+  541                             225 I1          .GLOBAL         _CPUA_IRQ_ERR_INT_CNT4  ;
+  542                             226 I1          .GLOBAL         _CPUA_IRQ_ERR_INT_CNT5  ;
+  543                             227 I1          .GLOBAL         _CPUA_IRQ_ERR_INT_CNT6  ;
+  544                             228 I1          .GLOBAL         _CPUA_IRQ_ERR_INT_CNT7  ;
+  545                             229 I1          .GLOBAL         _CPUA_IRQ_ERR_INT_CNT8  ;
+  546                             230 I1          .GLOBAL         _CPUA_IRQ_ERR_INT_CNT9  ;
+  547                             231 I1          .GLOBAL         _CPUB_IRQ_ERR_INT_CNT1  ;
+  548                             232 I1          .GLOBAL         _CPUB_IRQ_ERR_INT_CNT2  ;
+  549                             233 I1          .GLOBAL         _CPUB_IRQ_ERR_INT_CNT3  ;
+  550                             234 I1          .GLOBAL         _CPUB_IRQ_ERR_INT_CNT4  ;
+  551                             235 I1          .GLOBAL         _CPUB_IRQ_ERR_INT_CNT5  ;
+  552                             236 I1          .GLOBAL         _CPUB_IRQ_ERR_INT_CNT6  ;
+  553                             237 I1          .GLOBAL         _CPUB_IRQ_ERR_INT_CNT7  ;
+  554                             238 I1          .GLOBAL         _CPUB_IRQ_ERR_INT_CNT8  ;
+  555                             239 I1          .GLOBAL         _CPUB_IRQ_ERR_INT_CNT9  ;
+  556                             240 I1  
+  557                             241 I1  ;       =========== 2006-04-10 =========
+  558                             242 I1          .GLOBAL         _CPUA_SELF2_STR ;
+  559                             243 I1          .GLOBAL         _CPUA_SELF2_END ;
+  560                             244 I1          .GLOBAL         _CPUA_SELF2_CD1 ;
+  561                             245 I1          .GLOBAL         _CPUA_SELF2_CD2 ;
+  562                             246 I1          .GLOBAL         _CPUA_SELF2_CD3 ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    11
+PROGRAM NAME =
+
+  563                             247 I1          .GLOBAL         _CPUA_SELF2_CD4 ;
+  564                             248 I1  
+  565                             249 I1          .GLOBAL         _CPUB_SELF2_STR ;
+  566                             250 I1          .GLOBAL         _CPUB_SELF2_END ;
+  567                             251 I1          .GLOBAL         _CPUB_SELF2_CD1 ;
+  568                             252 I1          .GLOBAL         _CPUB_SELF2_CD2 ;
+  569                             253 I1          .GLOBAL         _CPUB_SELF2_CD3 ;
+  570                             254 I1          .GLOBAL         _CPUB_SELF2_CD4 ;
+  571                             255 I1  
+  572                             256 I1  ;       **********************COP2対応*************
+  573                             257 I1          .GLOBAL         _CPUA_OP_PG1_PLS        ;
+  574                             258 I1          .GLOBAL         _CPUA_OP_OUT1_PLS       ;
+  575                             259 I1          .GLOBAL         _PVOP2_WAIT_CODA                ;OP->CPUA
+  576                             260 I1          .GLOBAL         _PVOP2_WAIT_CODB                ;OP->CPUB
+  577                             261 I1          .GLOBAL         _SVOP2_WAIT_ANSA                ;CPUA->OP
+  578                             262 I1          .GLOBAL         _SVOP2_WAIT_ANSB                ;CPUB->OP
+  579                             263 I1  
+  580                             264 I1  
+  581                             265 I1  ;       =============== 2014-05-30===============
+  582                             266 I1          .GLOBAL         _PVPAB_SH2_AD_DATA      ;2013-12-18→2014-02-15→2014-05-30
+  583                             267 I1          .GLOBAL         _PVPAB_SH2_AD_DAT2
+  584                             268 I1          .GLOBAL         _PVPAB_SH2_AD_DAT3
+  585                             269 I1          .GLOBAL         _PVPAB_SH2_AD_DAT4
+  586                             270 I1          .GLOBAL         _PVPAB_DBG_KYUIN1
+  587                             271 I1          .GLOBAL         _PVPAB_DBG_KYUIN2
+  588                             272 I1          .GLOBAL         _PVPAB_DBG_KYUIN3
+  589                             273 I1  
+  590                             274 I1  
+  591                             275 I1  ;       ---------- 2014-02-05-------------
+  592                             276 I1  ;       CPUBが常に最小荷重をｻﾝﾌﾟﾘﾝｸﾞ
+  593                             277 I1  ;       CPUAは更新及び必要なﾀｲﾐﾝｸﾞをCPUBに教える
+  594                             278 I1  ;       H'336
+  595                             279 I1  ;
+  596                             280 I1  ;       ------------- 全区間(ｵｰﾊﾞﾛｰﾄﾞ,ﾛｱﾘﾐｯﾄ用)---------------
+  597                             281 I1          .GLOBAL         _ATOB_KJYUALL_SMPCLR    ;CPUA=>CPUB 1: CPUB=0CLR CPUBは0ｸﾘｱする
+  598                             282 I1          .GLOBAL         _ATOB_KJYUALL_SMPSTART  ;CPUA= 0->1 1->0         CPUBは参照のみ
+  599                             283 I1  
+  600                             284 I1  ;       ------------- 区間 ﾄﾚﾝﾄﾞ用---------------
+  601                             285 I1          .GLOBAL         _ATOB_KJYUTRD_SMPCLR    ;CPUA=>CPUB 1: CPUB=0CLR CPUBは0ｸﾘｱする
+  602                             286 I1          .GLOBAL         _ATOB_KJYUTRD_SMPSTART  ;CPUA= 0->1 1->0         CPUBは参照のみ
+  603                             287 I1  
+  604                             288 I1  ;       -----------------区間最大荷重(COP1Z)荷重補正用---------------
+  605                             289 I1  
+  606                             290 I1          .GLOBAL         _PVPAB_KAJLIV_LFT
+  607                             291 I1          .GLOBAL         _PVPAB_KAJLIV_RIH
+  608                             292 I1          .GLOBAL         _PVPAB_KAJLIV_TTL
+  609                             293 I1  
+  610                             294 I1  ;       ----------------- 生荷重符号付き(COP1Z)--------------
+  611                             295 I1          .GLOBAL         _PVPAB_ARA1_KAJ_L
+  612                             296 I1          .GLOBAL         _PVPAB_ARA1_KAJ_R
+  613                             297 I1          .GLOBAL         _PVPAB_ARA1_KAJ_T
+  614                             298 I1  
+  615                             299 I1  ;       --------全区間(ｵｰﾊﾞﾛｰﾄﾞ,ﾛﾘﾐｯﾄ用)-------------------
+  616                             300 I1          .GLOBAL         _BTOA_LFT_MAX           ;()
+  617                             301 I1          .GLOBAL         _BTOA_LFT_MIN           ;
+  618                             302 I1          .GLOBAL         _BTOA_LFT_HAB           ;
+  619                             303 I1  
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    12
+PROGRAM NAME =
+
+  620                             304 I1          .GLOBAL         _BTOA_RIH_MAX           ;
+  621                             305 I1          .GLOBAL         _BTOA_RIH_MIN           ;
+  622                             306 I1          .GLOBAL         _BTOA_RIH_HAB           ;
+  623                             307 I1  
+  624                             308 I1          .GLOBAL         _BTOA_TTL_MAX           ;
+  625                             309 I1          .GLOBAL         _BTOA_TTL_MIN           ;
+  626                             310 I1          .GLOBAL         _BTOA_TTL_HAB           ;
+  627                             311 I1  
+  628                             312 I1  ;       --------   トレンド用-------------------
+  629                             313 I1          .GLOBAL         _BTOA_LFT_TRDMAX        ;()
+  630                             314 I1          .GLOBAL         _BTOA_LFT_TRDMIN        ;
+  631                             315 I1          .GLOBAL         _BTOA_LFT_TRDHAB        ;
+  632                             316 I1  
+  633                             317 I1          .GLOBAL         _BTOA_RIH_TRDMAX        ;
+  634                             318 I1          .GLOBAL         _BTOA_RIH_TRDMIN        ;
+  635                             319 I1          .GLOBAL         _BTOA_RIH_TRDHAB        ;
+  636                             320 I1  
+  637                             321 I1          .GLOBAL         _BTOA_TTL_TRDMAX        ;
+  638                             322 I1          .GLOBAL         _BTOA_TTL_TRDMIN        ;
+  639                             323 I1          .GLOBAL         _BTOA_TTL_TRDHAB        ;
+  640                             324 I1  
+  641                             325 I1  ;       -------------下に追加----------
+  642                             326 I1          .GLOBAL         _SH4_HD_HLDSTOP1        ;1:ｽﾗｲﾄﾞ待機指令で停止にする 1→0:再起動す
+                                          る /exq,emg 通常時は0
+  643                             327 I1          .GLOBAL         _SH2_HD_HLDSTOP1        ;1:ｽﾗｲﾄﾞ待機指令で停止にする 1→0:再起動す
+                                          る /exq,emg 通常時は0
+  644                             328 I1  
+  645                             329 I1          .GLOBAL         _SH4_HD_HLDSTOP2        ;
+  646                             330 I1          .GLOBAL         _SH2_HD_HLDSTOP2        ;
+  647                             331 I1  
+  648                             332 I1                                                  ;2014-09-13
+  649                             333 I1          .GLOBAL         _SH4_VLV_SIG            ;209.6(ﾊﾟﾙｽ動作),206.0(ACT)
+  650                             334 I1          .GLOBAL         _SH2_VLV_SIG            ;209.6(ﾊﾟﾙｽ動作),206.0(ACT)
+  651                             335 I1  
+  652                             336 I1  
+  653                             337 I1          .GLOBAL         _SH2_OBJ_ENC360         ;ﾓﾆﾀ 2015-03-15
+  654                             338 I1          .GLOBAL         _SH2_PV_OUT_SPD_PER     ;
+  655                             339 I1          .GLOBAL         _SH2_PV_ENC_SPD_PER     ;
+  656                             340 I1  
+  657                             341 I1  ;       ------- 2015-03-15 ふりこ演算------
+  658                             342 I1          .GLOBAL         _SH4_DNM_CALC_INFO      ;SH4 TO SH2
+  659                             343 I1          .GLOBAL         _SH2_DNM_CALC_INFO      ;SH2 TO SH4
+  660                             344 I1  
+  661                             345 I1  ;       ------- 2016-04-16-----------------
+  662                             346 I1          .GLOBAL         _CPUA_SV_STEP           ;
+  663                             347 I1          .GLOBAL         _CPUB_SV_STEP           ;
+  664                             348 I1          .GLOBAL         _CPUA_DNM_DIR_SET       ;
+  665                             349 I1          .GLOBAL         _CPUA_DNM_DIR_NOW       ;
+  666                             350 I1          .GLOBAL         _CPUB_DNM_DIR_SET       ;
+  667                             351 I1          .GLOBAL         _CPUB_DNM_DIR_NOW       ;
+  668                             352 I1  
+  669                             353 I1  ;
+  670                             354 I1  ;1
+  671                             355 I1  ;       ------2016-10-31---------
+  672                             356 I1          .GLOBAL         _CPUA_LOT_CHK_FLG       ;2016-07-18CHECK
+  673                             357 I1          .GLOBAL         _CPUB_LOT_CHK_FLG       ;2016-07-18CHECK
+  674                             358 I1          .GLOBAL         _CPUA_LOT_CNT_FLG       ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    13
+PROGRAM NAME =
+
+  675                             359 I1          .GLOBAL         _CPUB_LOT_CNT_FLG       ;
+  676                             360 I1          .GLOBAL         _CPUA_CONT_MOD_CNT_PV   ;
+  677                             361 I1          .GLOBAL         _CPUB_CONT_MOD_CNT_PV   ;
+  678                             362 I1          .GLOBAL         _CPUB_DBG_MONI_STP      ;2016-08-12
+  679                             363 I1          .GLOBAL         _CPUB_DBG_MONI_CNT      ;2016-08-22
+  680                             364 I1  ;       ----------------------------------------
+  681                             365 I1  
+  682                             366 I1  ;       *******************************************
+  683                             367 I1  ;       ***             2013-12-02MC追加        ***
+  684                             368 I1  ;       *******************************************
+  685                             369 I1          .GLOBAL         _SEQAB_DP_TOP
+  686                             370 I1  
+  687                             371 I1  ;       *******************************************
+  688                             372 I1  ;       ***                                     ***
+  689                             373 I1  ;       ***     CPUB=>CPUA                      ***
+  690                             374 I1  ;       ***     ROMﾊﾟﾗ:KIND=1                   ***
+  691                             375 I1  ;       ***                                     ***
+  692                             376 I1  ;       *******************************************
+  693                             377 I1          .GLOBAL         _CPUBTOA_DAT1_REQADR    ;TOP-ADR
+  694                             378 I1          .GLOBAL         _CPUBTOA_DAT1_REQKND    ;種別
+  695                             379 I1          .GLOBAL         _CPUBTOA_DAT1_REQCNT    ;個数
+  696                             380 I1          .GLOBAL         _CPUBTOA_DAT1_REQCOD    ;WR
+  697                             381 I1          .GLOBAL         _CPUBTOA_DAT1_ACKCOD    ;ACK
+  698                             382 I1          .GLOBAL         _CPUBTOA_DAT1_DATTOP    ;256BYTE(128W)
+  699                              17             .include        "dp_cpuab.inc"
+  700                               1 I1  ;       *******************************************************************
+  701                               2 I1  ;       ***                                                             ***
+  702                               3 I1  ;       ***                                                             ***
+  703                               4 I1  ;       ***             CPUA<=>CPUB                                     ***
+  704                               5 I1  ;       ***                                                             ***
+  705                               6 I1  ;       ***                                                             ***
+  706                               7 I1  ;       ***                                                             ***
+  707                               8 I1  ;       *******************************************************************
+  708                               9 I1  ;
+  709                              10 I1  ;       *******************************************
+  710                              11 I1  ;       ***                                     ***
+  711                              12 I1  ;       ***     SH2→SH4　ﾊﾝﾄﾞｼｪｲｸ              ***
+  712                              13 I1  ;       ***                                     ***
+  713                              14 I1  ;       *******************************************
+  714 00000000                     15 I1                  .ORG    H'0000
+  715 00000000 00000002            16 I1  _CPUB_START_COD         .SRES   2               ;2013-12-11[mc]
+  716                              17 I1  ;       *******************************************
+  717                              18 I1  ;       ***                                     ***
+  718                              19 I1  ;       ***     SH2←SH4　ﾊﾝﾄﾞｼｪｲｸ              ***
+  719                              20 I1  ;       ***             (2010-12-08)            ***
+  720                              21 I1  ;       *******************************************
+  721 00000040                     22 I1                  .ORG    H'0040
+  722 00000040 00000002            23 I1  _DP_COP_CB_LD_MONI_SIG          .SRES   2       ;SH4-->SH2へ渡す
+  723 00000042 00000002            24 I1  _SH4_ORG_DIR_REV                .SRES   2       ;EC 原点復帰方向(2014-08-09)
+  724 00000044 00000002            25 I1  _DP_DBG_CPUAB_DRV_START         .SRES   2       ;201500408(2015-03-31):運転TEST用[]出荷時
+                                          はﾌﾟﾛｸﾞﾗﾑ側をはずす
+  725                              26 I1  
+  726                              27 I1  ;       --- 2015-07-14[ﾊﾝﾄﾞｲｪｲｸ WDT] ----
+  727 00000046 00000002            28 I1  _WDT_A_TO_B_REQ         .SRES   2       ;
+  728 00000048 00000002            29 I1  _WDT_A_TO_B_ANS         .SRES   2       ;
+  729 0000004A 00000002            30 I1  _WDT_B_TO_A_REQ         .SRES   2       ;
+  730 0000004C 00000002            31 I1  _WDT_B_TO_A_ANS         .SRES   2       ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    14
+PROGRAM NAME =
+
+  731 0000004E 00000002            32 I1  _CPUA_PLS_OUTF          .SRES   2       ;
+  732 00000050 00000002            33 I1  _CPUB_PLS_OUTF          .SRES   2       ;
+  733                              34 I1  
+  734 00000054                     35 I1          .ALIGN  4                       ;2015-07-14追加
+  735 00000054 00000004            36 I1  _HD_CMP_PLS_A1          .SRES   4       ;0:00CC=0:0204
+  736 00000058 00000004            37 I1  _HD_CMP_PLS_B1          .SRES   4       ;0:00D0=0:0208
+  737                              38 I1  
+  738                              39 I1  ;       *******************************************
+  739                              40 I1  ;       ***                                     ***
+  740                              41 I1  ;       ***     SH2←SH4　ﾊﾝﾄﾞｼｪｲｸ              ***
+  741                              42 I1  ;       ***                                     ***
+  742                              43 I1  ;       *******************************************
+  743 00000080                     44 I1                  .ORG    H'0080
+  744                              45 I1  
+  745 00000080                     46 I1          .ALIGN  4                       ;
+  746 00000080 00000004            47 I1  _SH4_GPOINT_LNG         .SRES   4       ;減速距離をCPU-Bに教えるCPU-Bはこれにあわせる(連続
+                                          時)
+  747 00000084 00000004            48 I1  _SH2_GPOINT_LNG         .SRES   4       ;減速距離をCPU-Bに教えるCPU-Bはこれにあわせる(連続
+                                          時)
+  748 00000088 00000004            49 I1  _SH4_GPOINT_LNGDSP      .SRES   4       ;表示用2004-12-20
+  749 0000008C 00000004            50 I1  _SH2_GPOINT_LNGDSP      .SRES   4       ;表示用
+  750 00000090 00000004            51 I1  _SH4_GPOINT_SPDDSP      .SRES   4       ;表示用2004-12-20
+  751 00000094 00000004            52 I1  _SH2_GPOINT_SPDDSP      .SRES   4       ;表示用
+  752                              53 I1  
+  753                              54 I1  ;       ----- 2013-06-19----------
+  754 00000098 00000002            55 I1  _SH4toSH2_TEPSIG        .SRES   2       ;EE
+  755 0000009A 00000002            56 I1  _SH2toSH4_TEPSIG        .SRES   2       ;F0
+  756                              57 I1  
+  757                              58 I1  
+  758                              59 I1  
+  759                              60 I1  
+  760                              61 I1  
+  761                              62 I1  ;--------------- 追加[[[[2013-12-02 MC???]]]
+  762 0000009C 00000002            63 I1  _DPPVP_KAJLIV_LFT               .SRES   2               ;//荷重生（TON）(1word)
+  763 0000009E 00000002            64 I1  _DPPVP_KAJLIV_TTL               .SRES   2               ;//荷重生（TON）(1word)
+  764 000000A0 00000002            65 I1  _DPPVP_KAJLIV_RIH               .SRES   2               ;//荷重生（TON）(1word)
+  765 000000A2 00000002            66 I1  _DPPVP_ARA1_KAJ_R               .SRES   2               ;OPTION 区間最大荷重
+  766 000000A4 00000002            67 I1  _DPPVP_ARA1_KAJ_L               .SRES   2               ;OPTION 区間最大荷重
+  767 000000A6 00000002            68 I1  _DPPVP_ARA1_KAJ_T               .SRES   2               ;OPTION 区間最大荷重TOTALのみ使用
+  768 000000A8 00000002            69 I1  _DPPVP_ARA1_KAJ_T2              .SRES   2               ;OPTION 区間最大荷重TOTALのみ使用
+  769                              70 I1  
+  770                              71 I1  
+  771                              72 I1  ;       ======= 2004-03-08 origin 追加(二重回路対策) ===========
+  772                              73 I1  ;;;;;;;;;[[[仮2013-12-02]]]             .ORG    H'3B00
+  773 000000AC                     74 I1          .ALIGN  4                       ;
+  774 000000AC 00000004            75 I1  _SH4_CNT_REST_PLS       .SRES   4       ;連続の切替時残りパルス
+  775 000000B0 00000004            76 I1  _SH4_LNGH_ADD_SR        .SRES   4       ;安全一行程,一行程 起動時移動量
+  776 000000B4 00000004            77 I1  _SH4_REST_PLS_SR        .SRES   4       ;安全一行程,一行程 起動時残ﾊﾟﾙｽ
+  777 000000B8 00000004            78 I1  _SH4_REST_PLS_RL        .SRES   4       ;安全一行程,一行程 REAL-TIME残ﾊﾟﾙｽ
+  778 000000BC 00000004            79 I1  _SH4_BAS_FRQ_SV         .SRES   4       ;ﾍﾞｰｽ周波数設定
+  779 000000C0 00000004            80 I1  _SH4_TOP_FRQ_SV         .SRES   4       ;TOP周波数設定
+  780 000000C4 00000004            81 I1  _SH4_NOW_FRQ_PV         .SRES   4       ;TOP周波数実測
+  781 000000C8 00000002            82 I1  _SH4_PLSI_ACCS          .SRES   2       ;加減速度
+  782 000000CA 00000002            83 I1  _SH4_PLSI_LATE          .SRES   2       ;24
+  783 000000CC 00000002            84 I1  _SH4_LOT_CNT_A          .SRES   2       ;上記のﾃﾞｰﾀ書き込み時の回転ロット数
+  784 000000CE 00000002            85 I1  _SH4_LOT_STEP_A         .SRES   2       ;上記のﾃﾞｰﾀ書き込み時のｽﾃｯﾌﾟ数
+  785 000000D0 00000002            86 I1  _SH4_REST_SR_HF         .SRES   2       ;ﾊﾝﾄﾞｼｪｲｸﾌﾗｸﾞ SH4=>SH2 書いたぞ!起動時移動量
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    15
+PROGRAM NAME =
+
+  786 000000D2 00000002            87 I1  _SH4_REST_RL_HF         .SRES   2       ;ﾊﾝﾄﾞｼｪｲｸﾌﾗｸﾞ SH4=>SH2 書いたぞ!残りﾊﾟﾙｽ
+  787 000000D4 00000002            88 I1  _SH4_CNT_REST_HF        .SRES   2       ;連続の切り替え時残りﾊﾟﾙｽかいたぞ!ﾌﾗｸﾞ
+  788                              89 I1  
+  789 000000D8                     90 I1          .ALIGN  4                       ;
+  790 000000D8 00000004            91 I1  _SH2_CNT_REST_PLS       .SRES   4       ;
+  791 000000DC 00000004            92 I1  _SH2_LNGH_ADD_SR        .SRES   4       ;安全一行程,一行程 起動時移動量
+  792 000000E0 00000004            93 I1  _SH2_REST_PLS_SR        .SRES   4       ;安全一行程,一行程 起動時残ﾊﾟﾙｽ
+  793 000000E4 00000004            94 I1  _SH2_REST_PLS_RL        .SRES   4       ;安全一行程,一行程 REAL-TIME残ﾊﾟﾙｽ
+  794 000000E8 00000004            95 I1  _SH2_BAS_FRQ_SV         .SRES   4       ;ﾍﾞｰｽ周波数設定
+  795 000000EC 00000004            96 I1  _SH2_TOP_FRQ_SV         .SRES   4       ;TOP周波数設定
+  796 000000F0 00000004            97 I1  _SH2_NOW_FRQ_PV         .SRES   4       ;TOP周波数実測
+  797 000000F4 00000002            98 I1  _SH2_PLSI_ACCS          .SRES   2       ;加減速度
+  798 000000F6 00000002            99 I1  _SH2_PLSI_LATE          .SRES   2       ;24
+  799 000000F8 00000002           100 I1  _SH2_LOT_CNT_A          .SRES   2       ;上記のﾃﾞｰﾀ書き込み時の回転ロット数
+  800 000000FA 00000002           101 I1  _SH2_LOT_STEP_A         .SRES   2       ;上記のﾃﾞｰﾀ書き込み時のｽﾃｯﾌﾟ数
+  801 000000FC 00000002           102 I1  _SH2_REST_SR_HF         .SRES   2       ;ﾊﾝﾄﾞｼｪｲｸﾌﾗｸﾞ SH2=>SH4 書いたぞ!起動時移動量
+  802 000000FE 00000002           103 I1  _SH2_REST_RL_HF         .SRES   2       ;ﾊﾝﾄﾞｼｪｲｸﾌﾗｸﾞ SH2=>SH4 書いたぞ!残りﾊﾟﾙｽ
+  803 00000100 00000002           104 I1  _SH2_CNT_REST_HF        .SRES   2       ;(未使用　ｸﾘｱのみ)
+  804                             105 I1  
+  805                             106 I1  
+  806                             107 I1  
+  807                             108 I1  ;       ======= 連続の内部情報モニタ用 ====
+  808 00000104                    109 I1          .ALIGN  4                       ;
+  809 00000104 00000004           110 I1  _SH4_STEP1_SV_PLS       .SRES   4       ;
+  810 00000108 00000004           111 I1  _SH4_STEP2_SV_PLS       .SRES   4       ;
+  811 0000010C 00000004           112 I1  _SH4_STEP3_SV_PLS       .SRES   4       ;
+  812 00000110 00000004           113 I1  _SH4_STEP4_SV_PLS       .SRES   4       ;
+  813 00000114 00000004           114 I1  _SH4_STEP5_SV_PLS       .SRES   4       ;
+  814 00000118 00000004           115 I1  _SH4_STEP1_PV_PLS       .SRES   4       ;
+  815 0000011C 00000004           116 I1  _SH4_STEP2_PV_PLS       .SRES   4       ;
+  816 00000120 00000004           117 I1  _SH4_STEP3_PV_PLS       .SRES   4       ;
+  817 00000124 00000004           118 I1  _SH4_STEP4_PV_PLS       .SRES   4       ;
+  818 00000128 00000004           119 I1  _SH4_STEP5_PV_PLS       .SRES   4       ;
+  819 0000012C 00000004           120 I1  _SH4_STEP1_REST_P       .SRES   4       ;
+  820 00000130 00000004           121 I1  _SH4_STEP2_REST_P       .SRES   4       ;
+  821 00000134 00000004           122 I1  _SH4_STEP3_REST_P       .SRES   4       ;
+  822 00000138 00000004           123 I1  _SH4_STEP4_REST_P       .SRES   4       ;
+  823 0000013C 00000004           124 I1  _SH4_STEP5_REST_P       .SRES   4       ;
+  824 00000140 00000002           125 I1  _SH4_STEP1_FRQ          .SRES   2       ;
+  825 00000142 00000002           126 I1  _SH4_STEP2_FRQ          .SRES   2       ;
+  826 00000144 00000002           127 I1  _SH4_STEP3_FRQ          .SRES   2       ;
+  827 00000146 00000002           128 I1  _SH4_STEP4_FRQ          .SRES   2       ;
+  828 00000148 00000002           129 I1  _SH4_STEP5_FRQ          .SRES   2       ;
+  829 0000014A 00000002           130 I1  _SH4_STEP1_TIM          .SRES   2       ;
+  830 0000014C 00000002           131 I1  _SH4_STEP2_TIM          .SRES   2       ;
+  831 0000014E 00000002           132 I1  _SH4_STEP3_TIM          .SRES   2       ;
+  832 00000150 00000002           133 I1  _SH4_STEP4_TIM          .SRES   2       ;
+  833 00000152 00000002           134 I1  _SH4_STEP5_TIM          .SRES   2       ;
+  834 00000154                    135 I1          .ALIGN  4                       ;
+  835 00000154 00000004           136 I1  _SH4_TOTAL_PLS          .SRES   4       ;
+  836 00000158 00000004           137 I1  _SH4_ADD_PLS            .SRES   4       ;
+  837                             138 I1  
+  838 0000015C 00000004           139 I1  _SH4_STEP_SV_PLS        .SRES   4       ;
+  839 00000160 00000004           140 I1  _SH4_STEP_PV_PLS        .SRES   4       ;
+  840 00000164 00000004           141 I1  _SH4_STEP_REST_P        .SRES   4       ;
+  841 00000168 00000002           142 I1  _SH4_STEP_FRQ           .SRES   2       ;
+  842 0000016A 00000002           143 I1  _SH4_STEP_TIM           .SRES   2       ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    16
+PROGRAM NAME =
+
+  843 0000016C 00000002           144 I1  _SH4_NOW_STEP           .SRES   2       ;
+  844                             145 I1  
+  845 00000170                    146 I1          .ALIGN  4                       ;
+  846 00000170 00000004           147 I1  _SH2_STEP1_SV_PLS       .SRES   4       ;
+  847 00000174 00000004           148 I1  _SH2_STEP2_SV_PLS       .SRES   4       ;
+  848 00000178 00000004           149 I1  _SH2_STEP3_SV_PLS       .SRES   4       ;
+  849 0000017C 00000004           150 I1  _SH2_STEP4_SV_PLS       .SRES   4       ;
+  850 00000180 00000004           151 I1  _SH2_STEP5_SV_PLS       .SRES   4       ;
+  851 00000184 00000004           152 I1  _SH2_STEP1_PV_PLS       .SRES   4       ;
+  852 00000188 00000004           153 I1  _SH2_STEP2_PV_PLS       .SRES   4       ;
+  853 0000018C 00000004           154 I1  _SH2_STEP3_PV_PLS       .SRES   4       ;
+  854 00000190 00000004           155 I1  _SH2_STEP4_PV_PLS       .SRES   4       ;
+  855 00000194 00000004           156 I1  _SH2_STEP5_PV_PLS       .SRES   4       ;
+  856 00000198 00000004           157 I1  _SH2_STEP1_REST_P       .SRES   4       ;
+  857 0000019C 00000004           158 I1  _SH2_STEP2_REST_P       .SRES   4       ;
+  858 000001A0 00000004           159 I1  _SH2_STEP3_REST_P       .SRES   4       ;
+  859 000001A4 00000004           160 I1  _SH2_STEP4_REST_P       .SRES   4       ;
+  860 000001A8 00000004           161 I1  _SH2_STEP5_REST_P       .SRES   4       ;
+  861 000001AC 00000002           162 I1  _SH2_STEP1_FRQ          .SRES   2       ;
+  862 000001AE 00000002           163 I1  _SH2_STEP2_FRQ          .SRES   2       ;
+  863 000001B0 00000002           164 I1  _SH2_STEP3_FRQ          .SRES   2       ;
+  864 000001B2 00000002           165 I1  _SH2_STEP4_FRQ          .SRES   2       ;
+  865 000001B4 00000002           166 I1  _SH2_STEP5_FRQ          .SRES   2       ;
+  866 000001B6 00000002           167 I1  _SH2_STEP1_TIM          .SRES   2       ;
+  867 000001B8 00000002           168 I1  _SH2_STEP2_TIM          .SRES   2       ;
+  868 000001BA 00000002           169 I1  _SH2_STEP3_TIM          .SRES   2       ;
+  869 000001BC 00000002           170 I1  _SH2_STEP4_TIM          .SRES   2       ;
+  870 000001BE 00000002           171 I1  _SH2_STEP5_TIM          .SRES   2       ;
+  871 000001C0                    172 I1          .ALIGN  4                       ;
+  872                             173 I1  
+  873 000001C0 00000004           174 I1  _SH2_TOTAL_PLS          .SRES   4       ;
+  874 000001C4 00000004           175 I1  _SH2_ADD_PLS            .SRES   4       ;
+  875                             176 I1  
+  876 000001C8 00000004           177 I1  _SH2_STEP_SV_PLS        .SRES   4       ;
+  877 000001CC 00000004           178 I1  _SH2_STEP_PV_PLS        .SRES   4       ;
+  878 000001D0 00000004           179 I1  _SH2_STEP_REST_P        .SRES   4       ;
+  879 000001D4 00000002           180 I1  _SH2_STEP_FRQ           .SRES   2       ;
+  880 000001D6 00000002           181 I1  _SH2_STEP_TIM           .SRES   2       ;
+  881 000001D8 00000002           182 I1  _SH2_NOW_STEP           .SRES   2       ;
+  882                             183 I1  
+  883                             184 I1  ;       ============== 20060919 DBG=====================
+  884 000001DC                    185 I1          .ALIGN  4                       ;
+  885 000001DC 00000008           186 I1  _SH_POSCTL_SV_SPD       .SRES   4*2     ;[+0:SH4 +4:SH2]
+  886 000001E4 00000008           187 I1  _SH_POSCTL_RL_SPD       .SRES   4*2     ;[+0:SH4 +4:SH2]
+  887 000001EC 00000008           188 I1  _SH_POSCTL_ACC          .SRES   4*2     ;
+  888 000001F4 00000008           189 I1  _SH_POSCTL_OFS          .SRES   4*2     ;
+  889 000001FC 00000010           190 I1  _SH_POSCTL_SV_ABSPLS    .SRES   8*2     ;
+  890 0000020C 00000010           191 I1  _SH_POSCTL_RL_ABSPLS    .SRES   8*2     ;
+  891 0000021C 00000010           192 I1  _SH_POSCTL_PV_ABSPLS    .SRES   8*2     ;
+  892 0000022C 00000008           193 I1  _SH_POSCTL_REST_PLS     .SRES   4*2     ;
+  893 00000234 00000008           194 I1  _SH_POSCTL_CAL_REST     .SRES   4*2     ;演算(SV-PV)
+  894 0000023C 00000008           195 I1  _SH_POSCTL_HENSA        .SRES   4*2     ;演算(SV-PV)
+  895 00000244 00000008           196 I1  _SH_POSCTL_LSIFREQ      .SRES   4*2     ;LSI
+  896                             197 I1  
+  897                             198 I1  ;       ===========  20070302   ===============
+  898 0000024C 00000004           199 I1  _SH_SQ200_IN            .SRES   2*2     ;
+  899 00000250 00000004           200 I1  _SH_CNTSTOP_FLG         .SRES   2*2     ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    17
+PROGRAM NAME =
+
+  900 00000254 00000004           201 I1  _SH_OUTPLS_DELT         .SRES   2*2     ;
+  901                             202 I1  
+  902                             203 I1  ;       *******************************************
+  903                             204 I1  ;       ***                                     ***
+  904                             205 I1  ;       ***     SH2←SH4　ﾊﾝﾄﾞｼｪｲｸ              ***
+  905                             206 I1  ;       ***                                     ***
+  906                             207 I1  ;       *******************************************
+  907                             208 I1  ;;;;;;;;;[[[仮2013-12-02]]]             .ORG    H'3F00
+  908 00000258 00000004           209 I1  _PVX_RNA_INDAT          .SRES   4       ;生     SH4-->SH2 生
+  909 0000025C 00000004           210 I1  _PVX_RNA_POSD1          .SRES   4       ;変換   SH4-->SH2 極性・ｵﾌｾｯﾄ分
+  910 00000260 00000004           211 I1  _PVX_RNA_POSD2          .SRES   4       ;変換   SH4-->SH2 0.5um->1mm+原点
+  911 00000264 00000004           212 I1  _PVX_RNA_POSDT          .SRES   4       ;制御用
+  912 00000268 00000004           213 I1  _PVX_RNA_DIGDT          .SRES   4       ;角度   360.0度程度 RNAｾﾝｻから求まる角度
+  913 0000026C 00000004           214 I1  _PVX_SH4_SFTY_IN        .SRES   2+2     ;安全装置(2byte)
+  914 00000270 00000004           215 I1  _PVX_RNA_PLS_P          .SRES   4       ;RNAｾﾝｻから求まるｵﾌｾｯﾄﾊﾟﾙｽP
+  915                             216 I1  ;       -------- 2015-07-14 変更 領域変えない---------
+  916                             217 I1  ;;_EMG_SH4_TO_SH2               .SRES   2+2     ;
+  917                             218 I1  ;;_EMG_SH2_TO_SH4               .SRES   2+2     ;
+  918 00000274 00000002           219 I1  _EMG_SH4_TO_SH2         .SRES   2       ;
+  919 00000276 00000002           220 I1  _EXQ_SH4_TO_SH2         .SRES   2       ;2015-07-14
+  920 00000278 00000002           221 I1  _EMG_SH2_TO_SH4         .SRES   2       ;
+  921 0000027A 00000002           222 I1  _EXQ_SH2_TO_SH4         .SRES   2       ;2015-07-14
+  922                             223 I1  
+  923                             224 I1  
+  924 0000027C 00000008           225 I1  _PVX_SH4_OUTPLS         .SRES   4*2     ;8BYTE
+  925 00000284 00000004           226 I1  _SH4_STEP_NO            .SRES   4       ;工程二重回路ﾁｪｯｸ用
+  926 00000288 00000004           227 I1  _SH2_STEP_NO            .SRES   4       ;工程二重回路ﾁｪｯｸ用
+  927 0000028C 00000002           228 I1  _SH4_POS_STS1           .SRES   2       ;上記信号 SH4==> WRITE SH2 ==>BIT7 CLR
+  928 0000028E 00000002           229 I1  _SH2_POS_STS1           .SRES   2       ;上記信号 SH2==> WRITE SH4 ==>BIT7 CLR
+  929 00000290 00000002           230 I1  _SH4_CMP_STS1           .SRES   2       ;(二重化異常信号 203同様      生)
+  930 00000292 00000002           231 I1  _SH2_CMP_STS1           .SRES   2       ;(二重化異常信号 273同様      生)
+  931 00000294 00000002           232 I1  _SH4_CMP_STS2           .SRES   2       ;(二重化異常信号 BIT0位置決中 生)
+  932 00000296 00000002           233 I1  _SH2_CMP_STS2           .SRES   2       ;(二重化異常信号 BIT0位置決中 生)
+  933                             234 I1  
+  934                             235 I1  ;       ====================================
+  935 00000298 00000002           236 I1  _SH4_HD_CTRL_REDY       .SRES   2       ;準備完了にしたい
+  936 0000029A 00000002           237 I1  _SH2_HD_CTRL_REDY       .SRES   2       ;準備完了にしたい
+  937 0000029C 00000002           238 I1  _SH4_HD_CTRL_BUSY       .SRES   2       ;準備未完了にしたい
+  938 0000029E 00000002           239 I1  _SH2_HD_CTRL_BUSY       .SRES   2       ;準備未完了にしたい
+  939 000002A0 00000002           240 I1  _SH4_HD_POS_START       .SRES   2       ;起動したい
+  940 000002A2 00000002           241 I1  _SH2_HD_POS_START       .SRES   2       ;起動したい
+  941 000002A4 00000002           242 I1  _SH4_HD_SFTY_AUTO       .SRES   2       ;1:AUTOを含めて停止する/安全一工程,連続ｶｳﾝﾀ
+  942 000002A6 00000002           243 I1  _SH2_HD_SFTY_AUTO       .SRES   2       ;1:AUTOを含めて停止する/安全一工程,連続ｶｳﾝﾀ
+  943 000002A8 00000002           244 I1  _SH4_HD_NEAR_ZERO       .SRES   2       ;ﾆｱｾﾞﾛ処理を行いたい(使用済み)
+  944 000002AA 00000002           245 I1  _SH2_HD_NEAR_ZERO       .SRES   2       ;ﾆｱｾﾞﾛ処理を行いたい(使用済み)
+  945 000002AC 00000002           246 I1  _SH4_HD_CNT_STOP        .SRES   2       ;連続停止(使用済み)
+  946 000002AE 00000002           247 I1  _SH2_HD_CNT_STOP        .SRES   2       ;連続停止(使用済み)
+  947 000002B0 00000002           248 I1  _SH4_HD_STEP_END        .SRES   2       ;位置決め完了としたい(使用済み)
+  948 000002B2 00000002           249 I1  _SH2_HD_STEP_END        .SRES   2       ;位置決め完了としたい(使用済み)
+  949 000002B4 00000002           250 I1  _SH4_HD_CNT_CNT         .SRES   2       ;連続停止しないで次へいくぞ
+  950 000002B6 00000002           251 I1  _SH2_HD_CNT_CNT         .SRES   2       ;連続停止しないで次へいくぞ
+  951                             252 I1  
+  952                             253 I1  ;       ===== 2002-09-12 SAITO =====
+  953                             254 I1  ;       SELF CHECK HAND SHAKE FLG
+  954 000002B8 00000002           255 I1  _CPUA_SELF_HAND_FLG     .SRES   2       ; CPUAの状態ﾌﾗｸﾞ
+  955 000002BA 00000002           256 I1  _CPUB_SELF_HAND_FLG     .SRES   2       ; CPUBの状態ﾌﾗｸﾞ
+  956                             257 I1  
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    18
+PROGRAM NAME =
+
+  957                             258 I1  ;       ===================================
+  958                             259 I1  ;       ===     各ｶｰﾄﾞのｽﾃｰﾀｽ作成用     ===
+  959                             260 I1  ;       ===================================
+  960                             261 I1  ;       運転開始
+  961                             262 I1  ;       １工程開始
+  962                             263 I1  ;       最終工程開始
+  963                             264 I1  ;       終了/
+  964                             265 I1  ;       ==== 2004-03-01 同期ｽﾞﾚ測定用時間 =====
+  965 000002BC 00000002           266 I1  _CPU_CTRL_CLK           .SRES   2       ;(同期ｽﾞﾚ測定ﾀｲﾑｽﾀﾝﾌﾟ)
+  966                             267 I1  
+  967 000002BE 00000002           268 I1  _CPUA_IRQ_ERR_INT_CNT1  .SRES   2       ;[IRQ-ERR]
+  968 000002C0 00000002           269 I1  _CPUA_IRQ_ERR_INT_CNT2  .SRES   2       ;
+  969 000002C2 00000002           270 I1  _CPUA_IRQ_ERR_INT_CNT3  .SRES   2       ;
+  970 000002C4 00000002           271 I1  _CPUA_IRQ_ERR_INT_CNT4  .SRES   2       ;
+  971 000002C6 00000002           272 I1  _CPUA_IRQ_ERR_INT_CNT5  .SRES   2       ;
+  972 000002C8 00000002           273 I1  _CPUA_IRQ_ERR_INT_CNT6  .SRES   2       ;
+  973 000002CA 00000002           274 I1  _CPUA_IRQ_ERR_INT_CNT7  .SRES   2       ;
+  974 000002CC 00000002           275 I1  _CPUA_IRQ_ERR_INT_CNT8  .SRES   2       ;
+  975 000002CE 00000002           276 I1  _CPUA_IRQ_ERR_INT_CNT9  .SRES   2       ;
+  976 000002D0 00000002           277 I1  _CPUB_IRQ_ERR_INT_CNT1  .SRES   2       ;
+  977 000002D2 00000002           278 I1  _CPUB_IRQ_ERR_INT_CNT2  .SRES   2       ;
+  978 000002D4 00000002           279 I1  _CPUB_IRQ_ERR_INT_CNT3  .SRES   2       ;
+  979 000002D6 00000002           280 I1  _CPUB_IRQ_ERR_INT_CNT4  .SRES   2       ;
+  980 000002D8 00000002           281 I1  _CPUB_IRQ_ERR_INT_CNT5  .SRES   2       ;
+  981 000002DA 00000002           282 I1  _CPUB_IRQ_ERR_INT_CNT6  .SRES   2       ;
+  982 000002DC 00000002           283 I1  _CPUB_IRQ_ERR_INT_CNT7  .SRES   2       ;
+  983 000002DE 00000002           284 I1  _CPUB_IRQ_ERR_INT_CNT8  .SRES   2       ;
+  984 000002E0 00000002           285 I1  _CPUB_IRQ_ERR_INT_CNT9  .SRES   2       ;
+  985                             286 I1  
+  986                             287 I1  ;       =========== 2006-04-10 =========
+  987 000002E2 00000002           288 I1  _CPUA_SELF2_STR         .SRES   2       ;
+  988 000002E4 00000002           289 I1  _CPUA_SELF2_END         .SRES   2       ;
+  989 000002E6 00000002           290 I1  _CPUA_SELF2_CD1         .SRES   2       ;
+  990 000002E8 00000002           291 I1  _CPUA_SELF2_CD2         .SRES   2       ;
+  991 000002EA 00000002           292 I1  _CPUA_SELF2_CD3         .SRES   2       ;
+  992 000002EC 00000002           293 I1  _CPUA_SELF2_CD4         .SRES   2       ;
+  993                             294 I1  
+  994 000002EE 00000002           295 I1  _CPUB_SELF2_STR         .SRES   2       ;
+  995 000002F0 00000002           296 I1  _CPUB_SELF2_END         .SRES   2       ;
+  996 000002F2 00000002           297 I1  _CPUB_SELF2_CD1         .SRES   2       ;
+  997 000002F4 00000002           298 I1  _CPUB_SELF2_CD2         .SRES   2       ;
+  998 000002F6 00000002           299 I1  _CPUB_SELF2_CD3         .SRES   2       ;
+  999 000002F8 00000002           300 I1  _CPUB_SELF2_CD4         .SRES   2       ;
+ 1000                             301 I1  
+ 1001                             302 I1  ;       **********************COP2対応*************
+ 1002 000002FC                    303 I1          .ALIGN  4                       ;
+ 1003 000002FC 00000004           304 I1  _CPUA_OP_PG1_PLS        .SRES   4       ;
+ 1004 00000300 00000002           305 I1  _CPUA_OP_OUT1_PLS       .SRES   2       ;
+ 1005 00000302 00000002           306 I1  _PVOP2_WAIT_CODA        .SRES   2       ;OP->CPUA
+ 1006 00000304 00000002           307 I1  _PVOP2_WAIT_CODB        .SRES   2       ;OP->CPUB
+ 1007 00000306 00000002           308 I1  _SVOP2_WAIT_ANSA        .SRES   2       ;CPUA->OP
+ 1008 00000308 00000002           309 I1  _SVOP2_WAIT_ANSB        .SRES   2       ;CPUB->OP
+ 1009                             310 I1  
+ 1010                             311 I1  ;       --------- 2007-05-30 ----------
+ 1011 0000030A 00000002           312 I1  _PVOP2_STEP1_CODA       .SRES   2       ;OP->CPUA
+ 1012 0000030C 00000002           313 I1  _PVOP2_STEP1_CODB       .SRES   2       ;OP->CPUB
+ 1013 0000030E 00000002           314 I1  _SVOP2_STEP1_ANSA       .SRES   2       ;CPUA->OP
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    19
+PROGRAM NAME =
+
+ 1014 00000310 00000002           315 I1  _SVOP2_STEP1_ANSB       .SRES   2       ;CPUB->OP
+ 1015 00000312 00000002           316 I1  _PVOP2_STEP2_CODA       .SRES   2       ;OP->CPUA
+ 1016 00000314 00000002           317 I1  _PVOP2_STEP2_CODB       .SRES   2       ;OP->CPUB
+ 1017 00000316 00000002           318 I1  _SVOP2_STEP2_ANSA       .SRES   2       ;CPUA->OP
+ 1018 00000318 00000002           319 I1  _SVOP2_STEP2_ANSB       .SRES   2       ;CPUB->OP
+ 1019                             320 I1  
+ 1020 0000031A 00000002           321 I1  _CPUB_STEP_INFO1        .SRES   2       ;[3FC2]
+ 1021                             322 I1  
+ 1022                             323 I1  ;       --------- 2008-03-25 ----------
+ 1023 0000031C 00000002           324 I1  _HD_SYNCHOS_LT_FLG      .SRES   2       ;
+ 1024 00000320                    325 I1          .ALIGN  4                       ;
+ 1025 00000320 00000008           326 I1  _HD_SYNCHOS_LT_OBJ      .SRES   4*2
+ 1026                             327 I1  
+ 1027                             328 I1  
+ 1028                             329 I1  
+ 1029                             330 I1  ;       =============== 2014-05-30===============
+ 1030 00000328 00000002           331 I1  _PVPAB_SH2_AD_DATA      .SRES   2
+ 1031 0000032A 00000002           332 I1  _PVPAB_SH2_AD_DAT2      .SRES   2       ;
+ 1032 0000032C 00000002           333 I1  _PVPAB_SH2_AD_DAT3      .SRES   2       ;
+ 1033 0000032E 00000002           334 I1  _PVPAB_SH2_AD_DAT4      .SRES   2       ;
+ 1034 00000330 00000002           335 I1  _PVPAB_DBG_KYUIN1       .SRES   2       ;(左:ﾃﾞﾊﾞｯｸ用ｲﾝﾃﾙﾌｫｰﾑ)
+ 1035 00000332 00000002           336 I1  _PVPAB_DBG_KYUIN2       .SRES   2       ;(合計:ﾃﾞﾊﾞｯｸ用ｲﾝﾃﾙﾌｫｰﾑ)
+ 1036 00000334 00000002           337 I1  _PVPAB_DBG_KYUIN3       .SRES   2       ;(右:ﾃﾞﾊﾞｯｸ用ｲﾝﾃﾙﾌｫｰﾑ)
+ 1037                             338 I1  
+ 1038                             339 I1  
+ 1039                             340 I1  ;       ---------- 2014-02-05-------------
+ 1040                             341 I1  ;       CPUBが常に最小荷重をｻﾝﾌﾟﾘﾝｸﾞ
+ 1041                             342 I1  ;       CPUAは更新及び必要なﾀｲﾐﾝｸﾞをCPUBに教える
+ 1042                             343 I1  ;       H'336
+ 1043                             344 I1  ;
+ 1044                             345 I1  ;       ------------- 全区間(ｵｰﾊﾞﾛｰﾄﾞ,ﾛｱﾘﾐｯﾄ用)---------------
+ 1045 00000336 00000002           346 I1  _ATOB_KJYUALL_SMPCLR    .SRES   2       ;CPUA=>CPUB 1: CPUB=0CLR CPUBは0ｸﾘｱする
+ 1046 00000338 00000002           347 I1  _ATOB_KJYUALL_SMPSTART  .SRES   2       ;CPUA= 0->1 1->0         CPUBは参照のみ
+ 1047                             348 I1  
+ 1048                             349 I1  ;       ------------- 区間 ﾄﾚﾝﾄﾞ用---------------
+ 1049 0000033A 00000002           350 I1  _ATOB_KJYUTRD_SMPCLR    .SRES   2       ;CPUA=>CPUB 1: CPUB=0CLR CPUBは0ｸﾘｱする
+ 1050 0000033C 00000002           351 I1  _ATOB_KJYUTRD_SMPSTART  .SRES   2       ;CPUA= 0->1 1->0         CPUBは参照のみ
+ 1051                             352 I1  
+ 1052                             353 I1  ;       ----------------- 生荷重符号付き(COP1Z)--------------
+ 1053 00000340                    354 I1          .ALIGN  4                       ;
+ 1054 00000340 00000004           355 I1  _PVPAB_KAJLIV_LFT       .SRES   4
+ 1055 00000344 00000004           356 I1  _PVPAB_KAJLIV_RIH       .SRES   4
+ 1056 00000348 00000004           357 I1  _PVPAB_KAJLIV_TTL       .SRES   4
+ 1057                             358 I1  
+ 1058                             359 I1  ;       -----------------区間最大荷重(COP1Z)荷重補正用---------------
+ 1059 0000034C 00000004           360 I1  _PVPAB_ARA1_KAJ_L       .SRES   4
+ 1060 00000350 00000004           361 I1  _PVPAB_ARA1_KAJ_R       .SRES   4
+ 1061 00000354 00000004           362 I1  _PVPAB_ARA1_KAJ_T       .SRES   4
+ 1062                             363 I1  
+ 1063                             364 I1  ;       --------全区間(ｵｰﾊﾞﾛｰﾄﾞ,ﾛﾘﾐｯﾄ用)-------------------
+ 1064 00000358 00000004           365 I1  _BTOA_LFT_MAX           .SRES   4       ;(これは使用しない予定,荷重計がやっているから)
+ 1065 0000035C 00000004           366 I1  _BTOA_LFT_MIN           .SRES   4       ;
+ 1066 00000360 00000004           367 I1  _BTOA_LFT_HAB           .SRES   4       ;
+ 1067                             368 I1  
+ 1068 00000364 00000004           369 I1  _BTOA_RIH_MAX           .SRES   4       ;(これは使用しない予定,荷重計がやっているから)
+ 1069 00000368 00000004           370 I1  _BTOA_RIH_MIN           .SRES   4       ;
+ 1070 0000036C 00000004           371 I1  _BTOA_RIH_HAB           .SRES   4       ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    20
+PROGRAM NAME =
+
+ 1071                             372 I1  
+ 1072 00000370 00000004           373 I1  _BTOA_TTL_MAX           .SRES   4       ;(これは使用しない予定,荷重計がやっているから)
+ 1073 00000374 00000004           374 I1  _BTOA_TTL_MIN           .SRES   4       ;
+ 1074 00000378 00000004           375 I1  _BTOA_TTL_HAB           .SRES   4       ;
+ 1075                             376 I1  
+ 1076                             377 I1  ;       --------   トレンド用-------------------
+ 1077 0000037C 00000004           378 I1  _BTOA_LFT_TRDMAX        .SRES   4       ;()
+ 1078 00000380 00000004           379 I1  _BTOA_LFT_TRDMIN        .SRES   4       ;
+ 1079 00000384 00000004           380 I1  _BTOA_LFT_TRDHAB        .SRES   4       ;
+ 1080                             381 I1  
+ 1081 00000388 00000004           382 I1  _BTOA_RIH_TRDMAX        .SRES   4       ;
+ 1082 0000038C 00000004           383 I1  _BTOA_RIH_TRDMIN        .SRES   4       ;
+ 1083 00000390 00000004           384 I1  _BTOA_RIH_TRDHAB        .SRES   4       ;
+ 1084                             385 I1  
+ 1085 00000394 00000004           386 I1  _BTOA_TTL_TRDMAX        .SRES   4       ;
+ 1086 00000398 00000004           387 I1  _BTOA_TTL_TRDMIN        .SRES   4       ;
+ 1087 0000039C 00000004           388 I1  _BTOA_TTL_TRDHAB        .SRES   4       ;0039C
+ 1088                             389 I1  
+ 1089                             390 I1  
+ 1090                             391 I1  ;       -------------下に追加----------
+ 1091 000003A0                    392 I1          .ALIGN  2                       ;ｽﾗｲﾄﾞ自動待機指令 2014-08-30(340.12)
+ 1092 000003A0 00000002           393 I1  _SH4_HD_HLDSTOP1        .SRES   2       ;1:ｽﾗｲﾄﾞ待機指令で停止にする 1→0:再起動する /exq,
+                                          emg 通常時は0
+ 1093 000003A2 00000002           394 I1  _SH2_HD_HLDSTOP1        .SRES   2       ;1:ｽﾗｲﾄﾞ待機指令で停止にする 1→0:再起動する /exq,
+                                          emg 通常時は0
+ 1094                             395 I1  
+ 1095 000003A4 00000002           396 I1  _SH4_HD_HLDSTOP2        .SRES   2       ;2014-09-11 ｽﾗｲﾄﾞ待機の解除側信号
+ 1096 000003A6 00000002           397 I1  _SH2_HD_HLDSTOP2        .SRES   2       ;
+ 1097                             398 I1  
+ 1098                             399 I1                                          ;2014-09-13
+ 1099 000003A8 00000002           400 I1  _SH4_VLV_SIG            .SRES   2       ;209.6(ﾊﾟﾙｽ動作),206.0(ACT)
+ 1100 000003AA 00000002           401 I1  _SH2_VLV_SIG            .SRES   2       ;209.6(ﾊﾟﾙｽ動作),206.0(ACT)
+ 1101                             402 I1  
+ 1102                             403 I1  ;       -------- 2015-03-15 ﾓﾆﾀ
+ 1103 000003AC 00000002           404 I1  _SH2_OBJ_ENC360         .SRES   2       ;ﾓﾆﾀ 2015-03-15
+ 1104 000003AE 00000002           405 I1  _SH2_PV_OUT_SPD_PER     .SRES   2       ;
+ 1105 000003B0 00000002           406 I1  _SH2_PV_ENC_SPD_PER     .SRES   2       ;
+ 1106                             407 I1  
+ 1107                             408 I1  ;       ------- 2015-03-15 ふりこ演算------
+ 1108 000003B2 00000002           409 I1  _SH4_DNM_CALC_INFO      .SRES   2       ;SH4 TO SH2
+ 1109 000003B4 00000002           410 I1  _SH2_DNM_CALC_INFO      .SRES   2       ;SH2 TO SH4[3B4]
+ 1110                             411 I1  
+ 1111                             412 I1  ;       ------- 2016-04-16-----------------
+ 1112 000003B6 00000002           413 I1  _CPUA_SV_STEP           .SRES   2       ;
+ 1113 000003B8 00000002           414 I1  _CPUB_SV_STEP           .SRES   2       ;
+ 1114 000003BA 00000002           415 I1  _CPUA_DNM_DIR_SET       .SRES   2       ;
+ 1115 000003BC 00000002           416 I1  _CPUA_DNM_DIR_NOW       .SRES   2       ;
+ 1116 000003BE 00000002           417 I1  _CPUB_DNM_DIR_SET       .SRES   2       ;
+ 1117 000003C0 00000002           418 I1  _CPUB_DNM_DIR_NOW       .SRES   2       ;
+ 1118                             419 I1  
+ 1119                             420 I1  ;1
+ 1120                             421 I1  ;------2016-10-31---------
+ 1121 000003C2 00000002           422 I1  _CPUA_LOT_CHK_FLG       .SRES   2       ;2016-07-18CHECK
+ 1122 000003C4 00000002           423 I1  _CPUB_LOT_CHK_FLG       .SRES   2       ;2016-07-18CHECK
+ 1123 000003C6 00000002           424 I1  _CPUA_LOT_CNT_FLG       .SRES   2       ;
+ 1124 000003C8 00000002           425 I1  _CPUB_LOT_CNT_FLG       .SRES   2       ;
+ 1125 000003CA 00000002           426 I1  _CPUA_CONT_MOD_CNT_PV   .SRES   2       ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    21
+PROGRAM NAME =
+
+ 1126 000003CC 00000002           427 I1  _CPUB_CONT_MOD_CNT_PV   .SRES   2       ;
+ 1127 000003CE 00000002           428 I1  _CPUB_DBG_MONI_STP      .SRES   2       ;2016-08-12
+ 1128 000003D0 00000002           429 I1  _CPUB_DBG_MONI_CNT      .SRES   2       ;2016-08-22
+ 1129                             430 I1  ;       ----------------------------------------
+ 1130                             431 I1  
+ 1131                             432 I1  ;       *******************************************
+ 1132                             433 I1  ;       ***                                     ***
+ 1133                             434 I1  ;       ***                                     ***
+ 1134                             435 I1  ;       ***                                     ***
+ 1135                             436 I1  ;       ***             2013-12-02MC追加        ***
+ 1136                             437 I1  ;       ***                                     ***
+ 1137                             438 I1  ;       ***                                     ***
+ 1138                             439 I1  ;       ***                                     ***
+ 1139                             440 I1  ;       *******************************************
+ 1140 00001000                    441 I1          .ORG    H'1000                  ;
+ 1141 00001000                    442 I1          .ALIGN  4                       ;
+ 1142 00001000 00000640           443 I1  _SEQAB_DP_TOP   .SRES   1600            ;MAX 2K
+ 1143                             444 I1  
+ 1144                             445 I1  ;       *******************************************
+ 1145                             446 I1  ;       ***                                     ***
+ 1146                             447 I1  ;       ***     CPUB=>CPUA                      ***
+ 1147                             448 I1  ;       ***     ROMﾊﾟﾗ:KIND=1                   ***
+ 1148                             449 I1  ;       ***                                     ***
+ 1149                             450 I1  ;       *******************************************
+ 1150 00001800                    451 I1          .ORG    H'1800                  ;
+ 1151 00001800                    452 I1          .ALIGN  4                       ;
+ 1152 00001800 00000004           453 I1  _CPUBTOA_DAT1_REQADR    .SRES   4       ;OFS WORD
+ 1153 00001804 00000002           454 I1  _CPUBTOA_DAT1_REQKND    .SRES   2       ;種別[BIT15=1:END <-//-> BIT7~BIT0 KIND]
+ 1154 00001806 00000002           455 I1  _CPUBTOA_DAT1_REQCNT    .SRES   2       ;WORD個数
+ 1155 00001808 00000002           456 I1  _CPUBTOA_DAT1_REQCOD    .SRES   2       ;WR
+ 1156 0000180A 00000002           457 I1  _CPUBTOA_DAT1_ACKCOD    .SRES   2       ;ACK
+ 1157 0000180C                    458 I1          .ALIGN  4                       ;
+ 1158 0000180C 00000100           459 I1  _CPUBTOA_DAT1_DATTOP    .SRES   2*128   ;256BYTE(128W)
+ 1159                             460 I1  
+ 1160                             461 I1  
+ 1161                             462 I1  ;       *******************************************
+ 1162                             463 I1  ;       ***                                     ***
+ 1163                             464 I1  ;       ***                                     ***
+ 1164                             465 I1  ;       ***                                     ***
+ 1165                             466 I1  ;       *******************************************
+ 1166 00002000                    467 I1          .ORG    H'2000                  ;
+ 1167 00002000                    468 I1          .ALIGN  4                       ;
+ 1168                             469 I1  
+ 1169                             470 I1  
+ 1170                             471 I1  
+ 1171                             472 I1  
+ 1172                              18     
+ 1173                              19     
+ 1174                              20             .END
+  *****TOTAL ERRORS       0
+  *****TOTAL WARNINGS     0
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    22
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+B                                B        SCT  00000000    302*
+BIT0                                      EQU  00000001     13*
+BIT1                                      EQU  00000002     14*
+BIT10                                     EQU  00000400     23*
+BIT11                                     EQU  00000800     24*
+BIT12                                     EQU  00001000     25*
+BIT13                                     EQU  00002000     26*
+BIT14                                     EQU  00004000     27*
+BIT15                                     EQU  00008000     28*
+BIT16                                     EQU  00010000     29*
+BIT17                                     EQU  00020000     30*
+BIT18                                     EQU  00040000     31*
+BIT19                                     EQU  00080000     32*
+BIT2                                      EQU  00000004     15*
+BIT20                                     EQU  00100000     33*
+BIT21                                     EQU  00200000     34*
+BIT22                                     EQU  00400000     35*
+BIT23                                     EQU  00800000     36*
+BIT24                                     EQU  01000000     37*
+BIT25                                     EQU  02000000     38*
+BIT26                                     EQU  04000000     39*
+BIT27                                     EQU  08000000     40*
+BIT28                                     EQU  10000000     41*
+BIT29                                     EQU  20000000     42*
+BIT3                                      EQU  00000008     16*
+BIT30                                     EQU  40000000     43*
+BIT31                                     EQU  80000000     44*
+BIT4                                      EQU  00000010     17*
+BIT5                                      EQU  00000020     18*
+BIT6                                      EQU  00000040     19*
+BIT7                                      EQU  00000080     20*
+BIT8                                      EQU  00000100     21*
+BIT9                                      EQU  00000200     22*
+H_BYTE                                    EQU  00000000     80*
+L_BYTE                                    EQU  00000001     79*
+NBIT0                                     EQU  000000FE     47*
+NBIT1                                     EQU  000000FD     48*
+NBIT10                                    EQU  0000FBFF     58*
+NBIT11                                    EQU  0000F7FF     59*
+NBIT12                                    EQU  0000EFFF     60*
+NBIT13                                    EQU  0000DFFF     61*
+NBIT14                                    EQU  0000BFFF     62*
+NBIT15                                    EQU  00007FFF     63*
+NBIT2                                     EQU  000000FB     49*
+NBIT3                                     EQU  000000F7     50*
+NBIT4                                     EQU  000000EF     51*
+NBIT5                                     EQU  000000DF     52*
+NBIT6                                     EQU  000000BF     53*
+NBIT7                                     EQU  0000007F     54*
+NBIT8                                     EQU  0000FEFF     56*
+NBIT9                                     EQU  0000FDFF     57*
+XBIT0                                     EQU  00000000     66*
+XBIT1                                     EQU  00000001     67*
+XBIT2                                     EQU  00000002     68*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    23
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+XBIT3                                     EQU  00000003     69*
+XBIT4                                     EQU  00000004     70*
+XBIT5                                     EQU  00000005     71*
+XBIT6                                     EQU  00000006     72*
+XBIT7                                     EQU  00000007     73*
+_ATOB_KJYUALL_SMPCLR             B        EXPT 00000336    597  1045*
+_ATOB_KJYUALL_SMPSTART           B        EXPT 00000338    598  1046*
+_ATOB_KJYUTRD_SMPCLR             B        EXPT 0000033A    601  1049*
+_ATOB_KJYUTRD_SMPSTART           B        EXPT 0000033C    602  1050*
+_BTOA_LFT_HAB                    B        EXPT 00000360    618  1066*
+_BTOA_LFT_MAX                    B        EXPT 00000358    616  1064*
+_BTOA_LFT_MIN                    B        EXPT 0000035C    617  1065*
+_BTOA_LFT_TRDHAB                 B        EXPT 00000384    631  1079*
+_BTOA_LFT_TRDMAX                 B        EXPT 0000037C    629  1077*
+_BTOA_LFT_TRDMIN                 B        EXPT 00000380    630  1078*
+_BTOA_RIH_HAB                    B        EXPT 0000036C    622  1070*
+_BTOA_RIH_MAX                    B        EXPT 00000364    620  1068*
+_BTOA_RIH_MIN                    B        EXPT 00000368    621  1069*
+_BTOA_RIH_TRDHAB                 B        EXPT 00000390    635  1083*
+_BTOA_RIH_TRDMAX                 B        EXPT 00000388    633  1081*
+_BTOA_RIH_TRDMIN                 B        EXPT 0000038C    634  1082*
+_BTOA_TTL_HAB                    B        EXPT 00000378    626  1074*
+_BTOA_TTL_MAX                    B        EXPT 00000370    624  1072*
+_BTOA_TTL_MIN                    B        EXPT 00000374    625  1073*
+_BTOA_TTL_TRDHAB                 B        EXPT 0000039C    639  1087*
+_BTOA_TTL_TRDMAX                 B        EXPT 00000394    637  1085*
+_BTOA_TTL_TRDMIN                 B        EXPT 00000398    638  1086*
+_CB_BAKUP_CMD1                            EQU  00005678    112*
+_CB_BAKUP_CMD2                            EQU  00001234    113*
+_CB_BAK_SUM_COD1                          EQU  5AA51234    110*
+_CB_BAK_SUM_COD2                          EQU  A55A4321    111*
+_CB_ERR_INFO_MEM                          EQU  00000080    136*
+_CB_ERR_INFO_PSIZE                        EQU  00000008    137*
+_CB_STS_BUF_1BLK                          EQU  00000040    115*  117 
+_CB_STS_BUF_BLKMAX                        EQU  00000008    116*  117 
+_CB_STS_BUF_MAX                           EQU  00000200    117*
+_CB_TRD_BEFORE                            EQU  00000060    125*
+_CB_TRD_BUF_DP_MAX                        EQU  00000080    129*
+_CB_TRD_BUF_MAX                           EQU  00000800    126*
+_CB_TRD_DP_1CNT                           EQU  00000008    128*
+_CB_TRD_DP_CH                             EQU  00000004    121*
+_CB_TRD_SMP_CNT                           EQU  00000080    124*
+_CPUA_CONT_MOD_CNT_PV            B        EXPT 000003CA    676  1125*
+_CPUA_DNM_DIR_NOW                B        EXPT 000003BC    665  1115*
+_CPUA_DNM_DIR_SET                B        EXPT 000003BA    664  1114*
+_CPUA_IRQ_ERR_INT_CNT1           B        EXPT 000002BE    538   967*
+_CPUA_IRQ_ERR_INT_CNT2           B        EXPT 000002C0    539   968*
+_CPUA_IRQ_ERR_INT_CNT3           B        EXPT 000002C2    540   969*
+_CPUA_IRQ_ERR_INT_CNT4           B        EXPT 000002C4    541   970*
+_CPUA_IRQ_ERR_INT_CNT5           B        EXPT 000002C6    542   971*
+_CPUA_IRQ_ERR_INT_CNT6           B        EXPT 000002C8    543   972*
+_CPUA_IRQ_ERR_INT_CNT7           B        EXPT 000002CA    544   973*
+_CPUA_IRQ_ERR_INT_CNT8           B        EXPT 000002CC    545   974*
+_CPUA_IRQ_ERR_INT_CNT9           B        EXPT 000002CE    546   975*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    24
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_CPUA_LOT_CHK_FLG                B        EXPT 000003C2    672  1121*
+_CPUA_LOT_CNT_FLG                B        EXPT 000003C6    674  1123*
+_CPUA_OP_OUT1_PLS                B        EXPT 00000300    574  1004*
+_CPUA_OP_PG1_PLS                 B        EXPT 000002FC    573  1003*
+_CPUA_PLS_OUTF                   B        EXPT 0000004E    332   731*
+_CPUA_SELF2_CD1                  B        EXPT 000002E6    560   989*
+_CPUA_SELF2_CD2                  B        EXPT 000002E8    561   990*
+_CPUA_SELF2_CD3                  B        EXPT 000002EA    562   991*
+_CPUA_SELF2_CD4                  B        EXPT 000002EC    563   992*
+_CPUA_SELF2_END                  B        EXPT 000002E4    559   988*
+_CPUA_SELF2_STR                  B        EXPT 000002E2    558   987*
+_CPUA_SELF_HAND_FLG              B        EXPT 000002B8    419   954*
+_CPUA_SV_STEP                    B        EXPT 000003B6    662  1112*
+_CPUBTOA_DAT1_ACKCOD             B        EXPT 0000180A    697  1156*
+_CPUBTOA_DAT1_DATTOP             B        EXPT 0000180C    698  1158*
+_CPUBTOA_DAT1_REQADR             B        EXPT 00001800    693  1152*
+_CPUBTOA_DAT1_REQCNT             B        EXPT 00001806    695  1154*
+_CPUBTOA_DAT1_REQCOD             B        EXPT 00001808    696  1155*
+_CPUBTOA_DAT1_REQKND             B        EXPT 00001804    694  1153*
+_CPUB_CONT_MOD_CNT_PV            B        EXPT 000003CC    677  1126*
+_CPUB_DBG_MONI_CNT               B        EXPT 000003D0    679  1128*
+_CPUB_DBG_MONI_STP               B        EXPT 000003CE    678  1127*
+_CPUB_DNM_DIR_NOW                B        EXPT 000003C0    667  1117*
+_CPUB_DNM_DIR_SET                B        EXPT 000003BE    666  1116*
+_CPUB_IRQ_ERR_INT_CNT1           B        EXPT 000002D0    547   976*
+_CPUB_IRQ_ERR_INT_CNT2           B        EXPT 000002D2    548   977*
+_CPUB_IRQ_ERR_INT_CNT3           B        EXPT 000002D4    549   978*
+_CPUB_IRQ_ERR_INT_CNT4           B        EXPT 000002D6    550   979*
+_CPUB_IRQ_ERR_INT_CNT5           B        EXPT 000002D8    551   980*
+_CPUB_IRQ_ERR_INT_CNT6           B        EXPT 000002DA    552   981*
+_CPUB_IRQ_ERR_INT_CNT7           B        EXPT 000002DC    553   982*
+_CPUB_IRQ_ERR_INT_CNT8           B        EXPT 000002DE    554   983*
+_CPUB_IRQ_ERR_INT_CNT9           B        EXPT 000002E0    555   984*
+_CPUB_LOT_CHK_FLG                B        EXPT 000003C4    673  1122*
+_CPUB_LOT_CNT_FLG                B        EXPT 000003C8    675  1124*
+_CPUB_PLS_OUTF                   B        EXPT 00000050    333   732*
+_CPUB_SELF2_CD1                  B        EXPT 000002F2    567   996*
+_CPUB_SELF2_CD2                  B        EXPT 000002F4    568   997*
+_CPUB_SELF2_CD3                  B        EXPT 000002F6    569   998*
+_CPUB_SELF2_CD4                  B        EXPT 000002F8    570   999*
+_CPUB_SELF2_END                  B        EXPT 000002F0    566   995*
+_CPUB_SELF2_STR                  B        EXPT 000002EE    565   994*
+_CPUB_SELF_HAND_FLG              B        EXPT 000002BA    420   955*
+_CPUB_START_COD                  B        EXPT 00000000    319   715*
+_CPUB_STEP_INFO1                 B             0000031A   1020*
+_CPUB_SV_STEP                    B        EXPT 000003B8    663  1113*
+_CPU_CTRL_CLK                    B        EXPT 000002BC    423   965*
+_DPPVP_ARA1_KAJ_L                B             000000A4    766*
+_DPPVP_ARA1_KAJ_R                B             000000A2    765*
+_DPPVP_ARA1_KAJ_T                B             000000A6    767*
+_DPPVP_ARA1_KAJ_T2               B             000000A8    768*
+_DPPVP_KAJLIV_LFT                B             0000009C    762*
+_DPPVP_KAJLIV_RIH                B             000000A0    764*
+_DPPVP_KAJLIV_TTL                B             0000009E    763*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    25
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_DP_COP_CB_LD_MONI_SIG           B        EXPT 00000040    322   722*
+_DP_DBG_CPUAB_DRV_START          B        EXPT 00000044    324   724*
+_DUMMY_SUM_CODE                           EQU  5AA53CC3    103*
+_EMG_SH2_TO_SH4                  B        EXPT 00000278    379   920*
+_EMG_SH4_TO_SH2                  B        EXPT 00000274    378   918*
+_ET1_CPUAB_BUF_MAX                        EQU  00000100    286*
+_ET1_CPUA_ADR_MAX                         EQU  00060000    289*
+_ET1_CPUB_ADR_MAX                         EQU  00008000    287*
+_ET1_DATA_COD                             EQU  5A3CC3A5    293*
+_ET1_INIT_ACK                             EQU  56789ABC    292*
+_ET1_INIT_REQ                             EQU  12345678    291*
+_ET1_RDWR2_BUFMAX                         EQU  00000020    297*
+_ET1_WD_HAND_COD                          EQU  00001234    298*
+_EXQ_SH2_TO_SH4                  B        EXPT 0000027A    382   921*
+_EXQ_SH4_TO_SH2                  B        EXPT 00000276    381   919*
+_HD_CMP_PLS_A1                   B        EXPT 00000054    335   735*
+_HD_CMP_PLS_B1                   B        EXPT 00000058    336   736*
+_HD_SYNCHOS_LT_FLG               B             0000031C   1023*
+_HD_SYNCHOS_LT_OBJ               B             00000320   1025*
+_ITIZI_MEM                       B        EXPT 00000000    310   313*
+_PVOP2_STEP1_CODA                B             0000030A   1011*
+_PVOP2_STEP1_CODB                B             0000030C   1012*
+_PVOP2_STEP2_CODA                B             00000312   1015*
+_PVOP2_STEP2_CODB                B             00000314   1016*
+_PVOP2_WAIT_CODA                 B        EXPT 00000302    575  1005*
+_PVOP2_WAIT_CODB                 B        EXPT 00000304    576  1006*
+_PVPAB_ARA1_KAJ_L                B        EXPT 0000034C    611  1059*
+_PVPAB_ARA1_KAJ_R                B        EXPT 00000350    612  1060*
+_PVPAB_ARA1_KAJ_T                B        EXPT 00000354    613  1061*
+_PVPAB_DBG_KYUIN1                B        EXPT 00000330    586  1034*
+_PVPAB_DBG_KYUIN2                B        EXPT 00000332    587  1035*
+_PVPAB_DBG_KYUIN3                B        EXPT 00000334    588  1036*
+_PVPAB_KAJLIV_LFT                B        EXPT 00000340    606  1054*
+_PVPAB_KAJLIV_RIH                B        EXPT 00000344    607  1055*
+_PVPAB_KAJLIV_TTL                B        EXPT 00000348    608  1056*
+_PVPAB_SH2_AD_DAT2               B        EXPT 0000032A    583  1031*
+_PVPAB_SH2_AD_DAT3               B        EXPT 0000032C    584  1032*
+_PVPAB_SH2_AD_DAT4               B        EXPT 0000032E    585  1033*
+_PVPAB_SH2_AD_DATA               B        EXPT 00000328    582  1030*
+_PVX_RNA_DIGDT                   B        EXPT 00000268    375   912*
+_PVX_RNA_INDAT                   B        EXPT 00000258    371   908*
+_PVX_RNA_PLS_P                   B        EXPT 00000270    377   914*
+_PVX_RNA_POSD1                   B        EXPT 0000025C    372   909*
+_PVX_RNA_POSD2                   B        EXPT 00000260    373   910*
+_PVX_RNA_POSDT                   B        EXPT 00000264    374   911*
+_PVX_SH4_OUTPLS                  B        EXPT 0000027C    384   924*
+_PVX_SH4_SFTY_IN                 B        EXPT 0000026C    376   913*
+_SEQAB_DP_TOP                    B        EXPT 00001000    685  1142*
+_SH2_ADD_PLS                     B        EXPT 000001C4    524   874*
+_SH2_BAS_FRQ_SV                  B        EXPT 000000E8    485   794*
+_SH2_CMP_STS1                    B        EXPT 00000292    395   930*
+_SH2_CMP_STS2                    B        EXPT 00000296    397   932*
+_SH2_CNT_REST_HF                 B        EXPT 00000100    496   803*
+_SH2_CNT_REST_PLS                B        EXPT 000000D8    480   790*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    26
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_SH2_DNM_CALC_INFO               B        EXPT 000003B4    659  1109*
+_SH2_GPOINT_LNG                  B        EXPT 00000084    340   747*
+_SH2_GPOINT_LNGDSP               B        EXPT 0000008C    342   749*
+_SH2_GPOINT_SPDDSP               B        EXPT 00000094    344   751*
+_SH2_HD_CNT_CNT                  B        EXPT 000002B6    415   950*
+_SH2_HD_CNT_STOP                 B        EXPT 000002AE    411   946*
+_SH2_HD_CTRL_BUSY                B        EXPT 0000029E    403   938*
+_SH2_HD_CTRL_REDY                B        EXPT 0000029A    401   936*
+_SH2_HD_HLDSTOP1                 B        EXPT 000003A2    643  1093*
+_SH2_HD_HLDSTOP2                 B        EXPT 000003A6    646  1096*
+_SH2_HD_NEAR_ZERO                B        EXPT 000002AA    409   944*
+_SH2_HD_POS_START                B        EXPT 000002A2    405   940*
+_SH2_HD_SFTY_AUTO                B        EXPT 000002A6    407   942*
+_SH2_HD_STEP_END                 B        EXPT 000002B2    413   948*
+_SH2_LNGH_ADD_SR                 B        EXPT 000000DC    481   791*
+_SH2_LOT_CNT_A                   B        EXPT 000000F8    492   799*
+_SH2_LOT_STEP_A                  B        EXPT 000000FA    493   800*
+_SH2_NOW_FRQ_PV                  B        EXPT 000000F0    487   796*
+_SH2_NOW_STEP                    B        EXPT 000001D8    531   881*
+_SH2_OBJ_ENC360                  B        EXPT 000003AC    653  1103*
+_SH2_PLSI_ACCS                   B        EXPT 000000F4    489   797*
+_SH2_PLSI_LATE                   B        EXPT 000000F6    490   798*
+_SH2_POS_STS1                    B        EXPT 0000028E    393   928*
+_SH2_PV_ENC_SPD_PER              B        EXPT 000003B0    655  1105*
+_SH2_PV_OUT_SPD_PER              B        EXPT 000003AE    654  1104*
+_SH2_REST_PLS_RL                 B        EXPT 000000E4    483   793*
+_SH2_REST_PLS_SR                 B        EXPT 000000E0    482   792*
+_SH2_REST_RL_HF                  B        EXPT 000000FE    495   802*
+_SH2_REST_SR_HF                  B        EXPT 000000FC    494   801*
+_SH2_STEP1_FRQ                   B        EXPT 000001AC    513   861*
+_SH2_STEP1_PV_PLS                B        EXPT 00000184    503   851*
+_SH2_STEP1_REST_P                B        EXPT 00000198    508   856*
+_SH2_STEP1_SV_PLS                B        EXPT 00000170    498   846*
+_SH2_STEP1_TIM                   B        EXPT 000001B6    518   866*
+_SH2_STEP2_FRQ                   B        EXPT 000001AE    514   862*
+_SH2_STEP2_PV_PLS                B        EXPT 00000188    504   852*
+_SH2_STEP2_REST_P                B        EXPT 0000019C    509   857*
+_SH2_STEP2_SV_PLS                B        EXPT 00000174    499   847*
+_SH2_STEP2_TIM                   B        EXPT 000001B8    519   867*
+_SH2_STEP3_FRQ                   B        EXPT 000001B0    515   863*
+_SH2_STEP3_PV_PLS                B        EXPT 0000018C    505   853*
+_SH2_STEP3_REST_P                B        EXPT 000001A0    510   858*
+_SH2_STEP3_SV_PLS                B        EXPT 00000178    500   848*
+_SH2_STEP3_TIM                   B        EXPT 000001BA    520   868*
+_SH2_STEP4_FRQ                   B        EXPT 000001B2    516   864*
+_SH2_STEP4_PV_PLS                B        EXPT 00000190    506   854*
+_SH2_STEP4_REST_P                B        EXPT 000001A4    511   859*
+_SH2_STEP4_SV_PLS                B        EXPT 0000017C    501   849*
+_SH2_STEP4_TIM                   B        EXPT 000001BC    521   869*
+_SH2_STEP5_FRQ                   B        EXPT 000001B4    517   865*
+_SH2_STEP5_PV_PLS                B        EXPT 00000194    507   855*
+_SH2_STEP5_REST_P                B        EXPT 000001A8    512   860*
+_SH2_STEP5_SV_PLS                B        EXPT 00000180    502   850*
+_SH2_STEP5_TIM                   B        EXPT 000001BE    522   870*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    27
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_SH2_STEP_FRQ                    B        EXPT 000001D4    529   879*
+_SH2_STEP_NO                     B        EXPT 00000288    386   926*
+_SH2_STEP_PV_PLS                 B        EXPT 000001CC    527   877*
+_SH2_STEP_REST_P                 B        EXPT 000001D0    528   878*
+_SH2_STEP_SV_PLS                 B        EXPT 000001C8    526   876*
+_SH2_STEP_TIM                    B        EXPT 000001D6    530   880*
+_SH2_TOP_FRQ_SV                  B        EXPT 000000EC    486   795*
+_SH2_TOTAL_PLS                   B        EXPT 000001C0    523   873*
+_SH2_VLV_SIG                     B        EXPT 000003AA    650  1100*
+_SH2toSH4_TEPSIG                 B        EXPT 0000009A    347   755*
+_SH4_ADD_PLS                     B        EXPT 00000158    472   836*
+_SH4_BAS_FRQ_SV                  B        EXPT 000000BC    433   778*
+_SH4_CMP_STS1                    B        EXPT 00000290    394   929*
+_SH4_CMP_STS2                    B        EXPT 00000294    396   931*
+_SH4_CNT_REST_HF                 B        EXPT 000000D4    444   787*
+_SH4_CNT_REST_PLS                B        EXPT 000000AC    429   774*
+_SH4_DNM_CALC_INFO               B        EXPT 000003B2    658  1108*
+_SH4_GPOINT_LNG                  B        EXPT 00000080    339   746*
+_SH4_GPOINT_LNGDSP               B        EXPT 00000088    341   748*
+_SH4_GPOINT_SPDDSP               B        EXPT 00000090    343   750*
+_SH4_HD_CNT_CNT                  B        EXPT 000002B4    414   949*
+_SH4_HD_CNT_STOP                 B        EXPT 000002AC    410   945*
+_SH4_HD_CTRL_BUSY                B        EXPT 0000029C    402   937*
+_SH4_HD_CTRL_REDY                B        EXPT 00000298    400   935*
+_SH4_HD_HLDSTOP1                 B        EXPT 000003A0    642  1092*
+_SH4_HD_HLDSTOP2                 B        EXPT 000003A4    645  1095*
+_SH4_HD_NEAR_ZERO                B        EXPT 000002A8    408   943*
+_SH4_HD_POS_START                B        EXPT 000002A0    404   939*
+_SH4_HD_SFTY_AUTO                B        EXPT 000002A4    406   941*
+_SH4_HD_STEP_END                 B        EXPT 000002B0    412   947*
+_SH4_LNGH_ADD_SR                 B        EXPT 000000B0    430   775*
+_SH4_LOT_CNT_A                   B        EXPT 000000CC    440   783*
+_SH4_LOT_STEP_A                  B        EXPT 000000CE    441   784*
+_SH4_NOW_FRQ_PV                  B        EXPT 000000C4    435   780*
+_SH4_NOW_STEP                    B        EXPT 0000016C    478   843*
+_SH4_ORG_DIR_REV                 B        EXPT 00000042    323   723*
+_SH4_PLSI_ACCS                   B        EXPT 000000C8    437   781*
+_SH4_PLSI_LATE                   B        EXPT 000000CA    438   782*
+_SH4_POS_STS1                    B        EXPT 0000028C    392   927*
+_SH4_REST_PLS_RL                 B        EXPT 000000B8    432   777*
+_SH4_REST_PLS_SR                 B        EXPT 000000B4    431   776*
+_SH4_REST_RL_HF                  B        EXPT 000000D2    443   786*
+_SH4_REST_SR_HF                  B        EXPT 000000D0    442   785*
+_SH4_STEP1_FRQ                   B        EXPT 00000140    461   824*
+_SH4_STEP1_PV_PLS                B        EXPT 00000118    451   814*
+_SH4_STEP1_REST_P                B        EXPT 0000012C    456   819*
+_SH4_STEP1_SV_PLS                B        EXPT 00000104    446   809*
+_SH4_STEP1_TIM                   B        EXPT 0000014A    466   829*
+_SH4_STEP2_FRQ                   B        EXPT 00000142    462   825*
+_SH4_STEP2_PV_PLS                B        EXPT 0000011C    452   815*
+_SH4_STEP2_REST_P                B        EXPT 00000130    457   820*
+_SH4_STEP2_SV_PLS                B        EXPT 00000108    447   810*
+_SH4_STEP2_TIM                   B        EXPT 0000014C    467   830*
+_SH4_STEP3_FRQ                   B        EXPT 00000144    463   826*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    28
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_SH4_STEP3_PV_PLS                B        EXPT 00000120    453   816*
+_SH4_STEP3_REST_P                B        EXPT 00000134    458   821*
+_SH4_STEP3_SV_PLS                B        EXPT 0000010C    448   811*
+_SH4_STEP3_TIM                   B        EXPT 0000014E    468   831*
+_SH4_STEP4_FRQ                   B        EXPT 00000146    464   827*
+_SH4_STEP4_PV_PLS                B        EXPT 00000124    454   817*
+_SH4_STEP4_REST_P                B        EXPT 00000138    459   822*
+_SH4_STEP4_SV_PLS                B        EXPT 00000110    449   812*
+_SH4_STEP4_TIM                   B        EXPT 00000150    469   832*
+_SH4_STEP5_FRQ                   B        EXPT 00000148    465   828*
+_SH4_STEP5_PV_PLS                B        EXPT 00000128    455   818*
+_SH4_STEP5_REST_P                B        EXPT 0000013C    460   823*
+_SH4_STEP5_SV_PLS                B        EXPT 00000114    450   813*
+_SH4_STEP5_TIM                   B        EXPT 00000152    470   833*
+_SH4_STEP_FRQ                    B        EXPT 00000168    476   841*
+_SH4_STEP_NO                     B        EXPT 00000284    385   925*
+_SH4_STEP_PV_PLS                 B        EXPT 00000160    474   839*
+_SH4_STEP_REST_P                 B        EXPT 00000164    475   840*
+_SH4_STEP_SV_PLS                 B        EXPT 0000015C    473   838*
+_SH4_STEP_TIM                    B        EXPT 0000016A    477   842*
+_SH4_TOP_FRQ_SV                  B        EXPT 000000C0    434   779*
+_SH4_TOTAL_PLS                   B        EXPT 00000154    471   835*
+_SH4_VLV_SIG                     B        EXPT 000003A8    649  1099*
+_SH4toSH2_TEPSIG                 B        EXPT 00000098    346   754*
+_SH_CNTSTOP_FLG                  B        EXPT 00000250    364   899*
+_SH_OUTPLS_DELT                  B        EXPT 00000254    365   900*
+_SH_POSCTL_ACC                   B        EXPT 000001EC    352   887*
+_SH_POSCTL_CAL_REST              B        EXPT 00000234    358   893*
+_SH_POSCTL_HENSA                 B        EXPT 0000023C    359   894*
+_SH_POSCTL_LSIFREQ               B        EXPT 00000244    360   895*
+_SH_POSCTL_OFS                   B        EXPT 000001F4    353   888*
+_SH_POSCTL_PV_ABSPLS             B        EXPT 0000021C    356   891*
+_SH_POSCTL_REST_PLS              B        EXPT 0000022C    357   892*
+_SH_POSCTL_RL_ABSPLS             B        EXPT 0000020C    355   890*
+_SH_POSCTL_RL_SPD                B        EXPT 000001E4    351   886*
+_SH_POSCTL_SV_ABSPLS             B        EXPT 000001FC    354   889*
+_SH_POSCTL_SV_SPD                B        EXPT 000001DC    350   885*
+_SH_SQ200_IN                     B        EXPT 0000024C    363   898*
+_START_ACK_COD                            EQU  00004321    211*
+_START_REQ_COD                            EQU  00009876    210*
+_SVOP2_STEP1_ANSA                B             0000030E   1013*
+_SVOP2_STEP1_ANSB                B             00000310   1014*
+_SVOP2_STEP2_ANSA                B             00000316   1017*
+_SVOP2_STEP2_ANSB                B             00000318   1018*
+_SVOP2_WAIT_ANSA                 B        EXPT 00000306    577  1007*
+_SVOP2_WAIT_ANSB                 B        EXPT 00000308    578  1008*
+_VUPCHECK_EQU                             EQU  11AB3739     96*
+_WDT_A_TO_B_ANS                  B        EXPT 00000048    328   728*
+_WDT_A_TO_B_REQ                  B        EXPT 00000046    327   727*
+_WDT_B_TO_A_ANS                  B        EXPT 0000004C    330   730*
+_WDT_B_TO_A_REQ                  B        EXPT 0000004A    329   729*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    07/04/21 19:29:24                                                  PAGE    29
+
+*** SECTION DATA LIST
+
+SECTION                          ATTRIBUTE    SIZE             START
+
+B                                REL-DATA    000002000        

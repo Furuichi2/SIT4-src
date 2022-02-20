@@ -1,0 +1,230 @@
+SH SERIES C/C++ Compiler (V.9.04.01.002)                                                         13-Dec-2020 18:20:39  PAGE    1
+
+************ OBJECT LISTING ************
+
+FILE NAME: D:\SIT4S_MC_99\cpua\cpua\SEQ_SRC\ssc_swrm.c
+
+SCT OFFSET   CODE       C LABEL     INSTRUCTION OPERAND    COMMENT
+
+           ssc_swrm.c          1    //    *******************************************
+           ssc_swrm.c          2    //    ***                 ***
+           ssc_swrm.c          3    //    *** ワークｒａｍ定義        ***
+           ssc_swrm.c          4    //    ***                 ***
+           ssc_swrm.c          5    //    *******************************************
+           ssc_swrm.c          6    #include  "cm_equ1.h"
+            cm_equ1.h          1    /*    *********************************** */
+            cm_equ1.h          2    /*    ***     基本        *** */
+            cm_equ1.h          3    /*    *********************************** */
+            cm_equ1.h          4    #define   cBIT0   0x1 /* */
+            cm_equ1.h          5    #define   cBIT1   0x2 /* */
+            cm_equ1.h          6    #define   cBIT2   0x4 /* */
+            cm_equ1.h          7    #define   cBIT3   0x8 /* */
+            cm_equ1.h          8    #define   cBIT4   0x10    /* */
+            cm_equ1.h          9    #define   cBIT5   0x20    /* */
+            cm_equ1.h         10    #define   cBIT6   0x40    /* */
+            cm_equ1.h         11    #define   cBIT7   0x80    /* */
+            cm_equ1.h         12    #define   cBIT8   0x100   /* */
+            cm_equ1.h         13    #define   cBIT9   0x200   /* */
+            cm_equ1.h         14    #define   cBIT10  0x400   /* */
+            cm_equ1.h         15    #define   cBIT11  0x800   /* */
+            cm_equ1.h         16    #define   cBIT12  0x1000  /* */
+            cm_equ1.h         17    #define   cBIT13  0x2000  /* */
+            cm_equ1.h         18    #define   cBIT14  0x4000  /* */
+            cm_equ1.h         19    #define   cBIT15  0x8000  /* */
+            cm_equ1.h         20    
+            cm_equ1.h         21    //    *******************************************
+            cm_equ1.h         22    //    ***                 ***
+            cm_equ1.h         23    //    ***                 ***
+            cm_equ1.h         24    //    ***                 ***
+            cm_equ1.h         25    //    *******************************************
+            cm_equ1.h         26    //
+            cm_equ1.h         27    //    共通定義 型に意味のある場合下記を仕様する
+            cm_equ1.h         28    typedef unsigned char     Uchar;      //
+            cm_equ1.h         29    typedef unsigned short    Ushort;     //
+            cm_equ1.h         30    typedef unsigned int  Uint;       //
+            cm_equ1.h         31    typedef unsigned long Ulong;      //
+            cm_equ1.h         32    typedef signed char   Char;       //
+            cm_equ1.h         33    typedef signed short  Short;      //
+            cm_equ1.h         34    typedef signed int    Int;        //
+            cm_equ1.h         35    typedef signed long   Long;       //
+            cm_equ1.h         36    
+            cm_equ1.h         37    /*    共通定義 ﾊﾞｲﾄ長に意味のある場合下記を仕様する   */
+            cm_equ1.h         38    typedef unsigned char     U1b;        /*  u1b */
+            cm_equ1.h         39    typedef unsigned short    U2b;        /*  u2b */
+            cm_equ1.h         40    typedef unsigned long U4b;        /*  u4b */
+            cm_equ1.h         41    typedef signed char   S1b;        /*  s1b */
+            cm_equ1.h         42    typedef signed short  S2b;        /*  s2b */
+            cm_equ1.h         43    typedef signed long   S4b;        /*  s4b */
+            cm_equ1.h         44    
+            cm_equ1.h         45    /*    ============ 通常この記述を使用 =============   */
+            cm_equ1.h         46    //typedef signed char     BYTE;       /*  s1b */
+            cm_equ1.h         47    //typedef signed short    WORD;       /*  s2b */
+            cm_equ1.h         48    //typedef signed long DWORD;      /*  s4b */
+            cm_equ1.h         49    
+            cm_equ1.h         50    /*    *********************************** */
+            cm_equ1.h         51    /*    ***     sh3     *** */
+            cm_equ1.h         52    /*    *********************************** */
+            cm_equ1.h         53    /*    =================================   */
+            cm_equ1.h         54    #define       Debug_YES   1
+            cm_equ1.h         55    #define       Debug_NO    0
+            cm_equ1.h         56    #define       CMPILE_YES  1
+            cm_equ1.h         57    #define       CMPILE_NO   0
+            cm_equ1.h         58    
+            cm_equ1.h         59    #define       CB_STS_BUF_MAX      512     //128
+            cm_equ1.h         60    #define       CB_TRD_BUF_MAX      2048    //2048 total 2048確保
+            cm_equ1.h         61    #define       CB_TRD_SMP_CNT      128     //128個
+           ssc_swrm.c          7    
+           ssc_swrm.c          8    //#define     SEQ_STEP_MAX    8000    //; 8000STEP
+           ssc_swrm.c          9    #define       SEQ_STEP_MAX    6000    //; 8000STEP 4K
+           ssc_swrm.c         10    
+           ssc_swrm.c         11    //#define     SEQ_CARD_MAX    800 //;
+           ssc_swrm.c         12    #define       SEQ_CARD_MAX    1000    //;2008-08-01(実際には800wordでOK)
+           ssc_swrm.c         13    
+           ssc_swrm.c         14    #define       SEQ_CTR_MAX 32  //;
+           ssc_swrm.c         15    #define       SEQ_TMR_MAX 96  //;
+           ssc_swrm.c         16    
+           ssc_swrm.c         17    
+           ssc_swrm.c         18    #pragma section   seqram1 /* ｾｸｼｮﾝ=時はBwkram1 */
+           ssc_swrm.c         19    S4b   seq_ram1_top;
+           ssc_swrm.c         20    
+           ssc_swrm.c         21    S4b   SEQ_RUN1_TOP;
+           ssc_swrm.c         22  E U2b   SEQ_RUN1[6000*20+1000]; 
+           ssc_swrm.c         23    //    U2b SEQ_RUN1[8000]; //; SEQUENCE RUN CODE AREA
+           ssc_swrm.c         24    S4b   SEQ_RUN1_END;               //; 8000STEP*20BYTE+余力
+           ssc_swrm.c         25                          //; 0C0A8000H ~ 0C0D3F20H
+           ssc_swrm.c         26    
+           ssc_swrm.c         27    
+           ssc_swrm.c         28    
+           ssc_swrm.c         29    
+           ssc_swrm.c         30    #pragma section   seqram2 /* ｾｸｼｮﾝ=時はBwkram1 */
+           ssc_swrm.c         31    S4b   seq_ram2_top;
+           ssc_swrm.c         32    
+           ssc_swrm.c         33    //S4b SEQ_CARD_RAM_TOP;
+           ssc_swrm.c         34    //    U2b SEQ_CARD_RAM[SEQ_CARD_MAX+20];      //; SEQUENCE BIT AREA ＤＰＲＡＭにとった
+           ssc_swrm.c         35    //S4b SEQ_CARD_RAM_END;           //;
+           ssc_swrm.c         36    
+           ssc_swrm.c         37    //    ========== DPRAM -> SDRAM 変更 2008-07-30 SAITO ==========
+           ssc_swrm.c         38  E   U2b SEQ_CARD_RAM[1000];     
+           ssc_swrm.c         39    //    ==========================================================
+           ssc_swrm.c         40    
+           ssc_swrm.c         41    //S4b SEQ_TMR_DT_TOP;
+           ssc_swrm.c         42  E   U4b SEQ_TMR_DATA[96];   
+           ssc_swrm.c         43    //S4b SEQ_TMR_DT_END;
+           ssc_swrm.c         44    
+           ssc_swrm.c         45    //S4b SEQ_CTR_DT_TOP;
+           ssc_swrm.c         46  E   U4b SEQ_CTR_DATA[32];   
+           ssc_swrm.c         47    //S4b SEQ_CTR_DT_END;
+           ssc_swrm.c         48    
+           ssc_swrm.c         49    
+           ssc_swrm.c         50    
+           ssc_swrm.c         51  E   U2b SEQ_SR_FLG[1000];   
+           ssc_swrm.c         52    
+           ssc_swrm.c         53    
+           ssc_swrm.c         54      U2b SEQ_CMP_ERR;            //; CMP OK = BX:0000 , CMP NG = BX:FFFF
+           ssc_swrm.c         55      U2b SEQ_ARG1_DATA;          //; ARG data load
+           ssc_swrm.c         56      U2b SEQ_MRG1_DATA;          //; MRG data load
+           ssc_swrm.c         57      U2b SEQ_NRG1_DATA;          //; NRG data load
+           ssc_swrm.c         58      U2b SEQ_DRG1_DATA;          //; DATA REG data load
+           ssc_swrm.c         59    
+           ssc_swrm.c         60      U4b SEQ_CMP_ERR_ADR;        //;
+           ssc_swrm.c         61    
+           ssc_swrm.c         62    
+Bse 00000000              _seq_ram1_top:                   ; static: seq_ram1_top
+    00000000 00000004               .RES.L      1
+    00000004              _SEQ_RUN1_TOP:                   ; static: SEQ_RUN1_TOP
+    00000004 00000004               .RES.L      1
+    00000008              _SEQ_RUN1:                       ; static: SEQ_RUN1
+    00000008 00000002               .RES.W      121000
+    0003B158              _SEQ_RUN1_END:                   ; static: SEQ_RUN1_END
+    0003B158 00000004               .RES.L      1
+Bse 00000000              _seq_ram2_top:                   ; static: seq_ram2_top
+    00000000 00000004               .RES.L      1
+    00000004              _SEQ_CARD_RAM:                   ; static: SEQ_CARD_RAM
+    00000004 00000002               .RES.W      1000
+    000007D4              _SEQ_TMR_DATA:                   ; static: SEQ_TMR_DATA
+    000007D4 00000004               .RES.L      96
+    00000954              _SEQ_CTR_DATA:                   ; static: SEQ_CTR_DATA
+    00000954 00000004               .RES.L      32
+    000009D4              _SEQ_SR_FLG:                     ; static: SEQ_SR_FLG
+    000009D4 00000002               .RES.W      1000
+    000011A4              _SEQ_CMP_ERR:                    ; static: SEQ_CMP_ERR
+    000011A4 00000002               .RES.W      1
+    000011A6              _SEQ_ARG1_DATA:                  ; static: SEQ_ARG1_DATA
+    000011A6 00000002               .RES.W      1
+    000011A8              _SEQ_MRG1_DATA:                  ; static: SEQ_MRG1_DATA
+    000011A8 00000002               .RES.W      1
+    000011AA              _SEQ_NRG1_DATA:                  ; static: SEQ_NRG1_DATA
+    000011AA 00000002               .RES.W      1
+    000011AC              _SEQ_DRG1_DATA:                  ; static: SEQ_DRG1_DATA
+    000011AC 00000002               .RES.W      1
+    000011AE 00000002               .RES.W      1
+    000011B0              _SEQ_CMP_ERR_ADR:                ; static: SEQ_CMP_ERR_ADR
+    000011B0 00000004               .RES.L      1
+SH SERIES C/C++ Compiler (V.9.04.01.002)                                                         13-Dec-2020 18:20:39  PAGE    1
+
+
+******** STATISTICS INFORMATION ********
+
+
+********** ERROR INFORMATION ***********
+
+NUMBER OF ERRORS:           0
+NUMBER OF WARNINGS:         0
+
+
+
+
+******* SOURCE LINE INFORMATION ********
+
+COMPILED SOURCE LINE:       62
+
+
+
+******* SECTION SIZE INFORMATION *******
+
+PROGRAM  SECTION (P):                                 00000000 Byte(s)
+CONSTANT SECTION (C):                                 00000000 Byte(s)
+DATA     SECTION (D):                                 00000000 Byte(s)
+BSS      SECTION (B):                                 00000000 Byte(s)
+BSS      SECTION (Bseqram1):                          0003B15C Byte(s)
+BSS      SECTION (Bseqram2):                          000011B4 Byte(s)
+
+TOTAL PROGRAM  SECTION: 00000000 Byte(s)
+TOTAL CONSTANT SECTION: 00000000 Byte(s)
+TOTAL DATA     SECTION: 00000000 Byte(s)
+TOTAL BSS      SECTION: 0003C310 Byte(s)
+
+    TOTAL PROGRAM SIZE: 0003C310 Byte(s)
+
+
+
+********** LABEL INFORMATION ***********
+
+NUMBER OF EXTERNAL REFERENCE SYMBOLS:            0
+NUMBER OF EXTERNAL DEFINITION SYMBOLS:          15
+NUMBER OF INTERNAL/EXTERNAL SYMBOLS:            15
+
+
+
+*** COMMAND PARAMETER ***
+
+-subcommand=D:\SIT4S_MC_99\cpua\cpua\cpua\Debug\ssc_swrm.shc
+-cpu=sh4
+-include="D:\SIT4S_MC_99\cpua\cpua\HW_SRC","D:\SIT4S_MC_99\comon","D:\SIT4S_MC_99\cpua\cpua","D:\SIT4S_MC_99\cpua\cpua\SEQ_SRC","D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON","D:\SIT4S_MC_99\cpua\cpua\cb_src\K_SRC","D:\SIT4S_MC_99\comon\cpua_inc"
+-object="D:\SIT4S_MC_99\cpua\cpua\cpua\Debug\ssc_swrm.obj"
+-debug
+-listfile="D:\SIT4S_MC_99\cpua\cpua\cpua\Debug\ssc_swrm.lst"
+-show=source,include,expansion,tab=4
+-optimize=0
+-noinline
+-gbr=auto
+-chgincpath
+-errorpath
+"D:\SIT4S_MC_99\cpua\cpua\SEQ_SRC\ssc_swrm.c"
+-global_volatile=0
+-opt_range=all
+-infinite_loop=0
+-del_vacant_loop=0
+-struct_alloc=1
+-lang=c
+-nologo

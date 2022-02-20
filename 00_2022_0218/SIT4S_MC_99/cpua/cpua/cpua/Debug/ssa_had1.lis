@@ -1,0 +1,1499 @@
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE     1
+PROGRAM NAME =
+
+    1                               1     ;       ***************************************************
+    2                               2     ;       ***                                             ***
+    3                               3     ;       ***     ﾊｰﾄﾞｳｴｱｱｸｾｽｻﾌﾞﾙｰﾁﾝ                      ***
+    4                               4     ;       ***                                             ***
+    5                               5     ;       ***************************************************
+ 2796                              14     
+ 2797                              15     
+ 2798                              16     ;       /*      extern   宣言           */
+ 2799                              17             .import         _DPRAM_TOP                      ;
+ 2800                              18             .import         _DPRAM_END                      ;
+ 2801                              19     
+ 2802                              20     
+ 2803                              21     ;       /*      public 宣言             */
+ 2804                              22             .export _WORK_MEM1_CHK
+ 2805                              23             .export _IRAM_CLR
+ 2806                              24             .export _DP_MEM_CHK
+ 2807                              25             .export _WDT_Rifresh
+ 2808                              26     
+ 2809          0C000000            27     _SDRAM_TOP      .EQU    H'0C000000
+ 2810                              28     ;_SDRAM_SIZE    .EQU    H'0FFFFF
+ 2811                              29     ;;;;_SDRAM_SIZE .EQU    H'11FFFF
+ 2812                              30     ;;;;_SDRAM_SIZE .EQU    H'3FFFFF
+ 2813                              31     ;;;[20090925]_SDRAM_SIZE        .EQU    H'1BFFFF                ; SIT-3と一緒
+ 2814                              32     ;;;_SDRAM_SIZE  .EQU    H'1DFFFF                ;[20090925]
+ 2815          0023FFFF            33     _SDRAM_SIZE     .EQU    H'23FFFF                ;2013-12-15
+ 2816                              34     
+ 2817                              35     
+ 2818                              36     
+ 2819 00000000                     37             .SECTION        Phwsetup1,CODE
+ 2820                              38     ;       ****************************************************
+ 2821                              39     ;       ****                                            ****
+ 2822                              40     ;       ****            SDRAMチェック                   ****
+ 2823                              41     ;       ****                                            ****
+ 2824                              42     ;       ****************************************************
+ 2825                              43     ;               0c00,0000~0cff,ffff 本当はこの空間
+ 2826                              44     ;               0c00,0000~0c0f,ffff までﾁｪｯｸを行う.
+ 2827                              45     ;               0c00,0000~0c07,ffff 512k:ﾌﾟﾛｸﾞﾗﾑ展開領域
+ 2828                              46     ;               0c08,0000~0c0f,ffff 512k:ﾜｰｸRAM領域
+ 2829 00000000                     47     _WORK_MEM1_CHK:
+ 2830                              48             SUB_START
+ 2831 00000000 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 2832                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 2833 00000002 244A                49             XOR     R4,R4                                   ;
+ 2834                              50     
+ 2835                              51     ;       ********************************************
+ 2836                              52     ;       ****            ｲﾝｸﾘﾒﾝﾀﾙWRITE           ****
+ 2837                              53     ;       ********************************************
+ 2838 00000004 D607                54             MOV.L   #_SDRAM_TOP,R6                  ;
+ 2839 00000006 D108                55             MOV.L   #(_SDRAM_SIZE+1)/4,R1                   ;SIZE BYTE-->WORD
+ 2840 00000008 D208                56             MOV.L   #H'5AA50001,R2                          ;DATA
+ 2841                              57     
+ 2842                              58     ;       =================================
+ 2843 0000000A                     59     WORK_MEM1_WR020:                                        ;
+ 2844 0000000A 2118                60             TST     R1,R1                                   ;
+ 2845                              61             TST_BIT_OF WORK_MEM1_WREND                      ;
+ 2846 0000000C 8928                   M           BT      WORK_MEM1_WREND
+ 2847                              62     
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE     2
+PROGRAM NAME =
+
+ 2848 0000000E 2622                63             MOV.L   R2,@R6                                  ;DATA -->MEM
+ 2849 00000010 7604                64             ADD     #4,R6                                   ;ADRESS +4
+ 2850 00000012 71FF                65             ADD     #H'FF,R1                                ;-1
+ 2851 00000014 7201                66             ADD     #1,R2                                   ;DATA +1
+ 2852                              67     ;       ------------------------------
+ 2853 00000016 6063                68             MOV     R6,R0                                   ;
+ 2854 00000018 D705                69             MOV.L   #H'00003FFF,R7                          ;
+ 2855 0000001A 2079                70             AND     R7,R0                                   ;
+ 2856 0000001C 2008                71             TST     R0,R0                                   ;
+ 2857                              72             TST_BIT_OF MEM1_WR_WDTST                        ;
+ 2858 0000001E 8909                   M           BT      MEM1_WR_WDTST
+ 2859                              73     ;       ------------------------------
+ 2860                              74             M_BRA   WORK_MEM1_WR020                         ;
+ 2861 00000020 AFF3                   M           BRA     WORK_MEM1_WR020
+ 2862 00000022 0009                   M           NOP
+ 2863                              75     
+ 2864                                     ***** BEGIN-POOL *****
+ 2865 00000024 0C000000                   DATA FOR SOURCE-LINE 54
+ 2866 00000028 00090000                   DATA FOR SOURCE-LINE 55
+ 2867 0000002C 5AA50001                   DATA FOR SOURCE-LINE 56
+ 2868 00000030 00003FFF                   DATA FOR SOURCE-LINE 69
+ 2869                                     ***** END-POOL *****
+ 2870 00000034                     76     MEM1_WR_WDTST:
+ 2871                              77     ;       ====================================
+ 2872                              78     ;       -------------- WDT CLR -------------
+ 2873                              79     ;       ====================================
+ 2874                              80             _WDT_CLR R14,R13,R12
+ 2875                                 M           DI_PUSH_SR_SH3  R14, R13
+ 2876 00000034 0E02                   M           STC     SR,R14                  ;
+ 2877 00000036 9D0E                   M           MOV.W   #H'000000F0,R13         ;
+ 2878 00000038 2EDB                   M           OR      R13,R14         ;INT15
+ 2879 0000003A 4F03                   M           STC.L   SR,@-R15                        ;PUSH SR
+ 2880 0000003C 4E0E                   M           LDC     R14,SR                  ;割込禁止（15）
+ 2881                                 M   
+ 2882 0000003E DD07                   M           MOV.L   #_PDTRB,R13
+ 2883 00000040 6ED1                   M           MOV.W   @R13,R14        ;R0:
+ 2884 00000042 9C09                   M           MOV.W   #BIT2,R12               ;
+ 2885 00000044 2ECA                   M           XOR     R12,R14 ;
+ 2886 00000046 2DE1                   M           MOV.W   R14,@R13        ;output
+ 2887                                 M   
+ 2888 00000048 2ECA                   M           XOR     R12,R14 ;
+ 2889 0000004A 2DE1                   M           MOV.W   R14,@R13        ;output
+ 2890                                 M   
+ 2891 0000004C 2ECA                   M           XOR     R12,R14 ;
+ 2892 0000004E 2DE1                   M           MOV.W   R14,@R13        ;output
+ 2893                                 M   
+ 2894                                 M           EI_POP_SR_SH3                   ;
+ 2895 00000050 4F07                   M           LDC.L   @R15+,SR                        ;POP SR
+ 2896                              81             M_BRA   WORK_MEM1_WR020                         ;
+ 2897 00000052 AFDA                   M           BRA     WORK_MEM1_WR020
+ 2898 00000054 0009                   M           NOP
+ 2899                              82     
+ 2900                                     ***** BEGIN-POOL *****
+ 2901 00000056 00F0                       DATA FOR SOURCE-LINE 80
+ 2902 00000058 0004                       DATA FOR SOURCE-LINE 80
+ 2903 0000005A 0000                       ALIGNMENT CODE
+ 2904 0000005C 00000000                   DATA FOR SOURCE-LINE 80
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE     3
+PROGRAM NAME =
+
+ 2905                                     ***** END-POOL *****
+ 2906 00000060                     83     WORK_MEM1_WREND:
+ 2907                              84             _WDT_CLR R14,R13,R12
+ 2908                                 M           DI_PUSH_SR_SH3  R14, R13
+ 2909 00000060 0E02                   M           STC     SR,R14                  ;
+ 2910 00000062 9D1E                   M           MOV.W   #H'000000F0,R13         ;
+ 2911 00000064 2EDB                   M           OR      R13,R14         ;INT15
+ 2912 00000066 4F03                   M           STC.L   SR,@-R15                        ;PUSH SR
+ 2913 00000068 4E0E                   M           LDC     R14,SR                  ;割込禁止（15）
+ 2914                                 M   
+ 2915 0000006A DD0F                   M           MOV.L   #_PDTRB,R13
+ 2916 0000006C 6ED1                   M           MOV.W   @R13,R14        ;R0:
+ 2917 0000006E 9C19                   M           MOV.W   #BIT2,R12               ;
+ 2918 00000070 2ECA                   M           XOR     R12,R14 ;
+ 2919 00000072 2DE1                   M           MOV.W   R14,@R13        ;output
+ 2920                                 M   
+ 2921 00000074 2ECA                   M           XOR     R12,R14 ;
+ 2922 00000076 2DE1                   M           MOV.W   R14,@R13        ;output
+ 2923                                 M   
+ 2924 00000078 2ECA                   M           XOR     R12,R14 ;
+ 2925 0000007A 2DE1                   M           MOV.W   R14,@R13        ;output
+ 2926                                 M   
+ 2927                                 M           EI_POP_SR_SH3                   ;
+ 2928 0000007C 4F07                   M           LDC.L   @R15+,SR                        ;POP SR
+ 2929                              85     
+ 2930                              86     ;       ********************************************
+ 2931                              87     ;       ****            ｲﾝｸﾘﾒﾝﾀﾙCHEAK           ****
+ 2932                              88     ;       ********************************************
+ 2933 0000007E D60B                89             MOV.L   #_SDRAM_TOP,R6                  ;
+ 2934 00000080 D10B                90             MOV.L   #(_SDRAM_SIZE+1)/4,R1                   ;SIZE BYTE-->WORD
+ 2935 00000082 D20C                91             MOV.L   #H'5AA50001,R2                          ;DATA
+ 2936                              92     
+ 2937                              93     ;       =================================
+ 2938 00000084                     94     WORK_MEM1_CK020:                                        ;
+ 2939 00000084 2118                95             TST     R1,R1                                   ;
+ 2940                              96             TST_BIT_OF WORK_MEM1_CKEND                      ;
+ 2941 00000086 8930                   M           BT      WORK_MEM1_CKEND
+ 2942 00000088 6362                97             MOV.L   @R6,R3                                  ;
+ 2943 0000008A 3230                98             CMP/EQ  R3,R2                                   ;
+ 2944 0000008C 8B2C                99             BF      WORK_MEM1_EREND                         ;
+ 2945 0000008E 7604               100             ADD     #4,R6                                   ;ADRESS +2
+ 2946 00000090 71FF               101             ADD     #H'FF,R1                                ;
+ 2947 00000092 7201               102             ADD     #1,R2                                   ;DATA +1
+ 2948                             103     
+ 2949                             104     ;       ------------------------------
+ 2950 00000094 6063               105             MOV     R6,R0                                   ;
+ 2951 00000096 D708               106             MOV.L   #H'00003FFF,R7                          ;
+ 2952 00000098 2079               107             AND     R7,R0                                   ;
+ 2953 0000009A 2008               108             TST     R0,R0                                   ;
+ 2954                             109             TST_BIT_OF MEM1_CK_WDTST                        ;
+ 2955 0000009C 890E                   M           BT      MEM1_CK_WDTST
+ 2956                             110     ;       ------------------------------
+ 2957                             111             M_BRA   WORK_MEM1_CK020                         ;
+ 2958 0000009E AFF1                   M           BRA     WORK_MEM1_CK020
+ 2959 000000A0 0009                   M           NOP
+ 2960                             112     
+ 2961                                     ***** BEGIN-POOL *****
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE     4
+PROGRAM NAME =
+
+ 2962 000000A2 00F0                       DATA FOR SOURCE-LINE 84
+ 2963 000000A4 0004                       DATA FOR SOURCE-LINE 84
+ 2964 000000A6 0000                       ALIGNMENT CODE
+ 2965 000000A8 00000000                   DATA FOR SOURCE-LINE 84
+ 2966 000000AC 0C000000                   DATA FOR SOURCE-LINE 89
+ 2967 000000B0 00090000                   DATA FOR SOURCE-LINE 90
+ 2968 000000B4 5AA50001                   DATA FOR SOURCE-LINE 91
+ 2969 000000B8 00003FFF                   DATA FOR SOURCE-LINE 106
+ 2970                                     ***** END-POOL *****
+ 2971 000000BC                    113     MEM1_CK_WDTST:
+ 2972                             114     ;       ====================================
+ 2973                             115     ;       -------------- WDT CLR -------------
+ 2974                             116     ;       ====================================
+ 2975                             117             _WDT_CLR R14,R13,R12
+ 2976                                 M           DI_PUSH_SR_SH3  R14, R13
+ 2977 000000BC 0E02                   M           STC     SR,R14                  ;
+ 2978 000000BE 9D0E                   M           MOV.W   #H'000000F0,R13         ;
+ 2979 000000C0 2EDB                   M           OR      R13,R14         ;INT15
+ 2980 000000C2 4F03                   M           STC.L   SR,@-R15                        ;PUSH SR
+ 2981 000000C4 4E0E                   M           LDC     R14,SR                  ;割込禁止（15）
+ 2982                                 M   
+ 2983 000000C6 DD07                   M           MOV.L   #_PDTRB,R13
+ 2984 000000C8 6ED1                   M           MOV.W   @R13,R14        ;R0:
+ 2985 000000CA 9C09                   M           MOV.W   #BIT2,R12               ;
+ 2986 000000CC 2ECA                   M           XOR     R12,R14 ;
+ 2987 000000CE 2DE1                   M           MOV.W   R14,@R13        ;output
+ 2988                                 M   
+ 2989 000000D0 2ECA                   M           XOR     R12,R14 ;
+ 2990 000000D2 2DE1                   M           MOV.W   R14,@R13        ;output
+ 2991                                 M   
+ 2992 000000D4 2ECA                   M           XOR     R12,R14 ;
+ 2993 000000D6 2DE1                   M           MOV.W   R14,@R13        ;output
+ 2994                                 M   
+ 2995                                 M           EI_POP_SR_SH3                   ;
+ 2996 000000D8 4F07                   M           LDC.L   @R15+,SR                        ;POP SR
+ 2997                             118             M_BRA   WORK_MEM1_CK020                         ;
+ 2998 000000DA AFD3                   M           BRA     WORK_MEM1_CK020
+ 2999 000000DC 0009                   M           NOP
+ 3000                             119     
+ 3001                                     ***** BEGIN-POOL *****
+ 3002 000000DE 00F0                       DATA FOR SOURCE-LINE 117
+ 3003 000000E0 0004                       DATA FOR SOURCE-LINE 117
+ 3004 000000E2 0000                       ALIGNMENT CODE
+ 3005 000000E4 00000000                   DATA FOR SOURCE-LINE 117
+ 3006                                     ***** END-POOL *****
+ 3007 000000E8                    120     WORK_MEM1_EREND:
+ 3008 000000E8 7401               121             ADD     #1,R4                                   ;ERR THEN ELSE 0
+ 3009 000000EA                    122     WORK_MEM1_CKEND:
+ 3010                             123             _WDT_CLR R14,R13,R12
+ 3011                                 M           DI_PUSH_SR_SH3  R14, R13
+ 3012 000000EA 0E02                   M           STC     SR,R14                  ;
+ 3013 000000EC 9D0E                   M           MOV.W   #H'000000F0,R13         ;
+ 3014 000000EE 2EDB                   M           OR      R13,R14         ;INT15
+ 3015 000000F0 4F03                   M           STC.L   SR,@-R15                        ;PUSH SR
+ 3016 000000F2 4E0E                   M           LDC     R14,SR                  ;割込禁止（15）
+ 3017                                 M   
+ 3018 000000F4 DD06                   M           MOV.L   #_PDTRB,R13
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE     5
+PROGRAM NAME =
+
+ 3019 000000F6 6ED1                   M           MOV.W   @R13,R14        ;R0:
+ 3020 000000F8 9C09                   M           MOV.W   #BIT2,R12               ;
+ 3021 000000FA 2ECA                   M           XOR     R12,R14 ;
+ 3022 000000FC 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3023                                 M   
+ 3024 000000FE 2ECA                   M           XOR     R12,R14 ;
+ 3025 00000100 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3026                                 M   
+ 3027 00000102 2ECA                   M           XOR     R12,R14 ;
+ 3028 00000104 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3029                                 M   
+ 3030                                 M           EI_POP_SR_SH3                   ;
+ 3031 00000106 4F07                   M           LDC.L   @R15+,SR                        ;POP SR
+ 3032                             124     
+ 3033                             125     
+ 3034                             126     ;       ********************************************
+ 3035                             127     ;       ****            ﾃﾞｸﾘﾒﾝﾄWRITE            ****
+ 3036                             128     ;       ********************************************
+ 3037                             129             M_BRA   WORK_MEM2_CKEND
+ 3038 00000108 A077                   M           BRA     WORK_MEM2_CKEND
+ 3039 0000010A 0009                   M           NOP
+ 3040                             130     
+ 3041                                     ***** BEGIN-POOL *****
+ 3042 0000010C 00F0                       DATA FOR SOURCE-LINE 123
+ 3043 0000010E 0004                       DATA FOR SOURCE-LINE 123
+ 3044 00000110 00000000                   DATA FOR SOURCE-LINE 123
+ 3045                                     ***** END-POOL *****
+ 3046 00000114 D607               131             MOV.L   #_SDRAM_TOP,R6                  ;
+ 3047 00000116 D108               132             MOV.L   #(_SDRAM_SIZE+1)/4,R1                   ;SIZE BYTE-->WORD
+ 3048 00000118 D208               133             MOV.L   #H'A55A0001,R2                          ;DATA
+ 3049                             134     
+ 3050                             135     ;       =================================
+ 3051 0000011A                    136     WORK_MEM2_WR020:                                        ;
+ 3052 0000011A 2118               137             TST     R1,R1                                   ;
+ 3053                             138             TST_BIT_OF WORK_MEM2_WREND                      ;
+ 3054 0000011C 8928                   M           BT      WORK_MEM2_WREND
+ 3055                             139     
+ 3056 0000011E 2622               140             MOV.L   R2,@R6                                  ;DATA -->MEM
+ 3057 00000120 7604               141             ADD     #4,R6                                   ;ADRESS +4
+ 3058 00000122 71FF               142             ADD     #H'FF,R1                                ;-1
+ 3059 00000124 72FF               143             ADD     #H'FF,R2                                ;DATA -1
+ 3060                             144     
+ 3061                             145     ;       ------------------------------
+ 3062 00000126 6063               146             MOV     R6,R0                                   ;
+ 3063 00000128 D705               147             MOV.L   #H'00003FFF,R7                          ;
+ 3064 0000012A 2079               148             AND     R7,R0                                   ;
+ 3065 0000012C 2008               149             TST     R0,R0                                   ;
+ 3066                             150             TST_BIT_OF MEM2_WR_WDTST                        ;
+ 3067 0000012E 8909                   M           BT      MEM2_WR_WDTST
+ 3068                             151     ;       ------------------------------
+ 3069                             152             M_BRA   WORK_MEM2_WR020                         ;
+ 3070 00000130 AFF3                   M           BRA     WORK_MEM2_WR020
+ 3071 00000132 0009                   M           NOP
+ 3072                             153     
+ 3073                                     ***** BEGIN-POOL *****
+ 3074 00000134 0C000000                   DATA FOR SOURCE-LINE 131
+ 3075 00000138 00090000                   DATA FOR SOURCE-LINE 132
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE     6
+PROGRAM NAME =
+
+ 3076 0000013C A55A0001                   DATA FOR SOURCE-LINE 133
+ 3077 00000140 00003FFF                   DATA FOR SOURCE-LINE 147
+ 3078                                     ***** END-POOL *****
+ 3079 00000144                    154     MEM2_WR_WDTST:
+ 3080                             155     
+ 3081                             156     ;       ====================================
+ 3082                             157     ;       -------------- WDT CLR -------------
+ 3083                             158     ;       ====================================
+ 3084                             159             _WDT_CLR R14,R13,R12
+ 3085                                 M           DI_PUSH_SR_SH3  R14, R13
+ 3086 00000144 0E02                   M           STC     SR,R14                  ;
+ 3087 00000146 9D0E                   M           MOV.W   #H'000000F0,R13         ;
+ 3088 00000148 2EDB                   M           OR      R13,R14         ;INT15
+ 3089 0000014A 4F03                   M           STC.L   SR,@-R15                        ;PUSH SR
+ 3090 0000014C 4E0E                   M           LDC     R14,SR                  ;割込禁止（15）
+ 3091                                 M   
+ 3092 0000014E DD07                   M           MOV.L   #_PDTRB,R13
+ 3093 00000150 6ED1                   M           MOV.W   @R13,R14        ;R0:
+ 3094 00000152 9C09                   M           MOV.W   #BIT2,R12               ;
+ 3095 00000154 2ECA                   M           XOR     R12,R14 ;
+ 3096 00000156 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3097                                 M   
+ 3098 00000158 2ECA                   M           XOR     R12,R14 ;
+ 3099 0000015A 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3100                                 M   
+ 3101 0000015C 2ECA                   M           XOR     R12,R14 ;
+ 3102 0000015E 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3103                                 M   
+ 3104                                 M           EI_POP_SR_SH3                   ;
+ 3105 00000160 4F07                   M           LDC.L   @R15+,SR                        ;POP SR
+ 3106                             160             M_BRA   WORK_MEM2_WR020                         ;
+ 3107 00000162 AFDA                   M           BRA     WORK_MEM2_WR020
+ 3108 00000164 0009                   M           NOP
+ 3109                             161     
+ 3110                                     ***** BEGIN-POOL *****
+ 3111 00000166 00F0                       DATA FOR SOURCE-LINE 159
+ 3112 00000168 0004                       DATA FOR SOURCE-LINE 159
+ 3113 0000016A 0000                       ALIGNMENT CODE
+ 3114 0000016C 00000000                   DATA FOR SOURCE-LINE 159
+ 3115                                     ***** END-POOL *****
+ 3116 00000170                    162     WORK_MEM2_WREND:
+ 3117                             163             _WDT_CLR R14,R13,R12
+ 3118                                 M           DI_PUSH_SR_SH3  R14, R13
+ 3119 00000170 0E02                   M           STC     SR,R14                  ;
+ 3120 00000172 9D1E                   M           MOV.W   #H'000000F0,R13         ;
+ 3121 00000174 2EDB                   M           OR      R13,R14         ;INT15
+ 3122 00000176 4F03                   M           STC.L   SR,@-R15                        ;PUSH SR
+ 3123 00000178 4E0E                   M           LDC     R14,SR                  ;割込禁止（15）
+ 3124                                 M   
+ 3125 0000017A DD0F                   M           MOV.L   #_PDTRB,R13
+ 3126 0000017C 6ED1                   M           MOV.W   @R13,R14        ;R0:
+ 3127 0000017E 9C19                   M           MOV.W   #BIT2,R12               ;
+ 3128 00000180 2ECA                   M           XOR     R12,R14 ;
+ 3129 00000182 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3130                                 M   
+ 3131 00000184 2ECA                   M           XOR     R12,R14 ;
+ 3132 00000186 2DE1                   M           MOV.W   R14,@R13        ;output
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE     7
+PROGRAM NAME =
+
+ 3133                                 M   
+ 3134 00000188 2ECA                   M           XOR     R12,R14 ;
+ 3135 0000018A 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3136                                 M   
+ 3137                                 M           EI_POP_SR_SH3                   ;
+ 3138 0000018C 4F07                   M           LDC.L   @R15+,SR                        ;POP SR
+ 3139                             164     
+ 3140                             165     ;       ********************************************
+ 3141                             166     ;       ****            ﾃﾞｸﾘﾒﾝﾄCHEAK            ****
+ 3142                             167     ;       ********************************************
+ 3143 0000018E D60B               168             MOV.L   #_SDRAM_TOP,R6                  ;
+ 3144 00000190 D10B               169             MOV.L   #(_SDRAM_SIZE+1)/4,R1                   ;SIZE BYTE-->WORD
+ 3145 00000192 D20C               170             MOV.L   #H'A55A0001,R2                          ;DATA
+ 3146                             171     
+ 3147                             172     ;       =================================
+ 3148 00000194                    173     WORK_MEM2_CK020:                                        ;
+ 3149 00000194 2118               174             TST     R1,R1                                   ;
+ 3150                             175             TST_BIT_OF WORK_MEM2_CKEND                      ;
+ 3151 00000196 8930                   M           BT      WORK_MEM2_CKEND
+ 3152 00000198 6362               176             MOV.L   @R6,R3                                  ;
+ 3153 0000019A 3230               177             CMP/EQ  R3,R2                                   ;
+ 3154 0000019C 8B2C               178             BF      WORK_MEM2_EREND                         ;
+ 3155 0000019E 7604               179             ADD     #4,R6                                   ;ADRESS +4
+ 3156 000001A0 71FF               180             ADD     #H'FF,R1                                ;
+ 3157 000001A2 72FF               181             ADD     #H'FF,R2                                ;DATA -1
+ 3158                             182     
+ 3159                             183     ;       ------------------------------
+ 3160 000001A4 6063               184             MOV     R6,R0                                   ;
+ 3161 000001A6 D708               185             MOV.L   #H'00003FFF,R7                          ;
+ 3162 000001A8 2079               186             AND     R7,R0                                   ;
+ 3163 000001AA 2008               187             TST     R0,R0                                   ;
+ 3164                             188             TST_BIT_OF MEM2_CK_WDTST                        ;
+ 3165 000001AC 890E                   M           BT      MEM2_CK_WDTST
+ 3166                             189     ;       ------------------------------
+ 3167                             190             M_BRA   WORK_MEM2_CK020                         ;
+ 3168 000001AE AFF1                   M           BRA     WORK_MEM2_CK020
+ 3169 000001B0 0009                   M           NOP
+ 3170                                     ***** BEGIN-POOL *****
+ 3171 000001B2 00F0                       DATA FOR SOURCE-LINE 163
+ 3172 000001B4 0004                       DATA FOR SOURCE-LINE 163
+ 3173 000001B6 0000                       ALIGNMENT CODE
+ 3174 000001B8 00000000                   DATA FOR SOURCE-LINE 163
+ 3175 000001BC 0C000000                   DATA FOR SOURCE-LINE 168
+ 3176 000001C0 00090000                   DATA FOR SOURCE-LINE 169
+ 3177 000001C4 A55A0001                   DATA FOR SOURCE-LINE 170
+ 3178 000001C8 00003FFF                   DATA FOR SOURCE-LINE 185
+ 3179                                     ***** END-POOL *****
+ 3180 000001CC                    191     MEM2_CK_WDTST:
+ 3181                             192     
+ 3182                             193     ;       ====================================
+ 3183                             194     ;       -------------- WDT CLR -------------
+ 3184                             195     ;       ====================================
+ 3185                             196             _WDT_CLR R14,R13,R12
+ 3186                                 M           DI_PUSH_SR_SH3  R14, R13
+ 3187 000001CC 0E02                   M           STC     SR,R14                  ;
+ 3188 000001CE 9D0E                   M           MOV.W   #H'000000F0,R13         ;
+ 3189 000001D0 2EDB                   M           OR      R13,R14         ;INT15
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE     8
+PROGRAM NAME =
+
+ 3190 000001D2 4F03                   M           STC.L   SR,@-R15                        ;PUSH SR
+ 3191 000001D4 4E0E                   M           LDC     R14,SR                  ;割込禁止（15）
+ 3192                                 M   
+ 3193 000001D6 DD07                   M           MOV.L   #_PDTRB,R13
+ 3194 000001D8 6ED1                   M           MOV.W   @R13,R14        ;R0:
+ 3195 000001DA 9C09                   M           MOV.W   #BIT2,R12               ;
+ 3196 000001DC 2ECA                   M           XOR     R12,R14 ;
+ 3197 000001DE 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3198                                 M   
+ 3199 000001E0 2ECA                   M           XOR     R12,R14 ;
+ 3200 000001E2 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3201                                 M   
+ 3202 000001E4 2ECA                   M           XOR     R12,R14 ;
+ 3203 000001E6 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3204                                 M   
+ 3205                                 M           EI_POP_SR_SH3                   ;
+ 3206 000001E8 4F07                   M           LDC.L   @R15+,SR                        ;POP SR
+ 3207                             197             M_BRA   WORK_MEM2_CK020                         ;
+ 3208 000001EA AFD3                   M           BRA     WORK_MEM2_CK020
+ 3209 000001EC 0009                   M           NOP
+ 3210                             198     
+ 3211                                     ***** BEGIN-POOL *****
+ 3212 000001EE 00F0                       DATA FOR SOURCE-LINE 196
+ 3213 000001F0 0004                       DATA FOR SOURCE-LINE 196
+ 3214 000001F2 0000                       ALIGNMENT CODE
+ 3215 000001F4 00000000                   DATA FOR SOURCE-LINE 196
+ 3216                                     ***** END-POOL *****
+ 3217 000001F8                    199     WORK_MEM2_EREND:
+ 3218 000001F8 7401               200             ADD     #1,R4                                   ;ERR THEN ELSE 0
+ 3219 000001FA                    201     WORK_MEM2_CKEND:
+ 3220                             202             _WDT_CLR R14,R13,R12
+ 3221                                 M           DI_PUSH_SR_SH3  R14, R13
+ 3222 000001FA 0E02                   M           STC     SR,R14                  ;
+ 3223 000001FC 9D1B                   M           MOV.W   #H'000000F0,R13         ;
+ 3224 000001FE 2EDB                   M           OR      R13,R14         ;INT15
+ 3225 00000200 4F03                   M           STC.L   SR,@-R15                        ;PUSH SR
+ 3226 00000202 4E0E                   M           LDC     R14,SR                  ;割込禁止（15）
+ 3227                                 M   
+ 3228 00000204 DD0D                   M           MOV.L   #_PDTRB,R13
+ 3229 00000206 6ED1                   M           MOV.W   @R13,R14        ;R0:
+ 3230 00000208 9C16                   M           MOV.W   #BIT2,R12               ;
+ 3231 0000020A 2ECA                   M           XOR     R12,R14 ;
+ 3232 0000020C 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3233                                 M   
+ 3234 0000020E 2ECA                   M           XOR     R12,R14 ;
+ 3235 00000210 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3236                                 M   
+ 3237 00000212 2ECA                   M           XOR     R12,R14 ;
+ 3238 00000214 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3239                                 M   
+ 3240                                 M           EI_POP_SR_SH3                   ;
+ 3241 00000216 4F07                   M           LDC.L   @R15+,SR                        ;POP SR
+ 3242                             203     
+ 3243                             204     
+ 3244                             205     ;       ********************************************
+ 3245                             206     ;       ****            0WRITE                  ****
+ 3246                             207     ;       ********************************************
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE     9
+PROGRAM NAME =
+
+ 3247 00000218 D609               208             MOV.L   #_SDRAM_TOP,R6                  ;
+ 3248 0000021A D10A               209             MOV.L   #(_SDRAM_SIZE+1)/4,R1                   ;SIZE BYTE-->WORD
+ 3249 0000021C D20A               210             MOV.L   #0,R2                                   ;DATA
+ 3250                             211     
+ 3251                             212     ;       =================================
+ 3252 0000021E                    213     WORK_MEM3_WR020:                                        ;
+ 3253 0000021E 2118               214             TST     R1,R1                                   ;
+ 3254                             215             TST_BIT_OF WORK_MEM3_WREND                      ;
+ 3255 00000220 892C                   M           BT      WORK_MEM3_WREND
+ 3256                             216     
+ 3257 00000222 2622               217             MOV.L   R2,@R6                                  ;DATA -->MEM
+ 3258 00000224 7604               218             ADD     #4,R6                                   ;ADRESS +2
+ 3259 00000226 71FF               219             ADD     #H'FF,R1                                ;
+ 3260                             220     
+ 3261                             221     ;       ------------------------------
+ 3262 00000228 6063               222             MOV     R6,R0                                   ;
+ 3263 0000022A D708               223             MOV.L   #H'00003FFF,R7                          ;
+ 3264 0000022C 2079               224             AND     R7,R0                                   ;
+ 3265 0000022E 2008               225             TST     R0,R0                                   ;
+ 3266                             226             TST_BIT_OF MEM3_WR_WDTST                        ;
+ 3267 00000230 890E                   M           BT      MEM3_WR_WDTST
+ 3268                             227     ;       ------------------------------
+ 3269                             228             M_BRA   WORK_MEM3_WR020                         ;
+ 3270 00000232 AFF4                   M           BRA     WORK_MEM3_WR020
+ 3271 00000234 0009                   M           NOP
+ 3272                             229     
+ 3273                                     ***** BEGIN-POOL *****
+ 3274 00000236 00F0                       DATA FOR SOURCE-LINE 202
+ 3275 00000238 0004                       DATA FOR SOURCE-LINE 202
+ 3276 0000023A 0000                       ALIGNMENT CODE
+ 3277 0000023C 00000000                   DATA FOR SOURCE-LINE 202
+ 3278 00000240 0C000000                   DATA FOR SOURCE-LINE 208
+ 3279 00000244 00090000                   DATA FOR SOURCE-LINE 209
+ 3280 00000248 00000000                   DATA FOR SOURCE-LINE 210
+ 3281 0000024C 00003FFF                   DATA FOR SOURCE-LINE 223
+ 3282                                     ***** END-POOL *****
+ 3283 00000250                    230     MEM3_WR_WDTST:
+ 3284                             231     
+ 3285                             232     ;       ====================================
+ 3286                             233     ;       -------------- WDT CLR -------------
+ 3287                             234     ;       ====================================
+ 3288                             235             _WDT_CLR R14,R13,R12
+ 3289                                 M           DI_PUSH_SR_SH3  R14, R13
+ 3290 00000250 0E02                   M           STC     SR,R14                  ;
+ 3291 00000252 9D0E                   M           MOV.W   #H'000000F0,R13         ;
+ 3292 00000254 2EDB                   M           OR      R13,R14         ;INT15
+ 3293 00000256 4F03                   M           STC.L   SR,@-R15                        ;PUSH SR
+ 3294 00000258 4E0E                   M           LDC     R14,SR                  ;割込禁止（15）
+ 3295                                 M   
+ 3296 0000025A DD07                   M           MOV.L   #_PDTRB,R13
+ 3297 0000025C 6ED1                   M           MOV.W   @R13,R14        ;R0:
+ 3298 0000025E 9C09                   M           MOV.W   #BIT2,R12               ;
+ 3299 00000260 2ECA                   M           XOR     R12,R14 ;
+ 3300 00000262 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3301                                 M   
+ 3302 00000264 2ECA                   M           XOR     R12,R14 ;
+ 3303 00000266 2DE1                   M           MOV.W   R14,@R13        ;output
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE    10
+PROGRAM NAME =
+
+ 3304                                 M   
+ 3305 00000268 2ECA                   M           XOR     R12,R14 ;
+ 3306 0000026A 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3307                                 M   
+ 3308                                 M           EI_POP_SR_SH3                   ;
+ 3309 0000026C 4F07                   M           LDC.L   @R15+,SR                        ;POP SR
+ 3310                             236             M_BRA   WORK_MEM3_WR020                         ;
+ 3311 0000026E AFD6                   M           BRA     WORK_MEM3_WR020
+ 3312 00000270 0009                   M           NOP
+ 3313                             237     
+ 3314                                     ***** BEGIN-POOL *****
+ 3315 00000272 00F0                       DATA FOR SOURCE-LINE 235
+ 3316 00000274 0004                       DATA FOR SOURCE-LINE 235
+ 3317 00000276 0000                       ALIGNMENT CODE
+ 3318 00000278 00000000                   DATA FOR SOURCE-LINE 235
+ 3319                                     ***** END-POOL *****
+ 3320 0000027C                    238     WORK_MEM3_WREND:
+ 3321                             239             _WDT_CLR R14,R13,R12
+ 3322                                 M           DI_PUSH_SR_SH3  R14, R13
+ 3323 0000027C 0E02                   M           STC     SR,R14                  ;
+ 3324 0000027E 9D15                   M           MOV.W   #H'000000F0,R13         ;
+ 3325 00000280 2EDB                   M           OR      R13,R14         ;INT15
+ 3326 00000282 4F03                   M           STC.L   SR,@-R15                        ;PUSH SR
+ 3327 00000284 4E0E                   M           LDC     R14,SR                  ;割込禁止（15）
+ 3328                                 M   
+ 3329 00000286 DD0A                   M           MOV.L   #_PDTRB,R13
+ 3330 00000288 6ED1                   M           MOV.W   @R13,R14        ;R0:
+ 3331 0000028A 9C10                   M           MOV.W   #BIT2,R12               ;
+ 3332 0000028C 2ECA                   M           XOR     R12,R14 ;
+ 3333 0000028E 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3334                                 M   
+ 3335 00000290 2ECA                   M           XOR     R12,R14 ;
+ 3336 00000292 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3337                                 M   
+ 3338 00000294 2ECA                   M           XOR     R12,R14 ;
+ 3339 00000296 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3340                                 M   
+ 3341                                 M           EI_POP_SR_SH3                   ;
+ 3342 00000298 4F07                   M           LDC.L   @R15+,SR                        ;POP SR
+ 3343                             240     
+ 3344 0000029A 2448               241             TST     R4,R4                   ; ＲＡＭチェック異常チェック
+ 3345                             242             TST_BIT_OF WORK_MEM123CHK_END   ;
+ 3346 0000029C 8903                   M           BT      WORK_MEM123CHK_END
+ 3347                             243     
+ 3348 0000029E D105               244             MOV.L   #_mem_chk_flg,R1        ;
+ 3349 000002A0 6011               245             MOV.W   @R1,R0                  ;
+ 3350 000002A2 CB01               246             OR      #BIT0,R0                ; BIT0 SDRAM ERR
+ 3351 000002A4 2101               247             MOV.W   R0,@R1                  ;
+ 3352                             248     
+ 3353 000002A6                    249     WORK_MEM123CHK_END:
+ 3354                             250     
+ 3355                             251             SUB_END
+ 3356                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 3357 000002A6 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 3358                             252             M_RTS
+ 3359 000002A8 000B                   M           RTS                             ;RTSの後ろの
+ 3360 000002AA 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE    11
+PROGRAM NAME =
+
+ 3361                             253     
+ 3362                             254     
+ 3363                             255     ;       ****************************************************
+ 3364                             256     ;       ****                                            ****
+ 3365                             257     ;       ****            DPRAMチェック                   **** 今回は使わない
+ 3366                             258     ;       ****                                            ****
+ 3367                             259     ;       ****************************************************
+ 3368                                     ***** BEGIN-POOL *****
+ 3369 000002AC 00F0                       DATA FOR SOURCE-LINE 239
+ 3370 000002AE 0004                       DATA FOR SOURCE-LINE 239
+ 3371 000002B0 00000000                   DATA FOR SOURCE-LINE 239
+ 3372 000002B4 00000000                   DATA FOR SOURCE-LINE 244
+ 3373                                     ***** END-POOL *****
+ 3374 000002B8                    260     _DP_MEM_CHK:
+ 3375                             261             SUB_START
+ 3376 000002B8 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 3377                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 3378                             262     
+ 3379                             263     ;       ------- DPRAM CLR-----------------
+ 3380 000002BA D506               264             MOV.L   #_DPRAM_TOP,R5          ;
+ 3381 000002BC D606               265             MOV.L   #_DPRAM_END,R6          ;
+ 3382                             266             FAR_JSR #MEM_CHK_CLR,R0         ;
+ 3383 000002BE D007                   M           MOV.L   #MEM_CHK_CLR,R0         ;ﾃｰﾌﾞﾙｱﾄﾞﾚｽの内容をREGへ
+ 3384 000002C0 400B                   M           JSR     @R0                     ;
+ 3385 000002C2 0009                   M           NOP                                     ;
+ 3386 000002C4 200B               267             OR      R0,R0                   ;
+ 3387 000002C6 890D               268             BT      _DP_CHK_END             ;
+ 3388                             269     
+ 3389 000002C8 D105               270             MOV.L   #_mem_chk_flg,R1        ;
+ 3390 000002CA 6011               271             MOV.W   @R1,R0                  ;
+ 3391 000002CC CB08               272             OR      #BIT3,R0                ;
+ 3392 000002CE 2101               273             MOV.W   R0,@R1                  ;
+ 3393                             274     
+ 3394                             275             M_BRA   _DP_CHK_END             ;
+ 3395 000002D0 A008                   M           BRA     _DP_CHK_END
+ 3396 000002D2 0009                   M           NOP
+ 3397                             276     
+ 3398                                     ***** BEGIN-POOL *****
+ 3399 000002D4 00000000                   DATA FOR SOURCE-LINE 264
+ 3400 000002D8 00000000                   DATA FOR SOURCE-LINE 265
+ 3401 000002DC 00000000                   DATA FOR SOURCE-LINE 266
+ 3402 000002E0 00000000                   DATA FOR SOURCE-LINE 270
+ 3403                                     ***** END-POOL *****
+ 3404 000002E4                    277     _DP_CHK_END:
+ 3405                             278             SUB_END
+ 3406                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 3407 000002E4 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 3408                             279             M_RTS
+ 3409 000002E6 000B                   M           RTS                             ;RTSの後ろの
+ 3410 000002E8 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 3411                             280     
+ 3412                             281     
+ 3413                             282     
+ 3414                             283     ;       *******************************************
+ 3415                             284     ;       ***                                     ***
+ 3416                             285     ;       ***             メモリクリア            ***     INS  '01/03/14
+ 3417                             286     ;       ***                                     ***
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE    12
+PROGRAM NAME =
+
+ 3418                             287     ;       *******************************************
+ 3419 000002EA                    288     _IRAM_CLR:
+ 3420                             289             SUB_START
+ 3421 000002EA 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 3422                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 3423                             290     
+ 3424                             291     ;       -------IRAM CLR-----------------
+ 3425 000002EC D504               292             MOV.L   #H'7C001000,R5                  ;
+ 3426 000002EE D605               293             MOV.L   #H'7C0027FF-H'40,R6             ;
+ 3427                             294     
+ 3428 000002F0                    295     _IMEM_CLR:
+ 3429 000002F0 D105               296             MOV.L   #0,R1
+ 3430                             297     
+ 3431 000002F2                    298     _IMEM_CLR_LOOP:
+ 3432 000002F2 2510               299             MOV.B   R1,@R5                          ;
+ 3433                             300     
+ 3434 000002F4 3562               301             CMP/HS  R6,R5                   ;
+ 3435 000002F6 8909               302             BT      _IMEM_CLR_END           ;BEQ
+ 3436                             303     
+ 3437 000002F8 7501               304             ADD     #1,R5                   ;
+ 3438                             305             M_BRA   _IMEM_CLR_LOOP  ;
+ 3439 000002FA AFFA                   M           BRA     _IMEM_CLR_LOOP
+ 3440 000002FC 0009                   M           NOP
+ 3441                             306     
+ 3442                                     ***** BEGIN-POOL *****
+ 3443 000002FE 0000                       ALIGNMENT CODE
+ 3444 00000300 7C001000                   DATA FOR SOURCE-LINE 292
+ 3445 00000304 7C0027BF                   DATA FOR SOURCE-LINE 293
+ 3446 00000308 00000000                   DATA FOR SOURCE-LINE 296
+ 3447                                     ***** END-POOL *****
+ 3448 0000030C                    307     _IMEM_CLR_END:
+ 3449                             308             _WDT_CLR R14,R13,R12
+ 3450                                 M           DI_PUSH_SR_SH3  R14, R13
+ 3451 0000030C 0E02                   M           STC     SR,R14                  ;
+ 3452 0000030E 9D0F                   M           MOV.W   #H'000000F0,R13         ;
+ 3453 00000310 2EDB                   M           OR      R13,R14         ;INT15
+ 3454 00000312 4F03                   M           STC.L   SR,@-R15                        ;PUSH SR
+ 3455 00000314 4E0E                   M           LDC     R14,SR                  ;割込禁止（15）
+ 3456                                 M   
+ 3457 00000316 DD07                   M           MOV.L   #_PDTRB,R13
+ 3458 00000318 6ED1                   M           MOV.W   @R13,R14        ;R0:
+ 3459 0000031A 9C0A                   M           MOV.W   #BIT2,R12               ;
+ 3460 0000031C 2ECA                   M           XOR     R12,R14 ;
+ 3461 0000031E 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3462                                 M   
+ 3463 00000320 2ECA                   M           XOR     R12,R14 ;
+ 3464 00000322 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3465                                 M   
+ 3466 00000324 2ECA                   M           XOR     R12,R14 ;
+ 3467 00000326 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3468                                 M   
+ 3469                                 M           EI_POP_SR_SH3                   ;
+ 3470 00000328 4F07                   M           LDC.L   @R15+,SR                        ;POP SR
+ 3471                             309     
+ 3472                             310             SUB_END
+ 3473                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 3474 0000032A 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE    13
+PROGRAM NAME =
+
+ 3475                             311             M_RTS
+ 3476 0000032C 000B                   M           RTS                             ;RTSの後ろの
+ 3477 0000032E 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 3478                             312     
+ 3479                             313     
+ 3480                             314     ;       *******************************************
+ 3481                             315     ;       ***                                     ***
+ 3482                             316     ;       ***             ﾒﾓﾘﾁｪｯｸ                 ***
+ 3483                             317     ;       ***                                     ***
+ 3484                             318     ;       *******************************************
+ 3485                                     ***** BEGIN-POOL *****
+ 3486 00000330 00F0                       DATA FOR SOURCE-LINE 308
+ 3487 00000332 0004                       DATA FOR SOURCE-LINE 308
+ 3488 00000334 00000000                   DATA FOR SOURCE-LINE 308
+ 3489                                     ***** END-POOL *****
+ 3490 00000338                    319     MEM_CHK_CLR:
+ 3491                             320             SUB_START
+ 3492 00000338 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 3493                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 3494                             321     
+ 3495 0000033A E15A               322             MOV.B   #H'5A,R1
+ 3496 0000033C E2A5               323             MOV.B   #H'A5,R2
+ 3497 0000033E E300               324             MOV.B   #H'00,R3
+ 3498                             325     
+ 3499 00000340                    326     MEM_CHKCLR_LOOP:
+ 3500                             327             _WDT_CLR R14,R13,R12
+ 3501                                 M           DI_PUSH_SR_SH3  R14, R13
+ 3502 00000340 0E02                   M           STC     SR,R14                  ;
+ 3503 00000342 9D2F                   M           MOV.W   #H'000000F0,R13         ;
+ 3504 00000344 2EDB                   M           OR      R13,R14         ;INT15
+ 3505 00000346 4F03                   M           STC.L   SR,@-R15                        ;PUSH SR
+ 3506 00000348 4E0E                   M           LDC     R14,SR                  ;割込禁止（15）
+ 3507                                 M   
+ 3508 0000034A DD17                   M           MOV.L   #_PDTRB,R13
+ 3509 0000034C 6ED1                   M           MOV.W   @R13,R14        ;R0:
+ 3510 0000034E 9C2A                   M           MOV.W   #BIT2,R12               ;
+ 3511 00000350 2ECA                   M           XOR     R12,R14 ;
+ 3512 00000352 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3513                                 M   
+ 3514 00000354 2ECA                   M           XOR     R12,R14 ;
+ 3515 00000356 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3516                                 M   
+ 3517 00000358 2ECA                   M           XOR     R12,R14 ;
+ 3518 0000035A 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3519                                 M   
+ 3520                                 M           EI_POP_SR_SH3                   ;
+ 3521 0000035C 4F07                   M           LDC.L   @R15+,SR                        ;POP SR
+ 3522                             328     
+ 3523 0000035E 2510               329             MOV.B   R1,@R5          ;
+ 3524 00000360 0009               330             NOP                     ;
+ 3525 00000362 0009               331             nop
+ 3526 00000364 0009               332             nop
+ 3527 00000366 0009               333             nop
+ 3528 00000368 0009               334             nop
+ 3529 0000036A 0009               335             nop
+ 3530 0000036C 6450               336             MOV.B   @R5,R4          ;
+ 3531 0000036E 3410               337             CMP/EQ  R1,R4           ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE    14
+PROGRAM NAME =
+
+ 3532 00000370 8B5C               338             BF      MEM_CHK_ERR     ;5A WR ERR
+ 3533                             339     
+ 3534 00000372 2520               340             MOV.B   R2,@R5  ;
+ 3535 00000374 0009               341             NOP                     ;
+ 3536 00000376 0009               342             nop
+ 3537 00000378 0009               343             nop
+ 3538 0000037A 0009               344             nop
+ 3539 0000037C 0009               345             nop
+ 3540 0000037E 0009               346             nop
+ 3541 00000380 6450               347             MOV.B   @R5,R4  ;
+ 3542 00000382 3420               348             CMP/EQ  R2,R4           ;
+ 3543 00000384 8B52               349             BF      MEM_CHK_ERR     ;A5 WR ERR
+ 3544                             350     
+ 3545 00000386 2530               351             MOV.B   R3,@R5          ;
+ 3546 00000388 0009               352             NOP
+ 3547 0000038A 0009               353             nop
+ 3548 0000038C 0009               354             nop
+ 3549 0000038E 0009               355             nop
+ 3550 00000390 0009               356             nop
+ 3551 00000392 0009               357             nop
+ 3552 00000394 6450               358             MOV.B   @R5,R4          ;
+ 3553 00000396 3430               359             CMP/EQ  R3,R4                   ;
+ 3554 00000398 8B48               360             BF      MEM_CHK_ERR             ;00 WR ERR
+ 3555                             361     
+ 3556 0000039A 3562               362             CMP/HS  R6,R5                   ;
+ 3557 0000039C 894A               363             BT      MEM_CHK_END             ;BEQ
+ 3558                             364     
+ 3559 0000039E 7501               365             ADD     #1,R5                   ;
+ 3560                             366             M_BRA   MEM_CHKCLR_LOOP ;
+ 3561 000003A0 AFCE                   M           BRA     MEM_CHKCLR_LOOP
+ 3562 000003A2 0009                   M           NOP
+ 3563                             367     
+ 3564                             368     
+ 3565                             369     ;       *******************************************
+ 3566                             370     ;       ***                                     ***
+ 3567                             371     ;       ***             ﾒﾓﾘﾁｪｯｸ                 ***
+ 3568                             372     ;       ***                                     ***
+ 3569                             373     ;       *******************************************
+ 3570                                     ***** BEGIN-POOL *****
+ 3571 000003A4 00F0                       DATA FOR SOURCE-LINE 327
+ 3572 000003A6 0004                       DATA FOR SOURCE-LINE 327
+ 3573 000003A8 00000000                   DATA FOR SOURCE-LINE 327
+ 3574                                     ***** END-POOL *****
+ 3575 000003AC                    374     WORD_MEM_CHK_CLR:
+ 3576                             375             SUB_START
+ 3577 000003AC 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 3578                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 3579                             376     
+ 3580 000003AE 4601               377             SHLR    R6                      ;
+ 3581 000003B0 4600               378             SHLL    R6                      ;
+ 3582                             379     
+ 3583 000003B2 9133               380             MOV.W   #H'5AA5,R1
+ 3584 000003B4 9233               381             MOV.W   #H'A55A,R2              ;
+ 3585 000003B6 9333               382             MOV.W   #H'0000,R3
+ 3586                             383     
+ 3587 000003B8                    384     WORD_MEM_CHKCLR_LOOP:
+ 3588                             385             _WDT_CLR R14,R13,R12
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE    15
+PROGRAM NAME =
+
+ 3589                                 M           DI_PUSH_SR_SH3  R14, R13
+ 3590 000003B8 0E02                   M           STC     SR,R14                  ;
+ 3591 000003BA 9D32                   M           MOV.W   #H'000000F0,R13         ;
+ 3592 000003BC 2EDB                   M           OR      R13,R14         ;INT15
+ 3593 000003BE 4F03                   M           STC.L   SR,@-R15                        ;PUSH SR
+ 3594 000003C0 4E0E                   M           LDC     R14,SR                  ;割込禁止（15）
+ 3595                                 M   
+ 3596 000003C2 DD19                   M           MOV.L   #_PDTRB,R13
+ 3597 000003C4 6ED1                   M           MOV.W   @R13,R14        ;R0:
+ 3598 000003C6 9C2D                   M           MOV.W   #BIT2,R12               ;
+ 3599 000003C8 2ECA                   M           XOR     R12,R14 ;
+ 3600 000003CA 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3601                                 M   
+ 3602 000003CC 2ECA                   M           XOR     R12,R14 ;
+ 3603 000003CE 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3604                                 M   
+ 3605 000003D0 2ECA                   M           XOR     R12,R14 ;
+ 3606 000003D2 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3607                                 M   
+ 3608                                 M           EI_POP_SR_SH3                   ;
+ 3609 000003D4 4F07                   M           LDC.L   @R15+,SR                        ;POP SR
+ 3610                             386     
+ 3611 000003D6 2511               387             MOV.W   R1,@R5                  ;
+ 3612 000003D8 0009               388             NOP                             ;
+ 3613 000003DA 0009               389             nop
+ 3614 000003DC 0009               390             nop
+ 3615 000003DE 0009               391             nop
+ 3616 000003E0 0009               392             nop
+ 3617 000003E2 0009               393             nop
+ 3618 000003E4 6451               394             MOV.W   @R5,R4                  ;
+ 3619 000003E6 3410               395             CMP/EQ  R1,R4                   ;
+ 3620 000003E8 8B20               396             BF      MEM_CHK_ERR             ;5A WR ERR
+ 3621                             397     
+ 3622 000003EA 2521               398             MOV.W   R2,@R5                  ;
+ 3623 000003EC 0009               399             NOP                             ;
+ 3624 000003EE 0009               400             nop
+ 3625 000003F0 0009               401             nop
+ 3626 000003F2 0009               402             nop
+ 3627 000003F4 0009               403             nop
+ 3628 000003F6 0009               404             nop
+ 3629 000003F8 6451               405             MOV.W   @R5,R4                  ;
+ 3630 000003FA 3420               406             CMP/EQ  R2,R4                   ;
+ 3631 000003FC 8B16               407             BF      MEM_CHK_ERR             ;A5 WR ERR
+ 3632                             408     
+ 3633 000003FE 2531               409             MOV.W   R3,@R5                  ;
+ 3634 00000400 0009               410             NOP
+ 3635 00000402 0009               411             nop
+ 3636 00000404 0009               412             nop
+ 3637 00000406 0009               413             nop
+ 3638 00000408 0009               414             nop
+ 3639 0000040A 0009               415             nop
+ 3640 0000040C 6451               416             MOV.W   @R5,R4                  ;
+ 3641 0000040E 3430               417             CMP/EQ  R3,R4                   ;
+ 3642 00000410 8B0C               418             BF      MEM_CHK_ERR             ;00 WR ERR
+ 3643                             419     
+ 3644 00000412 3562               420             CMP/HS  R6,R5                   ;er5 >=er6
+ 3645 00000414 890E               421             BT      MEM_CHK_END             ;BEQ
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE    16
+PROGRAM NAME =
+
+ 3646                             422     
+ 3647 00000416 7502               423             ADD     #2,R5                   ;
+ 3648                             424             M_BRA   WORD_MEM_CHKCLR_LOOP    ;
+ 3649 00000418 AFCE                   M           BRA     WORD_MEM_CHKCLR_LOOP
+ 3650 0000041A 0009                   M           NOP
+ 3651                             425     
+ 3652                             426     
+ 3653                                     ***** BEGIN-POOL *****
+ 3654 0000041C 5AA5                       DATA FOR SOURCE-LINE 380
+ 3655 0000041E A55A                       DATA FOR SOURCE-LINE 381
+ 3656 00000420 0000                       DATA FOR SOURCE-LINE 382
+ 3657 00000422 00F0                       DATA FOR SOURCE-LINE 385
+ 3658 00000424 0004                       DATA FOR SOURCE-LINE 385
+ 3659 00000426 0000                       ALIGNMENT CODE
+ 3660 00000428 00000000                   DATA FOR SOURCE-LINE 385
+ 3661                                     ***** END-POOL *****
+ 3662 0000042C                    427     MEM_CHK_ERR:
+ 3663 0000042C E0FF               428             MOV.B   #H'FF,R0        ;R0L=FF THEN ERR
+ 3664                             429             SUB_END
+ 3665                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 3666 0000042E 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 3667                             430             M_RTS
+ 3668 00000430 000B                   M           RTS                             ;RTSの後ろの
+ 3669 00000432 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 3670                             431     
+ 3671 00000434                    432     MEM_CHK_END:
+ 3672 00000434 E000               433             MOV.B   #H'00,R0        ;R0L=FF THEN ERR
+ 3673                             434             SUB_END
+ 3674                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 3675 00000436 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 3676                             435             M_RTS
+ 3677 00000438 000B                   M           RTS                             ;RTSの後ろの
+ 3678 0000043A 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 3679                             436     
+ 3680                             437     
+ 3681                             438     
+ 3682                             439     
+ 3683                             440     ;       ***************************************************
+ 3684                             441     ;       ***                                             ***
+ 3685                             442     ;       ***             WDTﾘﾌﾚｯｼｭ                       ***
+ 3686                             443     ;       ***                                             ***
+ 3687                             444     ;       ***************************************************
+ 3688 0000043C                    445     _WDT_Rifresh:
+ 3689                             446             SUB_START
+ 3690 0000043C 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 3691                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 3692                             447             PUSH_ALL
+ 3693                                 M           PUSH_REG1       R0      ;
+ 3694 0000043E 2F06                   M           MOV.L   R0,@-R15                ;PUSH=SP-4
+ 3695                                 M                                           ;REG=>[SP]
+ 3696                                 M                                           ;"-4" FF,FF,FF,FC
+ 3697                                 M           PUSH_REG1       R1      ;
+ 3698 00000440 2F16                   M           MOV.L   R1,@-R15                ;PUSH=SP-4
+ 3699                                 M                                           ;REG=>[SP]
+ 3700                                 M                                           ;"-4" FF,FF,FF,FC
+ 3701                                 M           PUSH_REG1       R2      ;
+ 3702 00000442 2F26                   M           MOV.L   R2,@-R15                ;PUSH=SP-4
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE    17
+PROGRAM NAME =
+
+ 3703                                 M                                           ;REG=>[SP]
+ 3704                                 M                                           ;"-4" FF,FF,FF,FC
+ 3705                                 M           PUSH_REG1       R3      ;
+ 3706 00000444 2F36                   M           MOV.L   R3,@-R15                ;PUSH=SP-4
+ 3707                                 M                                           ;REG=>[SP]
+ 3708                                 M                                           ;"-4" FF,FF,FF,FC
+ 3709                                 M           PUSH_REG1       R4      ;
+ 3710 00000446 2F46                   M           MOV.L   R4,@-R15                ;PUSH=SP-4
+ 3711                                 M                                           ;REG=>[SP]
+ 3712                                 M                                           ;"-4" FF,FF,FF,FC
+ 3713                                 M           PUSH_REG1       R5      ;
+ 3714 00000448 2F56                   M           MOV.L   R5,@-R15                ;PUSH=SP-4
+ 3715                                 M                                           ;REG=>[SP]
+ 3716                                 M                                           ;"-4" FF,FF,FF,FC
+ 3717                                 M           PUSH_REG1       R6      ;
+ 3718 0000044A 2F66                   M           MOV.L   R6,@-R15                ;PUSH=SP-4
+ 3719                                 M                                           ;REG=>[SP]
+ 3720                                 M                                           ;"-4" FF,FF,FF,FC
+ 3721                                 M           PUSH_REG1       R7      ;
+ 3722 0000044C 2F76                   M           MOV.L   R7,@-R15                ;PUSH=SP-4
+ 3723                                 M                                           ;REG=>[SP]
+ 3724                                 M                                           ;"-4" FF,FF,FF,FC
+ 3725                                 M           PUSH_REG1       R8      ;
+ 3726 0000044E 2F86                   M           MOV.L   R8,@-R15                ;PUSH=SP-4
+ 3727                                 M                                           ;REG=>[SP]
+ 3728                                 M                                           ;"-4" FF,FF,FF,FC
+ 3729                                 M           PUSH_REG1       R9      ;
+ 3730 00000450 2F96                   M           MOV.L   R9,@-R15                ;PUSH=SP-4
+ 3731                                 M                                           ;REG=>[SP]
+ 3732                                 M                                           ;"-4" FF,FF,FF,FC
+ 3733                                 M           PUSH_REG1       R10     ;
+ 3734 00000452 2FA6                   M           MOV.L   R10,@-R15               ;PUSH=SP-4
+ 3735                                 M                                           ;REG=>[SP]
+ 3736                                 M                                           ;"-4" FF,FF,FF,FC
+ 3737                                 M           PUSH_REG1       R11     ;
+ 3738 00000454 2FB6                   M           MOV.L   R11,@-R15               ;PUSH=SP-4
+ 3739                                 M                                           ;REG=>[SP]
+ 3740                                 M                                           ;"-4" FF,FF,FF,FC
+ 3741                                 M           PUSH_REG1       R12     ;
+ 3742 00000456 2FC6                   M           MOV.L   R12,@-R15               ;PUSH=SP-4
+ 3743                                 M                                           ;REG=>[SP]
+ 3744                                 M                                           ;"-4" FF,FF,FF,FC
+ 3745                                 M           PUSH_REG1       R13     ;
+ 3746 00000458 2FD6                   M           MOV.L   R13,@-R15               ;PUSH=SP-4
+ 3747                                 M                                           ;REG=>[SP]
+ 3748                                 M                                           ;"-4" FF,FF,FF,FC
+ 3749                                 M           PUSH_REG1       R14     ;
+ 3750 0000045A 2FE6                   M           MOV.L   R14,@-R15               ;PUSH=SP-4
+ 3751                                 M                                           ;REG=>[SP]
+ 3752                                 M                                           ;"-4" FF,FF,FF,FC
+ 3753                                 M           PUSH_MACHL              ;
+ 3754 0000045C 4F02                   M           STS.L   MACH,@-R15
+ 3755 0000045E 4F12                   M           STS.L   MACL,@-R15
+ 3756                                 M           PUSH_SYS_REG    GBR     ;
+ 3757 00000460 4F13                   M           STC.L   GBR,@-R15
+ 3758                                 M           .AIF    2 EQ 3
+ 3759                                             .AELSE
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE    18
+PROGRAM NAME =
+
+ 3760                                 C           PUSH_FPU_ALL            ;2001-07-08
+ 3761                                 M                   PUSH_SYS_FPU            ;2001-07-08 koma add
+ 3762 00000462 4F52                   M           STS.L   FPUL,@-R15
+ 3763 00000464 4F62                   M           STS.L   FPSCR,@-R15
+ 3764                                 M                   PUSH_FPU_REG1 FR0       ;
+ 3765 00000466 FF0B                   M           FMOV.S  FR0,@-R15
+ 3766                                 M                   PUSH_FPU_REG1 FR1       ;
+ 3767 00000468 FF1B                   M           FMOV.S  FR1,@-R15
+ 3768                                 M                   PUSH_FPU_REG1 FR2       ;
+ 3769 0000046A FF2B                   M           FMOV.S  FR2,@-R15
+ 3770                                 M                   PUSH_FPU_REG1 FR3       ;
+ 3771 0000046C FF3B                   M           FMOV.S  FR3,@-R15
+ 3772                                 M                   PUSH_FPU_REG1 FR4       ;
+ 3773 0000046E FF4B                   M           FMOV.S  FR4,@-R15
+ 3774                                 M           .AENDI
+ 3775                             448     
+ 3776                             449             _WDT_CLR R14,R13,R12
+ 3777                                 M           DI_PUSH_SR_SH3  R14, R13
+ 3778 00000470 0E02                   M           STC     SR,R14                  ;
+ 3779 00000472 9D28                   M           MOV.W   #H'000000F0,R13         ;
+ 3780 00000474 2EDB                   M           OR      R13,R14         ;INT15
+ 3781 00000476 4F03                   M           STC.L   SR,@-R15                        ;PUSH SR
+ 3782 00000478 4E0E                   M           LDC     R14,SR                  ;割込禁止（15）
+ 3783                                 M   
+ 3784 0000047A DD14                   M           MOV.L   #_PDTRB,R13
+ 3785 0000047C 6ED1                   M           MOV.W   @R13,R14        ;R0:
+ 3786 0000047E 9C23                   M           MOV.W   #BIT2,R12               ;
+ 3787 00000480 2ECA                   M           XOR     R12,R14 ;
+ 3788 00000482 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3789                                 M   
+ 3790 00000484 2ECA                   M           XOR     R12,R14 ;
+ 3791 00000486 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3792                                 M   
+ 3793 00000488 2ECA                   M           XOR     R12,R14 ;
+ 3794 0000048A 2DE1                   M           MOV.W   R14,@R13        ;output
+ 3795                                 M   
+ 3796                                 M           EI_POP_SR_SH3                   ;
+ 3797 0000048C 4F07                   M           LDC.L   @R15+,SR                        ;POP SR
+ 3798                             450     
+ 3799                             451             POP_ALL
+ 3800                                 M           .AIF    2 EQ 3
+ 3801                                             .AELSE
+ 3802                                 C           POP_FPU_ALL             ;2001-07-08
+ 3803                                 M                   POP_FPU_REG1 FR4        ;2001-07-08 koma add
+ 3804 0000048E F4F9                   M           FMOV.S  @R15+,FR4
+ 3805                                 M                   POP_FPU_REG1 FR3        ;
+ 3806 00000490 F3F9                   M           FMOV.S  @R15+,FR3
+ 3807                                 M                   POP_FPU_REG1 FR2        ;
+ 3808 00000492 F2F9                   M           FMOV.S  @R15+,FR2
+ 3809                                 M                   POP_FPU_REG1 FR1        ;
+ 3810 00000494 F1F9                   M           FMOV.S  @R15+,FR1
+ 3811                                 M                   POP_FPU_REG1 FR0        ;
+ 3812 00000496 F0F9                   M           FMOV.S  @R15+,FR0
+ 3813                                 M                   POP_SYS_FPU             ;
+ 3814 00000498 4F66                   M           LDS.L   @R15+,FPSCR
+ 3815 0000049A 4F56                   M           LDS.L   @R15+,FPUL
+ 3816                                 M           .AENDI
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE    19
+PROGRAM NAME =
+
+ 3817                                 M           POP_SYS_REG     GBR     ;
+ 3818 0000049C 4F17                   M           LDC.L   @R15+,GBR
+ 3819                                 M           POP_MACHL               ;
+ 3820 0000049E 4F16                   M           LDS.L   @R15+,MACL
+ 3821 000004A0 4F06                   M           LDS.L   @R15+,MACH
+ 3822                                 M           POP_REG1        R14     ;
+ 3823                                 M                                   ; RE"+4" 00,00,00,04
+ 3824 000004A2 6EF6                   M           MOV.L   @R15+,R14        ;
+ 3825                                 M           POP_REG1        R13     ;
+ 3826                                 M                                   ; RE"+4" 00,00,00,04
+ 3827 000004A4 6DF6                   M           MOV.L   @R15+,R13        ;
+ 3828                                 M           POP_REG1        R12     ;
+ 3829                                 M                                   ; RE"+4" 00,00,00,04
+ 3830 000004A6 6CF6                   M           MOV.L   @R15+,R12        ;
+ 3831                                 M           POP_REG1        R11     ;
+ 3832                                 M                                   ; RE"+4" 00,00,00,04
+ 3833 000004A8 6BF6                   M           MOV.L   @R15+,R11        ;
+ 3834                                 M           POP_REG1        R10     ;
+ 3835                                 M                                   ; RE"+4" 00,00,00,04
+ 3836 000004AA 6AF6                   M           MOV.L   @R15+,R10        ;
+ 3837                                 M           POP_REG1        R9      ;
+ 3838                                 M                                   ; RE"+4" 00,00,00,04
+ 3839 000004AC 69F6                   M           MOV.L   @R15+,R9        ;
+ 3840                                 M           POP_REG1        R8      ;
+ 3841                                 M                                   ; RE"+4" 00,00,00,04
+ 3842 000004AE 68F6                   M           MOV.L   @R15+,R8        ;
+ 3843                                 M           POP_REG1        R7      ;
+ 3844                                 M                                   ; RE"+4" 00,00,00,04
+ 3845 000004B0 67F6                   M           MOV.L   @R15+,R7        ;
+ 3846                                 M           POP_REG1        R6      ;
+ 3847                                 M                                   ; RE"+4" 00,00,00,04
+ 3848 000004B2 66F6                   M           MOV.L   @R15+,R6        ;
+ 3849                                 M           POP_REG1        R5      ;
+ 3850                                 M                                   ; RE"+4" 00,00,00,04
+ 3851 000004B4 65F6                   M           MOV.L   @R15+,R5        ;
+ 3852                                 M           POP_REG1        R4      ;
+ 3853                                 M                                   ; RE"+4" 00,00,00,04
+ 3854 000004B6 64F6                   M           MOV.L   @R15+,R4        ;
+ 3855                                 M           POP_REG1        R3      ;
+ 3856                                 M                                   ; RE"+4" 00,00,00,04
+ 3857 000004B8 63F6                   M           MOV.L   @R15+,R3        ;
+ 3858                                 M           POP_REG1        R2      ;
+ 3859                                 M                                   ; RE"+4" 00,00,00,04
+ 3860 000004BA 62F6                   M           MOV.L   @R15+,R2        ;
+ 3861                                 M           POP_REG1        R1      ;
+ 3862                                 M                                   ; RE"+4" 00,00,00,04
+ 3863 000004BC 61F6                   M           MOV.L   @R15+,R1        ;
+ 3864                                 M           POP_REG1        R0      ;
+ 3865                                 M                                   ; RE"+4" 00,00,00,04
+ 3866 000004BE 60F6                   M           MOV.L   @R15+,R0        ;
+ 3867                             452             SUB_END
+ 3868                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 3869 000004C0 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 3870                             453             M_RTS
+ 3871 000004C2 000B                   M           RTS                             ;RTSの後ろの
+ 3872 000004C4 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 3873                             454     
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE    20
+PROGRAM NAME =
+
+ 3874                             455     
+ 3875                             456     ;       ***************************************************
+ 3876                             457     ;       ***                                             ***
+ 3877                             458     ;       ***     SCI ﾌﾟﾛｸﾞﾗﾑ COPY                        ***
+ 3878                             459     ;       ***     ROM -> RAM                              ***
+ 3879                             460     ;       ***                                             ***
+ 3880                             461     ;       ***************************************************
+ 3881                             462             .IMPORT         __PvupROM_BGN
+ 3882                             463             .IMPORT         __PvupRAM_BGN
+ 3883                             464             .IMPORT         __PvupROM_END
+ 3884                             465             .EXPORT         _VUP_PRO_ROM_TO_RAM
+ 3885                                     ***** BEGIN-POOL *****
+ 3886 000004C6 00F0                       DATA FOR SOURCE-LINE 449
+ 3887 000004C8 0004                       DATA FOR SOURCE-LINE 449
+ 3888 000004CA 0000                       ALIGNMENT CODE
+ 3889 000004CC 00000000                   DATA FOR SOURCE-LINE 449
+ 3890                                     ***** END-POOL *****
+ 3891 000004D0                    466     _VUP_PRO_ROM_TO_RAM:
+ 3892                             467             SUB_START
+ 3893 000004D0 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 3894                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 3895                             468     
+ 3896 000004D2 D010               469             MOV.L   #__PvupROM_BGN,R0
+ 3897 000004D4 6502               470             MOV.L   @R0,R5                                  ;DATA SORCE
+ 3898 000004D6 D010               471             MOV.L   #__PvupRAM_BGN,R0
+ 3899 000004D8 6602               472             MOV.L   @R0,R6                                  ;DATA DIST
+ 3900 000004DA D010               473             MOV.L   #__PvupROM_END,R0
+ 3901 000004DC 6402               474             MOV.L   @R0,R4                                  ;
+ 3902 000004DE 3458               475             SUB     R5,R4                                   ;
+ 3903 000004E0 4401               476             SHLR    R4                                      ;
+ 3904                             477     
+ 3905 000004E2                    478     _VPC_LOOP:
+ 3906 000004E2 4415               479             CMP/PL  R4
+ 3907 000004E4 8B1E               480             BF      _VPC_LOOP_END                           ;ZERO or MINS THEN EXIT
+ 3908                             481     
+ 3909 000004E6 6055               482             MOV.W   @R5+,R0                                 ;
+ 3910 000004E8 2601               483             MOV.W   R0,@R6                                  ;
+ 3911 000004EA 7602               484             ADD     #2,R6                                   ;
+ 3912 000004EC 74FF               485             ADD     #-1,R4                          ;
+ 3913                             486             _WDT_CLR R10,R11,R12
+ 3914                                 M           DI_PUSH_SR_SH3  R10, R11
+ 3915 000004EE 0A02                   M           STC     SR,R10                  ;
+ 3916 000004F0 9B0E                   M           MOV.W   #H'000000F0,R11         ;
+ 3917 000004F2 2ABB                   M           OR      R11,R10         ;INT15
+ 3918 000004F4 4F03                   M           STC.L   SR,@-R15                        ;PUSH SR
+ 3919 000004F6 4A0E                   M           LDC     R10,SR                  ;割込禁止（15）
+ 3920                                 M   
+ 3921 000004F8 DB09                   M           MOV.L   #_PDTRB,R11
+ 3922 000004FA 6AB1                   M           MOV.W   @R11,R10        ;R0:
+ 3923 000004FC 9C09                   M           MOV.W   #BIT2,R12               ;
+ 3924 000004FE 2ACA                   M           XOR     R12,R10 ;
+ 3925 00000500 2BA1                   M           MOV.W   R10,@R11        ;output
+ 3926                                 M   
+ 3927 00000502 2ACA                   M           XOR     R12,R10 ;
+ 3928 00000504 2BA1                   M           MOV.W   R10,@R11        ;output
+ 3929                                 M   
+ 3930 00000506 2ACA                   M           XOR     R12,R10 ;
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE    21
+PROGRAM NAME =
+
+ 3931 00000508 2BA1                   M           MOV.W   R10,@R11        ;output
+ 3932                                 M   
+ 3933                                 M           EI_POP_SR_SH3                   ;
+ 3934 0000050A 4F07                   M           LDC.L   @R15+,SR                        ;POP SR
+ 3935                             487             M_BRA   _VPC_LOOP       ;
+ 3936 0000050C AFE9                   M           BRA     _VPC_LOOP
+ 3937 0000050E 0009                   M           NOP
+ 3938                             488     
+ 3939                                     ***** BEGIN-POOL *****
+ 3940 00000510 00F0                       DATA FOR SOURCE-LINE 486
+ 3941 00000512 0004                       DATA FOR SOURCE-LINE 486
+ 3942 00000514 00000000                   DATA FOR SOURCE-LINE 469
+ 3943 00000518 00000000                   DATA FOR SOURCE-LINE 471
+ 3944 0000051C 00000000                   DATA FOR SOURCE-LINE 473
+ 3945 00000520 00000000                   DATA FOR SOURCE-LINE 486
+ 3946                                     ***** END-POOL *****
+ 3947 00000524                    489     _VPC_LOOP_END:
+ 3948                             490             SUB_END
+ 3949                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 3950 00000524 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 3951                             491             M_RTS
+ 3952 00000526 000B                   M           RTS                             ;RTSの後ろの
+ 3953 00000528 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 3954                             492     
+ 3955                             493     
+ 3956                             494             .END
+  *****TOTAL ERRORS       0
+  *****TOTAL WARNINGS     0
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE    22
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+BIT0                                      EQU  00000001    180* 3350 
+BIT1                                      EQU  00000002    181*
+BIT10                                     EQU  00000400    190*
+BIT11                                     EQU  00000800    191*
+BIT12                                     EQU  00001000    192*
+BIT13                                     EQU  00002000    193*
+BIT14                                     EQU  00004000    194*
+BIT15                                     EQU  00008000    195*
+BIT16                                     EQU  00010000    196*
+BIT17                                     EQU  00020000    197*
+BIT18                                     EQU  00040000    198*
+BIT19                                     EQU  00080000    199*
+BIT2                                      EQU  00000004    182* 2884  2917  2985  3020  3094  3127  3195  3230  3298  3331  3459 
+                                                          3510  3598  3786  3923 
+BIT20                                     EQU  00100000    200*
+BIT21                                     EQU  00200000    201*
+BIT22                                     EQU  00400000    202*
+BIT23                                     EQU  00800000    203*
+BIT24                                     EQU  01000000    204*
+BIT25                                     EQU  02000000    205*
+BIT26                                     EQU  04000000    206*
+BIT27                                     EQU  08000000    207*
+BIT28                                     EQU  10000000    208*
+BIT29                                     EQU  20000000    209*
+BIT3                                      EQU  00000008    183* 3391 
+BIT30                                     EQU  40000000    210*
+BIT31                                     EQU  80000000    211*
+BIT4                                      EQU  00000010    184*
+BIT5                                      EQU  00000020    185*
+BIT6                                      EQU  00000040    186*
+BIT7                                      EQU  00000080    187*
+BIT8                                      EQU  00000100    188*
+BIT9                                      EQU  00000200    189*
+GA1_PFEX                                  EQU  00000084   2126*
+GA1_PGEX                                  EQU  00000000   2153*
+GA1_PHEX                                  EQU  00000000   2165*
+GA2_PFEX                                  EQU  000000D0   2613*
+GA2_PGEX                                  EQU  00000061   2650*
+GA2_PHEX                                  EQU  00000000   2674*
+H_BYTE                                    EQU  00000000    247*
+L_BYTE                                    EQU  00000001    246*
+MEM1_CK_WDTST                    Phwsetup      000000BC   2955  2971*
+MEM1_WR_WDTST                    Phwsetup      00000034   2858  2870*
+MEM2_CK_WDTST                    Phwsetup      000001CC   3165  3180*
+MEM2_WR_WDTST                    Phwsetup      00000144   3067  3079*
+MEM3_WR_WDTST                    Phwsetup      00000250   3267  3283*
+MEM_CHKCLR_LOOP                  Phwsetup      00000340   3499* 3561 
+MEM_CHK_CLR                      Phwsetup      00000338   3383  3490*
+MEM_CHK_END                      Phwsetup      00000434   3557  3645  3671*
+MEM_CHK_ERR                      Phwsetup      0000042C   3532  3543  3554  3620  3631  3642  3662*
+NBIT0                                     EQU  000000FE    214*
+NBIT1                                     EQU  000000FD    215*
+NBIT10                                    EQU  0000FBFF    225*
+NBIT11                                    EQU  0000F7FF    226*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE    23
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+NBIT12                                    EQU  0000EFFF    227*
+NBIT13                                    EQU  0000DFFF    228*
+NBIT14                                    EQU  0000BFFF    229*
+NBIT15                                    EQU  00007FFF    230*
+NBIT2                                     EQU  000000FB    216*
+NBIT3                                     EQU  000000F7    217*
+NBIT4                                     EQU  000000EF    218*
+NBIT5                                     EQU  000000DF    219*
+NBIT6                                     EQU  000000BF    220*
+NBIT7                                     EQU  0000007F    221*
+NBIT8                                     EQU  0000FEFF    223*
+NBIT9                                     EQU  0000FDFF    224*
+Phwsetup1                        Phwsetup SCT  00000000   2819*
+WORD_MEM_CHKCLR_LOOP             Phwsetup      000003B8   3587* 3649 
+WORD_MEM_CHK_CLR                 Phwsetup      000003AC   3575*
+WORK_MEM123CHK_END               Phwsetup      000002A6   3346  3353*
+WORK_MEM1_CK020                  Phwsetup      00000084   2938* 2958  2998 
+WORK_MEM1_CKEND                  Phwsetup      000000EA   2941  3009*
+WORK_MEM1_EREND                  Phwsetup      000000E8   2944  3007*
+WORK_MEM1_WR020                  Phwsetup      0000000A   2843* 2861  2897 
+WORK_MEM1_WREND                  Phwsetup      00000060   2846  2906*
+WORK_MEM2_CK020                  Phwsetup      00000194   3148* 3168  3208 
+WORK_MEM2_CKEND                  Phwsetup      000001FA   3038  3151  3219*
+WORK_MEM2_EREND                  Phwsetup      000001F8   3154  3217*
+WORK_MEM2_WR020                  Phwsetup      0000011A   3051* 3070  3107 
+WORK_MEM2_WREND                  Phwsetup      00000170   3054  3116*
+WORK_MEM3_WR020                  Phwsetup      0000021E   3252* 3270  3311 
+WORK_MEM3_WREND                  Phwsetup      0000027C   3255  3320*
+XBIT0                                     EQU  00000000    233*
+XBIT1                                     EQU  00000001    234*
+XBIT2                                     EQU  00000002    235*
+XBIT3                                     EQU  00000003    236*
+XBIT4                                     EQU  00000004    237*
+XBIT5                                     EQU  00000005    238*
+XBIT6                                     EQU  00000006    239*
+XBIT7                                     EQU  00000007    240*
+_BAMRA                                    IMPT 00000000     25 
+_BAMRB                                    IMPT 00000000     28 
+_BARA                                     IMPT 00000000     24 
+_BARB                                     IMPT 00000000     27 
+_BASRA                                    IMPT 00000000     13 
+_BASRB                                    IMPT 00000000     14 
+_BBRA                                     IMPT 00000000     26 
+_BBRB                                     IMPT 00000000     29 
+_BCR1                                     IMPT 00000000     35 
+_BCR2                                     IMPT 00000000     36 
+_BDMRB                                    IMPT 00000000     31 
+_BDRB                                     IMPT 00000000     30 
+_BRCR                                     IMPT 00000000     32 
+_CB_BAKUP_CMD1                            EQU  00005678    279*
+_CB_BAKUP_CMD2                            EQU  00001234    280*
+_CB_BAK_SUM_COD1                          EQU  5AA51234    277*
+_CB_BAK_SUM_COD2                          EQU  A55A4321    278*
+_CB_ERR_INFO_MEM                          EQU  00000080    303*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE    24
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_CB_ERR_INFO_PSIZE                        EQU  00000008    304*
+_CB_STS_BUF_1BLK                          EQU  00000040    282*  284 
+_CB_STS_BUF_BLKMAX                        EQU  00000008    283*  284 
+_CB_STS_BUF_MAX                           EQU  00000200    284*
+_CB_TRD_BEFORE                            EQU  00000060    292*
+_CB_TRD_BUF_DP_MAX                        EQU  00000080    296*
+_CB_TRD_BUF_MAX                           EQU  00000800    293*
+_CB_TRD_DP_1CNT                           EQU  00000008    295*
+_CB_TRD_DP_CH                             EQU  00000004    288*
+_CB_TRD_SMP_CNT                           EQU  00000080    291*
+_CCR                                      IMPT 00000000     15 
+_CHCR0                                    IMPT 00000000     56 
+_CHCR1                                    IMPT 00000000     60 
+_CHCR2                                    IMPT 00000000     64 
+_CHCR3                                    IMPT 00000000     68 
+_DAR0                                     IMPT 00000000     54 
+_DAR1                                     IMPT 00000000     58 
+_DAR2                                     IMPT 00000000     62 
+_DAR3                                     IMPT 00000000     66 
+_DA_CNV_DT0                               IMPT 00000000   2788 
+_DMAOR                                    IMPT 00000000     69 
+_DMATCR0                                  IMPT 00000000     55 
+_DMATCR1                                  IMPT 00000000     59 
+_DMATCR2                                  IMPT 00000000     63 
+_DMATCR3                                  IMPT 00000000     67 
+_DPRAM_END                                IMPT 00000000   2800  3381 
+_DPRAM_TOP                                IMPT 00000000   2799  3380 
+_DP_CHK_END                      Phwsetup      000002E4   3387  3395  3404*
+_DP_MEM_CHK                      Phwsetup EXPT 000002B8   2806  3374*
+_DUMMY_SUM_CODE                           EQU  5AA53CC3    270*
+_EXPEVT                                   IMPT 00000000     17 
+_FRQCR                                    IMPT 00000000     72 
+_GPIOIC                                   IMPT 00000000     50 
+_ICR                                      IMPT 00000000     79 
+_IMEM_CLR                        Phwsetup      000002F0   3428*
+_IMEM_CLR_END                    Phwsetup      0000030C   3435  3448*
+_IMEM_CLR_LOOP                   Phwsetup      000002F2   3431* 3439 
+_INTEVT                                   IMPT 00000000     18 
+_INT_2MS_SEL                              IMPT 00000000   2756 
+_IPRA                                     IMPT 00000000     80 
+_IPRB                                     IMPT 00000000     81 
+_IPRC                                     IMPT 00000000     82 
+_IPRD                                     IMPT 00000000     83 
+_IRAM_CLR                        Phwsetup EXPT 000002EA   2805  3419*
+_MCR                                      IMPT 00000000     40 
+_MMUCR                                    IMPT 00000000     12 
+_PCR                                      IMPT 00000000     41 
+_PCTRA                                    IMPT 00000000     46 
+_PCTRB                                    IMPT 00000000     48 
+_PDTRA                                    IMPT 00000000     47 
+_PDTRB                                    IMPT 00000000     49  2882  2915  2983  3018  3092  3125  3193  3228  3296  3329  3457 
+                                                          3508  3596  3784  3921 
+_PTEA                                     IMPT 00000000     19 
+_PTEH                                     IMPT 00000000      8 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE    25
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_PTEL                                     IMPT 00000000      9 
+_QACR0                                    IMPT 00000000     20 
+_QACR1                                    IMPT 00000000     21 
+_RFCR                                     IMPT 00000000     45 
+_RMIO2_IN_DATA                            IMPT 00000000   2786 
+_RMIO_IN_DATA                             IMPT 00000000   2785 
+_RTCNT                                    IMPT 00000000     43 
+_RTCOR                                    IMPT 00000000     44 
+_RTCSR                                    IMPT 00000000     42 
+_SAR0                                     IMPT 00000000     53 
+_SAR1                                     IMPT 00000000     57 
+_SAR2                                     IMPT 00000000     61 
+_SAR3                                     IMPT 00000000     65 
+_SCBRR1                                   IMPT 00000000    101 
+_SCBRR2                                   IMPT 00000000    111 
+_SCFCR2                                   IMPT 00000000    116 
+_SCFDR2                                   IMPT 00000000    117 
+_SCFRDR2                                  IMPT 00000000    115 
+_SCFSR2                                   IMPT 00000000    114 
+_SCFTDR2                                  IMPT 00000000    113 
+_SCLSR2                                   IMPT 00000000    119 
+_SCRDR1                                   IMPT 00000000    105 
+_SCSCMR1                                  IMPT 00000000    106 
+_SCSCR1                                   IMPT 00000000    102 
+_SCSCR2                                   IMPT 00000000    112 
+_SCSMR1                                   IMPT 00000000    100 
+_SCSMR2                                   IMPT 00000000    110 
+_SCSPTR1                                  IMPT 00000000    107 
+_SCSPTR2                                  IMPT 00000000    118 
+_SCSSR1                                   IMPT 00000000    104 
+_SCTDR1                                   IMPT 00000000    103 
+_SDRAM_SIZE                               EQU  0023FFFF   2815* 2839  2934  3047  3144  3248 
+_SDRAM_TOP                                EQU  0C000000   2809* 2838  2933  3046  3143  3247 
+_START_ACK_COD                            EQU  00004321    378*
+_START_REQ_COD                            EQU  00009876    377*
+_STBCR                                    IMPT 00000000     73 
+_STBCR2                                   IMPT 00000000     76 
+_TCNT0                                    IMPT 00000000     89 
+_TCNT1                                    IMPT 00000000     92 
+_TCNT2                                    IMPT 00000000     95 
+_TCOR0                                    IMPT 00000000     88 
+_TCOR1                                    IMPT 00000000     91 
+_TCOR2                                    IMPT 00000000     94 
+_TCPR2                                    IMPT 00000000     97 
+_TCR0                                     IMPT 00000000     90 
+_TCR1                                     IMPT 00000000     93 
+_TCR2                                     IMPT 00000000     96 
+_TEA                                      IMPT 00000000     11 
+_TOCR                                     IMPT 00000000     86 
+_TRA                                      IMPT 00000000     16 
+_TSTR                                     IMPT 00000000     87 
+_TTB                                      IMPT 00000000     10 
+_VPC_LOOP                        Phwsetup      000004E2   3905* 3936 
+_VPC_LOOP_END                    Phwsetup      00000524   3907  3947*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE    26
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_VUPCHECK_EQU                             EQU  11AB3739    263*
+_VUP_PRO_ROM_TO_RAM              Phwsetup EXPT 000004D0   3884  3891*
+_WCR1                                     IMPT 00000000     37 
+_WCR2                                     IMPT 00000000     38 
+_WCR3                                     IMPT 00000000     39 
+_WDT_Rifresh                     Phwsetup EXPT 0000043C   2807  3688*
+_WORK_MEM1_CHK                   Phwsetup EXPT 00000000   2804  2829*
+_WTCNT                                    IMPT 00000000     74 
+_WTCSR                                    IMPT 00000000     75 
+__PvupRAM_BGN                             IMPT 00000000   3882  3898 
+__PvupROM_BGN                             IMPT 00000000   3881  3896 
+__PvupROM_END                             IMPT 00000000   3883  3900 
+_data_init2_timer                         IMPT 00000000   2753 
+_mem_chk_flg                              IMPT 00000000   2755  3348  3389 
+_sram_top                                 IMPT 00000000   2751 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/13/20 18:20:46                                                  PAGE    27
+
+*** SECTION DATA LIST
+
+SECTION                          ATTRIBUTE    SIZE             START
+
+Phwsetup1                        REL-CODE    00000052A        

@@ -1,0 +1,23 @@
+;	***************************************************
+;	***						***
+;	***	ram定義					***
+;	***	不要だがｺﾝﾊﾟｲﾙ異常回避のためのmem	***
+;	***						***
+;	***************************************************
+	.include	"cm_equ1.equ"
+	.include	"com_et1.equ"
+
+	.SECTION	B,DATA			;
+	.INCLUDE	"ssa_dummymem.ext"	;
+	.ALIGN	4				;
+_ITIZI_MEM	.SRES	4			;
+
+;	***************************************************
+;	***	MC用　一時異常をなくすための定義	***
+;	***	2013-12-02				***
+;	***************************************************
+	.ALIGN	4
+	.INCLUDE	"dp_cpud_a.ext"			; real data define 1000word
+	.INCLUDE	"dp_cpud_a.inc"			; real data define 1000word
+
+	.END

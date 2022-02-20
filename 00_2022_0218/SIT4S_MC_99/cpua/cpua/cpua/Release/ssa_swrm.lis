@@ -1,0 +1,611 @@
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:05:29                                                  PAGE     1
+PROGRAM NAME =
+
+    1                               1     ;       ***********************************
+    2                               2     ;       ***                             ***
+    3                               3     ;       ***             ram定義         ***
+    4                               4     ;       ***             (WRAM)          ***
+    5                               5     ;       ***********************************
+    6                               6     ;       できる限りssc_wrm*.c側に定義する事
+    7 00000000                      7             .SECTION        Bwkram1,DATA                    ;
+    8                               8             .INCLUDE        "ssa_wrmy.ext"                  ;(ここはssa_wram.extではない方がい
+                                          い)
+    9                               1 I1  ;       ***********************************
+   10                               2 I1  ;       ***                             ***
+   11                               3 I1  ;       ***             ram定義         ***
+   12                               4 I1  ;       ***                             ***
+   13                               5 I1  ;       ***********************************
+   14                               6 I1  ;       できる限りssc_wrm*.c/ssc_wrm*.h側に定義する事
+   15                               7 I1  ;       ssc_wrm*.h のextern文をアセンブラで参照する場合はここに入れる
+   16                               8 I1  ;       ===========================================
+   17                               9 I1  ;       ===     ssa_wrmy.src のextern文         ===
+   18                              10 I1  ;       ===========================================
+   19                              11 I1          .GLOBAL _SAITO_ASM_RAM_TOP      ;
+   20                              12 I1  
+   21                              13 I1  ;//     ***********************************
+   22                              14 I1  ;//     ***     受信異常                ***
+   23                              15 I1  ;//     ***********************************
+   24                              16 I1          .global _rcv2_err_hard_INTflg1; // ﾊｰﾄﾞ異常
+   25                              17 I1          .global _rcv2_err_hard_INTflg2; // ﾊｰﾄﾞ異常
+   26                              18 I1          .global _rcv2_err_hard_INTflg3; // ﾊｰﾄﾞ異常
+   27                              19 I1          .global _rcv2_err_data_flg1;    // ﾃﾞｰﾀ異常(未使用)
+   28                              20 I1          .global _rcv2_err_hard_sts1;    // 詳細 異常内容
+   29                              21 I1          .global _rcv2_err_hard_sts2;    // 詳細 異常内容
+   30                              22 I1          .global _rcv2_err_hard_sts3;    //
+   31                              23 I1          .global _rcv2_err_data_sts1;    //(未使用)
+   32                              24 I1          .global _rcv2_err_OverRunCnt;   //
+   33                              25 I1          .global _rcv2_err_FRPRErrCnt;   //ﾌﾚｰﾑ・ﾊﾟﾘﾃｨ
+   34                              26 I1          .global _rcv2_err_elseErrCnt;   //ﾌﾚｰﾑ・ﾊﾟﾘﾃｨ
+   35                              27 I1  
+   36                              28 I1  ;//     ***********************************
+   37                              29 I1  ;//     ***     正常受信                ***
+   38                              30 I1  ;//     ***********************************
+   39                              31 I1          .global _rcv2_data_INcnt;//受信ﾃﾞｰﾀ数 受信ﾊﾞﾌｧ→個数
+   40                              32 I1          .global _rcv2_data_cnt;//処理すべきｶｳﾝﾀ数ﾘﾐｯﾄをかけたもんＰ
+   41                              33 I1          .global _rcv2_data_buf;[32];
+   42                              34 I1  
+   43                              35 I1  ;//     ***********************************
+   44                              36 I1  ;//     ***     送信                    ***
+   45                              37 I1  ;//     ***********************************
+   46                              38 I1          .global _send2_data_buf;[32];
+   47                              39 I1  ;//     ***********************************
+   48                              40 I1  ;//     ***     送受信管理              ***
+   49                              41 I1  ;//     ***********************************
+   50                              42 I1          .global _rcv2_event_flg;        //main-->bit0=1  2ms:bit1(処理開始),bit7(完了)
+   51                              43 I1          .global _send2_event_flg;//main-->bit0=1  2ms:bit1(処理開始),bit7(完了)
+   52                              44 I1  
+   53                              45 I1          .global _PV1_SCRW_POS;                  //;@使用sh->H8 ->表示   [回送有り1CH のみ]
+   54                              46 I1  
+   55                              47 I1          .global _PV0_SCRW_POS;                  //;@使用sh->H8 ->表示   [回送有り1CH のみ]
+   56                              48 I1  
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:05:29                                                  PAGE     2
+PROGRAM NAME =
+
+   57                              49 I1  
+   58                              50 I1  ;//     ***********************************
+   59                              51 I1  ;//     ***                             ***
+   60                              52 I1  ;//     ***     2015-10-14              ***
+   61                              53 I1  ;//     ***     X社用切替機能           ***
+   62                              54 I1  ;//     ***                             ***
+   63                              55 I1  ;//     ***********************************
+   64                              56 I1          .global _SND_RCV_CMD0;
+   65                              57 I1          .global _SND_RCV_CMD1;
+   66                              58 I1          .global _SND_RCV_CMDR;
+   67                              59 I1          .global _SND_RCV_INBUFCNT;
+   68                              60 I1  
+   69                              61 I1          .global _CRC_ERR_CNT;
+   70                              62 I1  
+   71                              63 I1  
+   72                              64 I1  ;//     *******************************************
+   73                              65 I1  ;//     ***     異常関係のワークＲＡＭ          ***
+   74                              66 I1  ;//     *******************************************
+   75                              67 I1  
+   76                              68 I1          .global _ERR_CHK_OK_FLG                 ;//異常処理開始ﾌﾗｸﾞ
+   77                              69 I1  
+   78                              70 I1          .global _ER_SQRAM_WK1                   ;//
+   79                              71 I1          .global _ER_SQRAM_WK2                   ;//
+   80                              72 I1          .global _SH4_SQERRAM                    ;// SH4 -> SH2
+   81                              73 I1          .global _DBG_ERRCHK_NASI                ;// ﾁｪｯｸなし
+   82                              74 I1  
+   83                              75 I1          .global _ER_SFTSW_CHG_OLD               ;//
+   84                              76 I1  
+   85                              77 I1          .global _FROM_SUMCHK_CODE               ;// FROM SUM CODE
+   86                              78 I1  
+   87                              79 I1          .global _SFTSW_ERR_TM                   ;//
+   88                              80 I1          .global _BTNER_ERR_TM                   ;//
+   89                              81 I1          .global _NCHSW_ERR_TM1                  ;//
+   90                              82 I1          .global _NCHSW_ERR_TM2                  ;//
+   91                              83 I1          .global _VLVER11_ERR_TM                 ;//
+   92                              84 I1          .global _VLVER12_ERR_TM                 ;//
+   93                              85 I1          .global _VLVER21_ERR_TM                 ;//
+   94                              86 I1          .global _VLVER22_ERR_TM                 ;//
+   95                              87 I1          .global _VLVER31_ERR_TM                 ;//
+   96                              88 I1          .global _VLVER32_ERR_TM                 ;//
+   97                              89 I1          .global _CMP2_ERR_TM2                   ;//
+   98                              90 I1          .global _FSFT_TRERR_TM                  ;//
+   99                              91 I1          .global _RSFT_TRERR_TM                  ;//
+  100                              92 I1  
+  101                              93 I1  
+  102                              94 I1          .global _WPAR1_SFTSWER_TM               ;//
+  103                              95 I1          .global _WPAR1_BTNER_TM                 ;//
+  104                              96 I1          .global _WPAR1_MODSER_TM1               ;//
+  105                              97 I1          .global _WPAR1_MODSER_TM2               ;//
+  106                              98 I1          .global _WPAR1_VLVER11_TM1              ;//
+  107                              99 I1          .global _WPAR1_VLVER12_TM1              ;//
+  108                             100 I1          .global _WPAR1_VLVER21_TM1              ;//
+  109                             101 I1          .global _WPAR1_VLVER22_TM1              ;//
+  110                             102 I1          .global _WPAR1_VLVER31_TM1              ;//
+  111                             103 I1          .global _WPAR1_VLVER32_TM1              ;//
+  112                             104 I1          .global _WPAR1_CMPER2_TM                ;//
+  113                             105 I1          .global _WPAR1_FSFTTRER_TM              ;//
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:05:29                                                  PAGE     3
+PROGRAM NAME =
+
+  114                             106 I1          .global _WPAR1_RSFTTRER_TM              ;//
+  115                             107 I1  
+  116                             108 I1  
+  117                             109 I1          .global _REMOTE_ERR_CHKTM               ;//
+  118                             110 I1  
+  119                             111 I1          .global _ROM_SYSPAR_ERRADR              ;//
+  120                             112 I1  
+  121                             113 I1  
+  122                             114 I1  
+  123                             115 I1  ;//     ***************************************************
+  124                             116 I1  ;//     ***     セルフチェック関係のワークＲＡＭ        ***
+  125                             117 I1  ;//     ***************************************************
+  126                             118 I1          .global _SELF_CHK_FLG                   ;ｾﾙﾌﾁｪｯｸ中 CHECK
+  127                             119 I1          .global _SELF_ACT_FLG                   ;ｾﾙﾌﾁｪｯｸ中 CHECK
+  128                             120 I1  
+  129                             121 I1  
+  130                             122 I1          .global _SELF_HAND_FLG1                 ; 自分の状態ﾌﾗｸﾞ SRAM
+  131                             123 I1          .global _SELF_HAND_FLG2                 ; 相手の状態ﾌﾗｸﾞ SRAM
+  132                             124 I1  
+  133                             125 I1          .global _SELF_FSTY_USE                  ;//;前安全装置チェックする・しない
+  134                             126 I1          .global _SELF_RSTY_USE                  ;//;後安全装置チェックする・しない
+  135                             127 I1  
+  136                             128 I1          .global _SELF_CHK_TIMER                 ;//;セルフチェックタイマ
+  137                             129 I1  
+  138                             130 I1  ;       *** AD CONVERTER WORK RAM ***
+  139                             131 I1          .global _AD_CNV_DT0                     ; 8BIT A/D
+  140                             132 I1  
+  141                             133 I1          .global _AD_BUFCNT                      ;// 移動平均ﾊﾞｯﾌｧｶｳﾝﾀ
+  142                             134 I1          .global _AD_AVG_BUF                     ;// 平均BAFTOP
+  143                             135 I1          .global _AD_AVG_TOTAL                   ;// ８回分のﾃﾞｰﾀ
+  144                             136 I1          .global _PV_AD_DATA                     ;// 移動平均とった後のAD DATA
+  145                             137 I1  
+  146                             138 I1  
+  147                             139 I1  
+  148                             140 I1  
+  149                             141 I1  ;//     ***************************************
+  150                             142 I1  ;//     ***     二重回路異常関係のワークＲＡＭ  ***
+  151                             143 I1  ;//     ***************************************
+  152                             144 I1          .global _CPUN_2CMP_DATA                 ;// 相手ＣＰＵの比較データ
+  153                             145 I1          .global _CMP2_ERR_FIRST                 ;// 初めて二重回路異常発生
+  154                             146 I1  
+  155                             147 I1          .global _CPUN_2CMP_LATCH2               ;// 相手二重回路異常ﾃﾞｰﾀﾗｯﾁ
+  156                             148 I1          .global _CPUN_2CMP_LATCH1               ;// 自分二重回路異常ﾃﾞｰﾀﾗｯﾁ
+  157                             149 I1  
+  158                             150 I1  
+  159                             151 I1  ;//     *** 安全装置関係 ***
+  160                             152 I1  
+  161                             153 I1          .global _FACT_IN_DATA                   ;//
+  162                             154 I1          .global _RACT_IN_DATA                   ;//
+  163                             155 I1          .global _FDEV_IN_DATA                   ;//
+  164                             156 I1          .global _RDEV_IN_DATA                   ;//
+  165                             157 I1  
+  166                             158 I1  
+  167                             159 I1  ;       ===========================================
+  168                             160 I1  ;       ===     ssc_wrmy.c のextern文           ===
+  169                             161 I1  ;       ===========================================
+  170                             162 I1  
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:05:29                                                  PAGE     4
+PROGRAM NAME =
+
+  171                             163 I1          .GLOBAL         _TINT3_10MS_CNT                 ;
+  172                             164 I1  
+  173                             165 I1  
+  174                             166 I1  ;//     通信関連 2004-04-14
+  175                             167 I1          .global _WK_RCV_SCLSR2;//2004-04-12
+  176                             168 I1          .global _WK_RCV_SCFSR2;//2004-04-12
+  177                             169 I1          .global _WK_RCV_SCFDR2  ;//2004-04-12
+  178                             170 I1  
+  179                             171 I1  ;//     ===================
+  180                             172 I1  ;//     ===             ===
+  181                             173 I1  ;//     ===================
+  182                             174 I1  ;//     === 2004-04-14 ====
+  183                             175 I1          .global _IN_RNA_REF_ERR_FLG1;//BIT0,BIT1,BIT2(HARD),BIT3CMD,BIT4(RNA-SYS),BIT5(RNA
+                                          -FORM),,
+  184                             176 I1          .global _IN_RNA_REF_ERR_FLG2;//BIT0~BIT7 ALM.BIT8
+  185                             177 I1          .global _RNA_REF_ERR_FLG1;//BIT0,BIT1,BIT2(HARD),BIT3CMD,BIT4(RNA-SYS),BIT5(RNA-FO
+                                          RM),,
+  186                             178 I1          .global _RNA_REF_ERR_FLG2;//BIT0~BIT7 ALM.BIT8
+  187                             179 I1          .global _LT_RNA_REF_ERR_FLG1;//BIT0,BIT1,BIT2(HARD),BIT3CMD,BIT4(RNA-SYS),BIT5(RNA
+                                          -FORM),,
+  188                             180 I1          .global _LT_RNA_REF_ERR_FLG2;//BIT0~BIT7 ALM.BIT8
+  189                             181 I1  
+  190                             182 I1          .global _RNA_CMD_VERIFY_CNT;//00,01以外が発生
+  191                             183 I1          .global _RNA_CMD_VERIFY_DAT;//異常時の最新ﾃﾞｰﾀ
+  192                             184 I1          .global _RNA_STS_SYSERR_CNT;//BIT0=1
+  193                             185 I1          .global _RNA_STS_REQERR_CNT;//BIT2=1
+  194                             186 I1          .global _RNA_STS_ERR_DAT;//異常時の最新ﾃﾞｰﾀ
+  195                             187 I1          .global _RNA_ALM_BIT0_CNT;//
+  196                             188 I1          .global _RNA_ALM_BIT1_CNT;//
+  197                             189 I1          .global _RNA_ALM_BIT2_CNT;//
+  198                             190 I1          .global _RNA_ALM_BIT3_CNT;//
+  199                             191 I1          .global _RNA_ALM_BIT4_CNT;//
+  200                             192 I1          .global _RNA_ALM_BIT5_CNT;//
+  201                             193 I1          .global _RNA_ALM_BIT6_CNT;//
+  202                             194 I1          .global _RNA_ALM_BIT7_CNT;//
+  203                             195 I1          .global _RNA_ALM_CNT;//
+  204                             196 I1          .global _RNA_ALM_DAT;//
+  205                             197 I1          .global _RNA_REF1_CNT;//処理が正常に動作しているか
+  206                             198 I1          .global _RNA_REF2_CNT;//処理が正常に動作しているか
+  207                             199 I1  
+  208                             200 I1          .global _DSET_SW_FLG;
+  209                             201 I1  
+  210                             202 I1  
+  211                             203 I1  
+  212                             204 I1  
+  213                             205 I1  
+  214                             206 I1  
+  215                             207 I1  
+  216                             208 I1  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                          ;;;;;;;;;;;;;;;;;;;;;;;;;
+  217                             209 I1  
+  218                             210 I1  
+  219                             211 I1  
+  220                             212 I1  
+  221                             213 I1  ;       ***********************************
+  222                             214 I1  ;       ***                             ***
+  223                             215 I1  ;       ***             ram定義         ***
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:05:29                                                  PAGE     5
+PROGRAM NAME =
+
+  224                             216 I1  ;       ***                             ***
+  225                             217 I1  ;       ***********************************
+  226                             218 I1  ;       できる限りssc_wrm*.c/ssc_wrm*.h側に定義する事
+  227                             219 I1  ;       ssc_wrm*.h のextern文をアセンブラで参照する場合はここに入れる
+  228                             220 I1  ;       ===========================================
+  229                             221 I1  ;       ===     ssa_wrmy.src のextern文         ===
+  230                             222 I1  ;       ===========================================
+  231                             223 I1  ;20060725 SAITO .GLOBAL _SAITO_ASM_RAM_TOP      ;
+  232                             224 I1  
+  233                             225 I1          .global         _SQ_CBWK_TOP            ;//
+  234                             226 I1          .global         _CPUA_EMG_IN_FLG        ;//
+  235                             227 I1  
+  236                             228 I1  
+  237                             229 I1  ;//     *** INP1 PORT ***
+  238                             230 I1          .global         _REAL_INP1_DATA                 ; 今回値
+  239                             231 I1          .global         _REAL_INP1_DT_OLD1              ; 1回前
+  240                             232 I1          .global         _REAL_INP1_DT_OLD2              ; 2回前
+  241                             233 I1  
+  242                             234 I1  ;//     *** PB PORT ***
+  243                             235 I1          .global         _PB_PORT_CTL_DATA               ; 今回値
+  244                             236 I1          .global         _PB_INDT_OLD1                   ; 1回前
+  245                             237 I1          .global         _PB_INDT_OLD2                   ; 2回前
+  246                             238 I1  
+  247                             239 I1  ;//;    *** PJ PORT ***
+  248                             240 I1          .global         _PJ_PORT_CTL_DATA               ; 今回値
+  249                             241 I1          .global         _PJ_INDT_OLD1                   ; 1回前
+  250                             242 I1          .global         _PJ_INDT_OLD2                   ; 2回前
+  251                             243 I1  
+  252                             244 I1  ;//     *** PK PORT ***
+  253                             245 I1          .global         _PK_PORT_CTL_DATA               ; 今回値
+  254                             246 I1          .global         _PK_INDT_OLD1                   ; 1回前
+  255                             247 I1          .global         _PK_INDT_OLD2                   ; 2回前
+  256                             248 I1  
+  257                             249 I1  ;//     *** PL PORT ***
+  258                             250 I1          .global         _PL_PORT_CTL_DATA               ; 今回値
+  259                             251 I1          .global         _PL_INDT_OLD1                   ; 1回前
+  260                             252 I1          .global         _PL_INDT_OLD2                   ; 2回前
+  261                             253 I1  
+  262                             254 I1  ;//     *******************************************
+  263                             255 I1  ;//     ***     異常関係のワークＲＡＭ          ***
+  264                             256 I1  ;//     *******************************************
+  265                             257 I1  
+  266                             258 I1  ;20060725 SAITO .global _ERR_CHK_OK_FLG                 ;//異常処理開始ﾌﾗｸﾞ
+  267                             259 I1  
+  268                             260 I1  ;20060725 SAITO .global _ER_SQRAM_WK1                   ;//
+  269                             261 I1  ;20060725 SAITO .global _ER_SQRAM_WK2                   ;//
+  270                             262 I1  ;20060725 SAITO .global _SH4_SQERRAM                    ;// SH4 -> SH2
+  271                             263 I1  ;20060725 SAITO .global _DBG_ERRCHK_NASI                ;// ﾁｪｯｸなし
+  272                             264 I1  
+  273                             265 I1  ;20060725 SAITO .global _ER_SFTSW_CHG_OLD               ;//
+  274                             266 I1  
+  275                             267 I1  ;20060725 SAITO .global _SFTSW_ERR_TM                   ;//
+  276                             268 I1  ;20060725 SAITO .global _BTNER_ERR_TM                   ;//
+  277                             269 I1  ;20060725 SAITO .global _NCHSW_ERR_TM1                  ;//
+  278                             270 I1  ;20060725 SAITO .global _NCHSW_ERR_TM2                  ;//
+  279                             271 I1  ;20060725 SAITO .global _VLVER11_ERR_TM                 ;//
+  280                             272 I1  ;20060725 SAITO .global _VLVER12_ERR_TM                 ;//
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:05:29                                                  PAGE     6
+PROGRAM NAME =
+
+  281                             273 I1  ;20060725 SAITO .global _VLVER21_ERR_TM                 ;//
+  282                             274 I1  ;20060725 SAITO .global _VLVER22_ERR_TM                 ;//
+  283                             275 I1  ;20060725 SAITO .global _VLVER31_ERR_TM                 ;//
+  284                             276 I1  ;20060725 SAITO .global _VLVER32_ERR_TM                 ;//
+  285                             277 I1  ;20060725 SAITO .global _CMP2_ERR_TM2                   ;//
+  286                             278 I1  ;20060725 SAITO .global _FSFT_TRERR_TM                  ;//
+  287                             279 I1  ;20060725 SAITO .global _RSFT_TRERR_TM                  ;//
+  288                             280 I1  
+  289                             281 I1  ;20060725 SAITO .global _WPAR1_SFTSWER_TM               ;//
+  290                             282 I1  ;20060725 SAITO .global _WPAR1_BTNER_TM                 ;//
+  291                             283 I1  ;20060725 SAITO .global _WPAR1_MODSER_TM1               ;//
+  292                             284 I1  ;20060725 SAITO .global _WPAR1_MODSER_TM2               ;//
+  293                             285 I1  ;20060725 SAITO .global _WPAR1_VLVER11_TM1              ;//
+  294                             286 I1  ;20060725 SAITO .global _WPAR1_VLVER12_TM1              ;//
+  295                             287 I1  ;20060725 SAITO .global _WPAR1_VLVER21_TM1              ;//
+  296                             288 I1  ;20060725 SAITO .global _WPAR1_VLVER22_TM1              ;//
+  297                             289 I1  ;20060725 SAITO .global _WPAR1_VLVER31_TM1              ;//
+  298                             290 I1  ;20060725 SAITO .global _WPAR1_VLVER32_TM1              ;//
+  299                             291 I1  ;20060725 SAITO .global _WPAR1_CMPER2_TM                ;//
+  300                             292 I1  ;20060725 SAITO .global _WPAR1_FSFTTRER_TM              ;//
+  301                             293 I1  ;20060725 SAITO .global _WPAR1_RSFTTRER_TM              ;//
+  302                             294 I1  
+  303                             295 I1  
+  304                             296 I1          .global _KEEPRY_BKUP_ERR                ;//
+  305                             297 I1  
+  306                             298 I1  
+  307                             299 I1  ;//     ***************************************************
+  308                             300 I1  ;//     ***     セルフチェック関係のワークＲＡＭ        ***
+  309                             301 I1  ;//     ***************************************************
+  310                             302 I1  ;20060725 SAITO .global _SELF_CHK_FLG                   ;ｾﾙﾌﾁｪｯｸ中 CHECK
+  311                             303 I1  ;20060725 SAITO .global _SELF_ACT_FLG                   ;ｾﾙﾌﾁｪｯｸ中 CHECK
+  312                             304 I1  
+  313                             305 I1  ;20060725 SAITO .global _SELF_HAND_FLG1                 ; 自分の状態ﾌﾗｸﾞ SRAM
+  314                             306 I1  ;20060725 SAITO .global _SELF_HAND_FLG2                 ; 相手の状態ﾌﾗｸﾞ SRAM
+  315                             307 I1  
+  316                             308 I1  ;20060725 SAITO .global _SELF_FSTY_USE                  ;//;前安全装置チェックする・しない
+  317                             309 I1  ;20060725 SAITO .global _SELF_RSTY_USE                  ;//;後安全装置チェックする・しない
+  318                             310 I1  
+  319                             311 I1  ;20060725 SAITO .global _SELF_CHK_TIMER                 ;//;セルフチェックタイマ
+  320                             312 I1  
+  321                             313 I1  ;//     *** AD CONVERTER WORK RAM ***
+  322                             314 I1  ;20060725 SAITO .global _AD_CNV_DT0                     ; 8BIT A/D
+  323                             315 I1  
+  324                             316 I1  ;20060725 SAITO .global _AD_BUFCNT                      ; 移動平均ﾊﾞｯﾌｧｶｳﾝﾀ
+  325                             317 I1  ;20060725 SAITO .global _AD_AVG_BUF                     ; 平均BAFTOP
+  326                             318 I1  ;20060725 SAITO .global _AD_AVG_TOTAL                   ; ８回分のﾃﾞｰﾀ
+  327                             319 I1  ;20060725 SAITO .global _PV_AD_DATA                     ; 移動平均とった後のAD DATA
+  328                             320 I1  
+  329                             321 I1  
+  330                             322 I1  
+  331                             323 I1  
+  332                             324 I1  ;//     ***************************************
+  333                             325 I1  ;//     ***     二重回路異常関係のワークＲＡＭ  ***
+  334                             326 I1  ;//     ***************************************
+  335                             327 I1  ;20060725 SAITO .global _CPUN_2CMP_DATA                 ;// 相手ＣＰＵの比較データ
+  336                             328 I1  ;20060725 SAITO .global _CMP2_ERR_FIRST                 ;// 初めて二重回路異常発生
+  337                             329 I1  
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:05:29                                                  PAGE     7
+PROGRAM NAME =
+
+  338                             330 I1  ;20060725 SAITO .global _CPUN_2CMP_LATCH2               ;// 相手二重回路異常ﾃﾞｰﾀﾗｯﾁ
+  339                             331 I1  ;20060725 SAITO .global _CPUN_2CMP_LATCH1               ;// 自分二重回路異常ﾃﾞｰﾀﾗｯﾁ
+  340                             332 I1  
+  341                             333 I1  
+  342                             334 I1  
+  343                             335 I1  ;//     *** 安全装置関係 ***
+  344                             336 I1  
+  345                             337 I1  ;20060725 SAITO .global _FACT_IN_DATA                   ;//
+  346                             338 I1  ;20060725 SAITO .global _RACT_IN_DATA                   ;//
+  347                             339 I1  ;20060725 SAITO .global _FDEV_IN_DATA                   ;//
+  348                             340 I1  ;20060725 SAITO .global _RDEV_IN_DATA                   ;//
+  349                             341 I1  
+  350                             342 I1  
+  351                             343 I1  
+  352                             344 I1  ;//     IOGA    関係　ＳＩＴ－４用 2006-07-16
+  353                             345 I1  
+  354                             346 I1  ;//;    *** IO-GA WORK ***
+  355                             347 I1          .global _IOGA1_CTRL_DAT1                ;       //.SRES 2*8             ; GA-PA,PB
+                                          ,PC,PD,PE 入力PORT
+  356                             348 I1                                                  ;//;    PF,PG,PH 出力PORT
+  357                             349 I1          .global _IOGA2_CTRL_DAT1                ;       //.SRES 2*8             ; GA-PA,PB
+                                          ,PC,PD,PE 入力PORT
+  358                             350 I1                                                  ;//;    PF,PG,PH 出力PORT
+  359                             351 I1  ;//;    *** IOGA INPUT WORK RAM ***
+  360                             352 I1          .global _IOGA1_PA_DT_OLD1               ;       // 1回前
+  361                             353 I1          .global _IOGA1_PB_DT_OLD1               ;       // 1回前
+  362                             354 I1          .global _IOGA1_PC_DT_OLD1               ;       // 1回前
+  363                             355 I1          .global _IOGA1_PD_DT_OLD1               ;       // 1回前
+  364                             356 I1          .global _IOGA1_PE_DT_OLD1               ;       // 1回前
+  365                             357 I1  
+  366                             358 I1          .global _IOGA1_PA_DT_OLD2               ;       // 2回前
+  367                             359 I1          .global _IOGA1_PB_DT_OLD2               ;       // 2回前
+  368                             360 I1          .global _IOGA1_PC_DT_OLD2               ;       // 2回前
+  369                             361 I1          .global _IOGA1_PD_DT_OLD2               ;       // 2回前
+  370                             362 I1          .global _IOGA1_PE_DT_OLD2               ;       // 2回前
+  371                             363 I1  
+  372                             364 I1          .global _IOGA2_PA_DT_OLD1               ;       // 1回前
+  373                             365 I1          .global _IOGA2_PB_DT_OLD1               ;       // 1回前
+  374                             366 I1          .global _IOGA2_PC_DT_OLD1               ;       // 1回前
+  375                             367 I1          .global _IOGA2_PD_DT_OLD1               ;       // 1回前
+  376                             368 I1          .global _IOGA2_PE_DT_OLD1               ;       // 1回前
+  377                             369 I1  
+  378                             370 I1          .global _IOGA2_PA_DT_OLD2               ;       // 2回前
+  379                             371 I1          .global _IOGA2_PB_DT_OLD2               ;       // 2回前
+  380                             372 I1          .global _IOGA2_PC_DT_OLD2               ;       // 2回前
+  381                             373 I1          .global _IOGA2_PD_DT_OLD2               ;       // 2回前
+  382                             374 I1          .global _IOGA2_PE_DT_OLD2               ;       // 2回前
+  383                             375 I1  
+  384                             376 I1  
+  385                             377 I1  ;20060725 SAITO .global _DSET_SW_FLG;
+  386                             378 I1  
+  387                             379 I1  
+  388                             380 I1  ;       -------- 2013-12-12 MC------------
+  389                             381 I1          .GLOBAL _HANYO2_DI_DAT;//3度読み結果
+  390                             382 I1          .GLOBAL _HANYO2_DI_OLD;//3度読みWORK
+  391                             383 I1  
+  392                             384 I1  
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:05:29                                                  PAGE     8
+PROGRAM NAME =
+
+  393                             385 I1  
+  394                             386 I1  
+  395                             387 I1  
+  396                             388 I1  
+  397                             389 I1  
+  398 00000000                      9             .ALIGN  4                                       ;
+  399 00000000 00000004            10     _SEQ_ASM_RAM_TOP        .SRES   4                       ;
+  400                              11     
+  401                              12             .END
+  *****TOTAL ERRORS       0
+  *****TOTAL WARNINGS     0
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:05:29                                                  PAGE     9
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+Bwkram1                          Bwkram1  SCT  00000000      7*
+_AD_AVG_BUF                               IMPT 00000000    142 
+_AD_AVG_TOTAL                             IMPT 00000000    143 
+_AD_BUFCNT                                IMPT 00000000    141 
+_AD_CNV_DT0                               IMPT 00000000    139 
+_BTNER_ERR_TM                             IMPT 00000000     88 
+_CMP2_ERR_FIRST                           IMPT 00000000    153 
+_CMP2_ERR_TM2                             IMPT 00000000     97 
+_CPUA_EMG_IN_FLG                          IMPT 00000000    234 
+_CPUN_2CMP_DATA                           IMPT 00000000    152 
+_CPUN_2CMP_LATCH1                         IMPT 00000000    156 
+_CPUN_2CMP_LATCH2                         IMPT 00000000    155 
+_CRC_ERR_CNT                              IMPT 00000000     69 
+_DBG_ERRCHK_NASI                          IMPT 00000000     81 
+_DSET_SW_FLG                              IMPT 00000000    208 
+_ERR_CHK_OK_FLG                           IMPT 00000000     76 
+_ER_SFTSW_CHG_OLD                         IMPT 00000000     83 
+_ER_SQRAM_WK1                             IMPT 00000000     78 
+_ER_SQRAM_WK2                             IMPT 00000000     79 
+_FACT_IN_DATA                             IMPT 00000000    161 
+_FDEV_IN_DATA                             IMPT 00000000    163 
+_FROM_SUMCHK_CODE                         IMPT 00000000     85 
+_FSFT_TRERR_TM                            IMPT 00000000     98 
+_HANYO2_DI_DAT                            IMPT 00000000    389 
+_HANYO2_DI_OLD                            IMPT 00000000    390 
+_IN_RNA_REF_ERR_FLG1                      IMPT 00000000    183 
+_IN_RNA_REF_ERR_FLG2                      IMPT 00000000    184 
+_IOGA1_CTRL_DAT1                          IMPT 00000000    355 
+_IOGA1_PA_DT_OLD1                         IMPT 00000000    360 
+_IOGA1_PA_DT_OLD2                         IMPT 00000000    366 
+_IOGA1_PB_DT_OLD1                         IMPT 00000000    361 
+_IOGA1_PB_DT_OLD2                         IMPT 00000000    367 
+_IOGA1_PC_DT_OLD1                         IMPT 00000000    362 
+_IOGA1_PC_DT_OLD2                         IMPT 00000000    368 
+_IOGA1_PD_DT_OLD1                         IMPT 00000000    363 
+_IOGA1_PD_DT_OLD2                         IMPT 00000000    369 
+_IOGA1_PE_DT_OLD1                         IMPT 00000000    364 
+_IOGA1_PE_DT_OLD2                         IMPT 00000000    370 
+_IOGA2_CTRL_DAT1                          IMPT 00000000    357 
+_IOGA2_PA_DT_OLD1                         IMPT 00000000    372 
+_IOGA2_PA_DT_OLD2                         IMPT 00000000    378 
+_IOGA2_PB_DT_OLD1                         IMPT 00000000    373 
+_IOGA2_PB_DT_OLD2                         IMPT 00000000    379 
+_IOGA2_PC_DT_OLD1                         IMPT 00000000    374 
+_IOGA2_PC_DT_OLD2                         IMPT 00000000    380 
+_IOGA2_PD_DT_OLD1                         IMPT 00000000    375 
+_IOGA2_PD_DT_OLD2                         IMPT 00000000    381 
+_IOGA2_PE_DT_OLD1                         IMPT 00000000    376 
+_IOGA2_PE_DT_OLD2                         IMPT 00000000    382 
+_KEEPRY_BKUP_ERR                          IMPT 00000000    304 
+_LT_RNA_REF_ERR_FLG1                      IMPT 00000000    187 
+_LT_RNA_REF_ERR_FLG2                      IMPT 00000000    188 
+_NCHSW_ERR_TM1                            IMPT 00000000     89 
+_NCHSW_ERR_TM2                            IMPT 00000000     90 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:05:29                                                  PAGE    10
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_PB_INDT_OLD1                             IMPT 00000000    244 
+_PB_INDT_OLD2                             IMPT 00000000    245 
+_PB_PORT_CTL_DATA                         IMPT 00000000    243 
+_PJ_INDT_OLD1                             IMPT 00000000    249 
+_PJ_INDT_OLD2                             IMPT 00000000    250 
+_PJ_PORT_CTL_DATA                         IMPT 00000000    248 
+_PK_INDT_OLD1                             IMPT 00000000    254 
+_PK_INDT_OLD2                             IMPT 00000000    255 
+_PK_PORT_CTL_DATA                         IMPT 00000000    253 
+_PL_INDT_OLD1                             IMPT 00000000    259 
+_PL_INDT_OLD2                             IMPT 00000000    260 
+_PL_PORT_CTL_DATA                         IMPT 00000000    258 
+_PV0_SCRW_POS                             IMPT 00000000     55 
+_PV1_SCRW_POS                             IMPT 00000000     53 
+_PV_AD_DATA                               IMPT 00000000    144 
+_RACT_IN_DATA                             IMPT 00000000    162 
+_RDEV_IN_DATA                             IMPT 00000000    164 
+_REAL_INP1_DATA                           IMPT 00000000    238 
+_REAL_INP1_DT_OLD1                        IMPT 00000000    239 
+_REAL_INP1_DT_OLD2                        IMPT 00000000    240 
+_REMOTE_ERR_CHKTM                         IMPT 00000000    117 
+_RNA_ALM_BIT0_CNT                         IMPT 00000000    195 
+_RNA_ALM_BIT1_CNT                         IMPT 00000000    196 
+_RNA_ALM_BIT2_CNT                         IMPT 00000000    197 
+_RNA_ALM_BIT3_CNT                         IMPT 00000000    198 
+_RNA_ALM_BIT4_CNT                         IMPT 00000000    199 
+_RNA_ALM_BIT5_CNT                         IMPT 00000000    200 
+_RNA_ALM_BIT6_CNT                         IMPT 00000000    201 
+_RNA_ALM_BIT7_CNT                         IMPT 00000000    202 
+_RNA_ALM_CNT                              IMPT 00000000    203 
+_RNA_ALM_DAT                              IMPT 00000000    204 
+_RNA_CMD_VERIFY_CNT                       IMPT 00000000    190 
+_RNA_CMD_VERIFY_DAT                       IMPT 00000000    191 
+_RNA_REF1_CNT                             IMPT 00000000    205 
+_RNA_REF2_CNT                             IMPT 00000000    206 
+_RNA_REF_ERR_FLG1                         IMPT 00000000    185 
+_RNA_REF_ERR_FLG2                         IMPT 00000000    186 
+_RNA_STS_ERR_DAT                          IMPT 00000000    194 
+_RNA_STS_REQERR_CNT                       IMPT 00000000    193 
+_RNA_STS_SYSERR_CNT                       IMPT 00000000    192 
+_ROM_SYSPAR_ERRADR                        IMPT 00000000    119 
+_RSFT_TRERR_TM                            IMPT 00000000     99 
+_SAITO_ASM_RAM_TOP                        IMPT 00000000     19 
+_SELF_ACT_FLG                             IMPT 00000000    127 
+_SELF_CHK_FLG                             IMPT 00000000    126 
+_SELF_CHK_TIMER                           IMPT 00000000    136 
+_SELF_FSTY_USE                            IMPT 00000000    133 
+_SELF_HAND_FLG1                           IMPT 00000000    130 
+_SELF_HAND_FLG2                           IMPT 00000000    131 
+_SELF_RSTY_USE                            IMPT 00000000    134 
+_SEQ_ASM_RAM_TOP                 Bwkram1       00000000    399*
+_SFTSW_ERR_TM                             IMPT 00000000     87 
+_SH4_SQERRAM                              IMPT 00000000     80 
+_SND_RCV_CMD0                             IMPT 00000000     64 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:05:29                                                  PAGE    11
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_SND_RCV_CMD1                             IMPT 00000000     65 
+_SND_RCV_CMDR                             IMPT 00000000     66 
+_SND_RCV_INBUFCNT                         IMPT 00000000     67 
+_SQ_CBWK_TOP                              IMPT 00000000    233 
+_TINT3_10MS_CNT                           IMPT 00000000    171 
+_VLVER11_ERR_TM                           IMPT 00000000     91 
+_VLVER12_ERR_TM                           IMPT 00000000     92 
+_VLVER21_ERR_TM                           IMPT 00000000     93 
+_VLVER22_ERR_TM                           IMPT 00000000     94 
+_VLVER31_ERR_TM                           IMPT 00000000     95 
+_VLVER32_ERR_TM                           IMPT 00000000     96 
+_WK_RCV_SCFDR2                            IMPT 00000000    177 
+_WK_RCV_SCFSR2                            IMPT 00000000    176 
+_WK_RCV_SCLSR2                            IMPT 00000000    175 
+_WPAR1_BTNER_TM                           IMPT 00000000    103 
+_WPAR1_CMPER2_TM                          IMPT 00000000    112 
+_WPAR1_FSFTTRER_TM                        IMPT 00000000    113 
+_WPAR1_MODSER_TM1                         IMPT 00000000    104 
+_WPAR1_MODSER_TM2                         IMPT 00000000    105 
+_WPAR1_RSFTTRER_TM                        IMPT 00000000    114 
+_WPAR1_SFTSWER_TM                         IMPT 00000000    102 
+_WPAR1_VLVER11_TM1                        IMPT 00000000    106 
+_WPAR1_VLVER12_TM1                        IMPT 00000000    107 
+_WPAR1_VLVER21_TM1                        IMPT 00000000    108 
+_WPAR1_VLVER22_TM1                        IMPT 00000000    109 
+_WPAR1_VLVER31_TM1                        IMPT 00000000    110 
+_WPAR1_VLVER32_TM1                        IMPT 00000000    111 
+_rcv2_data_INcnt                          IMPT 00000000     39 
+_rcv2_data_buf                            IMPT 00000000     41 
+_rcv2_data_cnt                            IMPT 00000000     40 
+_rcv2_err_FRPRErrCnt                      IMPT 00000000     33 
+_rcv2_err_OverRunCnt                      IMPT 00000000     32 
+_rcv2_err_data_flg1                       IMPT 00000000     27 
+_rcv2_err_data_sts1                       IMPT 00000000     31 
+_rcv2_err_elseErrCnt                      IMPT 00000000     34 
+_rcv2_err_hard_INTflg1                    IMPT 00000000     24 
+_rcv2_err_hard_INTflg2                    IMPT 00000000     25 
+_rcv2_err_hard_INTflg3                    IMPT 00000000     26 
+_rcv2_err_hard_sts1                       IMPT 00000000     28 
+_rcv2_err_hard_sts2                       IMPT 00000000     29 
+_rcv2_err_hard_sts3                       IMPT 00000000     30 
+_rcv2_event_flg                           IMPT 00000000     50 
+_send2_data_buf                           IMPT 00000000     46 
+_send2_event_flg                          IMPT 00000000     51 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:05:29                                                  PAGE    12
+
+*** SECTION DATA LIST
+
+SECTION                          ATTRIBUTE    SIZE             START
+
+Bwkram1                          REL-DATA    000000004        

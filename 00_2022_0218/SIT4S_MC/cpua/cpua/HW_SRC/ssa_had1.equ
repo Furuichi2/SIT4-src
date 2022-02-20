@@ -1,0 +1,137 @@
+;/*	***********************************	*/
+;/*	***				***	*/
+;/*	***	定周期割込み基本TIME	***	*/
+;/*	***				***	*/
+;/*	***********************************	*/
+;;アホ _BASE_100US	.EQU		D'675;				// 100usec/(1/(27MHz/4))
+_BASE_100US	.EQU		D'675*3/2;	// 100usec/(1/(27MHz/4))  1msec(2msec)
+_BASE_200US	.EQU		D'675*3;	// 200usec/(1/(27MHz/4))  1msec(2msec) 2004-03-03
+
+;;_BASE_100US	.EQU		D'675*3;	// 100usec/(1/(27MHz/4))  1msec(2msec)
+_TINT_3R3MS	.EQU		D'33750	;	// 3.3333333msec/(1/(27MHz*3/2/4)) 2006-12-26 SAITO
+
+;/*	***********************************	*/
+;/*	***				***	*/
+;/*	***		IOGA		***	*/
+;/*	***				***	*/
+;/*	***********************************	*/
+_IOGAi_PA		.equ	0*2	;//
+_IOGAi_PB		.equ	1*2	;//
+_IOGAi_PC		.equ	2*2	;//
+_IOGAi_PD		.equ	3*2	;//
+_IOGAi_PE		.equ	4*2	;//
+_IOGAo_PF		.equ	5*2	;//
+_IOGAo_PG		.equ	6*2	;//
+_IOGAo_PH		.equ	7*2	;//
+
+_IOGA_P0		.equ	0*2	;//
+_IOGA_P1		.equ	1*2	;//
+_IOGA_P2		.equ	2*2	;//
+_IOGA_P3		.equ	3*2	;//
+_IOGA_P4		.equ	4*2	;//
+_IOGA_P5		.equ	5*2	;//
+_IOGA_P6		.equ	6*2	;//
+_IOGA_P7		.equ	7*2	;//
+
+
+;/*	***********************************	*/
+;/*	***				***	*/
+;/*	***	立花IOGA(SIT-4)		***	*/
+;/*	***				***	*/
+;/*	***********************************	*/
+;	ﾃﾞｰﾀﾚｼﾞｽﾀ
+_IOGA_PDR0		.equ	0*2*2		;//
+_IOGA_PDR1		.equ	1*2*2		;//
+_IOGA_PDR2		.equ	2*2*2		;//
+_IOGA_PDR3		.equ	3*2*2		;//
+_IOGA_PDR4		.equ	4*2*2		;//
+_IOGA_PDR5		.equ	5*2*2		;//
+_IOGA_PDR6		.equ	6*2*2		;//
+_IOGA_PDR7		.equ	7*2*2		;// BIT0~3
+
+;	方向ﾚｼﾞｽﾀ
+_IOGA_PDIR0		.equ	0*2*2+2		;//
+_IOGA_PDIR1		.equ	1*2*2+2		;//
+_IOGA_PDIR2		.equ	2*2*2+2		;//
+_IOGA_PDIR3		.equ	3*2*2+2		;//
+_IOGA_PDIR4		.equ	4*2*2+2		;//
+_IOGA_PDIR5		.equ	5*2*2+2		;//
+_IOGA_PDIR6		.equ	6*2*2+2		;//
+_IOGA_PDIR7		.equ	7*2*2		;// BIT4~7
+
+
+;/*	***********************************	*/
+;/*	***				***	*/
+;/*	***	立花IOGA(SIT-4)		***	*/
+;/*	***				***	*/
+;/*	***********************************	*/
+;	IC7
+_IO1A_P4EX		.EQU	H'00		;//
+_IO1A_P5EX		.EQU	H'7B		;//
+_IO1A_P6EX		.EQU	H'00		;//
+_IO1A_P7EX		.EQU	H'00		;//
+;	IC8
+_IO2A_P5EX		.EQU	H'2F		;//
+_IO2A_P6EX		.EQU	H'9C		;//FCYCL/RCYCLは正論理 2006-08-05
+_IO2A_P7EX		.EQU	H'00		;//
+
+;	IC21
+_IO1B_P4EX		.EQU	H'FF		;//
+_IO1B_P5EX		.EQU	H'7B		;//
+_IO1B_P6EX		.EQU	H'00		;//
+_IO1B_P7EX		.EQU	H'00		;//
+;	IC22
+_IO2B_P5EX		.EQU	H'2F		;//
+_IO2B_P6EX		.EQU	H'9C		;//FCYCL/RCYCLは正論理 2006-08-05
+_IO2B_P7EX		.EQU	H'00		;//
+
+
+
+;/*	***********************************	*/
+;/*	***				***	*/
+;/*	***	位置決めLSI		***	*/
+;/*	***				***	*/
+;/*	***********************************	*/
+_PLSiCH1		.equ	0
+_PLSiCH2		.equ	h'30
+
+_PL_BitComdL		.equ	h'0
+_PL_BitComdH		.equ	h'2
+_PL_BitInfoL		.equ	h'4
+_PL_BitInfoH		.equ	h'6
+_PL_NowPos1L		.equ	h'24
+_PL_NowPos1H		.equ	h'26
+_PL_NowPos2		.equ	h'28
+_PL_CtrlReg		.equ	h'2A
+
+
+;/*	***********************************	*/
+;/*	***				***	*/
+;/*	***		D/A		***	*/
+;/*	***				***	*/
+;/*	***********************************	*/
+_HD_DA_OFS	.EQU	H'10	;10H区切り
+_HD_DA0		.EQU	H'D0
+_HD_DA1		.EQU	H'E0
+_HD_DA2		.EQU	H'F0
+
+
+;/*	***********************************	*/
+;/*	***				***	*/
+;/*	***		A/D		***	*/
+;/*	***				***	*/
+;/*	***********************************	*/
+_HD_AD_OFS	.EQU	H'10	;10H区切り
+_HD_AD0		.EQU	H'80	;
+_HD_AD1		.EQU	H'90	;
+_HD_AD2		.EQU	H'A0	;
+_HD_AD3		.EQU	H'B0	;
+_HD_AD4		.EQU	H'C0	;
+
+
+_DEBUG_DIS		.DEFINE		"0"
+_DEBUG_ENB		.DEFINE		"1"
+;;_SCAN_DEBUG_ENB		.DEFINE		"_DEBUG_ENB"
+_SCAN_DEBUG_ENB		.DEFINE		"_DEBUG_DIS"
+
+

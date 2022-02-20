@@ -1,0 +1,99 @@
+;	***********************************************************
+;	***							***
+;	***		ﾊﾞｰｼﾞｮﾝｱｯﾌﾟｿﾌﾄからくる固定ｱﾄﾞﾚｽﾜｰｸ	***
+;	***		AC040000~AC047FFF			***
+;	***							***
+;	***********************************************************
+	.INCLUDE	"cm_equ1.equ"			; 
+
+;	***********************************************************
+;	***							***
+;	***							***
+;	***		疑似dpram空間				***
+;	***							***
+;	***********************************************************
+
+
+
+
+;	***************************************************
+;	***						***
+;	***		ワークＲＡＭ			***
+;	***						***
+;	***************************************************
+	.INCLUDE	"ssa_wram.ext"			; 
+	.SECTION	Bwkram1,DATA		;
+	.ALIGN	4				;
+
+_data_init2_timer	.SRES	2		; ｲﾆｼｬﾙWAITﾀｲﾏ2
+
+
+;	*** IO-GA WORK ***
+;20060725 SAITO	_IOGA1_CTRL_DAT1	.SRES	2*8		; GA-PA,PB,PC,PD,PE 入力PORT
+						;    PF,PG,PH 出力PORT
+;20060725 SAITO	_IOGA2_CTRL_DAT1	.SRES	2*8		; GA-PA,PB,PC,PD,PE 入力PORT
+						;    PF,PG,PH 出力PORT
+;	*** IOGA INPUT WORK RAM ***
+;20060725 SAITO	_IOGA1_PA_DT_OLD1	.SRES	2		; 1回前
+;20060725 SAITO	_IOGA1_PB_DT_OLD1	.SRES	2		; 1回前
+;20060725 SAITO	_IOGA1_PC_DT_OLD1	.SRES	2		; 1回前
+;20060725 SAITO	_IOGA1_PD_DT_OLD1	.SRES	2		; 1回前
+;20060725 SAITO	_IOGA1_PE_DT_OLD1	.SRES	2		; 1回前
+
+;20060725 SAITO	_IOGA1_PA_DT_OLD2	.SRES	2		; 2回前
+;20060725 SAITO	_IOGA1_PB_DT_OLD2	.SRES	2		; 2回前
+;20060725 SAITO	_IOGA1_PC_DT_OLD2	.SRES	2		; 2回前
+;20060725 SAITO	_IOGA1_PD_DT_OLD2	.SRES	2		; 2回前
+;20060725 SAITO	_IOGA1_PE_DT_OLD2	.SRES	2		; 2回前
+
+;20060725 SAITO	_IOGA2_PA_DT_OLD1	.SRES	2		; 1回前
+;20060725 SAITO	_IOGA2_PB_DT_OLD1	.SRES	2		; 1回前
+;20060725 SAITO	_IOGA2_PC_DT_OLD1	.SRES	2		; 1回前
+;20060725 SAITO	_IOGA2_PD_DT_OLD1	.SRES	2		; 1回前
+;20060725 SAITO	_IOGA2_PE_DT_OLD1	.SRES	2		; 1回前
+
+;20060725 SAITO	_IOGA2_PA_DT_OLD2	.SRES	2		; 2回前
+;20060725 SAITO	_IOGA2_PB_DT_OLD2	.SRES	2		; 2回前
+;20060725 SAITO	_IOGA2_PC_DT_OLD2	.SRES	2		; 2回前
+;20060725 SAITO	_IOGA2_PD_DT_OLD2	.SRES	2		; 2回前
+;20060725 SAITO	_IOGA2_PE_DT_OLD2	.SRES	2		; 2回前
+
+
+;	*** REMOTE IO WORK RAM ***
+_RMIO_IN_DATA		.SRES	2*4		; Remote INPUT WORK RAM0~3
+_RMIO2_IN_DATA		.SRES	2*4		; Remote INPUT WORK RAM0~3　2013-12-12[MC]
+
+;	*** DA CONVERTER WORK RAM ***
+_DA_CNV_DT0		.SRES	2		;12BIT D/A
+
+
+;	***************************
+;	***	ﾒﾓﾘﾁｪｯｸ用	***
+;	***************************
+_mem_chk_flg		.SRES	2		;
+_INT_2MS_SEL		.SRES	2		;
+
+;	***************************
+;	***	ﾜｰｸRAM		***
+;	***************************
+	.ALIGN	4				;
+
+;20060725 SAITO	_SQ_CBWK_TOP:
+;20060725 SAITO	_SQ_CBWK_RAM		.SRES	2*70		;
+
+;20060725 SAITO	_CPUA_EMG_IN_FLG	.SRES	2		
+
+
+
+;	***************************************************
+;	***						***
+;	***		高速ワークＲＡＭ		***
+;	***		（内蔵ＲＡＭ）			***
+;	***						***
+;	***************************************************
+	.SECTION	BwkIRAM,DATA		;
+	.ALIGN	4				;
+_IRAM_TOP		.SRES	4
+
+
+	.END

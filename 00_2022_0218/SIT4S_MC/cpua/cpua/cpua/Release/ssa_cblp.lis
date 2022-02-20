@@ -1,0 +1,2101 @@
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE     1
+PROGRAM NAME =
+
+    1                               1     ;       ***************************************************
+    2                               2     ;       ***                                             ***
+    3                               3     ;       ***                                             ***
+    4                               4     ;       ***     バックグランド                          ***
+    5                               5     ;       ***                                             ***
+    6                               6     ;       ***                                             ***
+    7                               7     ;       ***************************************************
+ 5510                              18     
+ 5511 00000000                     19             .SECTION        P,CODE                  ;
+ 5512                              20     
+ 5513                              21     ;       //      ***********************************
+ 5514                              22     ;       //      ***     EXTERN 宣言 PROGRAM     ***
+ 5515                              23     ;       //      ***********************************
+ 5516                              24     
+ 5517                              25     
+ 5518                              26     ;       //      ***********************************
+ 5519                              27     ;       //      ***     EXTERN 宣言 MEMORY,HARD ***
+ 5520                              28     ;       //      ***********************************
+ 5521                              29     
+ 5522                              30     
+ 5523                              31     ;       //      ***********************************
+ 5524                              32     ;       //      ***     PUBLIC 宣言 PROGRAM     ***
+ 5525                              33     ;       //      ***********************************
+ 5526                              34     
+ 5527                              35     
+ 5528                              36             SUB_START
+ 5529 00000000 4F22                   M           STS.L   PR,@-R15                ;[必要]
+ 5530                                 M   ;;;;;;; ADD     #-4,R15                 ;[不要?]
+ 5531                              37             PUSH_ALL
+ 5532                                 M           PUSH_REG1       R0      ;
+ 5533 00000002 2F06                   M           MOV.L   R0,@-R15                ;PUSH=SP-4
+ 5534                                 M                                           ;REG=>[SP]
+ 5535                                 M                                           ;"-4" FF,FF,FF,FC
+ 5536                                 M           PUSH_REG1       R1      ;
+ 5537 00000004 2F16                   M           MOV.L   R1,@-R15                ;PUSH=SP-4
+ 5538                                 M                                           ;REG=>[SP]
+ 5539                                 M                                           ;"-4" FF,FF,FF,FC
+ 5540                                 M           PUSH_REG1       R2      ;
+ 5541 00000006 2F26                   M           MOV.L   R2,@-R15                ;PUSH=SP-4
+ 5542                                 M                                           ;REG=>[SP]
+ 5543                                 M                                           ;"-4" FF,FF,FF,FC
+ 5544                                 M           PUSH_REG1       R3      ;
+ 5545 00000008 2F36                   M           MOV.L   R3,@-R15                ;PUSH=SP-4
+ 5546                                 M                                           ;REG=>[SP]
+ 5547                                 M                                           ;"-4" FF,FF,FF,FC
+ 5548                                 M           PUSH_REG1       R4      ;
+ 5549 0000000A 2F46                   M           MOV.L   R4,@-R15                ;PUSH=SP-4
+ 5550                                 M                                           ;REG=>[SP]
+ 5551                                 M                                           ;"-4" FF,FF,FF,FC
+ 5552                                 M           PUSH_REG1       R5      ;
+ 5553 0000000C 2F56                   M           MOV.L   R5,@-R15                ;PUSH=SP-4
+ 5554                                 M                                           ;REG=>[SP]
+ 5555                                 M                                           ;"-4" FF,FF,FF,FC
+ 5556                                 M           PUSH_REG1       R6      ;
+ 5557 0000000E 2F66                   M           MOV.L   R6,@-R15                ;PUSH=SP-4
+ 5558                                 M                                           ;REG=>[SP]
+ 5559                                 M                                           ;"-4" FF,FF,FF,FC
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE     2
+PROGRAM NAME =
+
+ 5560                                 M           PUSH_REG1       R7      ;
+ 5561 00000010 2F76                   M           MOV.L   R7,@-R15                ;PUSH=SP-4
+ 5562                                 M                                           ;REG=>[SP]
+ 5563                                 M                                           ;"-4" FF,FF,FF,FC
+ 5564                                 M           PUSH_REG1       R8      ;
+ 5565 00000012 2F86                   M           MOV.L   R8,@-R15                ;PUSH=SP-4
+ 5566                                 M                                           ;REG=>[SP]
+ 5567                                 M                                           ;"-4" FF,FF,FF,FC
+ 5568                                 M           PUSH_REG1       R9      ;
+ 5569 00000014 2F96                   M           MOV.L   R9,@-R15                ;PUSH=SP-4
+ 5570                                 M                                           ;REG=>[SP]
+ 5571                                 M                                           ;"-4" FF,FF,FF,FC
+ 5572                                 M           PUSH_REG1       R10     ;
+ 5573 00000016 2FA6                   M           MOV.L   R10,@-R15               ;PUSH=SP-4
+ 5574                                 M                                           ;REG=>[SP]
+ 5575                                 M                                           ;"-4" FF,FF,FF,FC
+ 5576                                 M           PUSH_REG1       R11     ;
+ 5577 00000018 2FB6                   M           MOV.L   R11,@-R15               ;PUSH=SP-4
+ 5578                                 M                                           ;REG=>[SP]
+ 5579                                 M                                           ;"-4" FF,FF,FF,FC
+ 5580                                 M           PUSH_REG1       R12     ;
+ 5581 0000001A 2FC6                   M           MOV.L   R12,@-R15               ;PUSH=SP-4
+ 5582                                 M                                           ;REG=>[SP]
+ 5583                                 M                                           ;"-4" FF,FF,FF,FC
+ 5584                                 M           PUSH_REG1       R13     ;
+ 5585 0000001C 2FD6                   M           MOV.L   R13,@-R15               ;PUSH=SP-4
+ 5586                                 M                                           ;REG=>[SP]
+ 5587                                 M                                           ;"-4" FF,FF,FF,FC
+ 5588                                 M           PUSH_REG1       R14     ;
+ 5589 0000001E 2FE6                   M           MOV.L   R14,@-R15               ;PUSH=SP-4
+ 5590                                 M                                           ;REG=>[SP]
+ 5591                                 M                                           ;"-4" FF,FF,FF,FC
+ 5592                                 M           PUSH_MACHL              ;
+ 5593 00000020 4F02                   M           STS.L   MACH,@-R15
+ 5594 00000022 4F12                   M           STS.L   MACL,@-R15
+ 5595                                 M           PUSH_SYS_REG    GBR     ;
+ 5596 00000024 4F13                   M           STC.L   GBR,@-R15
+ 5597                                 M           .AIF    2 EQ 3
+ 5598                                             .AELSE
+ 5599                                 C           PUSH_FPU_ALL            ;2001-07-08
+ 5600                                 M                   PUSH_SYS_FPU            ;2001-07-08 koma add
+ 5601 00000026 4F52                   M           STS.L   FPUL,@-R15
+ 5602 00000028 4F62                   M           STS.L   FPSCR,@-R15
+ 5603                                 M                   PUSH_FPU_REG1 FR0       ;
+ 5604 0000002A FF0B                   M           FMOV.S  FR0,@-R15
+ 5605                                 M                   PUSH_FPU_REG1 FR1       ;
+ 5606 0000002C FF1B                   M           FMOV.S  FR1,@-R15
+ 5607                                 M                   PUSH_FPU_REG1 FR2       ;
+ 5608 0000002E FF2B                   M           FMOV.S  FR2,@-R15
+ 5609                                 M                   PUSH_FPU_REG1 FR3       ;
+ 5610 00000030 FF3B                   M           FMOV.S  FR3,@-R15
+ 5611                                 M                   PUSH_FPU_REG1 FR4       ;
+ 5612 00000032 FF4B                   M           FMOV.S  FR4,@-R15
+ 5613                                 M           .AENDI
+ 5614                              38     
+ 5615                              39     
+ 5616                              40             POP_ALL
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE     3
+PROGRAM NAME =
+
+ 5617                                 M           .AIF    2 EQ 3
+ 5618                                             .AELSE
+ 5619                                 C           POP_FPU_ALL             ;2001-07-08
+ 5620                                 M                   POP_FPU_REG1 FR4        ;2001-07-08 koma add
+ 5621 00000034 F4F9                   M           FMOV.S  @R15+,FR4
+ 5622                                 M                   POP_FPU_REG1 FR3        ;
+ 5623 00000036 F3F9                   M           FMOV.S  @R15+,FR3
+ 5624                                 M                   POP_FPU_REG1 FR2        ;
+ 5625 00000038 F2F9                   M           FMOV.S  @R15+,FR2
+ 5626                                 M                   POP_FPU_REG1 FR1        ;
+ 5627 0000003A F1F9                   M           FMOV.S  @R15+,FR1
+ 5628                                 M                   POP_FPU_REG1 FR0        ;
+ 5629 0000003C F0F9                   M           FMOV.S  @R15+,FR0
+ 5630                                 M                   POP_SYS_FPU             ;
+ 5631 0000003E 4F66                   M           LDS.L   @R15+,FPSCR
+ 5632 00000040 4F56                   M           LDS.L   @R15+,FPUL
+ 5633                                 M           .AENDI
+ 5634                                 M           POP_SYS_REG     GBR     ;
+ 5635 00000042 4F17                   M           LDC.L   @R15+,GBR
+ 5636                                 M           POP_MACHL               ;
+ 5637 00000044 4F16                   M           LDS.L   @R15+,MACL
+ 5638 00000046 4F06                   M           LDS.L   @R15+,MACH
+ 5639                                 M           POP_REG1        R14     ;
+ 5640                                 M                                   ; RE"+4" 00,00,00,04
+ 5641 00000048 6EF6                   M           MOV.L   @R15+,R14        ;
+ 5642                                 M           POP_REG1        R13     ;
+ 5643                                 M                                   ; RE"+4" 00,00,00,04
+ 5644 0000004A 6DF6                   M           MOV.L   @R15+,R13        ;
+ 5645                                 M           POP_REG1        R12     ;
+ 5646                                 M                                   ; RE"+4" 00,00,00,04
+ 5647 0000004C 6CF6                   M           MOV.L   @R15+,R12        ;
+ 5648                                 M           POP_REG1        R11     ;
+ 5649                                 M                                   ; RE"+4" 00,00,00,04
+ 5650 0000004E 6BF6                   M           MOV.L   @R15+,R11        ;
+ 5651                                 M           POP_REG1        R10     ;
+ 5652                                 M                                   ; RE"+4" 00,00,00,04
+ 5653 00000050 6AF6                   M           MOV.L   @R15+,R10        ;
+ 5654                                 M           POP_REG1        R9      ;
+ 5655                                 M                                   ; RE"+4" 00,00,00,04
+ 5656 00000052 69F6                   M           MOV.L   @R15+,R9        ;
+ 5657                                 M           POP_REG1        R8      ;
+ 5658                                 M                                   ; RE"+4" 00,00,00,04
+ 5659 00000054 68F6                   M           MOV.L   @R15+,R8        ;
+ 5660                                 M           POP_REG1        R7      ;
+ 5661                                 M                                   ; RE"+4" 00,00,00,04
+ 5662 00000056 67F6                   M           MOV.L   @R15+,R7        ;
+ 5663                                 M           POP_REG1        R6      ;
+ 5664                                 M                                   ; RE"+4" 00,00,00,04
+ 5665 00000058 66F6                   M           MOV.L   @R15+,R6        ;
+ 5666                                 M           POP_REG1        R5      ;
+ 5667                                 M                                   ; RE"+4" 00,00,00,04
+ 5668 0000005A 65F6                   M           MOV.L   @R15+,R5        ;
+ 5669                                 M           POP_REG1        R4      ;
+ 5670                                 M                                   ; RE"+4" 00,00,00,04
+ 5671 0000005C 64F6                   M           MOV.L   @R15+,R4        ;
+ 5672                                 M           POP_REG1        R3      ;
+ 5673                                 M                                   ; RE"+4" 00,00,00,04
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE     4
+PROGRAM NAME =
+
+ 5674 0000005E 63F6                   M           MOV.L   @R15+,R3        ;
+ 5675                                 M           POP_REG1        R2      ;
+ 5676                                 M                                   ; RE"+4" 00,00,00,04
+ 5677 00000060 62F6                   M           MOV.L   @R15+,R2        ;
+ 5678                                 M           POP_REG1        R1      ;
+ 5679                                 M                                   ; RE"+4" 00,00,00,04
+ 5680 00000062 61F6                   M           MOV.L   @R15+,R1        ;
+ 5681                                 M           POP_REG1        R0      ;
+ 5682                                 M                                   ; RE"+4" 00,00,00,04
+ 5683 00000064 60F6                   M           MOV.L   @R15+,R0        ;
+ 5684                              41             SUB_END
+ 5685                                 M   ;;;;;;; ADD     #4,R15                  ;[不要?]
+ 5686 00000066 4F26                   M           LDS.L   @R15+,PR                ;[必要]
+ 5687                              42             M_RTS
+ 5688 00000068 000B                   M           RTS                             ;RTSの後ろの
+ 5689 0000006A 0009                   M           NOP                             ;@R15+,PRはﾀﾞﾒ
+ 5690                              43     
+ 5691                              44             .END
+  *****TOTAL ERRORS       0
+  *****TOTAL WARNINGS     0
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE     5
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+BIT0                                      EQU  00000001     15* 2082  2386  2401 
+BIT1                                      EQU  00000002     16* 2083  2387  2402 
+BIT10                                     EQU  00000400     25* 2412 
+BIT11                                     EQU  00000800     26* 2413 
+BIT12                                     EQU  00001000     27* 2418 
+BIT13                                     EQU  00002000     28* 2419 
+BIT14                                     EQU  00004000     29* 2420 
+BIT15                                     EQU  00008000     30* 2421 
+BIT16                                     EQU  00010000     31*
+BIT17                                     EQU  00020000     32*
+BIT18                                     EQU  00040000     33*
+BIT19                                     EQU  00080000     34*
+BIT2                                      EQU  00000004     17* 2084  2388  2403  2423 
+BIT20                                     EQU  00100000     35*
+BIT21                                     EQU  00200000     36*
+BIT22                                     EQU  00400000     37*
+BIT23                                     EQU  00800000     38*
+BIT24                                     EQU  01000000     39*
+BIT25                                     EQU  02000000     40*
+BIT26                                     EQU  04000000     41*
+BIT27                                     EQU  08000000     42*
+BIT28                                     EQU  10000000     43*
+BIT29                                     EQU  20000000     44*
+BIT3                                      EQU  00000008     18* 2085  2389  2404  2424 
+BIT30                                     EQU  40000000     45*
+BIT31                                     EQU  80000000     46*
+BIT4                                      EQU  00000010     19* 2390  2405  2425 
+BIT5                                      EQU  00000020     20* 2391  2406  2426 
+BIT6                                      EQU  00000040     21* 2392  2407  2427 
+BIT7                                      EQU  00000080     22* 2393  2408  2428 
+BIT8                                      EQU  00000100     23* 2394  2409 
+BIT9                                      EQU  00000200     24* 2395  2410 
+H_BYTE                                    EQU  00000000     82*
+L_BYTE                                    EQU  00000001     81*
+NBIT0                                     EQU  000000FE     49*
+NBIT1                                     EQU  000000FD     50*
+NBIT10                                    EQU  0000FBFF     60*
+NBIT11                                    EQU  0000F7FF     61*
+NBIT12                                    EQU  0000EFFF     62*
+NBIT13                                    EQU  0000DFFF     63*
+NBIT14                                    EQU  0000BFFF     64*
+NBIT15                                    EQU  00007FFF     65*
+NBIT2                                     EQU  000000FB     51*
+NBIT3                                     EQU  000000F7     52*
+NBIT4                                     EQU  000000EF     53*
+NBIT5                                     EQU  000000DF     54*
+NBIT6                                     EQU  000000BF     55*
+NBIT7                                     EQU  0000007F     56*
+NBIT8                                     EQU  0000FEFF     58*
+NBIT9                                     EQU  0000FDFF     59*
+P                                P        SCT  00000000   5511*
+XBIT0                                     EQU  00000000     68*
+XBIT1                                     EQU  00000001     69*
+XBIT2                                     EQU  00000002     70*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE     6
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+XBIT3                                     EQU  00000003     71*
+XBIT4                                     EQU  00000004     72*
+XBIT5                                     EQU  00000005     73*
+XBIT6                                     EQU  00000006     74*
+XBIT7                                     EQU  00000007     75*
+_ABS_ENC_PLS_SPD                          IMPT 00000000   3478 
+_ABS_OUT_PLS_SPD                          IMPT 00000000   3488 
+_ACCERR_ACC_HENSA                         IMPT 00000000   4495 
+_ACCERR_ACC_OBJ                           IMPT 00000000   4494 
+_ACCERR_ACC_PV                            IMPT 00000000   4493 
+_ACCERR_DLY_PV_TIM                        IMPT 00000000   4504 
+_ACCERR_ERR_CNT                           IMPT 00000000   4496 
+_ACCESS_ERR1                              IMPT 00000000   3574 
+_ACC_MONITOR_DAT1                         IMPT 00000000   4307 
+_ACC_MONITOR_DAT2                         IMPT 00000000   4308 
+_ACC_MONITOR_DAT3                         IMPT 00000000   4309 
+_ACC_MONITOR_DAT4                         IMPT 00000000   4310 
+_ACC_MONITOR_DAT5                         IMPT 00000000   4311 
+_ACC_MONITOR_DAT6                         IMPT 00000000   4312 
+_ACC_MONITOR_DAT7                         IMPT 00000000   4313 
+_ACC_MONITOR_DAT8                         IMPT 00000000   4314 
+_ACC_REST_ABS_PLS                         IMPT 00000000   4264 
+_ACC_REST_FLG                             IMPT 00000000   4265 
+_BANK1_CALC_ROT_NUM_ZR                    IMPT 00000000   3721 
+_BANK1_LK_END_OBJ_ABSPLS                  IMPT 00000000   3714 
+_BANK2_LINK_OBJROT_NUMPLS_ZR              IMPT 00000000   3719 
+_BANK2_LINK_OBJROT_NUM_ZR                 IMPT 00000000   3718 
+_BANK2_LK_END_OBJ_ABSPLS                  IMPT 00000000   3715 
+_BASE_TIM010MS                            IMPT 00000000   2536 
+_BASE_TIM100MS                            IMPT 00000000   2537 
+_BBN_MESURE_DLY_POINT                     IMPT 00000000   4480 
+_BBN_MESURE_DLY_SSPD                      IMPT 00000000   4479 
+_BBN_MESURE_POINT                         IMPT 00000000   4474 
+_BBN_MESURE_PPOS_BUF                      IMPT 00000000   4464 
+_BBN_MESURE_PSPD                          IMPT 00000000   4466 
+_BBN_MESURE_PSPD_BUF                      IMPT 00000000   4465 
+_BBN_MESURE_SPOS_BUF                      IMPT 00000000   4460 
+_BBN_MESURE_SSPD                          IMPT 00000000   4462 
+_BBN_MESURE_SSPD_BUF                      IMPT 00000000   4461 
+_BBN_MESURE_SSPD_DLYBUF                   IMPT 00000000   4478 
+_BBN_MEUSRE_PV_ACC                        IMPT 00000000   4472 
+_BBN_MEUSRE_PV_ACC_SRC                    IMPT 00000000   4469 
+_BBN_MEUSRE_SV_ACC                        IMPT 00000000   4471 
+_BBN_MEUSRE_SV_ACC_SRC                    IMPT 00000000   4468 
+_BBN_SET_TIME                             IMPT 00000000   4475 
+_BKTMCL_ACCDAT                            IMPT 00000000   4666 
+_BKTMCL_ACCDAT_UNIT                       IMPT 00000000   4667 
+_BKTMCL_ACCPOINT                          IMPT 00000000   4669 
+_BKTMCL_BBNFLT_TIMPV                      IMPT 00000000   4683 
+_BKTMCL_BRKSTP_SPD                        IMPT 00000000   4691 
+_BKTMCL_BRKSTR_SPD                        IMPT 00000000   4690 
+_BKTMCL_BRKSTX_SPD                        IMPT 00000000   4696 
+_BKTMCL_BRKSTX_TIMPV                      IMPT 00000000   4697 
+_BKTMCL_BRKSTX_TIMSV                      IMPT 00000000   4698 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE     7
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_BKTMCL_BRK_TIMPV                         IMPT 00000000   4693 
+_BKTMCL_BRX_AREA_IN                       IMPT 00000000   4701 
+_BKTMCL_BRX_AREA_INLT                     IMPT 00000000   4702 
+_BKTMCL_ENC_DIR                           IMPT 00000000   4674 
+_BKTMCL_OLD_PLSPOS                        IMPT 00000000   4673 
+_BKTMCL_POINTMAX                          IMPT 00000000   4670 
+_BKTMCL_SETX_TMDEF                        IMPT 00000000   4685 
+_BKTMCL_SPDBUF                            IMPT 00000000   4665 
+_BKTMCL_STOP_SPD                          IMPT 00000000   4689 
+_BKTMCL_STOP_TIMPV                        IMPT 00000000   4682 
+_BKTMCL_TMDEF_PV                          IMPT 00000000   4684 
+_BKTMCL_TMSTEP_FLG                        IMPT 00000000   4678 
+_BKTMCL_TMSTEP_STS                        IMPT 00000000   4679 
+_BKTMCL_TOTAL_TIMPV                       IMPT 00000000   4681 
+_BRK1_CAL_DN_ACC                          IMPT 00000000   3467 
+_BRK1_CHKDLY_TM                           IMPT 00000000   3455 
+_BRK1_GEN_PV_ACCTM                        IMPT 00000000   3463 
+_BRK1_GEN_PV_DLYTM                        IMPT 00000000   3462 
+_BRK1_GEN_SV_ACCTM                        IMPT 00000000   3461 
+_BRK1_GEN_SV_DLYTM                        IMPT 00000000   3460 
+_BRK1_GEN_SV_FRQ1                         IMPT 00000000   3458 
+_BRK1_GEN_SV_FRQ2                         IMPT 00000000   3459 
+_BRK1_SV_DN_ACC                           IMPT 00000000   3466 
+_BRK2_CHKDLY_TM                           IMPT 00000000   3456 
+_BRK2_SV_DN_ACC                           IMPT 00000000   3468 
+_BRKTST_AREA_SIG                          IMPT 00000000   4205 
+_BRKTST_BAKUP_FLG_PV1                     IMPT 00000000   4215 
+_BRKTST_BAKUP_FLG_PV2                     IMPT 00000000   4216 
+_BRKTST_BAKUP_FLG_SV1                     IMPT 00000000   4213 
+_BRKTST_BAKUP_FLG_SV2                     IMPT 00000000   4214 
+_BRKTST_CHKSPD_PLS                        IMPT 00000000   4195 
+_BRKTST_CLNK_UP_POS_DN                    IMPT 00000000   4208 
+_BRKTST_CLNK_UP_POS_UP                    IMPT 00000000   4207 
+_BRKTST_INPUT_CMD                         IMPT 00000000   4198 
+_BRKTST_LINK_UP_POS_DN                    IMPT 00000000   4210 
+_BRKTST_LINK_UP_POS_UP                    IMPT 00000000   4209 
+_BRKTST_MOD_FLG                           IMPT 00000000   4193 
+_BRKTST_OUTSPD_PLS                        IMPT 00000000   4194 
+_BRKTST_STP_ABSPLS                        IMPT 00000000   4202 
+_BRKTST_STR_FLG                           IMPT 00000000   4203 
+_BRKTST_SW_IN                             IMPT 00000000   4204 
+_BRK_CHK_COM                              IMPT 00000000   3452 
+_BRK_CHK_FLG                              IMPT 00000000   3453 
+_BTTN_FLG                                 IMPT 00000000   2604 
+_BTTN_ON_TIME                             IMPT 00000000   3744 
+_BVLV_CTL_FLG                             IMPT 00000000   4852 
+_BVLV_CTL_ON                              IMPT 00000000   4853 
+_BVLV_START_IN                            IMPT 00000000   4856 
+_CALC_FULCLS_MXPLS                        IMPT 00000000   3225 
+_CALC_MEM_1REV_ML_NROT_ML36               IMPT 00000000   2950 
+_CALC_MEM_1REV_MUL_NROT                   IMPT 00000000   2949 
+_CALC_MISS_FLG1                           IMPT 00000000   3827 
+_CALC_PLS_MMIN_H32                        EQU  C0000000   2131*
+_CALC_PLS_MMIN_L32                        EQU  00000001   2132*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE     8
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_CALC_PLS_PMAX_H32                        EQU  3FFFFFFF   2127*
+_CALC_PLS_PMAX_L32                        EQU  FFFFFFFF   2128*
+_CALC_ROT_MAX                             EQU  60000000   2123*
+_CAM_CNT_CHG_FLG                          IMPT 00000000   3324 
+_CAM_CTL_STEP                             IMPT 00000000   2680 
+_CAM_DT_FLG                               EQU  0000000E   2241*
+_CAM_INF_D1                               EQU  00000010   2242*
+_CAM_INF_D2                               EQU  00000012   2243*
+_CAM_NOW_DIG                              IMPT 00000000   3321 
+_CAM_OF_DGT                               EQU  0000000C   2240*
+_CAM_OF_DIG                               EQU  00000008   2237* 2238 
+_CAM_OF_DIR                               EQU  0000000A   2239*
+_CAM_OF_STP                               EQU  00000006   2236*
+_CAM_OF_TIM                               EQU  00000008   2238*
+_CAM_OLD_DIG                              IMPT 00000000   3322 
+_CAM_ON_DIG                               EQU  00000002   2234*
+_CAM_ON_DIR                               EQU  00000004   2235*
+_CAM_ON_STP                               EQU  00000000   2233*
+_CAM_OUTPUT_DT                            IMPT 00000000   3315 
+_CAM_OUTPUT_SW                            IMPT 00000000   3313 
+_CAM_POS_CTL_STEP                         IMPT 00000000   3323 
+_CAM_POS_STEP_END_FLG1                    IMPT 00000000   3080 
+_CAM_POS_STEP_END_FLG2                    IMPT 00000000   3081 
+_CAM_SELECT_SW                            IMPT 00000000   3314 
+_CAM_START_FLG                            IMPT 00000000   3316 
+_CAM_START_MODE                           IMPT 00000000   3317 
+_CAM_STEP_MAX                             IMPT 00000000   3320 
+_CAM_STEP_NO                              IMPT 00000000   3318 
+_CAM_STEP_NO_OLD                          IMPT 00000000   3319 
+_CAM_STRCUT                               EQU  00000014   2232*
+_CBSTS_LOAD_FLG                           IMPT 00000000   4615 
+_CBSTS_SAVE_CMDWK                         IMPT 00000000   4623 
+_CBSTS_SAVE_DAT                           IMPT 00000000   4632 
+_CB_BAKUP_CMD1                            EQU  00005678    114*
+_CB_BAKUP_CMD2                            EQU  00001234    115*
+_CB_BAK_SUM_COD1                          EQU  5AA51234    112*
+_CB_BAK_SUM_COD2                          EQU  A55A4321    113*
+_CB_ERR_INFO_MEM                          EQU  00000080    138*
+_CB_ERR_INFO_PSIZE                        EQU  00000008    139*
+_CB_INT_START_OK                          IMPT 00000000   2533 
+_CB_IN_HANYO                              IMPT 00000000   4891 
+_CB_SEQ_CB_COM340                         IMPT 00000000   3066 
+_CB_SEQ_CB_COM345                         IMPT 00000000   3069 
+_CB_SEQ_CB_COM345X                        IMPT 00000000   5486 
+_CB_SEQ_CB_COM346                         IMPT 00000000   3070 
+_CB_SEQ_CB_COM347                         IMPT 00000000   3071 
+_CB_SEQ_CB_COM348                         IMPT 00000000   3072 
+_CB_SEQ_CB_COM349                         IMPT 00000000   3073 
+_CB_SEQ_CB_COM350                         IMPT 00000000   3075 
+_CB_SEQ_CB_COM351                         IMPT 00000000   3076 
+_CB_SEQ_CB_COM352                         IMPT 00000000   3077 
+_CB_SEQ_CB_COM356                         IMPT 00000000   5338 
+_CB_SEQ_CB_SEL341                         IMPT 00000000   3067 
+_CB_SEQ_CB_SEL342                         IMPT 00000000   3068 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE     9
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_CB_SEQ_SW_SEL022                         IMPT 00000000   3061 
+_CB_SEQ_SW_SEL024                         IMPT 00000000   3062 
+_CB_SEQ_SW_SEL028                         IMPT 00000000   3063 
+_CB_SEQ_SW_SEL029                         IMPT 00000000   3064 
+_CB_SEQ_SW_SEL058                         IMPT 00000000   4941 
+_CB_STS_BUF_1BLK                          EQU  00000040    117*  119 
+_CB_STS_BUF_BLKMAX                        EQU  00000008    118*  119 
+_CB_STS_BUF_MAX                           EQU  00000200    119*
+_CB_TIME                                  EQU  0000000A   2050* 2063  2064  2065  2070 
+_CB_TRD_BEFORE                            EQU  00000060    127*
+_CB_TRD_BUF_DP_MAX                        EQU  00000080    131*
+_CB_TRD_BUF_MAX                           EQU  00000800    128*
+_CB_TRD_DP_1CNT                           EQU  00000008    130*
+_CB_TRD_DP_CH                             EQU  00000004    123*
+_CB_TRD_SMP_CNT                           EQU  00000080    126*
+_CCS_BTTN_OFF                             IMPT 00000000   3566 
+_CHKPOSANSDIG                             IMPT 00000000   4786 
+_CHKPOSWORK1                              IMPT 00000000   4773 
+_CHKPOSWORK2                              IMPT 00000000   4774 
+_CHKPOSWORKANS                            IMPT 00000000   4779 
+_CHKSPDANSPER                             IMPT 00000000   4778 
+_CHKSPDPERWORK1                           IMPT 00000000   4781 
+_CHKSPDPERWORK2                           IMPT 00000000   4782 
+_CHKSPDPOSINFO                            IMPT 00000000   4784 
+_CHKSPDPOSOFS                             IMPT 00000000   4785 
+_CHKSPDWORK1                              IMPT 00000000   4771 
+_CHKSPDWORK2                              IMPT 00000000   4772 
+_CHKSPDWORKANS                            IMPT 00000000   4775 
+_CHKSPDWORKTMAX                           IMPT 00000000   4777 
+_CHKSPDWORKVMAX                           IMPT 00000000   4776 
+_CHK_ADD_DATA_LATCH                       IMPT 00000000   4304 
+_CHK_CLK_SIG                              IMPT 00000000   4817 
+_CHK_LSI_LOAD_OUT_CNT                     IMPT 00000000   4053 
+_CHK_LSI_LOAD_POS_CNT                     IMPT 00000000   4052 
+_CHK_OBJECT_TIM_TOP                       IMPT 00000000   3269 
+_CLS_INC_MOST_DOWN_PLS                    IMPT 00000000   2816 
+_CLS_RNA_MOST_DOWN_POS                    IMPT 00000000   2815 
+_CMP2_ACC_NG_CNT                          IMPT 00000000   3633 
+_CMP2_ACC_TOTAL_NG_CNT                    IMPT 00000000   3627 
+_CMP2_BAS_NG_CNT                          IMPT 00000000   3630 
+_CMP2_BAS_TOTAL_NG_CNT                    IMPT 00000000   3624 
+_CMP2_LAT_NG_CNT                          IMPT 00000000   3632 
+_CMP2_LAT_TOTAL_NG_CNT                    IMPT 00000000   3626 
+_CMP2_NOW_NG_CNT                          IMPT 00000000   3634 
+_CMP2_NOW_TOTAL_NG_CNT                    IMPT 00000000   3628 
+_CMP2_TOP_NG_CNT                          IMPT 00000000   3631 
+_CMP2_TOP_TOTAL_NG_CNT                    IMPT 00000000   3625 
+_CMPSTEP_CNT_STOP                         IMPT 00000000   2724 
+_CMPSTEP_CTRL_BUSY                        IMPT 00000000   2720 
+_CMPSTEP_CTRL_REDY                        IMPT 00000000   2719 
+_CMPSTEP_NEAR_ZERO                        IMPT 00000000   2723 
+_CMPSTEP_POS_START                        IMPT 00000000   2721 
+_CMPSTEP_SFTY_AUTO                        IMPT 00000000   2722 
+_CMPSTEP_STEP_END                         IMPT 00000000   2725 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    10
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_CMP_ERR_CHK_STSA                         IMPT 00000000   2933 
+_CMP_ERR_CHK_STSB                         IMPT 00000000   2934 
+_CMP_ERR_STEP_A                           IMPT 00000000   2939 
+_CMP_ERR_STEP_B                           IMPT 00000000   2940 
+_CMP_ERR_STSA_INF1                        IMPT 00000000   2935 
+_CMP_ERR_STSA_INF2                        IMPT 00000000   2936 
+_CMP_ERR_STSA_INF3                        IMPT 00000000   2937 
+_CMP_ERR_STSA_INF4                        IMPT 00000000   2938 
+_CMP_ERR_TIM1                             IMPT 00000000   2636 
+_CMP_LNGTH_AD_ERR_CNT                     IMPT 00000000   3737 
+_CMP_POS_LSI_ACCLT1                       IMPT 00000000   3942 
+_CMP_RECOVER_FLG                          IMPT 00000000   4047 
+_CMP_RESTP_SR_ERR_CNT                     IMPT 00000000   3738 
+_CMP_STEP_ERR_TIM1                        IMPT 00000000   2638 
+_CNT_BANK_CALC_ERR                        IMPT 00000000   3724 
+_CNT_GRF_I_DATA                           IMPT 00000000   5479 
+_CNT_GRF_POINT                            IMPT 00000000   5481 
+_CNT_GRF_Y_DATA                           IMPT 00000000   5480 
+_CNT_PLSOUT_STOP_CNT                      IMPT 00000000   3991 
+_CNT_REST_SPD_HOSEI_DAT                   IMPT 00000000   3730 
+_CNT_REST_SPD_HOSEI_FLG                   IMPT 00000000   3731 
+_CNT_STOP_CMD                             IMPT 00000000   2559 
+_CNT_STOP_CMD_BEF1                        IMPT 00000000   4441 
+_CNT_STOP_CTRL_FLG                        IMPT 00000000   3711 
+_CNT_STOP_DBG_CNT                         IMPT 00000000   5394 
+_CNT_STOP_LNGTH                           IMPT 00000000   3717 
+_CNT_STOP_WAIT_TIM                        IMPT 00000000   5393 
+_CNT_SYNC_CHK_CNT1                        IMPT 00000000   4006 
+_CNT_SYNC_CHK_CNT2                        IMPT 00000000   4007 
+_CNT_SYNC_ERR_FLG                         IMPT 00000000   3989 
+_CNT_SYNC_HOS_CNT1                        IMPT 00000000   4008 
+_CNT_SYNC_HOS_DAT1                        IMPT 00000000   4003 
+_CNT_SYNC_HOS_DAT2                        IMPT 00000000   4004 
+_CNT_SYNC_HOS_FLAG                        IMPT 00000000   4005 
+_CNT_SYNC_STS_FLG                         IMPT 00000000   3990 
+_CONT_MOD_CNT_PV                          IMPT 00000000   3137 
+_CONT_MOD_TIM_PV                          IMPT 00000000   3139 
+_CONT_STOP_END_SUBPLS                     IMPT 00000000   3723 
+_COP_CB_LD_MONI_SIG                       IMPT 00000000   3384 
+_COP_DIG_SIG_FLG                          IMPT 00000000   3383 
+_COP_OLD_ENC3600                          IMPT 00000000   3402 
+_CPOS_BANK_USELFUL                        IMPT 00000000   3710 
+_CPOS_CTL_MATH                            IMPT 00000000   2800 
+_CPOS_DND_DIGTOP                          IMPT 00000000   3819 
+_CPOS_DND_PLSTOP                          IMPT 00000000   3820 
+_CPOS_DND_STOP_DIRECTOLD                  IMPT 00000000   3818 
+_CPOS_DND_STOP_SW                         IMPT 00000000   3816 
+_CPOS_DND_STOP_SWOLD                      IMPT 00000000   3817 
+_CPOS_FULCLS_MATEHD_SW                    IMPT 00000000   4876 
+_CPOS_KJYUCLS_OBJ                         IMPT 00000000   4878 
+_CPOS_MOD_FLG1                            IMPT 00000000   2799 
+_CPOS_SDAT1_CHGAPOS                       IMPT 00000000   2797 
+_CPOS_SDAT1_CHGAPOS2                      IMPT 00000000   3712 
+_CPOS_SDAT1_CNTSTEP                       IMPT 00000000   2794 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    11
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_CPOS_SDAT1_INF1                          IMPT 00000000   2795 
+_CPOS_SDAT1_NUM                           IMPT 00000000   2796 
+_CPOS_SDAT1_OFSPOS                        IMPT 00000000   2791 
+_CPOS_SDAT1_SPD                           IMPT 00000000   2792 
+_CPOS_SDAT1_STPAPOS                       IMPT 00000000   2798 
+_CPOS_SDAT1_STPAPOS2                      IMPT 00000000   3713 
+_CPOS_SDAT1_TIM                           IMPT 00000000   2793 
+_CPOS_SDAT1_UP_OFSPOS                     IMPT 00000000   2819 
+_CPOS_SDAT1_UP_POS                        IMPT 00000000   2820 
+_CPOS_STEP_MAX                            IMPT 00000000   2801 
+_CPOS_UPAREA_PLS                          IMPT 00000000   2814 
+_CPUABD_WDTOK_FLG                         IMPT 00000000   5117 
+_CPUBX_MEM1_BUF                           IMPT 00000000   5495 
+_CPUBX_MEM1_ENDFLG                        IMPT 00000000   5494 
+_CPUBX_MEM1_RCVFLG                        IMPT 00000000   5493 
+_CPUBX_MEM1_SNDEVN                        IMPT 00000000   5504 
+_CPUBX_MEM1_SNDFLG                        IMPT 00000000   5506 
+_CPUBX_MEM1_SNDKND                        IMPT 00000000   5505 
+_CPUBX_SEND_MAXCNT                        IMPT 00000000   5501 
+_CPUBX_SEND_NOWCNT                        IMPT 00000000   5502 
+_CPUBX_SEND_TOPADR                        IMPT 00000000   5500 
+_CPUB_PARAM_ERR_NO                        IMPT 00000000   5215 
+_CPUC_PARAM_ERR_NO                        IMPT 00000000   5214 
+_CPUDX_MEM1_ENDFLG                        IMPT 00000000   5497 
+_CPUDX_MEM1_RCVFLG                        IMPT 00000000   5496 
+_CPUD_CHK_OLDCNT                          IMPT 00000000   5108 
+_CPUD_CHK_TIME                            IMPT 00000000   5109 
+_CPUX_PARAM_SEND_FLG                      IMPT 00000000   5204 
+_CPUX_PARAM_SEND_NO                       IMPT 00000000   5205 
+_CPU_SV_HAND_IN                           IMPT 00000000   2561 
+_CPU_SV_HAND_IN_ON                        IMPT 00000000   2562 
+_CPU_SV_HAND_OUT                          IMPT 00000000   2564 
+_CPUy_RESTPLS_LTFLG                       IMPT 00000000   4009 
+_CTL_ENC360                               IMPT 00000000   2573 
+_CTL_ENC360_OLD                           IMPT 00000000   4093 
+_CYCLE_SPD_CMP_FLG1                       IMPT 00000000   4351 
+_CYCLE_SPD_CMP_PV_DAT                     IMPT 00000000   4352 
+_CYCLE_TIME_DAT                           IMPT 00000000   3053 
+_CYCLE_TIME_FLG                           IMPT 00000000   3055 
+_CYCLE_TIME_PV                            IMPT 00000000   3054 
+_CYCL_DSP_CNT_PV                          IMPT 00000000   3518 
+_CYCL_DSP_DISENB                          IMPT 00000000   3517 
+_CYCL_START_CNT                           IMPT 00000000   2817 
+_DAIHAI_CALC_WORK1                        IMPT 00000000   4392 
+_DAIHAI_CALC_WORK10                       IMPT 00000000   4401 
+_DAIHAI_CALC_WORK11                       IMPT 00000000   4403 
+_DAIHAI_CALC_WORK12                       IMPT 00000000   4404 
+_DAIHAI_CALC_WORK13X                      IMPT 00000000   4405 
+_DAIHAI_CALC_WORK2                        IMPT 00000000   4393 
+_DAIHAI_CALC_WORK3                        IMPT 00000000   4394 
+_DAIHAI_CALC_WORK4                        IMPT 00000000   4395 
+_DAIHAI_CALC_WORK5                        IMPT 00000000   4396 
+_DAIHAI_CALC_WORK6                        IMPT 00000000   4397 
+_DAIHAI_CALC_WORK7X                       IMPT 00000000   4398 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    12
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_DAIHAI_CALC_WORK8                        IMPT 00000000   4399 
+_DAIHAI_CALC_WORK9X                       IMPT 00000000   4400 
+_DAI_CMP_SMPSTART                         IMPT 00000000   2997 
+_DAI_HOSEI1_FLG                           IMPT 00000000   2987 
+_DBG_ATO_DRV_START_FLG                    IMPT 00000000   5138 
+_DBG_ATO_DRV_TIME_PV                      IMPT 00000000   5139 
+_DBG_ATO_DRV_TIME_PV2                     IMPT 00000000   5144 
+_DBG_ATO_DRV_TIME_SV                      IMPT 00000000   5140 
+_DBG_ATO_DRV_TIME_SV2                     IMPT 00000000   5145 
+_DBG_CNT_GPOSINT                          IMPT 00000000   3648 
+_DBG_CNT_STOP_CNT                         IMPT 00000000   3642 
+_DBG_CNT_STOP_FLG                         IMPT 00000000   3641 
+_DBG_CNT_STOP_SPC                         IMPT 00000000   3643 
+_DBG_DNM_CLR_CNT                          IMPT 00000000   5377 
+_DBG_DNM_END_CNT                          IMPT 00000000   5376 
+_DBG_DNM_STR_CNT                          IMPT 00000000   5375 
+_DBG_REVMOD_CTLPLS                        IMPT 00000000   3282 
+_DBG_REVMOD_DNPLS                         IMPT 00000000   3284 
+_DBG_REVMOD_OBJPLS                        IMPT 00000000   3281 
+_DBG_REVMOD_UPPLS                         IMPT 00000000   3283 
+_DBG_STEP12_CHG_DIG                       IMPT 00000000   3651 
+_DBG_STEP12_CHG_POS                       IMPT 00000000   3655 
+_DBG_STEP12_CHG_RSTP                      IMPT 00000000   3663 
+_DBG_STEP12_CHG_SPD                       IMPT 00000000   3659 
+_DBG_STEP12_CHG_TIM                       IMPT 00000000   3645 
+_DBG_STEP23_CHG_DIG                       IMPT 00000000   3652 
+_DBG_STEP23_CHG_POS                       IMPT 00000000   3656 
+_DBG_STEP23_CHG_RSTP                      IMPT 00000000   3664 
+_DBG_STEP23_CHG_SPD                       IMPT 00000000   3660 
+_DBG_STEP23_CHG_TIM                       IMPT 00000000   3646 
+_DBG_STEPCD_CHG_DIG                       IMPT 00000000   3653 
+_DBG_STEPCD_CHG_GPS                       IMPT 00000000   3667 
+_DBG_STEPCD_CHG_POS                       IMPT 00000000   3657 
+_DBG_STEPCD_CHG_RSTP                      IMPT 00000000   3665 
+_DBG_STEPCD_CHG_SPD                       IMPT 00000000   3661 
+_DBG_STEPCD_CHG_TIM                       IMPT 00000000   3647 
+_DEBUG_ENC360_STS                         IMPT 00000000   4705 
+_DEBUG_ENC360_STS2                        IMPT 00000000   4706 
+_DEBUG_MOD_CODE                           IMPT 00000000   5136 
+_DEF_DAI_POS_PV                           IMPT 00000000   3026 
+_DG_PS_INF_CHK1                           EQU  00000000   2250*
+_DG_PS_INF_CHK2                           EQU  0000003C   2255*
+_DG_PS_INF_CONT                           EQU  00000004   2251*
+_DG_PS_INF_LATE                           EQU  00000010   2254*
+_DG_PS_INF_STLK                           EQU  0000000C   2253*
+_DG_PS_INF_UNIT                           EQU  00000008   2252*
+_DIR_FLG                                  IMPT 00000000   4105 
+_DISP_ENC360                              IMPT 00000000   2577 
+_DISP_RE_VIEW_FLG                         IMPT 00000000   3056 
+_DISP_SV_DG_DAT                           IMPT 00000000   3368 
+_DISP_SV_MM_DAT                           IMPT 00000000   3369 
+_DMATH_CNTROT                             EQU  00000001   2082*
+_DMATH_DNDRIV                             EQU  00000004   2084*
+_DMATH_REVRSE                             EQU  00000002   2083*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    13
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_DMATH_UPDRIV                             EQU  00000008   2085*
+_DNDINC_CTRL_STEP                         IMPT 00000000   3815 
+_DND_CALC_WORK                            IMPT 00000000   2843 
+_DND_OVERCHK_DIG                          IMPT 00000000   4305 
+_DNM_ACC_CALFLG                           IMPT 00000000   4275 
+_DNM_CTL_INC3600                          IMPT 00000000   4143 
+_DNM_DEBUG_CNT                            IMPT 00000000   4746 
+_DNM_DEBUG_STS1                           IMPT 00000000   4745 
+_DNM_DIR_CHG_FLG                          IMPT 00000000   4141 
+_DNM_DIR_CHG_TIM                          IMPT 00000000   4142 
+_DNM_DIR_FLG_INC_LATCH                    IMPT 00000000   5102 
+_DNM_DIR_FLG_OLD                          IMPT 00000000   4181 
+_DNM_DIR_NOW_FLG                          IMPT 00000000   4139 
+_DNM_DIR_SAM_FLG                          IMPT 00000000   4140 
+_DNM_DIR_SET_FLG                          IMPT 00000000   4138 
+_DNM_MAX_GENSOK_LENGTH                    IMPT 00000000   4794 
+_DNM_RESET_AREA                           IMPT 00000000   5057 
+_DNM_RST_SPEC_AREASIG                     IMPT 00000000   5367 
+_DNM_SET1_OBJECT_DIG_TOP                  IMPT 00000000   4137 
+_DNM_SET1_OBJECT_PLS_TOP                  IMPT 00000000   4135 
+_DNM_SET1_UPAREA_DIG0                     IMPT 00000000   4136 
+_DNM_SET1_UPAREA_PLS0                     IMPT 00000000   4134 
+_DNM_SETX_HOLD_CMP1_DEG                   IMPT 00000000   4510 
+_DNM_SETX_LINK_UP_POS_DN                  IMPT 00000000   4151 
+_DNM_SETX_LINK_UP_POS_UP                  IMPT 00000000   4150 
+_DNM_SETX_MOTREP_DIR                      IMPT 00000000   5082 
+_DNM_SETX_UPAREA_DIG                      IMPT 00000000   4146 
+_DNM_SETX_UPAREA_PLS                      IMPT 00000000   4145 
+_DNM_WSVX_CLNK_UP_POS                     IMPT 00000000   4147 
+_DNM_WSVX_CLNK_UP_POS_DN                  IMPT 00000000   4149 
+_DNM_WSVX_CLNK_UP_POS_UP                  IMPT 00000000   4148 
+_DPCHK_CPU_ERR_TIM                        IMPT 00000000   5187 
+_DPCHK_DI_ERR_TIM                         IMPT 00000000   5196 
+_DPCHK_ERR_SIG                            IMPT 00000000   5186 
+_DPCHK_WR_COD                             IMPT 00000000   5188 
+_DPSQ022                                  EQU  0000002C   2137*
+_DPSQ024                                  EQU  00000030   2138*
+_DPSQ028                                  EQU  00000038   2139*
+_DPSQ029                                  EQU  0000003A   2140*
+_DPSQ058                                  EQU  00000074   2141*
+_DPSQ287                                  EQU  0000023E   2152*
+_DPSQ288                                  EQU  00000240   2153*
+_DPSQ340                                  EQU  000002A8   2143*
+_DPSQ341                                  EQU  000002AA   2144*
+_DPSQ356                                  EQU  000002C8   2145*
+_DPSQ358                                  EQU  000002CC   2146*
+_DPSQ359                                  EQU  000002CE   2147*
+_DPSQ367                                  EQU  000002DE   2148*
+_DPSQ368                                  EQU  000002E0   2149*
+_DPSQ369                                  EQU  000002E2   2150*
+_DRVHOS_CAL_RNA_POS                       IMPT 00000000   3019 
+_DRVHOS_DEF_CNT_PV                        IMPT 00000000   3011 
+_DRVHOS_DEF_RNA_POS                       IMPT 00000000   3018 
+_DRVHOS_IDO_BUF                           IMPT 00000000   3023 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    14
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_DRVHOS_IDO_CNT                           IMPT 00000000   3014 
+_DRVHOS_IDO_POINT                         IMPT 00000000   3012 
+_DRVHOS_IDO_TOTAL                         IMPT 00000000   3022 
+_DRVHOS_MOST_DN_RNAPOS                    IMPT 00000000   3020 
+_DRVHOS_USE_FLG                           IMPT 00000000   3009 
+_DRVHOS_WAIT_CNT_PV                       IMPT 00000000   3010 
+_DRVHOS_WORK_BUF                          IMPT 00000000   3024 
+_DRV_ACT_FLG                              IMPT 00000000   2710 
+_DRV_START_KEEP                           IMPT 00000000   4041 
+_DT_100PER_0                              EQU  00000064   2054*
+_DT_100PER_1                              EQU  000003E8   2053*
+_DUMMY_SUM_CODE                           EQU  5AA53CC3    105*
+_DUM_MRTION_SEL1                          IMPT 00000000   3378 
+_DUM_MTSTEP_MAXM                          IMPT 00000000   3377 
+_DUM_SET1_DIG_TOP                         IMPT 00000000   3376 
+_DUM_SET1_SPD_TOP                         IMPT 00000000   5163 
+_DUM_SET2_SPD_TOP                         IMPT 00000000   5164 
+_DUM_UPAREA_DIG0                          IMPT 00000000   3375 
+_DURING_TIM_FX                            IMPT 00000000   4708 
+_ELSE_ERR_FLG1                            IMPT 00000000   2632 
+_ELSE_ERR_FLG2                            IMPT 00000000   2633 
+_EMG_SCANCUT_FLG                          IMPT 00000000   4830 
+_ENC360_BITERR_CNT                        IMPT 00000000   2597 
+_ENC360_BITFLW_CNT                        IMPT 00000000   2596 
+_ENC360_BITNML_CNT                        IMPT 00000000   2598 
+_ENC360_HEX                               IMPT 00000000   2572 
+_ENC360_INDT                              IMPT 00000000   2571 
+_ENC360_INOLD                             IMPT 00000000   2570 
+_ENC360_LINK_AREASIG                      IMPT 00000000   3690 
+_ENC360_OVER_ENC                          IMPT 00000000   3582 
+_ENC360_OVER_FLG                          IMPT 00000000   3581 
+_ENCPLS_1000MSEC_LAT                      IMPT 00000000   3484 
+_ENCPLS_DELT                              IMPT 00000000   3480 
+_ENCPLS_POINT_SEL                         IMPT 00000000   3483 
+_ENCPLS_SPD_AVL_TOP                       IMPT 00000000   3481 
+_ENCPLS_SPD_POINT                         IMPT 00000000   3482 
+_ENCPLS_SPD_TOTAL                         IMPT 00000000   3476 
+_ENC_PLS_SPD                              IMPT 00000000   3477 
+_ENC_PLS_SPD_DIR                          IMPT 00000000   3479 
+_ENC_SYSRST_CMD                           IMPT 00000000   2588 
+_ENC_TIMEXT_FLG                           IMPT 00000000   2589 
+_ENDHAND_TIMOUT_PV                        IMPT 00000000   5154 
+_END_CMD_LATCH                            IMPT 00000000   2683 
+_EPCHK_COM                                IMPT 00000000   4976 
+_EPCHK_DLY_TIM                            IMPT 00000000   4979 
+_EPCHK_ERR_TIM                            IMPT 00000000   4980 
+_EPCHK_FLG                                IMPT 00000000   4977 
+_EPCHK_FORCE_VONCMD                       IMPT 00000000   4983 
+_EPCHK_RETRY_CNT                          IMPT 00000000   4981 
+_EPCHK_STEP                               IMPT 00000000   4978 
+_EPCHK_STOP_DISENB                        IMPT 00000000   5300 
+_EPCHK_STS                                IMPT 00000000   4982 
+_EQ_DND_MAX                               EQU  00000002   2087*
+_EQ_STEP_MAX                              EQU  00000005   2080*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    15
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_EQ_STEP_MX2                              EQU  0000000A   2081*
+_ERRCHK_ENC360                            IMPT 00000000   4657 
+_ERR_FIRST_ST                             IMPT 00000000   5045 
+_ERR_INFO_A01                             EQU  00000020   2306*
+_ERR_INFO_A02                             EQU  00000022   2307*
+_ERR_INFO_A03                             EQU  00000024   2308*
+_ERR_INFO_A04                             EQU  00000026   2309*
+_ERR_INFO_A05                             EQU  00000028   2310*
+_ERR_INFO_A06                             EQU  0000002A   2311*
+_ERR_INFO_A07                             EQU  0000002C   2312*
+_ERR_INFO_A08                             EQU  0000002E   2313*
+_ERR_INFO_B01                             EQU  00000030   2314*
+_ERR_INFO_B02                             EQU  00000032   2315*
+_ERR_INFO_B03                             EQU  00000034   2316*
+_ERR_INFO_B04                             EQU  00000036   2317*
+_ERR_INFO_B05                             EQU  00000038   2318*
+_ERR_INFO_B06                             EQU  0000003A   2319*
+_ERR_INFO_B07                             EQU  0000003C   2320*
+_ERR_INFO_B08                             EQU  0000003E   2321*
+_ERR_INFO_C01                             EQU  00000000   2298*
+_ERR_INFO_C02                             EQU  00000004   2299*
+_ERR_INFO_C03                             EQU  00000008   2300*
+_ERR_INFO_C04                             EQU  0000000C   2301*
+_ERR_INFO_C05                             EQU  00000010   2302*
+_ERR_INFO_C06                             EQU  00000014   2303*
+_ERR_INFO_C07                             EQU  00000018   2304*
+_ERR_INFO_C08                             EQU  0000001C   2305*
+_ERR_INFO_DLY_TIM                         IMPT 00000000   3576 
+_ERR_INFO_SAVE_FLG                        IMPT 00000000   3577 
+_ERR_INFO_SAVE_LATCH                      IMPT 00000000   3578 
+_ERR_LEV_IN2                              IMPT 00000000   4330 
+_ERR_LEV_IN3                              IMPT 00000000   4331 
+_ERR_LEV_IN4                              IMPT 00000000   4332 
+_ERR_LEV_IN5                              IMPT 00000000   4333 
+_ERR_LEV_IN6                              IMPT 00000000   4334 
+_EXQ_LT_CMPSTEP_STEP_END                  IMPT 00000000   5351 
+_EXQ_LT_GET_FLG                           IMPT 00000000   5350 
+_EXQ_LT_PROC_CNT1                         IMPT 00000000   5352 
+_EXQ_LT_PROC_CNT2                         IMPT 00000000   5353 
+_EXQ_LT_PROC_CNT3                         IMPT 00000000   5354 
+_EXQ_LT_PROC_CNT4                         IMPT 00000000   5355 
+_EXTDRV_BTTN_ERR_TIM                      IMPT 00000000   4899 
+_EXTDRV_BTTN_USE                          IMPT 00000000   4892 
+_EXTDRV_UTINUKI_FLG                       IMPT 00000000   4893 
+_EXT_BTTN_FLG                             IMPT 00000000   4896 
+_FREQ_BAS_SV_SPD                          IMPT 00000000   3623 
+_FREQ_PLSI_MAX_FRQ                        IMPT 00000000   3622 
+_FREQ_SV_SPD                              IMPT 00000000   3555 
+_FR_CYL_MASK_FLG                          IMPT 00000000   2682 
+_FULCLS_ELSE_STS                          IMPT 00000000   4882 
+_FULCLS_MATHED                            IMPT 00000000   4872 
+_FULCLS_TIM_SETFLG                        IMPT 00000000   4880 
+_FULL_CLS_OBJ_MM                          IMPT 00000000   3118 
+_FUL_CLS_DLYTM_SV                         IMPT 00000000   4712 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    16
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_FUL_CLS_MAXOVER_F                        IMPT 00000000   4713 
+_FUL_CLS_RNADIG                           EQU  00000320   2058*
+_GMN_HANYO_DI1                            IMPT 00000000   5412 
+_GMN_HANYO_OUT1_SQ                        IMPT 00000000   5413 
+_GMN_OVER_LIDE_FLG                        IMPT 00000000   3921 
+_HENSA_OVER_MOVE_CNT                      IMPT 00000000   3997 
+_HENSA_OVER_STOP_CNT                      IMPT 00000000   3998 
+_HENSA_OVR_ENCPOS                         IMPT 00000000   2918 
+_HENSA_OVR_OUTPLS                         IMPT 00000000   2917 
+_HIST_DAT_SEND_COM                        IMPT 00000000   5473 
+_HIST_DAT_SEND_DIS                        IMPT 00000000   5472 
+_HIST_EVENT_COD                           IMPT 00000000   5474 
+_HIST_KEP_SEND_COM                        IMPT 00000000   5475 
+_INCENC_ADD                               EQU  00000000   2109*
+_INCENC_LINK_NOWROT_NUMPLS_ZR             IMPT 00000000   2739 
+_INCENC_LINK_NOWROT_NUM_ZR                IMPT 00000000   2738 
+_INCENC_LINK_NOWROT_OFSPLS                IMPT 00000000   2740 
+_INCHEN_ADD                               EQU  00000000   2108*
+_INCREV_ADD                               EQU  00000000   2113*
+_INCRNA_ADD                               EQU  00000000   2110*
+_INCSTP_ADD                               EQU  00000000   2111*
+_INC_ABS_ORGWORK                          IMPT 00000000   2965 
+_INC_ABS_ORGWORK2                         IMPT 00000000   4384 
+_INC_ABS_ORGWORK2A                        IMPT 00000000   4385 
+_INC_ENC360                               IMPT 00000000   2576 
+_INC_ENC_MM_POS                           IMPT 00000000   2760 
+_INC_LINK_NOWROT_OFSPLS_P                 IMPT 00000000   2741 
+_INC_OFS_ORGWORK2A                        IMPT 00000000   4386 
+_INC_RESET_STEP                           IMPT 00000000   5097 
+_INC_RESET_USE_F                          IMPT 00000000   5098 
+_INC_STOP_CNT                             IMPT 00000000   3296 
+_INFO_CHK1_COD                            EQU  5AA51234   2248*
+_INFO_CHK2_COD                            EQU  4321A55A   2249*
+_INPUT_MODE_SW                            IMPT 00000000   2631 
+_INP_ERR_FLG                              IMPT 00000000   4648 
+_INP_MODE                                 IMPT 00000000   2663 
+_INSERT_MOT_SV_CHGF                       IMPT 00000000   5162 
+_INT1MS_SCAN_02MS                         IMPT 00000000   4323 
+_INT1MS_SCAN_03MS                         IMPT 00000000   4324 
+_INT1MS_SCAN_05MS1                        IMPT 00000000   4325 
+_INT1MS_SCAN_05MS2                        IMPT 00000000   4326 
+_INT1MS_SCAN_10MS                         IMPT 00000000   4327 
+_INT_CLS_CTL_FLG                          IMPT 00000000   2884 
+_INT_CLS_DYL_TIM                          IMPT 00000000   2885 
+_INT_CYC_DRV_STS                          IMPT 00000000   2883 
+_INT_DND_CTL_STEP                         IMPT 00000000   2879 
+_INT_DND_NEG_STEP                         IMPT 00000000   2887 
+_INT_DND_STEP_FLG                         IMPT 00000000   2882 
+_INT_LINK_TOTAL_ABSPLS                    IMPT 00000000   2896 
+_INT_POS_CTL_FLAG                         IMPT 00000000   2880 
+_INT_POS_CTL_STEP                         IMPT 00000000   2877 
+_INT_POS_STEP_FLG                         IMPT 00000000   2881 
+_INT_SFY_INP_DAT                          IMPT 00000000   3683 
+_INT_STP_INP_DAT                          IMPT 00000000   3684 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    17
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_INT_STP_INP_DAT1                         IMPT 00000000   3685 
+_INT_STP_INP_DAT2                         IMPT 00000000   3686 
+_INT_STP_INP_DAT3                         IMPT 00000000   3687 
+_IN_PARAM_RNA_CHK                         IMPT 00000000   4080 
+_IN_POS_GPOINT_POS                        IMPT 00000000   3982 
+_IN_RDY_FLG                               IMPT 00000000   2671 
+_IRQ_EMG_CNT                              IMPT 00000000   3677 
+_IRQ_EMG_FLG                              IMPT 00000000   3676 
+_IRQ_SFY_CNT                              IMPT 00000000   3679 
+_IRQ_SFY_FLG                              IMPT 00000000   3678 
+_IRQ_STP_CNT                              IMPT 00000000   3681 
+_IRQ_STP_FLG                              IMPT 00000000   3680 
+_KAJLIV_TTL_IDOBUF                        IMPT 00000000   4238 
+_KAJLIV_TTL_POINT                         IMPT 00000000   4237 
+_KAJLIV_TTL_TOTAL                         IMPT 00000000   4235 
+_KJPHOS_CAL_PRS                           IMPT 00000000   3046 
+_KJPHOS_DEF_CNT_PV                        IMPT 00000000   3038 
+_KJPHOS_IDO_BUF                           IMPT 00000000   3041 
+_KJPHOS_IDO_CNT                           IMPT 00000000   3035 
+_KJPHOS_IDO_POINT                         IMPT 00000000   3034 
+_KJPHOS_IDO_TOTAL                         IMPT 00000000   3040 
+_KJPHOS_USE_FLG                           IMPT 00000000   3033 
+_KJPHOS_WAIT_CNT_PV                       IMPT 00000000   3037 
+_KJYUCLS_KN_HENSA                         IMPT 00000000   4869 
+_KJYUCLS_KN_HENSA_PLS                     IMPT 00000000   4870 
+_KJYUCLS_OBJ_KN                           IMPT 00000000   4868 
+_KJYUU_DEF_DAT_PV                         IMPT 00000000   3044 
+_KJYUU_IN_DAT_PV                          IMPT 00000000   3043 
+_KJYUU_NEW_DAT_PV                         IMPT 00000000   3045 
+_KJYU_CHK_NEARSIG                         IMPT 00000000   4879 
+_KJYU_CMP_CMD                             IMPT 00000000   4938 
+_KJYU_CMP_SEQHABA                         IMPT 00000000   4944 
+_KJYU_CMP_SEQMINS                         IMPT 00000000   4943 
+_KJ_AREATRD_SIG                           IMPT 00000000   4920 
+_KJ_AREATRD_SIG_OLD                       IMPT 00000000   4921 
+_KJ_AREA_BT0_OLD                          IMPT 00000000   3801 
+_KJ_AREA_SIG                              IMPT 00000000   3800 
+_KOMA_ASM_RAM_TOP                         IMPT 00000000   2524 
+_LINKX_SV_OBJ_ABSPLS                      IMPT 00000000   3716 
+_LINK_1000ROT_PLS                         IMPT 00000000   4256 
+_LINK_1ROT_PLS                            IMPT 00000000   2811 
+_LINK_2ROT_PLS                            IMPT 00000000   4253 
+_LINK_3ROT_PLS                            IMPT 00000000   4254 
+_LINK_4ROT_PLS                            IMPT 00000000   4255 
+_LINK_CLANK_PV                            IMPT 00000000   3533 
+_LINK_MAX_SPD_PLS                         IMPT 00000000   3086 
+_LINK_NOWROT_NUMPLS_ZR                    IMPT 00000000   2734 
+_LINK_NOWROT_NUM_ZR                       IMPT 00000000   2733 
+_LINK_NOWROT_OFSPLS                       IMPT 00000000   2735 
+_LINK_NOWROT_OFSPLS_P                     IMPT 00000000   2736 
+_LINK_OBJROT_NUMPLS_ZR                    IMPT 00000000   2805 
+_LINK_OBJROT_NUM_ZR                       IMPT 00000000   2804 
+_LINK_POS_OFFSET1                         IMPT 00000000   2898 
+_LINK_POS_OFFSET2                         IMPT 00000000   2899 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    18
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_LINK_PV_ABSPLS                           IMPT 00000000   2897 
+_LINK_RL_OBJ_ABSPLS                       IMPT 00000000   2858 
+_LINK_SV_OBJ_ABSPLS                       IMPT 00000000   2866 
+_LINK_SV_OBJ_SPDPLS                       IMPT 00000000   2867 
+_LNGTH_ADD_DATA                           IMPT 00000000   2892 
+_LNGTH_TOTAL_OUTPLS                       IMPT 00000000   2893 
+_LOT_CHK_DBG_CNT1                         IMPT 00000000   3520 
+_LOT_CHK_DBG_CNT2                         IMPT 00000000   3521 
+_LOT_CHK_FLG                              IMPT 00000000   2703 
+_LOT_CNT_FLG                              IMPT 00000000   2701 
+_LSA1_FILETR_TIM                          IMPT 00000000   3782 
+_LSA2_FILETR_TIM                          IMPT 00000000   3783 
+_LSA_CHK_DELAY_TM                         IMPT 00000000   3788 
+_LSA_ENC_DIG                              IMPT 00000000   3775 
+_LSA_ENC_MOV_LNG1A                        IMPT 00000000   3776 
+_LSA_ENC_MOV_LNG1B                        IMPT 00000000   3777 
+_LSA_ENC_MOV_LNG2                         IMPT 00000000   3778 
+_LSA_ERR_SIG                              IMPT 00000000   3787 
+_LSA_SIG_DT                               IMPT 00000000   3779 
+_LSA_SIG_DT2                              IMPT 00000000   4104 
+_LSA_SIG_OLD_DT                           IMPT 00000000   3780 
+_LSA_SIG_OLD_WRK                          IMPT 00000000   3781 
+_LSI_BUF_PLS_BitComdL                     IMPT 00000000   3639 
+_LSI_CHK_DBG_CNT1                         IMPT 00000000   4512 
+_LSI_CHK_DBG_CNT2                         IMPT 00000000   4513 
+_LSI_CHK_DBG_CNT3                         IMPT 00000000   4514 
+_LSI_CHK_DBG_CNT4                         IMPT 00000000   4515 
+_LSI_CMPCPUAB_POSMAX                      IMPT 00000000   3618 
+_LSI_CMPCPUAB_POS_RL                      IMPT 00000000   3617 
+_LSI_LOAD_PLS                             IMPT 00000000   5224 
+_LSI_PLSCLR_AC_CNT1                       IMPT 00000000   3607 
+_LSI_PLSCLR_NG_CNT1                       IMPT 00000000   3608 
+_LSI_PLSCLR_NG_CNT2                       IMPT 00000000   3609 
+_LSI_PLSCLR_RETRY_CNT1                    IMPT 00000000   3590 
+_LSI_PLSCMP_AC_CNT1                       IMPT 00000000   3603 
+_LSI_PLSCMP_NG_CNT1                       IMPT 00000000   3601 
+_LSI_PLSCMP_RETRY_CNT1                    IMPT 00000000   3600 
+_LSI_PLSRD_NG_CNT1                        IMPT 00000000   3604 
+_LSI_PLSSET_AC_CNT1                       IMPT 00000000   3610 
+_LSI_PLSSET_AC_CNT2                       IMPT 00000000   3611 
+_LSI_PLSSET_NG_CNT1                       IMPT 00000000   3612 
+_LSI_PLSSET_NG_CNT2                       IMPT 00000000   3613 
+_LSI_PLSSET_NG_CNT3                       IMPT 00000000   3614 
+_LSI_PLSSET_RETRY_CNT1                    IMPT 00000000   3591 
+_LSI_SET_SPD_MAXLMT                       IMPT 00000000   3701 
+_LSI_SET_SPD_MINLMT                       IMPT 00000000   3702 
+_LSI_SET_SPD_SV                           IMPT 00000000   3700 
+_LT_INT_LINK_RL_OBJ_ABSPLS                IMPT 00000000   3551 
+_LT_LINK_SV_OBJ_ABSPLS                    IMPT 00000000   3550 
+_LT_LNGTH_ADD_DATA                        IMPT 00000000   3552 
+_LT_LNGTH_TOTAL_OUTPLS                    IMPT 00000000   3553 
+_MAIN_CLK                                 IMPT 00000000   4816 
+_MAIN_START_OK                            IMPT 00000000   2534 
+_MCN_DBG_COD11                            EQU  00000063   2283*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    19
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_MCN_DBG_COD21                            EQU  00000059   2285*
+_MCN_DBG_COD22                            EQU  00000058   2286*
+_MCN_DBG_COD23                            EQU  00000058   2287*
+_MCN_DBG_COD31                            EQU  0000004F   2289*
+_MCN_DBG_COD32                            EQU  0000004E   2290*
+_MCN_DBG_COD33                            EQU  0000004D   2291*
+_MCN_FUJI_DBG1                            EQU  000004D2   2293*
+_MISS_KEN_CAM_IN                          IMPT 00000000   5429 
+_MISS_KEN_CAM_OF_EDG                      IMPT 00000000   5430 
+_MISS_KEN_CNT_STOP_SQ                     IMPT 00000000   5432 
+_MISS_KEN_DI                              IMPT 00000000   5425 
+_MISS_KEN_DI_REC_ON                       IMPT 00000000   5426 
+_MISS_KEN_EMG_STOP_SQ                     IMPT 00000000   5433 
+_MISS_KEN_INIT_FLG                        IMPT 00000000   5422 
+_MISS_KEN_INIT_TIM                        IMPT 00000000   5423 
+_MNWR_POS_CMD                             IMPT 00000000   2827 
+_MODE_SEL                                 IMPT 00000000   2664 
+_MONI_CPUAB_PLSDELT                       IMPT 00000000   3957 
+_MONI_DISP_MOD                            IMPT 00000000   5477 
+_MONI_RDY_STEP                            IMPT 00000000   5038 
+_MONI_RESET_STEP                          IMPT 00000000   5037 
+_MONI_SELF_STS1                           IMPT 00000000   5039 
+_MONI_SELF_STS2                           IMPT 00000000   5040 
+_MOT_REP_CNT                              IMPT 00000000   5084 
+_MOT_REP_F                                IMPT 00000000   5083 
+_MOVE_MODE_MATH_LATCH                     IMPT 00000000   5101 
+_MOV_DATA_ERR_FLG1                        IMPT 00000000   2637 
+_MOV_ERR_FLG1                             IMPT 00000000   2634 
+_MRTION_SEL                               IMPT 00000000   2669 
+_MYUTING_MOD_STOPSEL                      IMPT 00000000   4765 
+_M_LINK_AREASIG                           IMPT 00000000   2743 
+_M_LINK_RL_OBJ_ABSPLS                     IMPT 00000000   2851 
+_NEAR_IN_FLG                              IMPT 00000000   2726 
+_NEG_CTL_OBJ_POS_PUSH                     IMPT 00000000   4364 
+_NEG_CTRL_BEFOR_OBJ_PLS                   IMPT 00000000   4362 
+_NEG_CTRL_BEFOR_SLW_PLS                   IMPT 00000000   4363 
+_NEG_DND_STOP_POS_END_F                   IMPT 00000000   5441 
+_NEG_DND_STOP_USE_F                       IMPT 00000000   5440 
+_NEG_EXITTIM                              IMPT 00000000   4734 
+_NEW_POSLSI_RESTPLS                       IMPT 00000000   3619 
+_NEW_TEP_CNT                              IMPT 00000000   3847 
+_NOW_MOTREP_DIR                           IMPT 00000000   5085 
+_NZ_TIM_OUT_PV1                           IMPT 00000000   3435 
+_NZ_TIM_OUT_PV2                           IMPT 00000000   3436 
+_NZ_TIM_OUT_SV1                           IMPT 00000000   3433 
+_NZ_TIM_OUT_SV2                           IMPT 00000000   3434 
+_OBJDIG_CLANK                             IMPT 00000000   4737 
+_OBJ_ENC360                               IMPT 00000000   2578 
+_OLD_RNAORG_POS1                          IMPT 00000000   2565 
+_ORGIN2_STEP_FLG                          IMPT 00000000   4373 
+_ORGIN_END_FLG1                           IMPT 00000000   3108 
+_ORGIN_MOD2_CHKTIM                        IMPT 00000000   3871 
+_ORGIN_MOD2_SEL                           IMPT 00000000   3870 
+_ORGIN_MOD2_START_FLG                     IMPT 00000000   3872 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    20
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_ORGPOS_LATCH1_INC_OFFSET_PLS             IMPT 00000000   4429 
+_ORGPOS_LATCH1_RNA_ABS_DAT                IMPT 00000000   4430 
+_ORGPOS_SERCH_RNA_ABS_DAT                 IMPT 00000000   4431 
+_ORG_DND_NOMAL_FLG1                       IMPT 00000000   2641 
+_ORG_DRV_CNT_PV                           IMPT 00000000   3507 
+_ORG_ELSE_NOMAL_FLG1                      IMPT 00000000   2640 
+_ORG_FIRST_OBJPLS                         IMPT 00000000   3099 
+_ORG_PRESET_TIM                           IMPT 00000000   2649 
+_ORG_RDY_CTL_FLG                          IMPT 00000000   3508 
+_ORG_SECOND_OBJPLS                        IMPT 00000000   3100 
+_ORIGN_180ARA_FLG                         IMPT 00000000   4065 
+_ORIGN_OBJ_CTL_FLG                        IMPT 00000000   3703 
+_OUTPLS_1000MSEC_LAT                      IMPT 00000000   3494 
+_OUTPLS_DELT                              IMPT 00000000   3490 
+_OUTPLS_DIV                               IMPT 00000000   2901 
+_OUTPLS_MOD                               IMPT 00000000   2900 
+_OUTPLS_POINT_SEL                         IMPT 00000000   3493 
+_OUTPLS_SPD_AVL_TOP                       IMPT 00000000   3491 
+_OUTPLS_SPD_POINT                         IMPT 00000000   3492 
+_OUTPLS_SPD_TOTAL                         IMPT 00000000   3486 
+_OUT_PLS_SPD                              IMPT 00000000   3487 
+_OUT_PLS_SPD_DIR                          IMPT 00000000   3489 
+_OVER1_JGDIG                              EQU  00000032   2092*
+_OVERH_CALC_USE                           IMPT 00000000   4731 
+_OVERH_MODE_SEL                           IMPT 00000000   4729 
+_OVERLIDE_DT_SEL                          IMPT 00000000   3919 
+_OVER_LIDE_ANS_TIM                        IMPT 00000000   3946 
+_OVER_RIDE_LATE_ANS                       IMPT 00000000   3909 
+_OVER_RIDE_LATE_FLG                       IMPT 00000000   3907 
+_OVER_RIDE_LATE_REQ                       IMPT 00000000   3908 
+_OVER_RIDE_USEFUL                         IMPT 00000000   3941 
+_OVER_UPDN_DBGCNT                         IMPT 00000000   3943 
+_OVRLIDE_LATE_MAX                         EQU  00000064   2324*
+_PLSOUTEND_FLG                            IMPT 00000000   5247 
+_PLSOUTEND_PVPLS                          IMPT 00000000   5245 
+_PLSOUTEND_SHIN                           IMPT 00000000   5246 
+_PLS_OUTPUT_FLG                           IMPT 00000000   3426 
+_PLS_OUT_END_STS                          IMPT 00000000   4799 
+_PON_ERR_WAIT_TIM                         IMPT 00000000   5177 
+_POSCANSEL_CMD                            IMPT 00000000   5366 
+_POSCTL_CALC_ERR                          IMPT 00000000   3894 
+_POSCTL_OVER_ACC_LAT                      IMPT 00000000   3950 
+_POSCTL_OVER_SPD_LAT                      IMPT 00000000   3949 
+_POSCTL_RL_PLS                            IMPT 00000000   3881 
+_POSCTL_RL_SPD                            IMPT 00000000   3885 
+_POSCTL_SET_SPD                           IMPT 00000000   3883 
+_POSCTL_STEP_CMD                          IMPT 00000000   3892 
+_POSCTL_STEP_FLG                          IMPT 00000000   3893 
+_POSCTL_SV_DN_ACC                         IMPT 00000000   3888 
+_POSCTL_SV_OFS_SPD                        IMPT 00000000   3890 
+_POSCTL_SV_PLS                            IMPT 00000000   3880 
+_POSCTL_SV_SPD                            IMPT 00000000   3884 
+_POSCTL_SV_UP_ACC                         IMPT 00000000   3887 
+_POSHLD1_CHKLST_FLG                       IMPT 00000000   5032 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    21
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_POSHLD1_GENSKPOSWK                       IMPT 00000000   5011 
+_POSHLD1_GENSK_STEP                       IMPT 00000000   5012 
+_POSHLD1_SDAT1_HOLDPOS                    IMPT 00000000   5014 
+_POSHLD1_SDAT2_HOLDPOS                    IMPT 00000000   5015 
+_POSHLD1_STOPLATCH                        IMPT 00000000   5020 
+_POSHLD1_STOPSPDWK                        IMPT 00000000   5009 
+_POSHLD1_STOP_STEP                        IMPT 00000000   5008 
+_POSHLD1_STOP_STEPWK                      IMPT 00000000   5007 
+_POSHLD_SET_DN_ACC                        IMPT 00000000   5019 
+_POSINER_FLG                              IMPT 00000000   4960 
+_POSINER_MOSTPV_POS                       IMPT 00000000   4956 
+_POSINER_OLDPV_POS                        IMPT 00000000   4955 
+_POSINER_PV_POS                           IMPT 00000000   4954 
+_POSINER_RETRY_CNT                        IMPT 00000000   4962 
+_POSINER_STOPCHK_TIM1                     IMPT 00000000   4963 
+_POSINER_STOPCHK_TIM2                     IMPT 00000000   4964 
+_POSINER_STS                              IMPT 00000000   4961 
+_POSINER_SV_OVRPOS                        IMPT 00000000   4958 
+_POSINER_SV_POS                           IMPT 00000000   4957 
+_POSINER_SV_STPPOS                        IMPT 00000000   4959 
+_POSLSI_CHK_CNT                           IMPT 00000000   2910 
+_POSLSI_CHK_DLT                           IMPT 00000000   2911 
+_POSLSI_CHK_RESTPLS                       IMPT 00000000   2904 
+_POSLSI_CHK_STS                           IMPT 00000000   2912 
+_POSLSI_CMP_DATA                          IMPT 00000000   2894 
+_POSLSI_DELT_POS                          IMPT 00000000   2895 
+_POSLSI_DRIV_SHIN                         IMPT 00000000   2903 
+_POSLSI_DRV_FRQ                           IMPT 00000000   3620 
+_POSLSI_HENSA_LATCH                       IMPT 00000000   2908 
+_POSLSI_OUTPUT_TOTAL_PLS                  IMPT 00000000   2906 
+_POS_CALC_ERR_FLG1                        IMPT 00000000   3593 
+_POS_CALC_ERR_FLG2                        IMPT 00000000   3594 
+_POS_CALC_ERR_INF1                        IMPT 00000000   3597 
+_POS_CALC_ERR_INF2                        IMPT 00000000   3598 
+_POS_CTRL_SQ_STS                          IMPT 00000000   2874 
+_POS_DRV_DIRECT                           IMPT 00000000   2868 
+_POS_END_MYUTIG_KEEPTIM                   IMPT 00000000   5266 
+_POS_END_MYUTIG_STOPTIM                   IMPT 00000000   5265 
+_POS_END_WAIT_TIM                         IMPT 00000000   5256 
+_POS_FRQ_SPDMAX                           IMPT 00000000   3092 
+_POS_GPOINT_POS                           IMPT 00000000   3983 
+_POS_HLDSTOP1_CHKTIM                      IMPT 00000000   4991 
+_POS_HLDSTOP1_FLG                         IMPT 00000000   4992 
+_POS_HLDSTOP1_SIG1TIM                     IMPT 00000000   4993 
+_POS_HLDSTOP1_SIG2TIM                     IMPT 00000000   4994 
+_POS_HOLDABS_CALCF                        IMPT 00000000   5031 
+_POS_HOLD_CMD                             IMPT 00000000   5026 
+_POS_HOLD_FLG                             IMPT 00000000   5027 
+_POS_HOLD_RDY_EXITF                       IMPT 00000000   5028 
+_POS_HOLD_RDY_EXITF2                      IMPT 00000000   5029 
+_POS_HOLD_RESTARTCMD                      IMPT 00000000   5025 
+_POS_LSI_ABSPLS                           IMPT 00000000   2956 
+_POS_LSI_ACCLT1                           IMPT 00000000   3096 
+_POS_LSI_ACCLT2                           IMPT 00000000   3097 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    22
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_POS_LSI_ACS_ERR_FLG1                     IMPT 00000000   3592 
+_POS_LSI_ACS_ERR_INF1                     IMPT 00000000   3596 
+_POS_LSI_CLSINC_SPDBAS                    IMPT 00000000   3114 
+_POS_LSI_CLS_SPDBAS                       IMPT 00000000   3113 
+_POS_LSI_CTL_NOWPLS                       IMPT 00000000   2960 
+_POS_LSI_OFFSET1                          IMPT 00000000   2958 
+_POS_LSI_OFFSET2                          IMPT 00000000   2959 
+_POS_LSI_OLDCNT                           IMPT 00000000   2962 
+_POS_LSI_SPDBAS                           IMPT 00000000   3095 
+_POS_LSI_SPDLAT                           IMPT 00000000   3094 
+_POS_LSI_SPDMAX                           IMPT 00000000   3093 
+_POS_LSI_TOTAL_PLS                        IMPT 00000000   2955 
+_PRD_DAI_CMP_ENB                          IMPT 00000000   3545 
+_PRD_DAI_POS0                             IMPT 00000000   3543 
+_PRD_DAI_POS1                             IMPT 00000000   3544 
+_PRD_KJP_CMP_ENB                          IMPT 00000000   4031 
+_PS_DG_INF_CHK1                           EQU  00000000   2257*
+_PS_DG_INF_CHK2                           EQU  0000003C   2262*
+_PS_DG_INF_CONT                           EQU  00000004   2258*
+_PS_DG_INF_LATE                           EQU  00000010   2261*
+_PS_DG_INF_STLK                           EQU  0000000C   2260*
+_PS_DG_INF_UNIT                           EQU  00000008   2259*
+_PS_TIME                                  EQU  00000002   2051*
+_PVCK_STOP_SMPTIM                         IMPT 00000000   3294 
+_PVC_BRK_ENC_SPD                          IMPT 00000000   3498 
+_PVC_BRK_OUT_SPD                          IMPT 00000000   3499 
+_PVX_AMPERR_TIM1                          IMPT 00000000   3232 
+_PVX_AMPERR_TIM2                          IMPT 00000000   3233 
+_PVX_AMPERR_TIM3                          IMPT 00000000   3234 
+_PVX_CKAGL_OVBIT                          IMPT 00000000   4789 
+_PVX_CKSPD_OVBIT                          IMPT 00000000   4770 
+_PVX_DAI_POS0                             IMPT 00000000   2976 
+_PVX_DAI_POS1                             IMPT 00000000   2977 
+_PVX_DNMOD_DLYTIM                         IMPT 00000000   4754 
+_PVX_DYHITO_POS                           IMPT 00000000   2984 
+_PVX_IAMP_VLT                             IMPT 00000000   3235 
+_PVX_INPPOS_TIM1                          IMPT 00000000   3208 
+_PVX_MOTINS_AG2                           IMPT 00000000   4574 
+_PVX_MOTINS_AG2X                          IMPT 00000000   4575 
+_PVX_MOTINS_AG3                           IMPT 00000000   4580 
+_PVX_MOTINS_AG3X                          IMPT 00000000   4581 
+_PVX_MOTINS_AGL                           IMPT 00000000   4577 
+_PVX_MOTINS_AGLX                          IMPT 00000000   4578 
+_PVX_MOTINS_DAN                           IMPT 00000000   4585 
+_PVX_MOTINS_DANAFT                        IMPT 00000000   4586 
+_PVX_MOTINS_DANBEF                        IMPT 00000000   4584 
+_PVX_MOTINS_INF                           IMPT 00000000   4588 
+_PVX_MOTINS_POS                           IMPT 00000000   4571 
+_PVX_MOTINS_PS2                           IMPT 00000000   4570 
+_PVX_MOTINS_PS3                           IMPT 00000000   4572 
+_PVX_RNA_STLORK                           IMPT 00000000   2978 
+_PV_ENC_SPD_PER                           IMPT 00000000   3496 
+_PV_OUT_SPD_PER                           IMPT 00000000   3497 
+_RDY_SFTY_LOCK                            IMPT 00000000   3767 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    23
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_RDY_SFTY_WAIT_TIM                        IMPT 00000000   3768 
+_REP_CAMOBJ_DIG                           IMPT 00000000   5086 
+_RESET_ROTNUMPLS_ZR                       IMPT 00000000   2768 
+_RESET_ROTNUM_ZR                          IMPT 00000000   2767 
+_REVCHK_DRIV_SHIN                         IMPT 00000000   4655 
+_REVCHK_MASK_PVTIM                        IMPT 00000000   4656 
+_REVMOD_REVDN_DIG                         IMPT 00000000   4658 
+_REV_CALC_WORK0                           IMPT 00000000   3285 
+_REV_CALC_WORK1                           IMPT 00000000   3286 
+_REV_CALC_WORK2                           IMPT 00000000   3287 
+_REV_ERR_FLG                              IMPT 00000000   5287 
+_REV_ERR_LT_PGPOS                         IMPT 00000000   5290 
+_REV_ERR_LT_SVPOS                         IMPT 00000000   5291 
+_REV_ERR_WAIT_TIMPV                       IMPT 00000000   4654 
+_REV_LATCH_ENCPOS                         IMPT 00000000   2926 
+_REV_LATCH_OUTPLS                         IMPT 00000000   2925 
+_REV_LATCH_RNAPOS                         IMPT 00000000   2927 
+_RM1_CHK_OLDSTS                           IMPT 00000000   5111 
+_RM1_CHK_TIME                             IMPT 00000000   5112 
+_RM2_CHK_OLDSTS                           IMPT 00000000   5114 
+_RM2_CHK_TIME                             IMPT 00000000   5115 
+_RNAREV_ADD                               EQU  00000000   2114*
+_RNASTP_ADD                               EQU  00000000   2112*
+_RNA_ABS_DRVHOS_DT                        IMPT 00000000   3017 
+_RNA_ABS_MAXPOS                           IMPT 00000000   2996 
+_RNA_ABS_MD2_C1                           IMPT 00000000   4388 
+_RNA_ABS_MD2_C1A                          IMPT 00000000   4389 
+_RNA_ABS_MD2_C2                           IMPT 00000000   4390 
+_RNA_ABS_MD_DT0                           IMPT 00000000   2980 
+_RNA_ABS_MD_DT1                           IMPT 00000000   2981 
+_RNA_ABS_MEMORG                           IMPT 00000000   2973 
+_RNA_ABS_MINPOS                           IMPT 00000000   2995 
+_RNA_ABS_ORGWORK                          IMPT 00000000   2964 
+_RNA_ABS_ORGWORK2                         IMPT 00000000   4382 
+_RNA_ABS_ORGWORK2A                        IMPT 00000000   4383 
+_RNA_ABS_POS                              IMPT 00000000   2972 
+_RNA_ABS_WKMAXPOS                         IMPT 00000000   2994 
+_RNA_ABS_WKMINPOS                         IMPT 00000000   2993 
+_RNA_BBN_MESURE_POINT                     IMPT 00000000   4529 
+_RNA_BBN_MESURE_SPOS_BUF                  IMPT 00000000   4522 
+_RNA_BBN_MESURE_SSPD                      IMPT 00000000   4524 
+_RNA_BBN_MESURE_SSPD_BUF                  IMPT 00000000   4523 
+_RNA_BBN_MEUSRE_ACC                       IMPT 00000000   4526 
+_RNA_BBN_MEUSRE_ACC_SRC                   IMPT 00000000   4525 
+_RNA_BBN_SET_TIME                         IMPT 00000000   4528 
+_RNA_CMD_RD_CNT                           IMPT 00000000   2591 
+_RNA_CMD_SND_CNT                          IMPT 00000000   2590 
+_RNA_COM_ERR_CNT                          IMPT 00000000   2583 
+_RNA_COM_NML_CNT                          IMPT 00000000   2584 
+_RNA_CTL_POS0                             IMPT 00000000   2982 
+_RNA_CTL_POS1                             IMPT 00000000   2983 
+_RNA_ENC360                               IMPT 00000000   2575 
+_RNA_HOS_DELT                             IMPT 00000000   2985 
+_RNA_INSERT_CHKFLG                        IMPT 00000000   4541 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    24
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_RNA_LINK_NOWROT_OFSPLS_P                 IMPT 00000000   2759 
+_RNA_OLD_STEP                             IMPT 00000000   4544 
+_RNA_POS_OFFSET1                          IMPT 00000000   2970 
+_RNA_POS_OFFSET2                          IMPT 00000000   2971 
+_RNA_PROTOCOL_SEL                         IMPT 00000000   4081 
+_RNA_PROTOCOL_X                           IMPT 00000000   4084 
+_RNA_RESET_FLG                            IMPT 00000000   2586 
+_RNA_RESET_TIM                            IMPT 00000000   2587 
+_RNA_STLORK                               IMPT 00000000   2975 
+_RNA_STLORK_HALF                          IMPT 00000000   4380 
+_RNA_STOP_CNT                             IMPT 00000000   3295 
+_RNA_TECH_POINT                           IMPT 00000000   4540 
+_RNA_TECH_POSBUF                          IMPT 00000000   4539 
+_ROOT_MAIN_INP                            IMPT 00000000   5483 
+_ROOT_MAIN_OUT                            IMPT 00000000   5484 
+_RST_DLY_TM                               EQU  000000C8   2070*
+_RST_ERR_CHK_ERR                          IMPT 00000000   2931 
+_RST_ERR_CHK_FLG                          IMPT 00000000   2929 
+_SAME_TIM                                 IMPT 00000000   2711 
+_SCAN_DBG_CNT                             IMPT 00000000   4835 
+_SCAN_SMP_SIG                             IMPT 00000000   4822 
+_SCAN_TIM_IDOBUF                          IMPT 00000000   4813 
+_SCAN_TIM_IN                              IMPT 00000000   4818 
+_SCAN_TIM_POINT                           IMPT 00000000   4814 
+_SCAN_TIM_TOTAL                           IMPT 00000000   4812 
+_SDATCLS_OBJMM                            IMPT 00000000   3120 
+_SDATCLS_OBJPLS                           IMPT 00000000   3119 
+_SDATCLS_OBJ_NEAR_UPDNPLS                 IMPT 00000000   3121 
+_SDATCLS_TRG_STEP                         IMPT 00000000   3123 
+_SDATCLS_UPOBJ_PLS                        IMPT 00000000   3122 
+_SDAT_WAIT_PVTIM                          IMPT 00000000   2813 
+_SELF_AD_LATCH                            IMPT 00000000   3756 
+_SELF_BRK_LOCK                            IMPT 00000000   3752 
+_SELF_CHK_MATHED                          IMPT 00000000   3751 
+_SELF_CHK_SEL                             IMPT 00000000   2658 
+_SELF_COM                                 IMPT 00000000   2656 
+_SELF_FIRST_END_FLG                       IMPT 00000000   3749 
+_SELF_FLG                                 IMPT 00000000   2654 
+_SELF_LOCK_FLG                            IMPT 00000000   4036 
+_SELF_MOV_LENGTH                          IMPT 00000000   3759 
+_SELF_MOV_SPEED                           IMPT 00000000   3760 
+_SELF_SECOND_ACT_FLG                      IMPT 00000000   3754 
+_SELF_SECOND_STEP                         IMPT 00000000   3755 
+_SELF_START_POS_LATCH                     IMPT 00000000   3758 
+_SELF_START_WAIT_TM                       IMPT 00000000   2657 
+_SELF_TIMING_SIG                          IMPT 00000000   3750 
+_SET1_ACCLAT_TIM1                         IMPT 00000000   3195 
+_SET1_AMP100P_VLT                         IMPT 00000000   3229 
+_SET1_ARACHK_LNG1                         IMPT 00000000   3210 
+_SET1_ATDAT_DOTPOS                        IMPT 00000000   4972 
+_SET1_ATSLID_BAKLNG                       IMPT 00000000   4967 
+_SET1_ATSLID_COEF1                        IMPT 00000000   4970 
+_SET1_ATSLID_COEF2                        IMPT 00000000   4971 
+_SET1_ATSLID_DNOBJ1                       IMPT 00000000   4968 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    25
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_SET1_ATSLID_UPOBJ1                       IMPT 00000000   4969 
+_SET1_BREAK_DIG                           IMPT 00000000   3531 
+_SET1_BREAK_TIM1                          IMPT 00000000   3529 
+_SET1_CNT_CNT                             IMPT 00000000   3138 
+_SET1_CNT_TIM                             IMPT 00000000   3136 
+_SET1_DAIHAI_LNG1                         IMPT 00000000   3221 
+_SET1_DAIHAI_LNG2                         IMPT 00000000   3222 
+_SET1_DAIHAI_LNG3                         IMPT 00000000   3223 
+_SET1_DAIHAI_ORG0                         IMPT 00000000   3240 
+_SET1_DAIORG0_CMP1DN                      IMPT 00000000   3242 
+_SET1_DAIORG0_CMP1UP                      IMPT 00000000   3241 
+_SET1_DAIORG0_CMP2DN                      IMPT 00000000   3244 
+_SET1_DAIORG0_CMP2UP                      IMPT 00000000   3243 
+_SET1_DAIORG0_CMP3DN                      IMPT 00000000   3246 
+_SET1_DAIORG0_CMP3UP                      IMPT 00000000   3245 
+_SET1_DAIORG0_CMP4DN                      IMPT 00000000   3248 
+_SET1_DAIORG0_CMP4UP                      IMPT 00000000   3247 
+_SET1_DNAREA_INPX                         IMPT 00000000   3198 
+_SET1_DNAREA_INPXPLS                      IMPT 00000000   3202 
+_SET1_DNAREA_JUDG                         IMPT 00000000   3172 
+_SET1_DNDINC_SPD1                         IMPT 00000000   3181 
+_SET1_DND_DIGTOP                          IMPT 00000000   3810 
+_SET1_DND_PLSTOP                          IMPT 00000000   3811 
+_SET1_DND_STOPDIG_UP                      IMPT 00000000   3809 
+_SET1_DND_STOP_SW                         IMPT 00000000   3808 
+_SET1_DND_UPPLS                           IMPT 00000000   3812 
+_SET1_EJECAM_OFR                          IMPT 00000000   5075 
+_SET1_EJECAM_ONR                          IMPT 00000000   5074 
+_SET1_ENC360_HOS1                         IMPT 00000000   3212 
+_SET1_FULCLS_MXPLS                        IMPT 00000000   3224 
+_SET1_INCDIR_SEL1                         IMPT 00000000   3153 
+_SET1_INCENC_ELNG                         IMPT 00000000   3215 
+_SET1_INCHEN_ELNG                         IMPT 00000000   3214 
+_SET1_INCPLS_1REV                         IMPT 00000000   3150 
+_SET1_INCPLS_HOSM                         IMPT 00000000   3155 
+_SET1_INCPLS_HOSN                         IMPT 00000000   3154 
+_SET1_INCPOS_KP01                         IMPT 00000000   3193 
+_SET1_INCREV_ELNG                         IMPT 00000000   3219 
+_SET1_INCRNA_ELNG                         IMPT 00000000   3216 
+_SET1_INCSTP_ELNG                         IMPT 00000000   3217 
+_SET1_INPPOS_TIM1                         IMPT 00000000   3207 
+_SET1_INTLIM_AGL                          IMPT 00000000   4997 
+_SET1_INTLIM_PLS                          IMPT 00000000   4999 
+_SET1_KAJAREA_ENO                         IMPT 00000000   4908 
+_SET1_KAJAREA_SEL                         IMPT 00000000   4922 
+_SET1_KAJAREA_SNO                         IMPT 00000000   4907 
+_SET1_KATTCH_EAG                          IMPT 00000000   4930 
+_SET1_KATTCH_SAG                          IMPT 00000000   4929 
+_SET1_KATTCH_SPD                          IMPT 00000000   4598 
+_SET1_KJEND_DIG1                          IMPT 00000000   3799 
+_SET1_KJEND_DIG2                          IMPT 00000000   4911 
+_SET1_KJEND_STEP1                         IMPT 00000000   3798 
+_SET1_KJSTR_DIG1                          IMPT 00000000   3797 
+_SET1_KJSTR_DIG2                          IMPT 00000000   4910 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    26
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_SET1_KJSTR_STEP1                         IMPT 00000000   3796 
+_SET1_LSAABN_AGL1                         IMPT 00000000   3785 
+_SET1_LSAABN_AGL2                         IMPT 00000000   3786 
+_SET1_MAX_KJYU                            IMPT 00000000   4241 
+_SET1_MISCAM_OFR                          IMPT 00000000   5077 
+_SET1_MISCAM_ONR                          IMPT 00000000   5076 
+_SET1_MOTMAX_FREQ                         IMPT 00000000   3167 
+_SET1_MOTREP_CNT                          IMPT 00000000   5067 
+_SET1_MOTREP_SPD                          IMPT 00000000   5066 
+_SET1_MOTREP_STGE                         IMPT 00000000   5065 
+_SET1_MOTREP_STGS                         IMPT 00000000   5064 
+_SET1_MOTREP_USEFUL                       IMPT 00000000   5063 
+_SET1_MOTRPM_MAXM                         IMPT 00000000   3157 
+_SET1_MRTION_SEL1                         IMPT 00000000   3250 
+_SET1_MTSTEP_MAXM                         IMPT 00000000   3251 
+_SET1_NEG_OFS_LNG                         IMPT 00000000   3228 
+_SET1_OBJARA_INPX                         IMPT 00000000   3199 
+_SET1_OBJARA_INPXPLS                      IMPT 00000000   3203 
+_SET1_OBJARA_INPXPSX                      IMPT 00000000   3205 
+_SET1_OBJECT_DIG_TOP                      IMPT 00000000   3275 
+_SET1_OBJECT_PLS_TOP                      IMPT 00000000   3261 
+_SET1_OBJECT_POS_TOP                      IMPT 00000000   3256 
+_SET1_OBJECT_SPD_TOP                      IMPT 00000000   3264 
+_SET1_OBJECT_TIM_TOP                      IMPT 00000000   3268 
+_SET1_OBJ_CAM_DIG_TOP                     IMPT 00000000   3309 
+_SET1_OVERLIDE_COF                        IMPT 00000000   3920 
+_SET1_PLSAHI_PLS                          IMPT 00000000   3836 
+_SET1_PLSALO_PLS                          IMPT 00000000   3835 
+_SET1_RCAMON_POS_TOP                      IMPT 00000000   3311 
+_SET1_RCAMON_TIM_TOP                      IMPT 00000000   3312 
+_SET1_REVDAT_SPD1                         IMPT 00000000   3184 
+_SET1_REVDAT_SPD2                         IMPT 00000000   3187 
+_SET1_REVDAT_SPD3                         IMPT 00000000   3188 
+_SET1_RNADIR_SEL1                         IMPT 00000000   3152 
+_SET1_RNAORG_POS1                         IMPT 00000000   3168 
+_SET1_RNAPOS_KP01                         IMPT 00000000   3194 
+_SET1_RNAPOS_MAXP                         IMPT 00000000   3169 
+_SET1_RNAPOS_MINP                         IMPT 00000000   3170 
+_SET1_RNAREV_ELNG                         IMPT 00000000   3220 
+_SET1_RNASTP_ELNG                         IMPT 00000000   3218 
+_SET1_ROTCAM_OFR                          IMPT 00000000   5073 
+_SET1_ROTCAM_ONR                          IMPT 00000000   5072 
+_SET1_RPARAM_TOP1                         IMPT 00000000   3146 
+_SET1_SSCURV_TIM1                         IMPT 00000000   3196 
+_SET1_STDINC_SPD1                         IMPT 00000000   3183 
+_SET1_TEPCTL_SPD1                         IMPT 00000000   3843 
+_SET1_TEPLAT_DAT1                         IMPT 00000000   3190 
+_SET1_TEPLAT_DAT2                         IMPT 00000000   3191 
+_SET1_UPAREA_DIG0                         IMPT 00000000   3274 
+_SET1_UPAREA_DIG1                         IMPT 00000000   3211 
+_SET1_UPAREA_INPX                         IMPT 00000000   3197 
+_SET1_UPAREA_INPXPLS                      IMPT 00000000   3201 
+_SET1_UPAREA_JUDG                         IMPT 00000000   3171 
+_SET1_UPAREA_PLS0                         IMPT 00000000   3259 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    27
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_SET1_UPAREA_PLS1                         IMPT 00000000   3260 
+_SET1_UPAREA_POS0                         IMPT 00000000   3255 
+_SET1_UPAREA_POS1                         IMPT 00000000   3091 
+_SET1_UPAREA_SPD0                         IMPT 00000000   3263 
+_SET1_UPAREA_SPD1                         IMPT 00000000   3182 
+_SET1_UPAREA_TIM0                         IMPT 00000000   3267 
+_SET1_UPCLEEP_SPD                         IMPT 00000000   3185 
+_SET1_VIB_KJYU_TTL                        IMPT 00000000   4240 
+_SET2_INTLIM_AGL                          IMPT 00000000   4998 
+_SET2_INTLIM_PLS                          IMPT 00000000   5000 
+_SET360_UPAREA_DIG1                       IMPT 00000000   4096 
+_SET360_UPAREA_PLS1                       IMPT 00000000   4097 
+_SETC_KJEND_DIG1                          IMPT 00000000   4179 
+_SETC_KJEND_DIG2                          IMPT 00000000   4918 
+_SETC_KJSTR_DIG1                          IMPT 00000000   4178 
+_SETC_KJSTR_DIG2                          IMPT 00000000   4917 
+_SETD_DEGSPD_MAX                          IMPT 00000000   3347 
+_SETD_LINK_MAX_SPD_PLS                    IMPT 00000000   4289 
+_SETD_MOTRPM_MAXM                         IMPT 00000000   4290 
+_SETXY_LINK_UP_POS_DN                     IMPT 00000000   4160 
+_SETXY_LINK_UP_POS_UP                     IMPT 00000000   4159 
+_SETXY_UPAREA_DIG                         IMPT 00000000   4155 
+_SETXY_UPAREA_PLS                         IMPT 00000000   4154 
+_SETX_ACCERR_DLY1                         IMPT 00000000   4497 
+_SETX_ACCERR_ERR3DAT                      IMPT 00000000   4492 
+_SETX_ACCERR_SEL                          IMPT 00000000   4502 
+_SETX_BANK_USELFUL                        IMPT 00000000   3709 
+_SETX_BREAK_DIG2                          IMPT 00000000   4225 
+_SETX_BREAK_TIM2                          IMPT 00000000   4226 
+_SETX_DAIPOS_MAXP                         IMPT 00000000   3177 
+_SETX_DAIPOS_MINP                         IMPT 00000000   3178 
+_SETX_DNAREA_JG_LNK                       IMPT 00000000   3173 
+_SETX_DNAREA_JG_PLS                       IMPT 00000000   3174 
+_SETX_FULCLS_AREA_DIG                     IMPT 00000000   3116 
+_SETX_FULCLS_AREA_PLS                     IMPT 00000000   3117 
+_SETX_FULCLS_MATEHD_SW                    IMPT 00000000   4875 
+_SETX_HOLD_CMP1_DEG                       IMPT 00000000   4509 
+_SETX_INCPLS_HOSM                         IMPT 00000000   3156 
+_SETX_KJEND_DIG1                          IMPT 00000000   4174 
+_SETX_KJEND_DIG2                          IMPT 00000000   4914 
+_SETX_KJSTR_DIG1                          IMPT 00000000   4173 
+_SETX_KJSTR_DIG2                          IMPT 00000000   4913 
+_SETX_KJYUCLS_OBJ                         IMPT 00000000   4877 
+_SETX_KJYU_INCPOS_KP01                    IMPT 00000000   5167 
+_SETX_LINK_UP_POS_DN                      IMPT 00000000   2754 
+_SETX_LINK_UP_POS_UP                      IMPT 00000000   2753 
+_SETX_MAX_ACC_LATE                        IMPT 00000000   4486 
+_SETX_MOTREP_DIR                          IMPT 00000000   5081 
+_SETX_OUTPLS_HOSA                         IMPT 00000000   3164 
+_SETX_OUTPLS_HOSB                         IMPT 00000000   3165 
+_SETX_OVERH_AMP                           IMPT 00000000   4728 
+_SETX_OVERH_LNGTH                         IMPT 00000000   4727 
+_SETX_POS_CTL_MATH                        IMPT 00000000   2787 
+_SETX_POS_MOD_FLG1                        IMPT 00000000   2786 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    28
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_SETX_POS_SDAT1_CNTSTEP                   IMPT 00000000   2778 
+_SETX_POS_SDAT1_INF1                      IMPT 00000000   2779 
+_SETX_POS_SDAT1_OFSPOS                    IMPT 00000000   2775 
+_SETX_POS_SDAT1_SPD                       IMPT 00000000   2776 
+_SETX_POS_SDAT1_TIM                       IMPT 00000000   2777 
+_SETX_POS_SDAT2_INF1                      IMPT 00000000   2785 
+_SETX_POS_SDAT2_OFSPOS                    IMPT 00000000   2781 
+_SETX_POS_STEP_MAX                        IMPT 00000000   2788 
+_SETX_RNA_ACC_BEFTIM                      IMPT 00000000   4542 
+_SETX_RNA_ACC_CHKPOS                      IMPT 00000000   4543 
+_SETX_SDAT1_INTLIMOFS                     IMPT 00000000   5001 
+_SETX_SDAT2_INTLIMOFS                     IMPT 00000000   5002 
+_SETX_UPAREA_DIG                          IMPT 00000000   3089 
+_SETX_UPAREA_PLS                          IMPT 00000000   3087 
+_SETX_UPAREA_RNA                          IMPT 00000000   3088 
+_SETX_UPDN_CHK_DN_DIG                     IMPT 00000000   3104 
+_SETX_UPDN_CHK_DN_PLS                     IMPT 00000000   3106 
+_SETX_UPDN_CHK_UP_DIG                     IMPT 00000000   3103 
+_SETX_UPDN_CHK_UP_PLS                     IMPT 00000000   3105 
+_SETX_UPERR_ERRCMPDAT                     IMPT 00000000   4508 
+_SETY_INCPLS_HOSM0001                     IMPT 00000000   3162 
+_SETY_INCPLS_HOSM001                      IMPT 00000000   3161 
+_SETY_INCPLS_HOSM01X                      IMPT 00000000   3160 
+_SETY_INCPLS_HOSM1XX                      IMPT 00000000   3159 
+_SETY_KJEND_DIG1                          IMPT 00000000   4176 
+_SETY_KJEND_DIG2                          IMPT 00000000   4916 
+_SETY_KJSTR_DIG1                          IMPT 00000000   4175 
+_SETY_KJSTR_DIG2                          IMPT 00000000   4915 
+_SETY_SDAT1_INTLIMOFS                     IMPT 00000000   5004 
+_SETY_SDAT2_INTLIMOFS                     IMPT 00000000   5005 
+_SET_ACC_OVRLIDE                          IMPT 00000000   3931 
+_SET_CLSINC_SPDBAS_PLS                    IMPT 00000000   3899 
+_SET_CLS_SPDBAS_PLS                       IMPT 00000000   3897 
+_SET_DN_ACC_LATE                          IMPT 00000000   3948 
+_SET_GMN_ACC_OVRLIDE                      IMPT 00000000   3923 
+_SET_GMN_SPD_OVRLIDE                      IMPT 00000000   3922 
+_SET_SEQ_ACC_OVRLIDE                      IMPT 00000000   3911 
+_SET_SEQ_SPD_OVRLIDE                      IMPT 00000000   3910 
+_SET_SPDBAS_PLS                           IMPT 00000000   3898 
+_SET_SPD_OVRLIDE                          IMPT 00000000   3930 
+_SET_UP_ACC_LATE                          IMPT 00000000   3947 
+_SET_UP_TIM                               IMPT 00000000   2712 
+_SFTYCHK_CLANK_DEG                        IMPT 00000000   5233 
+_SFTYCHK_LINK_PLS                         IMPT 00000000   5234 
+_SFTYCHK_RNA_POS                          IMPT 00000000   3427 
+_SFTY_CTL_IN_DAT                          IMPT 00000000   2606 
+_SFTY_IN_DAT                              IMPT 00000000   2605 
+_SFTY_LOCK_DLYTM                          IMPT 00000000   4030 
+_SHOT_MOST_DOWN_POS                       IMPT 00000000   4059 
+_SHOT_MOST_DOWN_POSWK                     IMPT 00000000   4060 
+_SINKAKU_INF                              IMPT 00000000   3328 
+_SINKAKU_ROTCAM_ENBSEL                    IMPT 00000000   3330 
+_SINKAKU_ROTCAM_ENBSEL_WK                 IMPT 00000000   3329 
+_SINKAKU_USESEL_OF_INF                    IMPT 00000000   3332 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    29
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_SINKAKU_USESEL_ON_INF                    IMPT 00000000   3331 
+_SINWK_CALC_SCAN                          IMPT 00000000   3340 
+_SIN_RCAMOF_SW1                           IMPT 00000000   3356 
+_SIN_RCAMON_SW1                           IMPT 00000000   3355 
+_SIN_RCAM_OF_DIG                          IMPT 00000000   3335 
+_SIN_RCAM_OF_ERR1                         IMPT 00000000   3359 
+_SIN_RCAM_ON_DIG                          IMPT 00000000   3334 
+_SIN_RCAM_ON_ERR1                         IMPT 00000000   3358 
+_SLIDALM_CHK_FLG                          IMPT 00000000   4417 
+_SLIDALM_CHK_POS                          IMPT 00000000   4419 
+_SLIDALM_CHK_TIM                          IMPT 00000000   4418 
+_SLIDALM_POS_MINAS                        IMPT 00000000   4421 
+_SLIDALM_POS_PULAS                        IMPT 00000000   4420 
+_SPD_PER_MAX                              EQU  00002710   2052*
+_SPLCHK_FLG                               IMPT 00000000   5051 
+_SPLCHK_TIM                               IMPT 00000000   5052 
+_SPL_ERR_INIT_WAIT_TIM                    IMPT 00000000   5124 
+_SQ_OVERH_CMP                             IMPT 00000000   4730 
+_SQ_RNA_ALMRST_OLD                        IMPT 00000000   4079 
+_START_ACK_COD                            EQU  00004321    213*
+_START_FLG_AFTER_EMG                      IMPT 00000000   3409 
+_START_REQ_COD                            EQU  00009876    212*
+_STEP_CMPERR_TIMX1                        IMPT 00000000   5386 
+_STOPCHK_INC_POS                          IMPT 00000000   3293 
+_STOPCHK_RNA_POS                          IMPT 00000000   3292 
+_STOPPING_STOP_POS                        IMPT 00000000   2690 
+_STOPPING_STOP_TIM                        IMPT 00000000   2692 
+_STOPPING_TIM_FLG                         IMPT 00000000   2691 
+_STOPPING_TIM_PV1                         IMPT 00000000   2693 
+_STOPPING_TIM_PV2                         IMPT 00000000   2694 
+_STOPPING_VLVOFF_POS                      IMPT 00000000   2689 
+_STOP_360ENC_DIG                          IMPT 00000000   4112 
+_STOP_ERR_LATCH                           IMPT 00000000   3530 
+_STOP_LATCH                               IMPT 00000000   2672 
+_STOP_LATCH_B                             IMPT 00000000   2673 
+_STOP_LATCH_CHK_TIM                       IMPT 00000000   2923 
+_STOP_LATCH_ENCPOS                        IMPT 00000000   2921 
+_STOP_LATCH_OUTPLS                        IMPT 00000000   2920 
+_STOP_LATCH_RNAPOS                        IMPT 00000000   2922 
+_STR_ENC3600_DIG                          IMPT 00000000   2840 
+_STR_ENC3600_DIG_LNG                      IMPT 00000000   2841 
+_SVCHK_SCAN                               IMPT 00000000   4749 
+_SVPX_UPAREA_DIG1                         IMPT 00000000   3278 
+_SVX_DNM_MAXSPM                           IMPT 00000000   4298 
+_SVX_OVER_ERR_DIG                         IMPT 00000000   3584 
+_SVX_OVER_JGSTR_DIG                       IMPT 00000000   3585 
+_SV_CHG_FLG1                              IMPT 00000000   3371 
+_SV_CHG_FLG2                              IMPT 00000000   3372 
+_SV_CONST_SUB_PV                          IMPT 00000000   3999 
+_SV_DAT_ERR1                              IMPT 00000000   3373 
+_SV_OBJ360                                IMPT 00000000   3556 
+_SV_POS_CTL_STEP                          IMPT 00000000   2873 
+_SV_REAL_PLS                              IMPT 00000000   4000 
+_SV_REAL_SUB_PV                           IMPT 00000000   4001 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    30
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_SW_DEV_MASK_FLG                          IMPT 00000000   2681 
+_SYS_BSAME_TIM                            EQU  000001F4   2063*
+_SYS_SETUP_TIM                            EQU  000007D0   2064*
+_SYS_STOPPING_TIM                         EQU  00000032   2065*
+_TABLE_ERR_FLG                            IMPT 00000000   2538 
+_TBL_ANS_ACCTIM                           IMPT 00000000   4294 
+_TBL_ANS_ACC_SEL                          IMPT 00000000   4296 
+_TBL_ANS_MAXSPM                           IMPT 00000000   4295 
+_TBL_USE_POS0                             IMPT 00000000   4293 
+_TECH2_KJYU_DIG                           IMPT 00000000   4561 
+_TECH2_KJYU_LNG                           IMPT 00000000   4559 
+_TECH2_KJYU_LT1KN                         IMPT 00000000   4552 
+_TECH2_KJYU_LT1PLS                        IMPT 00000000   4553 
+_TECH2_KJYU_LT1PLS_OFS                    IMPT 00000000   4554 
+_TECH2_KJYU_LT2KN                         IMPT 00000000   4555 
+_TECH2_KJYU_LT2PLS                        IMPT 00000000   4556 
+_TECH2_KJYU_LT2PLS_OFS                    IMPT 00000000   4557 
+_TECH2_KJYU_PLS                           IMPT 00000000   4560 
+_TECH2_KJYU_PLSX                          IMPT 00000000   4558 
+_TECH2_KN_FLG                             IMPT 00000000   4562 
+_TECH_USED_F                              IMPT 00000000   4599 
+_TECH_WK_DIG1                             IMPT 00000000   4592 
+_TECH_WK_DIG2                             IMPT 00000000   4593 
+_TECH_WK_DIG3                             IMPT 00000000   4594 
+_TECH_WK_DIG4                             IMPT 00000000   4595 
+_TECH_WK_PLS1                             IMPT 00000000   4591 
+_TEPA_PLS_ZERO_TIM                        IMPT 00000000   4455 
+_TEP_ADDCHK_SVPLS                         IMPT 00000000   3857 
+_TEP_CHG_SPD1                             IMPT 00000000   3861 
+_TEP_CHG_SPD2                             IMPT 00000000   3862 
+_TEP_CNTSMP_TIM                           IMPT 00000000   4805 
+_TEP_DND_SPD_PLS                          IMPT 00000000   4804 
+_TEP_INPLS_FLG                            IMPT 00000000   3852 
+_TEP_IN_ADD                               IMPT 00000000   3846 
+_TEP_MIN_SPD_FRQ                          IMPT 00000000   3859 
+_TEP_MIN_SPD_PLS                          IMPT 00000000   3858 
+_TEP_MODE_DRV                             IMPT 00000000   3848 
+_TEP_POS_ADD_CNT                          IMPT 00000000   3844 
+_TEP_REVPLS_LT_FLG                        IMPT 00000000   4806 
+_TEP_STEP_FLG                             IMPT 00000000   3849 
+_TEP_STEP_SVSMPTM                         IMPT 00000000   3856 
+_TEP_STEP_SVWTTM1                         IMPT 00000000   3855 
+_TEP_STEP_WTTM                            IMPT 00000000   3850 
+_TIM_1MSEC                                EQU  0000000A   2049* 2063  2064  2065  2070 
+_TIM_CNT010MS_DT                          EQU  0000000A   2379*
+_TIM_CNT100MS_DT                          EQU  00000064   2380*
+_TIM_SEC                                  EQU  00002710   2048*
+_TMP_SCI_DEBUG                            IMPT 00000000   5328 
+_TRD_CLR_CMD                              IMPT 00000000   5460 
+_TRD_DP_MOV_CNT                           IMPT 00000000   5466 
+_TRD_DP_MOV_FLG                           IMPT 00000000   5465 
+_TRD_EVENT_COD                            IMPT 00000000   5455 
+_TRD_EVENT_LATCH                          IMPT 00000000   5457 
+_TRD_LATE_PV                              IMPT 00000000   5462 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    31
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_TRD_LATE_SV                              IMPT 00000000   5461 
+_TRD_POINT_END                            IMPT 00000000   5459 
+_TRD_POINT_EVENT                          IMPT 00000000   5458 
+_TRD_SMP_DAT1                             IMPT 00000000   5446 
+_TRD_SMP_DAT2                             IMPT 00000000   5447 
+_TRD_SMP_DAT3                             IMPT 00000000   5448 
+_TRD_SMP_DAT4                             IMPT 00000000   5449 
+_TRD_SMP_DAT5                             IMPT 00000000   5450 
+_TRD_SMP_DAT6                             IMPT 00000000   5451 
+_TRD_SMP_DAT7                             IMPT 00000000   5452 
+_TRD_SMP_DAT8                             IMPT 00000000   5453 
+_TRD_SMP_FLG                              IMPT 00000000   5463 
+_TRD_SMP_POINT                            IMPT 00000000   5454 
+_UP360_CHK_LIST                           IMPT 00000000   4094 
+_UP360_JGDIG                              EQU  00000028   2091*
+_UPDN_DIRJG_DIG                           EQU  00000708   2057*
+_UPHOLD_SPDERR_OK_FLG                     IMPT 00000000   5278 
+_UPLIMIT_START_F                          IMPT 00000000   4760 
+_UPLIMIT_SV_SPD                           IMPT 00000000   4759 
+_UPMAK2_MOD_USE_SW                        IMPT 00000000   4720 
+_UPMSK2_DRVSEL                            IMPT 00000000   4722 
+_UPMSK2_MATH                              IMPT 00000000   4721 
+_UPMSK2_MOD                               IMPT 00000000   4718 
+_UPMSK2_MOD_IN_SW                         IMPT 00000000   4719 
+_UPMSK2_MOD_IN_SWOLD                      IMPT 00000000   4723 
+_UP_HOLD_DIG                              IMPT 00000000   2678 
+_UP_HOLD_FLG                              IMPT 00000000   2679 
+_UP_HOLD_STEP                             IMPT 00000000   2675 
+_UP_HOLD_STEP1                            IMPT 00000000   2676 
+_UP_HOLD_STEP2                            IMPT 00000000   2677 
+_VALV_OFF_DIG_CLANK                       IMPT 00000000   3532 
+_VALV_ON_FLG                              IMPT 00000000   4106 
+_VIB_DLY_TIM                              IMPT 00000000   4248 
+_VIB_GET_SET_TIM                          IMPT 00000000   4245 
+_VIB_PV_UP_TIM                            IMPT 00000000   4247 
+_VIB_STEP_COM                             IMPT 00000000   4244 
+_VIB_STEP_FLG                             IMPT 00000000   4243 
+_VIB_USE_SET_TIM                          IMPT 00000000   4246 
+_VUPCHECK_EQU                             EQU  11AB3739     98*
+_W1CNT                                    EQU  00000008   2404*
+_W1DIC                                    EQU  00000020   2406*
+_W1DUP                                    EQU  00000040   2407*
+_W1END                                    EQU  00000080   2408*
+_W1INC                                    EQU  00000002   2402*
+_W1LNC                                    EQU  00000400   2412*
+_W1LNO                                    EQU  00000800   2413*
+_W1OFF                                    EQU  00000001   2401*
+_W1OPT                                    EQU  00000010   2405*
+_W1REV                                    EQU  00004000   2420*
+_W1RNC                                    EQU  00000100   2409*
+_W1RNO                                    EQU  00000200   2410*
+_W1RST                                    EQU  00008000   2421*
+_W1SGL                                    EQU  00000004   2403*
+_W1SNC                                    EQU  00001000   2418*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    32
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_W1SNO                                    EQU  00002000   2419*
+_W2LS1                                    EQU  00000004   2423*
+_W2LS2                                    EQU  00000008   2424*
+_W2SUP                                    EQU  00000080   2428*
+_W2WT1                                    EQU  00000010   2425*
+_W2WT2                                    EQU  00000020   2426*
+_W2WT3                                    EQU  00000040   2427*
+_W4_PVP_KAJLIV_TTL                        IMPT 00000000   5128 
+_W4_PV_CTL_KJYU_TTL_P                     IMPT 00000000   4866 
+_W4_PV_FLT_KJYU_TTL                       IMPT 00000000   4864 
+_W4_PV_FLT_KJYU_TTL_P                     IMPT 00000000   4865 
+_WFSYS_MAX_STEP_SEL                       IMPT 00000000   3564 
+_WFSYS_OPT_CNT_SEL                        IMPT 00000000   3563 
+_WKSQCB200                                EQU  00000000   2157*
+_WKSQCB201                                EQU  00000002   2158*
+_WKSQCB202                                EQU  00000004   2159*
+_WKSQCB203                                EQU  00000006   2160*
+_WKSQCB204                                EQU  00000008   2161*
+_WKSQCB205                                EQU  0000000A   2162*
+_WKSQCB206                                EQU  0000000C   2163*
+_WKSQCB207                                EQU  0000000E   2164*
+_WKSQCB208                                EQU  00000010   2165*
+_WKSQCB209                                EQU  00000012   2166*
+_WKSQCB210                                EQU  00000014   2167*
+_WKSQCB211                                EQU  00000016   2168*
+_WKSQCB212                                EQU  00000018   2169*
+_WKSQCB213                                EQU  0000001A   2170*
+_WKSQCB214                                EQU  0000001C   2171*
+_WKSQCB215                                EQU  0000001E   2172*
+_WKSQCB216                                EQU  00000020   2173*
+_WKSQCB217                                EQU  00000022   2174*
+_WKSQCB218                                EQU  00000024   2175*
+_WKSQCB219                                EQU  00000026   2176*
+_WKSQCB220                                EQU  00000028   2177*
+_WKSQCB221                                EQU  0000002A   2178*
+_WKSQCB222                                EQU  0000002C   2179*
+_WKSQCB223                                EQU  0000002E   2180*
+_WKSQCB224                                EQU  00000030   2181*
+_WKSQCB225                                EQU  00000032   2182*
+_WKSQCB226                                EQU  00000034   2183*
+_WKSQCB227                                EQU  00000036   2184*
+_WKSQCB228                                EQU  00000038   2185*
+_WKSQCB229                                EQU  0000003A   2186*
+_WKSQCB230                                EQU  0000003C   2187*
+_WKSQCB231                                EQU  0000003E   2188*
+_WKSQCB232                                EQU  00000040   2189*
+_WKSQCB233                                EQU  00000042   2190*
+_WKSQCB234                                EQU  00000044   2191*
+_WKSQCB235                                EQU  00000046   2192*
+_WKSQCB236                                EQU  00000048   2193*
+_WKSQCB237                                EQU  0000004A   2194*
+_WKSQCB238                                EQU  0000004C   2195*
+_WKSQCB239                                EQU  0000004E   2196*
+_WKSQCB240                                EQU  00000050   2197*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    33
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_WKSQCB241                                EQU  00000052   2198*
+_WKSQCB242                                EQU  00000054   2199*
+_WKSQCB243                                EQU  00000056   2200*
+_WKSQCB244                                EQU  00000058   2201*
+_WKSQCB245                                EQU  0000005A   2202*
+_WKSQCB246                                EQU  0000005C   2203*
+_WKSQCB247                                EQU  0000005E   2204*
+_WKSQCB248                                EQU  00000060   2205*
+_WKSQCB249                                EQU  00000062   2206*
+_WKSQCB250                                EQU  00000064   2207*
+_WKSQCB251                                EQU  00000066   2208*
+_WKSQCB252                                EQU  00000068   2209*
+_WKSQCB253                                EQU  0000006A   2210*
+_WKSQCB254                                EQU  0000006C   2211*
+_WKSQCB255                                EQU  0000006E   2212*
+_WKSQCB256                                EQU  00000070   2213*
+_WKSQCB257                                EQU  00000072   2214*
+_WKSQCB258                                EQU  00000074   2215*
+_WKSQCB259                                EQU  00000076   2216*
+_WKSQCB260                                EQU  00000078   2217*
+_WKSQCB261                                EQU  0000007A   2218*
+_WKSQCB262                                EQU  0000007C   2219*
+_WKSQCB263                                EQU  0000007E   2220*
+_WKSQCB264                                EQU  00000080   2221*
+_WKSQCB265                                EQU  00000082   2222*
+_WKSQCB266                                EQU  00000084   2223*
+_WKSQCB267                                EQU  00000086   2224*
+_WKSQCB268                                EQU  00000088   2225*
+_WKSQCB269                                EQU  0000008A   2226*
+_WK_ERR_INFO_CPU_TOP                      IMPT 00000000   3575 
+_WK_SIN_RCAMOF_SW1                        IMPT 00000000   3353 
+_WK_SIN_RCAMON_SW1                        IMPT 00000000   3352 
+_WK_SIN_RCAM_OF_DIG                       IMPT 00000000   3338 
+_WK_SIN_RCAM_OF_KOUTEI                    IMPT 00000000   3345 
+_WK_SIN_RCAM_OF_SPD                       IMPT 00000000   3346 
+_WK_SIN_RCAM_ON_DIG                       IMPT 00000000   3337 
+_WK_SIN_RCAM_ON_KOUTEI                    IMPT 00000000   3343 
+_WK_SIN_RCAM_ON_SPD                       IMPT 00000000   3344 
+_WK_SIN_RCAM_SQOF1                        IMPT 00000000   3350 
+_WK_SIN_RCAM_SQON1                        IMPT 00000000   3349 
+_WOANT                                    EQU  00000010   2390*
+_WOATO                                    EQU  00000040   2392*
+_WOFCY                                    EQU  00000080   2393*
+_WOQST                                    EQU  00000001   2386*
+_WORCY                                    EQU  00000100   2394*
+_WORDY                                    EQU  00000020   2391*
+_WORST                                    EQU  00000200   2395*
+_WOVN1                                    EQU  00000002   2387*
+_WOVN2                                    EQU  00000004   2388*
+_WOVN3                                    EQU  00000008   2389*
+_WPARX_BRKTST_DNDLMT                      IMPT 00000000   4641 
+_WPARX_BRKTST_ORGDEGX                     IMPT 00000000   4449 
+_WPARX_BRKTST_ORGPLS                      IMPT 00000000   4450 
+_WPARX_BRKTST_STPDEGX                     IMPT 00000000   4199 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    34
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_WPARX_BRKTST_STPLNG                      IMPT 00000000   4201 
+_WPARX_BRKTST_STPPLS                      IMPT 00000000   4200 
+_WPARX_COP_DNDRV1_SDG1                    IMPT 00000000   4166 
+_WPARX_COP_DNDRV1_SDG2                    IMPT 00000000   4167 
+_WPARX_COP_DNDRV1_ZDG1                    IMPT 00000000   4164 
+_WPARX_COP_DNDRV1_ZDG2                    IMPT 00000000   4165 
+_WPARX_COP_DNDRV2_SDG1                    IMPT 00000000   4170 
+_WPARX_COP_DNDRV2_SDG2                    IMPT 00000000   4171 
+_WPARX_COP_DNDRV2_ZDG1                    IMPT 00000000   4168 
+_WPARX_COP_DNDRV2_ZDG2                    IMPT 00000000   4169 
+_WPARX_ELSE_ORGDEGX                       IMPT 00000000   4742 
+_WPARX_ELSE_ORGPLS                        IMPT 00000000   4741 
+_WPAR_360STP_HAB                          IMPT 00000000   4091 
+_WPAR_ACCTYP_SEL                          IMPT 00000000   4017 
+_WPAR_ACC_MATHED                          IMPT 00000000   4261 
+_WPAR_ANAIN_SEL                           IMPT 00000000   4015 
+_WPAR_BKTMCL_ACCCK                        IMPT 00000000   4688 
+_WPAR_BRK1_ACCTM                          IMPT 00000000   3446 
+_WPAR_BRK1_DLYTM                          IMPT 00000000   3445 
+_WPAR_BRK2_ACCTM                          IMPT 00000000   3447 
+_WPAR_BRKTCHK_SPD                         IMPT 00000000   4189 
+_WPAR_BRKTOUT_SPD                         IMPT 00000000   4188 
+_WPAR_BRKTST_ORGDEG                       IMPT 00000000   4448 
+_WPAR_BRK_SEL_SPD                         IMPT 00000000   3444 
+_WPAR_CMP_ERR_TIM1                        IMPT 00000000   4342 
+_WPAR_CMP_ERR_TIM2                        IMPT 00000000   4343 
+_WPAR_COP_CNTROT_SDG1                     IMPT 00000000   3388 
+_WPAR_COP_CNTROT_SDG2                     IMPT 00000000   3389 
+_WPAR_COP_CNTROT_ZDG1                     IMPT 00000000   3386 
+_WPAR_COP_CNTROT_ZDG2                     IMPT 00000000   3387 
+_WPAR_COP_DISP_SPM1                       IMPT 00000000   4353 
+_WPAR_COP_REVRSE_SDG1                     IMPT 00000000   3393 
+_WPAR_COP_REVRSE_SDG2                     IMPT 00000000   3394 
+_WPAR_COP_REVRSE_ZDG1                     IMPT 00000000   3391 
+_WPAR_COP_REVRSE_ZDG2                     IMPT 00000000   3392 
+_WPAR_COP_SDG1                            IMPT 00000000   3398 
+_WPAR_COP_SDG2                            IMPT 00000000   3399 
+_WPAR_COP_ZDG1                            IMPT 00000000   3396 
+_WPAR_COP_ZDG2                            IMPT 00000000   3397 
+_WPAR_CUPCHK_SEL                          IMPT 00000000   4090 
+_WPAR_DAIHAI_SEL                          IMPT 00000000   4407 
+_WPAR_DRVHOS_AVLCNT                       IMPT 00000000   3006 
+_WPAR_DRVHOS_DIG1                         IMPT 00000000   3003 
+_WPAR_DRVHOS_DIG2                         IMPT 00000000   3004 
+_WPAR_DRVHOS_NO_USE                       IMPT 00000000   3007 
+_WPAR_DRVHOS_SEL1                         IMPT 00000000   3002 
+_WPAR_DRVHOS_WAITCNT                      IMPT 00000000   3005 
+_WPAR_ILNGERR_DIG                         IMPT 00000000   3450 
+_WPAR_ILNGERR_LNG                         IMPT 00000000   3449 
+_WPAR_INCOVER_LNG                         IMPT 00000000   3415 
+_WPAR_INCOVER_LNG1                        IMPT 00000000   3416 
+_WPAR_INCOVER_LNG2                        IMPT 00000000   3417 
+_WPAR_INCREV_EDYTM                        IMPT 00000000   3418 
+_WPAR_INCSTP_EDYTM                        IMPT 00000000   3422 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    35
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_WPAR_INCSTP_EDYTM1                       IMPT 00000000   3420 
+_WPAR_INCSTP_EDYTM2                       IMPT 00000000   3421 
+_WPAR_KJYU_STOPTBL                        IMPT 00000000   4236 
+_WPAR_LSA_FILTIM                          IMPT 00000000   3784 
+_WPAR_MCNRNA_SEL                          IMPT 00000000   4089 
+_WPAR_ORGDRV_MD2                          IMPT 00000000   4372 
+_WPAR_ORGMOD2_TIM                         IMPT 00000000   3869 
+_WPAR_ORGPOS_LNG1                         IMPT 00000000   4432 
+_WPAR_OVRLIDE_GMN                         IMPT 00000000   3918 
+_WPAR_RNA_SFTY_LNG1                       IMPT 00000000   3424 
+_WPAR_SFYOPT_USEL                         IMPT 00000000   4190 
+_WPAR_SLDALM_LNG                          IMPT 00000000   4414 
+_WPAR_SLDALM_TIM                          IMPT 00000000   4415 
+_WPAR_STOPING_TIM                         IMPT 00000000   4259 
+_WPAR_ZERO_SPD                            IMPT 00000000   3443 
+_WPVX_KAJLIV_TTL                          IMPT 00000000   4239 
+_WPV_ABS_AD_DATA                          IMPT 00000000   4023 
+_WPV_AD_DATA                              IMPT 00000000   4022 
+_WPV_CB_STS_DAT_TOP                       IMPT 00000000   5443 
+_WPV_CB_STS_POINT                         IMPT 00000000   5468 
+_WPV_CB_TRD_DAT_TOP                       IMPT 00000000   5444 
+_WPV_CB_TRD_POINT                         IMPT 00000000   5469 
+_WPV_POWER_MONI                           IMPT 00000000   4024 
+_WPV_POWER_ON_CNT                         IMPT 00000000   5470 
+_WPV_SCAN_MAX01                           IMPT 00000000   4824 
+_WPV_SCAN_MAX10                           IMPT 00000000   4823 
+_WPV_SCAN_TIM_AVL                         IMPT 00000000   4820 
+_WPV_SCAN_TIM_REAL                        IMPT 00000000   4819 
+_WR_CB_SYS_CHKCOD1                        EQU  00001234   2268*
+_WR_CB_SYS_CHKCOD2                        EQU  00004321   2269*
+_WR_CB_SYS_CHKCOD3                        EQU  00005678   2270*
+_WR_CB_SYS_CHKCOD4                        EQU  00008765   2271*
+_WSVXY_CLNK_UP_POS                        IMPT 00000000   4156 
+_WSVXY_CLNK_UP_POS_DN                     IMPT 00000000   4158 
+_WSVXY_CLNK_UP_POS_UP                     IMPT 00000000   4157 
+_WSVX_CLNK_UP_POS                         IMPT 00000000   2750 
+_WSVX_CLNK_UP_POS_DN                      IMPT 00000000   2752 
+_WSVX_CLNK_UP_POS_UP                      IMPT 00000000   2751 
+_WXPV_ERR_DISP                            IMPT 00000000   3694 
+_W_PARAM_TOP                              IMPT 00000000   4607 
+_X_PROTCOL_TMP_ANS                        IMPT 00000000   5325 
+_X_PROTCOL_TMP_EVENTCNT                   IMPT 00000000   5320 
+_X_PROTCOL_TMP_FLG                        IMPT 00000000   5313 
+_X_PROTCOL_TMP_LNG_PVTM                   IMPT 00000000   5318 
+_X_PROTCOL_TMP_LNG_SVTM                   IMPT 00000000   5317 
+_X_PROTCOL_TMP_PV1                        IMPT 00000000   5326 
+_X_PROTCOL_TMP_PV2                        IMPT 00000000   5314 
+_X_PROTCOL_TMP_PVLNG                      IMPT 00000000   5316 
+_X_PROTCOL_TMP_REQ                        IMPT 00000000   5324 
+_X_PROTCOL_TMP_SVLNG                      IMPT 00000000   5315 
+_X_PROTCOL_TMP_TIME_PV                    IMPT 00000000   5321 
+_ZERO_INCENC                              EQU  00000000   2100*
+_ZERO_INCHEN                              EQU  00000000   2099*
+_ZERO_INCREV                              EQU  00000000   2104*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    36
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_ZERO_INCRNA                              EQU  00000001   2101*
+_ZERO_INCSTP                              EQU  00000000   2102*
+_ZERO_RNAREV                              EQU  00000001   2105*
+_ZERO_RNASTP                              EQU  00000001   2103*
+_cbsys_tbl_err                            IMPT 00000000   4281 
+_di1_cb_ctl1                              IMPT 00000000   2543 
+_di1_cb_ctl1_dt                           IMPT 00000000   2551 
+_di1_cb_ctl1_of                           IMPT 00000000   2553 
+_di1_cb_ctl1_on                           IMPT 00000000   2552 
+_di2_cb_ctl2                              IMPT 00000000   2544 
+_di2_cb_ctl2_dt                           IMPT 00000000   2555 
+_di2_cb_ctl2_of                           IMPT 00000000   2557 
+_di2_cb_ctl2_on                           IMPT 00000000   2556 
+_di3_cb_inp1                              IMPT 00000000   2545 
+_di3_cb_inp1_dt                           IMPT 00000000   2549 
+_di4_cb_inp2                              IMPT 00000000   2546 
+_dq1_cb_out1                              IMPT 00000000   2547 
+_emg_err_flg                              IMPT 00000000   2627 
+_emg_lev_flg                              IMPT 00000000   2626 
+_exq_err_flg                              IMPT 00000000   2630 
+_exq_lev_flg                              IMPT 00000000   2628 
+_pass_err_flg1                            IMPT 00000000   2624 
+_pass_err_flg2                            IMPT 00000000   2625 
+_reset_dly_tim                            IMPT 00000000   2648 
+_reset_flg                                IMPT 00000000   2647 
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    11/14/21 17:25:09                                                  PAGE    37
+
+*** SECTION DATA LIST
+
+SECTION                          ATTRIBUTE    SIZE             START
+
+P                                REL-CODE    00000006C        

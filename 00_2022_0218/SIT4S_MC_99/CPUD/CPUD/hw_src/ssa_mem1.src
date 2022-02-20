@@ -1,0 +1,493 @@
+;	***********************************************************
+;	***							***
+;	***							***
+;	***		各領域定義				***
+;	***							***
+;	***							***
+;	***********************************************************
+	.LIST	OFF
+	.include	"cm_equ1.equ"
+	.include	"ssa_had1.equ"
+	.include	"com_et1.equ"
+	.include	"dp_et1.ext"			; V05j
+	.LIST	ON
+
+;	***************************************************
+;	***						***
+;	***		ＦＲＯＭ			***
+;	***						***
+;	***************************************************
+	.SECTION	Bfrom, DATA			; B9000000H
+
+	.ORG	H'0
+	.export		_from_top;
+_from_top:
+	.export		_GAM_TABLE;			;
+_GAM_TABLE:
+
+	.ORG	H'044fc
+	.GLOBAL		_SV_INTER_VER2
+_SV_INTER_VER2		.SRES	2			; ｲﾝﾀｰﾛｰｯｸのﾊﾞｰｼﾞｮﾝ	(121.15-140をつぶす)
+	.GLOBAL		_SV_INTER_VER1
+_SV_INTER_VER1		.SRES	2			; ｲﾝﾀｰﾛｰｯｸのﾊﾞｰｼﾞｮﾝ	(121.15-141をつぶす)
+
+	.ORG	H'080A0
+	.GLOBAL		_SV_SEQDT1_A91_INI
+_SV_SEQDT1_A91_INI	.SRES	2			; 初期値ﾃﾞｰﾀのﾊﾞｰｼﾞｮﾝ
+	.GLOBAL		_SV_SEQDT2_A91_INI
+_SV_SEQDT2_A91_INI	.SRES	2			; 初期値ﾃﾞｰﾀのﾊﾞｰｼﾞｮﾝ
+
+
+;	***************************************************
+;	***						***
+;	***		ＦＲＯＭ			***
+;	***						***
+;	***************************************************
+	.SECTION	Pcbsys, DATA			; B90B0000H
+
+	.ORG	H'0
+	.export		_CBSYS_TOP;
+_CBSYS_TOP:
+	.INCLUDE	"cb_param.ext"			;
+	.INCLUDE	"cb_param.inc"			;
+
+
+;	***************************************************
+;	***						***
+;	***		ＤＰＲＡＭ			***
+;	***						***
+;	***************************************************
+	.SECTION	Bdpram, DATA			; B8000000H
+	.org	h'0
+	.export		_dpram_top;
+_dpram_top:
+;;;[2013-11-29 MC]	.include	"dp_cpuab.ext"
+;;;[2013-11-29 MC]	.include	"dp_cpuab.inc"
+
+	.include	"dp_cpud_com.ext"		;[2013-11-29 mc]
+	.include	"dp_cpud_com.inc"		;[2013-11-29 mc]
+
+;;;	----------- dp_cpud_a.incの中で .org h'2000を宣言---------
+	.include	"dp_cpud_a.ext"			;[2013-11-29 mc]
+	.include	"dp_cpud_a.inc"			;[2013-11-29 mc]
+
+	.org	h'3FFC
+	.export		_CPUA_RD_CPUB_WR;
+_CPUA_RD_CPUB_WR	.SRES	2			;
+
+	.org	h'3FFE
+	.export		_CPUA_WR_CPUB_RD;
+_CPUA_WR_CPUB_RD	.SRES	2			;
+
+
+;	***************************************************
+;	***						***
+;	***		ＤＰＲＡＭ			***
+;	***						***
+;	***************************************************
+	.SECTION	BdpramB, DATA			; B9000000H
+	.org	h'0
+	.export		_dpramB_top;
+_dpramB_top:
+
+;	"_dp_cpud_com"を定義していないが存在する
+;	--------.include "dp_cpud_com.inc"--------------
+;
+
+
+;;;	----------- dp_cpud_b.incの中で .org h'2000を宣言---------
+	.include	"dp_cpud_b.ext"			;[2013-11-29 mc]
+	.include	"dp_cpud_b.inc"			;[2013-11-29 mc]
+
+	.org	h'3FFC
+	.export		_CPUA_RD_CPUD_WR;
+_CPUA_RD_CPUD_WR	.SRES	2			;
+
+	.org	h'3FFE
+	.export		_CPUA_WR_CPUD_RD;
+_CPUA_WR_CPUD_RD	.SRES	2			;
+
+
+;	***************************************************
+;	***						***
+;	***		位置決めＬＳＩ			***
+;	***						***
+;	***************************************************
+	.SECTION	Bposlsi1, DATA			; BA000000H
+	.export		_poslsi1_top;
+_poslsi1_top:
+
+
+;	***************************************************
+;	***						***
+;	***	ＫＥＥＰ ＲＹバックアップ領域		***
+;	***						***
+;	***************************************************
+	.SECTION	BframSEQ, DATA			; B4007000H
+	.org	0
+	.export		_FRAM_SEQ_TOP
+
+	.export		_KEEP_RY_TOP_CODE		; ﾊﾞｯｸｱｯﾌﾟﾁｪｯｸ用ｺｰﾄﾞ 55H
+	.export		_KEEP_RY_AREA_TOP		; ﾊﾞｯｸｱｯﾌﾟ領域SEQ544～549(6WORD)
+	.export		_KEEP_RY_END_CODE		; ﾊﾞｯｸｱｯﾌﾟﾁｪｯｸ用ｺｰﾄﾞ AAH
+
+;	---2011-09-14----- ｸﾗｯﾁ信号記憶----
+	.export		_FRAM_CBSTS_SQCOD1	;USEFUL DATA 5AA5またはA55Aならﾊﾞｯｸｱｯﾌﾟ有
+	.export		_FRAM_CBSTS_SQDAT1	;data1
+	.export		_FRAM_CBSTS_SQDAT1_SUM	;data1の反転
+	.export		_FRAM_CBSTS_SQDAT2	;data2
+	.export		_FRAM_CBSTS_SQDAT2_SUM	;data2の反転
+	.export		_FRAM_CBSTS_SQDAT3	;data3
+	.export		_FRAM_CBSTS_SQDAT3_SUM	;data3
+	.export		_FRAM_CBSTS_SQDAT4	;data4
+	.export		_FRAM_CBSTS_SQDAT4_SUM	;data4の反転
+;	---------------------------------------
+
+;	---------------------------------------
+	.export		_FRAM_CBPV1_COD1			;USEFUL DATA 5AA5またはA55Aならﾊﾞｯｸｱｯﾌﾟ有
+	.export		_FRAM_CBPV1_DAT01			;data1
+	.export		_FRAM_CBPV1_DAT01_SUM		;data1の反転
+	.export		_FRAM_CBPV1_DAT02			;data2
+	.export		_FRAM_CBPV1_DAT02_SUM		;data2の反転
+	.export		_FRAM_CBPV1_DAT03			;data3
+	.export		_FRAM_CBPV1_DAT03_SUM		;data3の反転
+	.export		_FRAM_CBPV1_DAT04			;data4
+	.export		_FRAM_CBPV1_DAT04_SUM		;data4の反転
+	.export		_FRAM_CBPV1_DAT05			;data5
+	.export		_FRAM_CBPV1_DAT05_SUM		;data5の反転
+	.export		_FRAM_CBPV1_DAT06			;data6
+	.export		_FRAM_CBPV1_DAT06_SUM		;data6の反転
+	.export		_FRAM_CBPV1_DAT07			;data7
+	.export		_FRAM_CBPV1_DAT07_SUM		;data7の反転
+	.export		_FRAM_CBPV1_DAT08			;data8
+	.export		_FRAM_CBPV1_DAT08_SUM		;data8の反転
+
+;	---------------------------------------
+	.export		_FRAM_CB_BAKUP_INF_TOP
+	.export		_FRAM_CB_USELFUL_COD1	
+	.export		_FRAM_CB_STSA_POINT			;最新値ﾎﾟｲﾝﾀの指示位置
+	.export		_FRAM_CB_STSA_CNT			;実行回数
+	.export		_FRAM_CB_STSB_POINT			;最新値ﾎﾟｲﾝﾀの指示位置
+	.export		_FRAM_CB_STSB_CNT			;実行回数
+	.export		_FRAM_POWER_ON_CNT		
+	.export		_FRAM_ERR_INFO_CPUA_TOP
+	.export		_FRAM_ERR_INFO_CPUB_TOP
+	.export		_FRAM_CB_BAKUP_INF_END				;B4007CFF以下であれば良い
+;	---------------------------------------
+
+
+
+_FRAM_SEQ_TOP:
+_KEEP_RY_TOP_CODE	.SRES	2		; ﾊﾞｯｸｱｯﾌﾟﾁｪｯｸ用ｺｰﾄﾞ 55H
+_KEEP_RY_AREA_TOP	.SRES	2*6		; ﾊﾞｯｸｱｯﾌﾟ領域SEQ544～549(6WORD)
+_KEEP_RY_END_CODE	.SRES	2		; ﾊﾞｯｸｱｯﾌﾟﾁｪｯｸ用ｺｰﾄﾞ AAH
+						; MAX256BYTE
+;	---2011-09-14 追加 完了信号(多分制動試験実行完了ｽﾃｰﾀｽ)----
+_FRAM_CBSTS_SQCOD1				.SRES	2			;USEFUL DATA 5AA5またはA55Aならﾊﾞｯｸｱｯﾌﾟ有
+_FRAM_CBSTS_SQDAT1				.SRES	2			;data1
+_FRAM_CBSTS_SQDAT1_SUM			.SRES	2			;data1の反転
+_FRAM_CBSTS_SQDAT2				.SRES	2			;data2
+_FRAM_CBSTS_SQDAT2_SUM			.SRES	2			;data2の反転
+_FRAM_CBSTS_SQDAT3				.SRES	2			;data3
+_FRAM_CBSTS_SQDAT3_SUM			.SRES	2			;data3
+_FRAM_CBSTS_SQDAT4				.SRES	2			;data4
+_FRAM_CBSTS_SQDAT4_SUM			.SRES	2			;data4の反転
+
+;	--------- [2018-11-11全面変更] --------------
+;	------------------------------------------------------------------------------------------
+;	-----2018-11-11<ﾊﾟﾜｰﾀﾞｳﾝ監視も行い,ﾊﾟﾜｰﾀﾞｳﾝ時はﾊﾞｯｸｱｯﾌﾟしない> 下限位置関連(8word準備) ---
+;	------------------------------------------------------------------------------------------
+_FRAM_CBPV1_COD1				.SRES	2			;USEFUL DATA 5AA5またはA55Aならﾊﾞｯｸｱｯﾌﾟ有
+_FRAM_CBPV1_DAT01				.SRES	2			;data1
+_FRAM_CBPV1_DAT01_SUM			.SRES	2			;data1の反転
+_FRAM_CBPV1_DAT02				.SRES	2			;data2
+_FRAM_CBPV1_DAT02_SUM			.SRES	2			;data2の反転
+_FRAM_CBPV1_DAT03				.SRES	2			;data3
+_FRAM_CBPV1_DAT03_SUM			.SRES	2			;data3の反転
+_FRAM_CBPV1_DAT04				.SRES	2			;data4
+_FRAM_CBPV1_DAT04_SUM			.SRES	2			;data4の反転
+_FRAM_CBPV1_DAT05				.SRES	2			;data5
+_FRAM_CBPV1_DAT05_SUM			.SRES	2			;data5の反転
+_FRAM_CBPV1_DAT06				.SRES	2			;data6
+_FRAM_CBPV1_DAT06_SUM			.SRES	2			;data6の反転
+_FRAM_CBPV1_DAT07				.SRES	2			;data7
+_FRAM_CBPV1_DAT07_SUM			.SRES	2			;data7の反転
+_FRAM_CBPV1_DAT08				.SRES	2			;data8
+_FRAM_CBPV1_DAT08_SUM			.SRES	2			;data8の反転
+
+;	--------- [2018-11-11全面変更] --------------
+;	--------- HED -------
+		.org	H'100										;807100H~8071FFH
+_FRAM_CB_BAKUP_INF_TOP:										;
+_FRAM_CB_USELFUL_COD1		.SRES	4						;5AA51234なら有効(初期化を実施した信号)
+_FRAM_POWER_ON_CNT			.SRES	2						;電源投入回数
+_FRAM_CB_STSA_POINT			.SRES	2						;最新値ﾎﾟｲﾝﾀの指示位置
+_FRAM_CB_STSA_CNT			.SRES	2						;実行回数
+_FRAM_CB_STSB_POINT			.SRES	2						;最新値ﾎﾟｲﾝﾀの指示位置
+_FRAM_CB_STSB_CNT			.SRES	2						;実行回数
+
+		.org	H'200										;807200H~8079FFH
+_FRAM_ERR_INFO_CPUA_TOP		.SRES	_CB_ERR_INFO_MEM*_CB_ERR_INFO_PSIZE	;(128byte*8頁(1024)
+_FRAM_ERR_INFO_CPUB_TOP		.SRES	_CB_ERR_INFO_MEM*_CB_ERR_INFO_PSIZE	;(128byte*8頁(1024)
+;;;;[2018-11-11全面変更];	===== 2003-07-01 =====
+;;;;[2018-11-11全面変更]	.export		_FRAM_CB_BAKUP_INF_TOP		;5AA51234なら有効
+;;;;[2018-11-11全面変更]	.export		_FRAM_CB_BAKUP_INF_END		;
+;;;;[2018-11-11全面変更]	.export		_FRAM_CB_USELFUL_COD1	;
+;;;;[2018-11-11全面変更]	.export		_FRAM_CB_STS_POINT	;最新値ﾎﾟｲﾝﾀの指示位置
+;;;;[2018-11-11全面変更]	.export		_FRAM_CB_TRD_POINT	;有効なﾃﾞｰﾀ数
+;;;;[2018-11-11全面変更]	.export		_FRAM_CB_USELFUL_COD2	;A55A4321なら有効
+;;;;[2018-11-11全面変更]	.export		_FRAM_CB_STS_DAT_TOP		;
+;;;;[2018-11-11全面変更]	.export		_FRAM_CB_TRD_DAT_TOP		;
+;;;;[2018-11-11全面変更]	.EXPORT		_FRAM_POWER_ON_CNT		;電源投入回数
+;;;;[2018-11-11全面変更]	.EXPORT		_FRAM_ERR_INFO_CPUA_TOP		;(CPUAはDPRAM経由)
+;;;;[2018-11-11全面変更]	.EXPORT		_FRAM_ERR_INFO_CPUB_TOP		;(CPUBは直接)
+;;;;[2018-11-11全面変更]
+;;;;[2018-11-11全面変更]
+;;;;[2018-11-11全面変更]	.org	H'100		;807100H~8071FFH		;STS
+;;;;[2018-11-11全面変更]_FRAM_CB_BAKUP_INF_TOP:							;5AA51234なら有効
+;;;;[2018-11-11全面変更]_FRAM_CB_USELFUL_COD1		.SRES	4			;
+;;;;[2018-11-11全面変更]_FRAM_CB_STS_POINT			.SRES	2			;最新値ﾎﾟｲﾝﾀの指示位置
+;;;;[2018-11-11全面変更]_FRAM_CB_TRD_POINT			.SRES	2			;有効なﾃﾞｰﾀ数
+;;;;[2018-11-11全面変更]_FRAM_POWER_ON_CNT			.SRES	2			;電源投入回数
+;;;;[2018-11-11全面変更]							.SRES	2			;
+;;;;[2018-11-11全面変更]							.SRES	2			;
+;;;;[2018-11-11全面変更]							.SRES	2			;16BYTE
+;;;;[2018-11-11全面変更]
+;;;;[2018-11-11全面変更];	===2004-01-26 ==
+;;;;[2018-11-11全面変更]	.ALIGN	4
+;;;;[2018-11-11全面変更]_FRAM_ERR_INFO_CPUA_TOP		.SRES	_CB_ERR_INFO_MEM	;64byte
+;;;;[2018-11-11全面変更]_FRAM_ERR_INFO_CPUB_TOP		.SRES	_CB_ERR_INFO_MEM	;64byte
+;;;;[2018-11-11全面変更]
+;;;;[2018-11-11全面変更]
+;;;;[2018-11-11全面変更]	.org	H'1FC						;4byte align
+;;;;[2018-11-11全面変更]_FRAM_CB_USELFUL_COD2	.SRES	4			;A55A4321なら有効
+;;;;[2018-11-11全面変更]
+;;;;[2018-11-11全面変更]	.org	H'200					;807200H~8072FFH	;DATA 32byte*8BLOCK
+;;;;[2018-11-11全面変更]_FRAM_CB_STS_DAT_TOP:					;
+;;;;[2018-11-11全面変更]	.SRES	_CB_STS_BUF_MAX				;64*8=512
+;;;;[2018-11-11全面変更]
+;;;;[2018-11-11全面変更]	.org	H'400					;807300H~80BFFH		;STS 2Kbyte(800H)
+;;;;[2018-11-11全面変更]_FRAM_CB_TRD_DAT_TOP:					;
+;;;;[2018-11-11全面変更]	.SRES	_CB_TRD_BUF_MAX				;16*128=2048
+;;;;[2018-11-11全面変更]
+;;;;[2018-11-11全面変更]
+;;;;[2018-11-11全面変更];	=======2003-07-01 END====
+;;;;[2018-11-11全面変更]_FRAM_CB_BAKUP_INF_END:			
+;;;;[2018-11-11全面変更]
+;;;;[2018-11-11全面変更]	.org	H'D00				;B4007000~B4007FFF
+;;;;[2018-11-11全面変更]
+_FRAM_CB_BAKUP_INF_END:									;B4007CFF以下であれば良い
+	.org	H'FF0										;B4007FFFまで
+
+
+;	***************************************************
+;	***						***
+;	***		ＤＩＯ				***
+;	***						***
+;	***************************************************
+	.SECTION	Bdio, DATA			; BB000000H
+	.org	0
+	.export		_dio_top1
+_dio_top1:
+	.org	H'100
+	.export		_dio_top2
+_dio_top2:
+
+	.org	H'200
+	.export		_REAL_INP0;
+_REAL_INP0:	.SRES	2
+	.export		_REAL_INP1;
+_REAL_INP1:	.SRES	2
+	.export		_REAL_OUT0;
+_REAL_OUT0:	.SRES	2
+
+
+
+;	***************************************************
+;	***						***
+;	***		漢字ＲＯＭ			***
+;	***						***
+;	***************************************************
+	.SECTION	Pkanrom, DATA			;
+	.ORG	0
+	.export		_kan_rom_top;
+_kan_rom_top:
+;;;	.INCLUDE	"CHAR_ROM.SRC"
+
+
+;	***************************************************
+;	***						***
+;	***		ＬＣＤコントローラ		***
+;	***						***
+;	***************************************************
+	.SECTION	Blcdctrl, DATA			;
+	.ORG	0
+	.export		_LCD_CTRL;
+_LCD_CTRL	.SRES	1*2;
+
+
+;	***************************************************
+;	***						***
+;	***		漢字ＲＯＭバンク		***
+;	***						***
+;	***************************************************
+	.SECTION	Bwkram1, DATA			;
+	.export		_kan_bank_outp;
+_kan_bank_outp:		.sres	4;
+
+
+;	***************************************************
+;	***						***
+;	***		型ﾃﾞｰﾀWORK			***
+;	***						***
+;	***************************************************
+	.SECTION	Bkata_work,DATA			;
+	.org	h'0
+	.export		_KATA_WORK_TOP;
+_KATA_WORK_TOP:
+
+
+;	***************************************************
+;	***						***
+;	***		ROM SUM DATA			***
+;	***						***
+;	***************************************************
+	.SECTION	Psum_code,CODE,ALIGN=4		;
+	.org	h'0
+	.export		_ROM_SUM_CODE;
+_ROM_SUM_CODE:
+	.DATA.L		_DUMMY_SUM_CODE
+;;;;;	.DATA.L		H'F2632425	;V05h,S05h
+;;;;;	.DATA.L		H'4D3EA7AF	;V05g,S05h
+;;;;;	.DATA.L		H'E31F928D	;V05f,S05g
+;;;;;	.DATA.L		H'E324928C	;V05e,S05g
+;;;;;	.DATA.L		H'3ED0B211	;V05d,S05g
+;;;;;	.DATA.L		H'680FCE3C	;V05b,S05e(338=680F,339=CE3C)
+;;;;;	.DATA.L		H'6340B074	;V05a,S05e(338=6340,339=B074)
+;;;;;	.DATA.L		H'AAD0DF6F	;V05a,S05d(338=AAD0,339=DF6F)
+;;;;;	.DATA.L		H'59C69B8A	;V05a,S05c(338=59C6,339=9B8A)
+;;;;;	.DATA.L		H'726AEDDA	;V05,S05c(338=726A,339=EDDA)
+;;;;;	.DATA.L		H'470C00AB	;V05,S05b
+;;;;;	.DATA.L		H'EDD245BE	;V05,S05a(SQ338=EDD2,SQ339=45BE)
+;;;;;	.DATA.L		H'A23309AD	;V05,S05(SQ338=A233,SQ339=09AD)
+
+	.export		_VUPCHECK_DATA;
+_VUPCHECK_DATA:
+	.DATA.L		_VUPCHECK_EQU
+
+
+;	***************************************************
+;	***						***
+;	***		ＬＣＤ用ＶＲＡＭ		***
+;	***						***
+;	***************************************************
+	.SECTION	Blcd_vram, DATA			; AC600000H
+	.org	h'0
+	.export		_LCD_VRAM;
+_LCD_VRAM:		.sres	640*480
+	.org	h'050000
+	.export		_LCD_VBASE;
+_LCD_VBASE:		.sres	640*480
+	.org	h'0A0000
+	.export		_LCD_VMON1;
+_LCD_VMON1:		.sres	640*6*16*2
+	.export		_LCD_VMON2;
+_LCD_VMON2:		.sres	640*6*16*2
+
+
+;	***************************************************
+;	***						***
+;	***		画面制御情報テーブル		***
+;	***						***
+;	***************************************************
+	.SECTION	Pctl_TBL, CODE, ALIGN=4			;
+	.org	h'0
+
+	.include	"ssc_fram.ext"
+	.include	"ssa_wk_ext.ext"
+
+	.export		_GAM_CTL_TBL;
+_GAM_CTL_TBL:
+
+	.export		_ALLTBL_CSTBL;
+_ALLTBL_CSTBL:
+	.align	4
+	.include	"ssa_csr_ctrl.inc"
+
+	.export		_ALLTBL_SVTBL;
+_ALLTBL_SVTBL:
+	.align	4
+	.include	"ssa_svp_ctrl.inc"
+
+	.export		_ALLTBL_PVTBL;
+_ALLTBL_PVTBL:
+	.align	4
+	.include	"ssa_pvp_ctrl.inc"
+
+	.export		_ALLTBL_SWTBL;
+_ALLTBL_SWTBL:
+	.align	4
+	.include	"ssa_swl_ctrl.inc"
+	
+	.export		_ALLTBL_CHARTBL;
+_ALLTBL_CHARTBL:
+	.align	4
+	.include	"ssa_char_ctrl.inc"
+	
+
+;	***************************************************
+;	***						***
+;	***		画面表示情報テーブル		***
+;	***						***
+;	***************************************************
+	.SECTION	Pgam_inf_tbl, CODE, ALIGN=4			;
+	.org	h'0
+	.export		_GAM_INF_TBL;
+_GAM_INF_TBL:
+
+
+;	***************************************************
+;	***						***
+;	***		表示キャラクタテーブル		***
+;	***						***
+;	***************************************************
+	.SECTION	Pall_chr_tbl, CODE, ALIGN=4			;
+	.org	h'0
+	.export		_ALL_CHR_TBL;
+_ALL_CHR_TBL:
+
+
+;	***************************************************
+;	***						***
+;	***		表示キャラクタテーブル		***		; V06
+;	***						***
+;	***************************************************
+	.SECTION	Pgam_table2, CODE, ALIGN=4			;
+	.org	h'0
+	.export		_GAM_TABLE2;			;
+_GAM_TABLE2:
+
+
+;	***************************************************
+;	***						***
+;	***		表示キャラクタテーブル		***		; V06
+;	***						***
+;	***************************************************
+	.SECTION	Pall_chr_tbl2, CODE, ALIGN=4			;
+	.org	h'0
+	.export		_ALL_CHR_TBL2;
+_ALL_CHR_TBL2:
+
+
+;	***************************************************
+;	***						***
+;	***		画面表示情報テーブル		***		; V06
+;	***						***
+;	***************************************************
+	.SECTION	Pgam_inf_tbl2, CODE, ALIGN=4			;
+	.org	h'0
+	.export		_GAM_INF_TBL2;
+_GAM_INF_TBL2:
+
+
+	.END

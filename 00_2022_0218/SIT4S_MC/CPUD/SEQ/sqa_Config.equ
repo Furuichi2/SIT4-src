@@ -1,0 +1,147 @@
+;****************************************************************************************
+;* File Name	: ssa_Config.equ
+;* Function	: シーケンス コンフィグレーション
+;* Author	: Designed by T.Akiba, Coded by T.Akiba
+;* Date		: 2009-11-20 Akiba
+;* Update	: 2010-08-12 Y.Kobayashi(コード整理)
+;* 		: 2010-08-17 Y.Kobayashi(KOMTRAX用に変更)
+;****************************************************************************************
+
+;********************************************************************
+;* コンパイルオプション
+;********************************************************************
+_SEQ_PAT99	.DEFINE "99"					;DEBUG:KOMATSU
+_SEQ_PAT0	.DEFINE "0"					;KOMTRAX
+_SEQ_PAT1	.DEFINE "1"					;製品1
+_SEQ_PAT	.DEFINE "_SEQ_PAT1"				;製品
+;_SEQ_PAT	.DEFINE "_SEQ_PAT99"				;
+
+;********************************************************************
+;* コンパイル時コード
+;********************************************************************
+_SQ_NML_COD		.EQU	0				; ｺｰﾄﾞ正常
+_SQ_NML_END		.EQU	H'0055				; 正常終了
+_SQ_ERR_END		.EQU	H'FF00				; 異常終了
+
+;********************************************************************
+;* メモリ領域サイズ
+;* ssc_Config.h にも同様の定義あり
+;********************************************************************
+	.AIF	_SEQ_PAT EQ _SEQ_PAT1
+_SEQ_W0_SET		.EQU	0				; 予備領域0(W)
+_SEQ_X_SET		.EQU	16				; X領域(W)
+_SEQ_Y_SET		.EQU	16				; Y領域(W)
+_SEQ_M_SET		.EQU	512				; M領域(W)
+_SEQ_L_SET		.EQU	32				; L領域(W)
+_SEQ_T_SET		.EQU	32				; T領域(W)
+_SEQ_C_SET		.EQU	32				; C領域(W)
+_SEQ_TD_SET		.EQU	_SEQ_T_SET * 16			; Td領域(W)
+_SEQ_CD_SET		.EQU	_SEQ_C_SET * 16			; Cd領域(W)
+_SEQ_W1_SET		.EQU	0				; 予備領域1(W)
+_SEQ_W2_SET		.EQU	0				; 予備領域2(W)
+_SEQ_W3_SET		.EQU	0				; 予備領域3(W)
+_SEQ_W4_SET		.EQU	0				; 予備領域4(W)
+_SEQ_F_SET		.EQU	136				; F領域(W)
+_SEQ_S_SET		.EQU	1024				; S領域(W)
+_SEQ_A_SET		.EQU	32				; A領域(W)
+_SEQ_CARD_MAX		.EQU	3*1024				; ｶｰﾄﾞｱﾄﾞﾚｽMAX(W)
+	.AENDI
+
+	.AIF	_SEQ_PAT EQ _SEQ_PAT99
+_SEQ_W0_SET		.EQU	0				; 予備領域0(W)
+_SEQ_X_SET		.EQU	32				; X領域(W)
+_SEQ_Y_SET		.EQU	32				; Y領域(W)
+_SEQ_M_SET		.EQU	512				; M領域(W)
+_SEQ_L_SET		.EQU	32				; L領域(W)
+_SEQ_T_SET		.EQU	32				; T領域(W)
+_SEQ_C_SET		.EQU	32				; C領域(W)
+_SEQ_TD_SET		.EQU	_SEQ_T_SET * 16			; Td領域(W)
+_SEQ_CD_SET		.EQU	_SEQ_C_SET * 16			; Cd領域(W)
+_SEQ_W1_SET		.EQU	0				; 予備領域1(W)
+_SEQ_W2_SET		.EQU	0				; 予備領域2(W)
+_SEQ_W3_SET		.EQU	0				; 予備領域3(W)
+_SEQ_W4_SET		.EQU	0				; 予備領域4(W)
+_SEQ_F_SET		.EQU	64				; F領域(W)
+_SEQ_S_SET		.EQU	64				; S領域(W)
+_SEQ_A_SET		.EQU	64				; A領域(W)
+_SEQ_CARD_MAX		.EQU	2*1024				; ｶｰﾄﾞｱﾄﾞﾚｽ最大値 2Kword
+	.AENDI
+
+_SEQ_MAX_BYTE		.EQU	30				; 最大命令数(BYTE)
+_SEQ_POU_SET		.EQU	H'4000				; POU領域ｻｲｽﾞ(DW)
+
+;********************************************************************
+;* メモリ領域定義
+;********************************************************************
+_MKIND_W0_ADR		.EQU	0				; 予備領域0 TOPｱﾄﾞﾚｽ
+_MKIND_W0		.EQU	_SEQ_W0_SET * 2			; 予備領域0 ｻｲｽﾞ
+_MKIND_X_ADR		.EQU	_MKIND_W0			; 実入力領域 TOPｱﾄﾞﾚｽ
+_MKIND_X		.EQU	_SEQ_X_SET * 2			; 実入力領域 ｻｲｽﾞ
+_MKIND_Y_ADR		.EQU	_MKIND_X_ADR + _MKIND_X		; 実出力領域 TOPｱﾄﾞﾚｽ
+_MKIND_Y		.EQU	_SEQ_Y_SET * 2			; 実出力領域 ｻｲｽﾞ
+_MKIND_M_ADR		.EQU	_MKIND_Y_ADR + _MKIND_Y		; 補助ﾒﾓﾘ(非保持) TOPｱﾄﾞﾚｽ
+_MKIND_M		.EQU	_SEQ_M_SET * 2			; 補助ﾒﾓﾘ(非保持) ｻｲｽﾞ
+_MKIND_L_ADR		.EQU	_MKIND_M_ADR + _MKIND_M		; 補助ﾒﾓﾘ(保持) TOPｱﾄﾞﾚｽ
+_MKIND_L		.EQU	_SEQ_L_SET * 2			; 補助ﾒﾓﾘ(保持) ｻｲｽﾞ
+_MKIND_T_ADR		.EQU	_MKIND_L_ADR + _MKIND_L		; ﾀｲﾏ TOPｱﾄﾞﾚｽ
+_MKIND_T		.EQU	_SEQ_T_SET * 2			; ﾀｲﾏ ｻｲｽﾞ
+_MKIND_C_ADR		.EQU	_MKIND_T_ADR + _MKIND_T		; ｶｳﾝﾀ TOPｱﾄﾞﾚｽ
+_MKIND_C		.EQU	_SEQ_C_SET * 2			; ｶｳﾝﾀ ｻｲｽﾞ
+_MKIND_TD_ADR		.EQU	_MKIND_C_ADR + _MKIND_C		; ﾀｲﾏ実測 TOPｱﾄﾞﾚｽ
+_MKIND_TD		.EQU	_SEQ_TD_SET * 2			; ﾀｲﾏ実測 ｻｲｽﾞ
+_MKIND_CD_ADR		.EQU	_MKIND_TD_ADR + _MKIND_TD	; ﾀｲﾏｶｳﾝﾀ TOPｱﾄﾞﾚｽ
+_MKIND_CD		.EQU	_SEQ_CD_SET * 2			; ﾀｲﾏｶｳﾝﾀ ｻｲｽﾞ
+_MKIND_W1_ADR		.EQU	_MKIND_CD_ADR + _MKIND_CD	; 予備領域1 TOPｱﾄﾞﾚｽ
+_MKIND_W1		.EQU	_SEQ_W1_SET * 2			; 予備領域1 ｻｲｽﾞ
+_MKIND_W2_ADR		.EQU	_MKIND_W1_ADR + _MKIND_W1	; 予備領域2 TOPｱﾄﾞﾚｽ
+_MKIND_W2		.EQU	_SEQ_W2_SET * 2			; 予備領域2 ｻｲｽﾞ
+_MKIND_W3_ADR		.EQU	_MKIND_W2_ADR + _MKIND_W2	; 予備領域3 TOPｱﾄﾞﾚｽ
+_MKIND_W3		.EQU	_SEQ_W3_SET * 2			; 予備領域3 ｻｲｽﾞ
+_MKIND_W4_ADR		.EQU	_MKIND_W3_ADR + _MKIND_W3	; 予備領域4 TOPｱﾄﾞﾚｽ
+_MKIND_W4		.EQU	_SEQ_W4_SET * 2			; 予備領域4 ｻｲｽﾞ
+_MKIND_F_ADR		.EQU	_MKIND_W4_ADR + _MKIND_W4	; 機能領域(位置決め) TOPｱﾄﾞﾚｽ
+_MKIND_F		.EQU	_SEQ_F_SET * 2			; 機能領域(位置決め)
+_MKIND_S_ADR		.EQU	_MKIND_F_ADR + _MKIND_F		; ｼｽﾃﾑ TOPｱﾄﾞﾚｽ
+_MKIND_S		.EQU	_SEQ_S_SET * 2			; ｼｽﾃﾑ ｻｲｽﾞ
+_MKIND_A_ADR		.EQU	_MKIND_S_ADR + _MKIND_S		; ｱﾅｳﾝｽ TOPｱﾄﾞﾚｽ
+_MKIND_A		.EQU	_SEQ_A_SET * 2			; ｱﾅｳﾝｽ ｻｲｽﾞ
+
+;********************************************************************
+;* タイマ、カウンタ
+;********************************************************************
+__TMCT_ST_CNT		.EQU	12				;12byte占有
+__TMCT_PV		.EQU	0*4				;
+__TMCT_SV		.EQU	1*4				;
+__TMCT_FLG		.EQU	2*4				;
+
+_T_0010MS_TOP		.EQU	0				;[10msec]
+_T_0010MS_CNT		.EQU	256				;T0000-T0255
+_T_0100MS_TOP		.EQU	_T_0010MS_TOP+_T_0010MS_CNT	;[10msec]
+_T_0100MS_CNT		.EQU	128				;T0256-T0383
+_T_1000MS_TOP		.EQU	_T_0100MS_TOP+_T_0100MS_CNT	;[100msec]
+_T_1000MS_CNT		.EQU	32				;T0384-T0415
+_T_0001MS_TOP		.EQU	_T_1000MS_TOP+_T_1000MS_CNT	;[1msec]
+_T_0001MS_CNT		.EQU	64				;T0416-T0479
+_T_0001HR_TOP		.EQU	_T_0001MS_TOP+_T_0001MS_CNT	;[1000msec]
+_T_0001HR_CNT		.EQU	32				;T0480-T0511
+
+;********************************************************************
+;* 命令コードと実行ファイル
+;********************************************************************
+A_REG:			.REG	R5				;"ｼｰｹﾝｽ開始時 毎ｽｷｬﾝ 0000,0000,0000,0000"
+N_REG:			.REG	R6				;"ｼｰｹﾝｽ開始時 毎ｽｷｬﾝ 0000,0000,0000,0001"*
+M_REG:			.REG	R7				;"ｼｰｹﾝｽ開始時 毎ｽｷｬﾝ 0000,0000,0000,0000"
+D_REG:			.REG	R8				;data ﾚｼﾞｽﾀ
+CTBL_REG		.REG	R11				;CALL_TABLE=_SEQ_CALL_TBL1
+DTBL_REG		.REG	R12				;DATA_TABLE=_SEQ_DATA_TBL1
+TOP_REG			.REG	R14				;=GBR=_SEQ_CARD_RAM
+
+;ﾜｰｸﾚｼﾞｽﾀを長めにﾚｼﾞｽﾀを退避したり引数で使用する場合---
+R0_REG			.REG	R0				;
+R1_REG			.REG	R1				;
+R2_REG			.REG	R2				;
+R3_REG			.REG	R3				;
+R4_REG			.REG	R4				;
+R9_REG			.REG	R9				;
+R10_REG			.REG	R10				;
+

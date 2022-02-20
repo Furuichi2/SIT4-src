@@ -1,0 +1,700 @@
+;	***************************************************
+;	***						***
+;	***						***
+;	***	各インターフェイスソフト		***
+;	***						***
+;	***						***
+;	***************************************************
+	.LIST	OFF
+
+	.INCLUDE	"cm_equ1.equ"		; //共通定義:必ず実行ﾌﾟﾛｸﾞﾗﾑにｲﾝｸﾙｰﾄﾞする事
+	.INCLUDE	"ssa_ver1.equ"		; //
+	.INCLUDE	"shn_cmd1.mac"		; //
+	.INCLUDE	"ssa_kmc1.mac"		; //
+	.INCLUDE	"ssa_pfom.equ"		; //equ定義
+	.INCLUDE	"ssa_khad.equ"		; //equ定義
+	.INCLUDE	"ssa_wrmk.ext"		; //
+	.INCLUDE	"dp_cpuab.ext"		; //
+	.INCLUDE	"dp_cpud.ext"		; //[2013-11-29 MC]
+	.INCLUDE	"ssa_krom.ext"		; //
+
+	.INCLUDE	"dp_cop2.ext"		; //
+
+	.LIST	ON
+
+	.SECTION	P,CODE			;
+
+
+;	***********************************
+;	***	IMPORT-RAM		***
+;	***********************************
+	.IMPORT		_COP2_FEED_USEFUL;
+
+	.IMPORT		_PVPX_LFEED_POS			;//ﾌｨｰﾀﾞ現在位置表示
+	.IMPORT		_PVPX_LFD_PVABSPOS1		;//ﾌｨｰﾀﾞ現在位置1(ABS)
+	.IMPORT		_PVPX_LFD_PVABSPOS2		;//ﾌｨｰﾀﾞ現在位置2(ABS)
+	.IMPORT		_PVPX_LFD_PVABSPLS1		;//ﾌｨｰﾀﾞ現在位置PLS1(ABS)
+	.IMPORT		_PVPX_LFD_PVABSPLS2		;//ﾌｨｰﾀﾞ現在位置PLS2(ABS)
+
+	.IMPORT		_PVPX_LFD_PVINCPOS1		;//ﾌｨｰﾀﾞ現在位置1(INC)
+	.IMPORT		_PVPX_LFD_PVINCPOS2		;//ﾌｨｰﾀﾞ現在位置2(INC)
+	.IMPORT		_PVPX_LFD_PVINCPLS1		;//ﾌｨｰﾀﾞ現在位置PLS1(INC)
+	.IMPORT		_PVPX_LFD_PVINCPLS2		;//ﾌｨｰﾀﾞ現在位置PLS2(INC)
+
+	.IMPORT		_PVPX_LFD_OBJABSPLS		;//ﾌｨｰﾀﾞ現在位置1(ABS)
+	.IMPORT		_PVPX_LFD_OBJINCPLS		;//ﾌｨｰﾀﾞ現在位置PLS1(INC)
+
+	.IMPORT		_PVPX_LFD_OBJSPD		;//+/- PER
+	.IMPORT		_PVPX_LFD_ENCSPD		;//+/- PER
+
+	.IMPORT		_CMD_LFD_SITMCN_SIG		;
+
+	.IMPORT		_SET1_LFEED_STRNO	;送り開始行程		
+	.IMPORT		_SET1_LFEED_ENDNO	;送り終了行程
+
+	.IMPORT		_SET1X_LFEED_STRDEG	;往路送り開始角度 0.1度
+	.IMPORT		_SET1X_LFEED_ENDDEG	;往路送り終了角度 0.1度
+	.IMPORT		_SET1Y_LFEED_STRDEG	;復路送り開始角度 0.1度
+	.IMPORT		_SET1Y_LFEED_ENDDEG	;復路送り終了角度 0.1度
+
+	.IMPORT		_OBJ_ENC360OLD	;
+	.IMPORT		_SQ_CBWK_TOP;
+
+	.IMPORT		_FEED_POS_STEP_OLD;
+
+
+;	***********************************
+;	***	IMPORT-PARAM		***
+;	***********************************
+	.IMPORT	_SYS_FEED_PAR0001	;H'1234		;ﾊﾟﾗﾒｰﾀWR開始
+	.IMPORT	_SYS_FEED_PAR0002	;H'4321		;ﾊﾟﾗﾒｰﾀWR開始
+	.IMPORT	_SYS_FEED_PAR0005	;1		;ﾌｨｰﾀﾞ機能有(1)／無(0)
+
+;	***********************************
+;	***	IMPORT-関数		***
+;	***********************************
+	.IMPORT	_SV_CLNK_DG_CHG_LINK_DG1	;
+	.IMPORT	_SV_DN_CLANK_LINK_CHG		;
+
+
+;	***************************************************
+;	***						***
+;	***	2016-04-01				***
+;	***	cop2-feeder関連				***
+;	***						***
+;	***************************************************
+
+
+	.EXPORT	_CPUA_TO_CPUC_INIT1
+	.EXPORT	_CPUA_TO_CPUC_INIT2
+	.EXPORT	_CPUA_TO_CPUC_DATA_MAIN	;MAIN
+	.EXPORT	_CPUA_TO_CPUC_INT_MAIN	;1ms
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***	イニシャル１			***
+;	***					***
+;	***					***
+;	*******************************************
+_CPUA_TO_CPUC_INIT1
+	SUB_START
+
+	FAR_JSR	#_COP2_FEEDER_USE_CHECK,R0
+
+	MOV.L	#_COP2_FEED_USEFUL,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF CPUA_TO_CPUCINIT1_END	;
+
+
+CPUA_TO_CPUCINIT1_END
+	SUB_END
+	M_RTS
+
+
+_COP2_FEEDER_USE_CHECK
+	SUB_START
+
+	XOR	R2,R2
+
+
+	MOV.L	#_SYS_FEED_PAR0001,R1		;H'1234	;ﾊﾟﾗﾒｰﾀWR開始
+	MOV.W	@R1,R0				;
+	MOV.W	#H'1234,R4			;
+	CMP/EQ	R0,R4				;
+	BF	COP2_FEEDER_USE_CHK_END		;
+
+	MOV.L	#_SYS_FEED_PAR0002,R1		;H'4321	;ﾊﾟﾗﾒｰﾀWR開始
+	MOV.W	@R1,R0				;
+	MOV.W	#H'4321,R4			;
+	CMP/EQ	R0,R4				;
+	BF	COP2_FEEDER_USE_CHK_END		;
+
+
+	MOV.L	#_SYS_FEED_PAR0005,R1		;1;ﾌｨｰﾀﾞ機能有(1)／無(0)
+	MOV.W	@R1,R0				;
+	CMP/EQ	#1,R0				;
+	BF	COP2_FEEDER_USE_CHK_END		;
+
+;	-------ROMﾊﾟﾗﾒｰﾀ判断---------
+	MOV.B	#1,R2				;
+
+COP2_FEEDER_USE_CHK_END
+	MOV.L	#_COP2_FEED_USEFUL,R1		;
+	MOV.W	R2,@R1
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***	イニシャル２			***
+;	***	[起動ｺｰﾄﾞは出力する]		***
+;	***					***
+;	*******************************************
+;
+_CPUA_TO_CPUC_INIT2
+	SUB_START
+	MOV.L	#_COP2_FEED_USEFUL,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF CPUA_TO_CPUCINIT2_END	;
+
+	FAR_JSR	#_cop2_PONdata_move,R0		;POWER-ON(ﾊﾞｯｸｱｯﾌﾟ)
+	FAR_JSR	#_cop2_SYSdata_move,R0		;
+	FAR_JSR	#_cop2_SV1data_move,R0		;
+	FAR_JSR	#_cop2_SEQCMD1data_move,R0	;SEQ
+	FAR_JSR	#_dio_data_move1,R0
+	
+CPUA_TO_CPUCINIT2_END
+	FAR_JSR	#_COP2_START_SET,R0		;(ﾊﾞｰｼﾞｮﾝｱｯﾌﾟ)
+
+	SUB_END
+	M_RTS
+
+
+;	*******************************************
+;	***					***
+;	***					***
+;	*******************************************
+_COP2_START_SET
+	SUB_START
+;	----------- CPUC起動-------------
+	MOV.L	#_COP2_START_COD1,R0
+	MOV.L	#_COP2_CPUA_COD1,R1
+	MOV.L	R0,@R1
+
+	MOV.L	#_COP2_START_COD2,R0
+	MOV.L	#_COP2_CPUA_COD2,R1
+	MOV.L	R0,@R1
+
+	SUB_END
+	M_RTS
+
+
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***		メインスキャン		***
+;	***					***
+;	*******************************************
+_CPUA_TO_CPUC_DATA_MAIN
+	SUB_START
+	MOV.L	#_COP2_FEED_USEFUL,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF CPUA_TO_CPUC_DATMAIN_END	;
+
+	FAR_JSR	#_cop2_SV1data_move,R0
+	FAR_JSR	#_FEEDER_DAT_MAK,R0
+
+CPUA_TO_CPUC_DATMAIN_END	;
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***		定周期			***
+;	***					***
+;	*******************************************
+_CPUA_TO_CPUC_INT_MAIN
+	SUB_START
+	MOV.L	#_COP2_FEED_USEFUL,R1		;
+	MOV.W	@R1,R0				;
+	TST	R0,R0				;
+	TST_BIT_OF CPUA_TO_CPUC_INTMAIN_END	;
+
+	FAR_JSR	#_cop2_SEQCMD1data_move,R0
+	FAR_JSR	#_dio_data_move1,R0
+
+	FAR_JSR	#_cop2_PV1data_move,R0		;CPUC->CPUA->HMI
+
+	FAR_JSR	#_FEEDER_AUTO_SIG_CONF_CHK,R0	;
+
+;	-------- 2017-06-29 展示会用-------------
+	FAR_JSR	#_cop23_data_move1,R0		;CPUA->CPUC(COP3)
+
+CPUA_TO_CPUC_INTMAIN_END	;
+
+	SUB_END
+	M_RTS
+
+
+
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+_FEEDER_DAT_MAK
+	SUB_START
+
+	MOV.L	#_SVP_LFEED_STRDEG,R1			;
+	MOV.W	@R1,R2					;
+	FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0		;
+	MOV.L	#_SET1X_LFEED_STRDEG,R1			;往路送り開始角度 0.1度
+	MOV.W	R2,@R1					;
+
+	MOV.L	#_SVP_LFEED_STRDEG,R1			;
+	MOV.W	@R1,R2					;
+	FAR_JSR	#_SV_DN_CLANK_LINK_CHG,R0
+	MOV.L	#_SET1Y_LFEED_STRDEG,R1			;往路送り開始角度 0.1度
+	MOV.W	R2,@R1					;
+
+	MOV.L	#_SVP_LFEED_ENDDEG,R1			;
+	MOV.W	@R1,R2					;
+	FAR_JSR	#_SV_CLNK_DG_CHG_LINK_DG1,R0		;
+	MOV.L	#_SET1X_LFEED_ENDDEG,R1
+	MOV.W	R2,@R1					;
+
+
+	MOV.L	#_SVP_LFEED_ENDDEG,R1			;
+	MOV.W	@R1,R2					;
+	FAR_JSR	#_SV_DN_CLANK_LINK_CHG,R0
+	MOV.L	#_SET1Y_LFEED_ENDDEG,R1
+	MOV.W	R2,@R1					;
+
+	MOV.L	#_SVP_LFEED_STRNO,R1	;送り開始行程
+	MOV.W	@R1,R2			;
+	MOV.L	#_SVP_LFEED_ENDNO,R1	;送り終了行程
+	MOV.W	@R1,R3			;
+
+	TST	R2,R2
+	TST_BIT_ON FEEDR_DTMAK_NO_CHK150	;
+	XOR	R3,R3				;
+	M_BRA	FEEDR_DTMAK_NO_CHK200		;
+FEEDR_DTMAK_NO_CHK150
+	TST	R3,R3
+	TST_BIT_ON FEEDR_DTMAK_NO_CHK200
+	XOR	R2,R2
+FEEDR_DTMAK_NO_CHK200
+	MOV.L	#_SET1_LFEED_STRNO,R1		;
+	MOV.W	R2,@R1				;
+	MOV.L	#_SET1_LFEED_ENDNO,R1		;送り終了行程
+	MOV.W	R3,@R1				;
+
+
+
+
+	SUB_END
+	M_RTS
+
+;	*******************************************
+;	***					***
+;	***					***
+;	***					***
+;	***					***
+;	*******************************************
+_FEEDER_AUTO_SIG_CONF_CHK
+	SUB_START
+
+
+	MOV.L	#_MODE_SEL,R1
+	MOV.W	@R1,R0					;
+	TST	#_W1INC+_W1SGL+_W1CNT+_W1OPT,R0		;
+	TST_BIT_OF FEEDER_AUTOSIG_CONFCK_ALLCLR		;
+
+	MOV.L	#_emg_err_flg,R1			;//異常ﾗｯﾁ
+	MOV.W	@R1,R0					;
+	TST	R0,R0					;
+	TST_BIT_ON FEEDER_AUTOSIG_CONFCK_ALLCLR		;
+
+;	------- 有効な状態----------
+	FAR_JSR	#_FEED_AUTO_SIG_USE_ON,R0		;
+
+	MOV.L	#_DRV_ACT_FLG,R1		;//運転動作ﾌﾗｸﾞ BIT0:運転中
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_OF FEEDER_AUTOSIG_CONFCK_100	;
+
+	FAR_JSR	#_FEED_AUTO_SIG_DRV1_ON,R0	;
+
+	M_BRA	FEEDER_AUTOSIG_CONFCK_150	;
+
+FEEDER_AUTOSIG_CONFCK_100:
+
+	FAR_JSR	#_FEED_AUTO_SIG_DRV1_OF,R0
+
+FEEDER_AUTOSIG_CONFCK_150:
+
+
+	MOV.L	#_INT_CYC_DRV_STS,R1		;SV=0非常停止またはｻｲｸﾙ停止(BIT0=1:ｻｲｸﾙ停止)
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;サイクル終了
+	TST_BIT_OF FEEDER_AUTOSIG_CONFCK_200	;
+
+	FAR_JSR	#_FEED_AUTO_SIG_DRV2_ON,R0	;
+
+	M_BRA	FEEDER_AUTOSIG_CONFCK_250	;
+
+FEEDER_AUTOSIG_CONFCK_200:
+	FAR_JSR	#_FEED_AUTO_SIG_DRV2_OF,R0
+FEEDER_AUTOSIG_CONFCK_250:
+
+
+	M_BRA	FEEDER_AUTOSIG_CONFCK_900
+
+FEEDER_AUTOSIG_CONFCK_ALLCLR:
+	FAR_JSR	#_FEED_AUTO_SIG_USE_OF,R0
+	FAR_JSR	#_FEED_AUTO_SIG_DRV1_OF,R0
+	FAR_JSR	#_FEED_AUTO_SIG_DRV2_OF,R0
+
+FEEDER_AUTOSIG_CONFCK_900:
+
+	FAR_JSR	#_FEEDER_CAMSIG_MAKE,R0
+
+	MOV.L	#_CMD_LFD_SITMCN_SIG,R1		;
+	MOV.W	@R1,R2
+	MOV.L	#_SQ_CBWK_TOP+_WKSQCB237,R1	;
+	MOV.W	R2,@R1
+
+	SUB_END
+	M_RTS
+
+
+;	---------------- 有効な状態 ------------
+_FEED_AUTO_SIG_USE_ON
+	SUB_START
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_CMD_LFD_SITMCN_SIG,LG=W,BIT=BIT1,WKREG=R4	;
+	SUB_END
+	M_RTS
+
+_FEED_AUTO_SIG_USE_OF
+	SUB_START
+	MEM1_BIT0_TO_BIT7_ANDCLR MEM=_CMD_LFD_SITMCN_SIG,LG=W,BIT=~BIT1,WKREG=R4	;
+	SUB_END
+	M_RTS
+
+;	---------------- 運転中 ------------
+_FEED_AUTO_SIG_DRV1_ON
+	SUB_START
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_CMD_LFD_SITMCN_SIG,LG=W,BIT=BIT2,WKREG=R4	;
+	SUB_END
+	M_RTS
+
+_FEED_AUTO_SIG_DRV1_OF
+	SUB_START
+	MEM1_BIT0_TO_BIT7_ANDCLR MEM=_CMD_LFD_SITMCN_SIG,LG=W,BIT=~BIT2,WKREG=R4	;
+	SUB_END
+	M_RTS
+
+;	---------------- 待機点中(位置決めタイマまたは準備完了) ------------
+_FEED_AUTO_SIG_DRV2_ON
+	SUB_START
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_CMD_LFD_SITMCN_SIG,LG=W,BIT=BIT3,WKREG=R4	;
+	SUB_END
+	M_RTS
+
+_FEED_AUTO_SIG_DRV2_OF
+	SUB_START
+	MEM1_BIT0_TO_BIT7_ANDCLR MEM=_CMD_LFD_SITMCN_SIG,LG=W,BIT=~BIT3,WKREG=R4	;
+	SUB_END
+	M_RTS
+;	---------------- 有効な状態 ------------
+_FEED_AUTO_SIG_CAM_ON
+	SUB_START
+	MEM1_BIT0_TO_BIT7_ORSET MEM=_CMD_LFD_SITMCN_SIG,LG=W,BIT=BIT0,WKREG=R4	;
+	SUB_END
+	M_RTS
+
+_FEED_AUTO_SIG_CAM_OF
+	SUB_START
+	MEM1_BIT0_TO_BIT7_ANDCLR MEM=_CMD_LFD_SITMCN_SIG,LG=W,BIT=~BIT0,WKREG=R4	;
+	SUB_END
+	M_RTS
+
+
+;	***********************************
+;	***				***
+;	***				***
+;	***				***
+;	***				***
+;	***********************************
+_FEEDER_CAMSIG_MAKE
+	SUB_START
+
+	MOV.L	#_OBJ_ENC360,R1			;
+	MOV.W	@R1,R9				;NOW
+	MOV.L	#_OBJ_ENC360OLD,R5		;
+	MOV.W	@R5,R8
+	MOV.W	R9,@R5				;R9:NEW R8:OLD
+
+
+	MOV.L	#_FEED_POS_STEP_OLD,R5
+	MOV.W	@R5,R11				;
+
+	MOV.L	#_INT_POS_CTL_STEP,R1	;//内部制御工程1~11
+	MOV.W	@R1,R12			;
+	TST	R12,R12			;
+	TST_BIT_OF FEEDER_CAMSIG_MK020	;
+	MOV.W	R12,@R5			;
+	M_BRA	FEEDER_CAMSIG_MK030	;
+FEEDER_CAMSIG_MK020:
+	MOV	R11,R12			;
+FEEDER_CAMSIG_MK030:
+
+	MOV.L	#_SET1_LFEED_STRNO,R1		;
+	MOV.W	@R1,R2				;
+	TST	R2,R2				;
+	TST_BIT_ON FEEDER_CAMSIG_MK050		;番号有り
+	M_BRA	FEEDER_CAMSIG_MK500		;番号なしJUMP
+
+FEEDER_CAMSIG_MK050:
+	MOV.L	#_CMD_LFD_SITMCN_SIG,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON FEEDER_CAMSIG_MK300		;(ON)
+FEEDER_CAMSIG_MK300:
+
+;	-------------------------------------------
+;	------	 	純粋な位置CAM		---
+;	-------------------------------------------
+FEEDER_CAMSIG_MK500
+	MOV.L	#_CMD_LFD_SITMCN_SIG,R1		;
+	MOV.W	@R1,R0				;
+	TST	#BIT0,R0			;
+	TST_BIT_ON FEEDER_CAMSIG_MK700		;(ON)
+
+	XOR	R10,R10
+	FAR_JSR	#_FEEDER_POSCAM_CONF1,R0	;R10=0 START
+
+	CMP/EQ	#1,R0				;
+	BT	FEEDER_CAMSIG_MK510		;
+	CMP/EQ	#2,R0				;
+	BT	FEEDER_CAMSIG_MK520		;
+	CMP/EQ	#3,R0				;
+	BT	FEEDER_CAMSIG_MK530		;
+	FAR_JSR	#_FEEDER_START_POSCHK1,R0	;0
+	M_BRA	FEEDER_CAMSIG_MK900		;
+
+FEEDER_CAMSIG_MK510
+	FAR_JSR	#_FEEDER_START_POSCHK2,R0	;1
+	M_BRA	FEEDER_CAMSIG_MK900
+
+FEEDER_CAMSIG_MK520
+	FAR_JSR	#_FEEDER_START_POSCHK3,R0	;2
+	M_BRA	FEEDER_CAMSIG_MK900
+
+FEEDER_CAMSIG_MK530
+	FAR_JSR	#_FEEDER_START_POSCHK4,R0	;3
+	M_BRA	FEEDER_CAMSIG_MK900
+
+;	------------------ OFF CHECK----------------
+FEEDER_CAMSIG_MK700:
+	MOV.B	#-1,R10				;
+	FAR_JSR	#_FEEDER_POSCAM_CONF1,R0	;OFF
+
+	CMP/EQ	#1,R0
+	BT	FEEDER_CAMSIG_MK710
+	CMP/EQ	#2,R0
+	BT	FEEDER_CAMSIG_MK720
+	CMP/EQ	#3,R0
+	BT	FEEDER_CAMSIG_MK730
+	FAR_JSR	#_FEEDER_END_POSCHK1,R0	;
+	M_BRA	FEEDER_CAMSIG_MK900	;
+
+FEEDER_CAMSIG_MK710
+	FAR_JSR	#_FEEDER_END_POSCHK2,R0	;
+	M_BRA	FEEDER_CAMSIG_MK900
+
+FEEDER_CAMSIG_MK720			;
+	FAR_JSR	#_FEEDER_END_POSCHK3,R0	;
+	M_BRA	FEEDER_CAMSIG_MK900	;
+
+FEEDER_CAMSIG_MK730
+	FAR_JSR	#_FEEDER_END_POSCHK4,R0	;
+
+FEEDER_CAMSIG_MK900
+
+	SUB_END
+	M_RTS
+
+
+_FEEDER_POSCAM_CONF1
+	SUB_START
+
+	XOR	R7,R7					;
+	MOV.L	#_SETX_POS_CTL_MATH,R1			;
+	MOV.W	@R1,R0					;
+	TST	#_DMATH_CNTROT,R0			;回転時
+	TST_BIT_ON FEEDER_POSCAMCONF1_500		;FWD-X:0
+	TST	#_DMATH_DNDRIV,R0			;振子
+	TST_BIT_OF FEEDER_POSCAMCONF1_200		;
+;振子
+	MOV.L	#_DNM_DIR_NOW_FLG,R1			;起動時は確定しているDNM_DIR_SET_FLG->NOW
+	MOV.W	@R1,R0					;
+	TST	R0,R0					;
+	TST_BIT_OF FEEDER_POSCAMCONF1_500		;
+	MOV.B	#3,R7					;復路REV-Y
+	M_BRA	FEEDER_POSCAMCONF1_500			;
+
+FEEDER_POSCAMCONF1_200
+	TST	R10,R10					;START:R10=0
+	TST_BIT_ON FEEDER_POSCAMCONF1_500		;
+	MOV.B	#1,R7					;REV-X
+
+FEEDER_POSCAMCONF1_500
+	MOV	R7,R0					;
+
+	SUB_END
+	M_RTS
+
+
+_FEEDER_START_POSCHK1
+	SUB_START
+
+	MOV.L	#_SET1X_LFEED_STRDEG,R1		;往路送り開始角度 0.1度
+	MOV.W	@R1,R2				;
+	FAR_JSR	#_FEEDER_FWD_ON_CHK,R0		;0:FWD-X
+
+	SUB_END
+	M_RTS
+
+_FEEDER_START_POSCHK2
+	SUB_START
+
+	MOV.L	#_SET1X_LFEED_STRDEG,R1		;往路送り開始角度 0.1度
+	MOV.W	@R1,R2				;
+	FAR_JSR	#_FEEDER_REV_ON_CHK,R0		;1:REV-X
+
+	SUB_END
+	M_RTS
+
+_FEEDER_START_POSCHK3
+	SUB_START
+
+
+	MOV.L	#_SET1Y_LFEED_STRDEG,R1		;往路送り開始角度 0.1度
+	MOV.W	@R1,R2				;
+	FAR_JSR	#_FEEDER_FWD_ON_CHK,R0		;2:FWD-Y
+
+	SUB_END
+	M_RTS
+
+_FEEDER_START_POSCHK4
+	SUB_START
+
+	MOV.L	#_SET1Y_LFEED_STRDEG,R1		;往路送り開始角度 0.1度
+	MOV.W	@R1,R2				;
+	FAR_JSR	#_FEEDER_REV_ON_CHK,R0		;3:REV-Y
+
+	SUB_END
+	M_RTS
+
+_FEEDER_END_POSCHK1
+	SUB_START
+	MOV.L	#_SET1X_LFEED_ENDDEG,R1				;往路送り開始角度 0.1度
+	MOV.W	@R1,R2						;
+	FAR_JSR	#_FEEDER_FWD_OF_CHK,R0				;
+	SUB_END
+	M_RTS
+
+_FEEDER_END_POSCHK2
+	SUB_START
+	MOV.L	#_SET1X_LFEED_ENDDEG,R1				;往路送り開始角度 0.1度
+	MOV.W	@R1,R2						;
+	FAR_JSR	#_FEEDER_REV_OF_CHK,R0				;
+	SUB_END
+	M_RTS
+
+_FEEDER_END_POSCHK3
+	SUB_START
+	MOV.L	#_SET1Y_LFEED_ENDDEG,R1				;往路送り開始角度 0.1度
+	MOV.W	@R1,R2						;
+	FAR_JSR	#_FEEDER_FWD_OF_CHK,R0				;
+
+	SUB_END
+	M_RTS
+
+_FEEDER_END_POSCHK4
+	SUB_START
+	MOV.L	#_SET1Y_LFEED_ENDDEG,R1				;往路送り開始角度 0.1度
+	MOV.W	@R1,R2						;
+	FAR_JSR	#_FEEDER_REV_OF_CHK,R0				;
+
+	SUB_END
+	M_RTS
+
+
+_FEEDER_FWD_ON_CHK
+	SUB_START
+	DIG_AREA_CHK STREG=R8,EDREG=R9,PVREG=R2,ANSREG=R0	;R0 !=0 範囲内
+	TST	R0,R0						;
+	TST_BIT_OF FEEDER_FWD_ONCHK100				;
+	FAR_JSR	#_FEED_AUTO_SIG_CAM_ON,R0			;
+FEEDER_FWD_ONCHK100
+	SUB_END
+	M_RTS
+
+_FEEDER_FWD_OF_CHK
+	SUB_START
+	DIG_AREA_CHK STREG=R8,EDREG=R9,PVREG=R2,ANSREG=R0	;R0 !=0 範囲内
+	TST	R0,R0						;
+	TST_BIT_OF FEEDER_FWD_OFCHK100				;
+	FAR_JSR	#_FEED_AUTO_SIG_CAM_OF,R0			;
+FEEDER_FWD_OFCHK100
+	SUB_END
+	M_RTS
+
+_FEEDER_REV_ON_CHK
+	SUB_START
+	DIG_AREA_CHK STREG=R9,EDREG=R8,PVREG=R2,ANSREG=R0	;R0 !=0 範囲内
+	TST	R0,R0						;
+	TST_BIT_OF FEEDER_REV_ONCHK100				;
+	FAR_JSR	#_FEED_AUTO_SIG_CAM_ON,R0			;
+FEEDER_REV_ONCHK100
+	SUB_END
+	M_RTS
+
+_FEEDER_REV_OF_CHK
+	SUB_START
+	DIG_AREA_CHK STREG=R9,EDREG=R8,PVREG=R2,ANSREG=R0	;R0 !=0 範囲内
+	TST	R0,R0						;
+	TST_BIT_OF FEEDER_REV_OFCHK100				;
+	FAR_JSR	#_FEED_AUTO_SIG_CAM_OF,R0			;
+FEEDER_REV_OFCHK100
+	SUB_END
+	M_RTS
+
+
+
+
+
+;	***************************************************
+;	***						***
+;	***						***
+;	***						***
+;	***						***
+;	***************************************************
+	.INCLUDE	"cpua_to_cop2.inc"		; //
+
+
+
+
+	.END
+

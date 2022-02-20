@@ -1,0 +1,353 @@
+;	***************************************************
+;	***	R0ÇégópÇµÅABIT0~BIT7ÇæØƒÇ∑ÇÈ		***
+;	***************************************************
+;	R0ãyÇ—WKREGîjâÛ
+	.MACRO	MEM1_BIT0_TO_BIT7_ORSET MEM,LG,BIT,WKREG
+	MOV.L	#\MEM,\WKREG		;
+	MOV.\LG	@\WKREG,R0		;
+	OR	#\BIT,R0		;
+	MOV.\LG	R0,@\WKREG		;
+	.ENDM
+
+	.MACRO	MEM1_BIT0_TO_BIT7_ANDCLR MEM,LG,BIT,WKREG
+	MOV.L	#\MEM,\WKREG		;
+	MOV.\LG	@\WKREG,R0		;
+	AND	#LOW \BIT,R0		;
+	MOV.\LG	R0,@\WKREG		;
+	.ENDM
+
+;	***************************************************
+;	***	R0,R4ÇégópÇµÅABIT0~BIT15ÇæØƒÇ∑ÇÈ	***
+;	***************************************************
+;	R0ãyÇ—WKREGîjâÛ
+	.MACRO	MEM1_BIT0_F_ORSET MEM,LG,BIT,WKRG1,WKRG2
+	MOV.L	#\MEM,\WKRG1		;
+	MOV.\LG	@\WKRG1,R0		;
+	MOV.W	#\BIT,\WKRG2		;
+	OR	\WKRG2,R0		;
+	MOV.\LG	R0,@\WKRG1		;
+	.ENDM
+
+	.MACRO	MEM1_BIT0_F_ADCLR MEM,LG,BIT,WKRG1,WKRG2
+	MOV.L	#\MEM,\WKRG1		;
+	MOV.\LG	@\WKRG1,R0		;
+	MOV.W	#LWORD \BIT,\WKRG2	;
+	AND	\WKRG2,R0		;
+	MOV.\LG	R0,@\WKRG1		;
+	.ENDM
+
+;	***********************************
+;	***	data æØƒ		***
+;	***********************************
+;	WKREG1,WKREG2îjâÛ
+	.MACRO	MEM1_DATA_SET MEM,LG,DATA,WKREG1,WKREG2
+	MOV.L	#\MEM,\WKREG1		;
+	MOV.\LG	#\DATA,\WKREG2		;
+	MOV.\LG	\WKREG2,@\WKREG1	;
+	.ENDM
+
+;	***********************************
+;	***	data COPY		***
+;	***********************************
+;	WKREG1,WKREG2îjâÛ
+	.MACRO	MEM1_TO_MEM2 MEM1,L1,MEM2,L2,WKREG1,WKREG2
+	MOV.L	#\MEM1,\WKREG1		;
+	MOV.\L1	@\WKREG1,\WKREG2
+	MOV.L	#\MEM2,\WKREG1		;
+	MOV.\L2	\WKREG2,@\WKREG1	;
+	.ENDM
+
+;	***********************************
+;	***	MEMCLR 			***
+;	***********************************
+;	WKREG1,WKREG2îjâÛ(REG1=0ANS)
+	.MACRO	MEM1_0CLR MEM,LG,WKREG1,CLRREG
+	MOV.L	#\MEM,\WKREG1		;
+	XOR	\CLRREG,\CLRREG		;
+	MOV.\LG	\CLRREG,@\WKREG1	;
+	.ENDM
+
+;	*******************************************
+;	***					***
+;	***	ADD 8BYTE(DT)+8BYTE(DT_ANS)=ANS	***
+;	***					***
+;	*******************************************
+	.MACRO	ADD8B DT_REGH,DT_REGL,DT_ANS_REGH,DT_ANS_REGL
+	CLRT
+	ADDC	\DT_REGL,\DT_ANS_REGL
+	ADDC	\DT_REGH,\DT_ANS_REGH
+	.ENDM
+
+;	*******************************************
+;	***					***
+;	***	SUB 8BYTE(ANS)-DT=ANS		***
+;	***					***
+;	*******************************************
+	.MACRO	SUB8B DT_REGH,DT_REGL,DT_ANS_REGH,DT_ANS_REGL
+	CLRT
+	SUBC	\DT_REGL,\DT_ANS_REGL
+	SUBC	\DT_REGH,\DT_ANS_REGH
+	.ENDM
+
+;	*******************************************
+;	***					***
+;	***	8BYTE MAX/MIN LIMIT		***
+;	***					***
+;	*******************************************
+;	WKREG
+;	Input R1,R2/R5,R6 ....
+	.MACRO	MAX_MIN8B DT_REGH,DT_REGL,WKRG1,WKRG2,MAX_H,MAX_L,MIN_H,MIN_L
+	CLRT
+	MOV.L	#\MAX_L,\WKRG1
+	SUBC	\DT_REGL,\WKRG1		;
+	MOV.L	#\MAX_H,\WKRG1
+	SUBC	\DT_REGH,\WKRG1		;
+	CMP/PZ	\WKRG1			;
+	BT	JMP01\@			;DATA=<MAX
+	MOV.L	#\MAX_L,\DT_REGL	;data >= max
+	MOV.L	#\MAX_H,\DT_REGH	;LIMIT
+JMP01\@					;
+	CLRT
+	MOV.L	#\MIN_L,\WKRG1		;
+	SUBC	\DT_REGL,\WKRG1		;
+	MOV.L	#\MIN_H,\WKRG2		;
+	SUBC	\DT_REGH,\WKRG2		;
+	CMP/PL	\WKRG2			;
+	BF	JMP02\@			;"-" R3 < 0 THEN OK!
+	OR	\WKRG1,\WKRG2		;
+	TST	\WKRG2,\WKRG2		;
+	TST_BIT_OF JMP02\@		;
+	MOV.L	#\MIN_L,\DT_REGL	;data < min
+	MOV.L	#\MIN_H,\DT_REGH	;LIMIT
+JMP02\@:
+	.ENDM
+
+	.MACRO	MAX_MIN_RG8B DT_REGH,DT_REGL,WKRG1,WKRG2,MAXRG_H,MAXRG_L,MINRG_H,MINRG_L
+	CLRT
+	MOV	\MAXRG_L,\WKRG1
+	SUBC	\DT_REGL,\WKRG1		;
+	MOV	\MAXRG_H,\WKRG1
+	SUBC	\DT_REGH,\WKRG1		;
+	CMP/PZ	\WKRG1			;
+	BT	JMP01\@			;DATA=<MAX
+	MOV	\MAXRG_L,\DT_REGL	;data >= max
+	MOV	\MAXRG_H,\DT_REGH	;LIMIT
+JMP01\@					;
+	CLRT
+	MOV	\MINRG_L,\WKRG1	;
+	SUBC	\DT_REGL,\WKRG1		;
+	MOV	\MINRG_H,\WKRG2	;
+	SUBC	\DT_REGH,\WKRG2		;
+	CMP/PL	\WKRG2			;
+	BF	JMP02\@			;"-" R3 < 0 THEN OK!
+	OR	\WKRG1,\WKRG2		;
+	TST	\WKRG2,\WKRG2		;
+	TST_BIT_OF JMP02\@		;
+	MOV	\MINRG_L,\DT_REGL	;data < min
+	MOV	\MINRG_H,\DT_REGH	;LIMIT
+JMP02\@:
+	.ENDM
+
+;	***********************************************************
+;	***	8BYTE   MIN_REG =< DT_REG =< MAX_REG THEN T=1	***
+;	***********************************************************
+;	⁄ºﬁΩ¿‹∞∏à»äOï€éù
+	.MACRO	MAX_MIN_RG_CMP8B DT_REGH,DT_REGL,WKRG1,WKRG2,MAXRG_H,MAXRG_L,MINRG_H,MINRG_L
+	CLRT
+	MOV	\MAXRG_L,\WKRG1
+	SUBC	\DT_REGL,\WKRG1		;
+	MOV	\MAXRG_H,\WKRG1
+	SUBC	\DT_REGH,\WKRG1		;
+	CMP/PZ	\WKRG1			;
+	BT	JMP01\@			;DATA=<MAX
+	CLRT
+	M_BRA	JMP03\@			;
+
+JMP01\@					;
+	CLRT
+	MOV	\MINRG_L,\WKRG1	;
+	SUBC	\DT_REGL,\WKRG1		;
+	MOV	\MINRG_H,\WKRG2	;
+	SUBC	\DT_REGH,\WKRG2		;
+	CMP/PL	\WKRG2			;
+	BF	JMP02\@			;"-" R3 < 0 THEN OK!
+	OR	\WKRG1,\WKRG2		;
+	TST	\WKRG2,\WKRG2		;
+	TST_BIT_OF JMP02\@		;
+	CLRT
+	M_BRA	JMP03\@			;
+JMP02\@:
+	SETT
+JMP03\@:
+	.ENDM
+
+
+
+
+
+;	***************************
+;	***	DI		***
+;	***************************
+	.MACRO	DI_PUSH_SR_SHn	WK_REG1,WK_REG2
+	STC	SR,\WK_REG1			;
+	MOV.W	#H'000000F0,\WK_REG2		;
+	OR	\WK_REG2,\WK_REG1		;INT15
+	STC.L	SR,@-R15			;PUSH SR
+	LDC	\WK_REG1,SR			;äÑçûã÷é~Åi15Åj
+	.ENDM
+
+;	***************************
+;	***	EI		***
+;	***************************
+	.MACRO	EI_POP_SR_SHn 			;
+	LDC.L	@R15+,SR			;POP SR
+	.ENDM
+
+;	***************************
+;	***	ïÑçÜ¡™Ø∏	***
+;	***************************
+;	IF data < 0 THEN 0CLR
+	.MACRO	REG1_0CHK REG1
+	CMP/PZ	\REG1
+	BT	JMP01\@			;DATA=<MAX
+	XOR	\REG1,\REG1		;
+JMP01\@					;
+	.ENDM
+
+
+;	***************************
+;	***	äpìxë´ÇµéZ	***
+;	***************************
+;	LATE=3600
+;	LATE=360
+;	=== REGB=REGB+REGA
+	.MACRO	DIG_REGA_ADD_REGB_ANS_REGB REGA,REGB,WKREG,LATE
+	ADD	\REGA,\REGB		
+	MOV.W	#\LATE,\WKREG		
+	CMP/GT	\REGB,\WKREG		;359.9<3600
+	BT	JMP01\@			;
+	SUB	\WKREG,\REGB		;
+JMP01\@					;
+	.ENDM
+
+;	***************************
+;	***	äpìxà¯Ç´éZ	***
+;	***************************
+;	=== REGB=REGB-REGA
+	.MACRO	DIG_REGA_SUB_REGB_ANS_REGB REGA,REGB,WKREG,LATE
+	SUB	\REGA,\REGB
+	CMP/PZ	\REGB
+	BT	JMP01\@			;
+	MOV.W	#\LATE,\WKREG
+	ADD	\WKREG,\REGB		;
+JMP01\@					;
+	.ENDM
+
+;	***************************
+;	***	äpìxîÕàÕ¡™Ø∏	***
+;	***************************
+;	STREG=R1
+;	EDREG=R3
+;	PVREG=R2
+;	ANSREG=R0 =1 îÕàÕì‡
+;
+	.MACRO	DIG_AREA_CHK STREG,EDREG,PVREG,ANSREG
+	CMP/GE	\STREG,\EDREG
+	BF	JMP01\@
+;	=== 0ìxÇÇÕÇ≥Ç»Ç‹Ç¢===
+	XOR	\ANSREG,\ANSREG
+	CMP/GE	\STREG,\PVREG		;
+	BF	JMP02\@			; PV<SV1
+	CMP/GE	\PVREG,\EDREG		;
+	BF	JMP02\@			; SV2<PV2 (1)
+	MOV	#1,\ANSREG		;
+	M_BRA	JMP02\@			;
+
+;	==== ÇOìxÇÇÕÇ≥Çﬁ====
+JMP01\@:
+	MOV	#1,\ANSREG
+	CMP/GE	\STREG,\PVREG
+	BT	JMP02\@			;SV1=<PV=<360
+	CMP/GE	\PVREG,\EDREG		;
+	BT	JMP02\@			;
+	XOR	\ANSREG,\ANSREG		;
+JMP02\@:
+	.ENDM
+
+
+;	***********************************
+;	***	R5,R6-R1,R2		***
+;	***********************************
+	.MACRO	SB1_R12_SUB_R56_ANSABS_R12
+	SUB8B DT_REGH=R5,DT_REGL=R6,DT_ANS_REGH=R1,DT_ANS_REGL=R2	;
+	CMP/PZ	R1				;
+	BT	JMP01\@				;SV1=<PV=<360
+	NEG1_64	H_REG=R1,L_REG=R2,WKREG=R0	;|R1,R2|
+JMP01\@:
+	.ENDM
+
+	.MACRO	EXTD_8B_R1_R2_TO_2B_R2_UNS	;R1,R2-->0~FFFF
+	
+	TST	R1,R1
+	TST_BIT_OF JMP01\@		;
+	XOR	R1,R1			;
+	MOV.L	#H'0000FFFF,R0		;
+	M_BRA	JMP02\@			;
+JMP01\@:
+	MOV.L	#H'0000FFFF,R0		;
+	CMP/HS	R2,R0			;
+	BT	JMP02\@			;
+	XOR	R1,R1
+	MOV	R0,R2			;
+JMP02\@:
+	.ENDM
+
+;	***********************************
+;	***	4byte-->8byte ïÑçÜägí£	***
+;	***********************************
+;	REG4B=4byte---> REG8B_H,REG4B
+	.MACRO	EXTS_4B_TO_8B REG8B_H,REG4B
+	XOR	\REG8B_H,\REG8B_H
+	CMP/PZ	\REG4B
+	BT	JMP01\@		;
+	ADD	#-1,\REG8B_H	;
+JMP01\@:
+
+	.ENDM
+
+;	***********************************************************
+;	***	4BYTE   MIN_REG =< DT_REG =< MAX_REG THEN T=1	***
+;	***********************************************************
+;	⁄ºﬁΩ¿‹∞∏à»äOï€éù
+;;	.AIF	_PRG_CHG20030127 EQ _COMPILE_YES	;Ãﬂ€∏ﬁ◊—ïœçXâ”èä(îΩì]édólà»äOÇÃïWèÄÇ…ì¸ÇÍÇÈïœçX)
+;;	.AENDI
+	.MACRO	MAX_MIN_RG_CMP4B DT_REG,MAXRG,MINRG
+	CMP/GE	\MINRG,\DT_REG		;MIN =< DT THEN T=1
+	BF	JMP01\@			;DT < MIN T=0
+	CMP/GE	\DT_REG,\MAXRG		;
+JMP01\@					;
+	.ENDM
+
+;	***********************************
+;	***	å∏ë¨í‚é~∫œ›ƒﬁ		***
+;	***********************************
+	.MACRO	MOD_LOW_STOP_R0_R1
+	MOV.L	#_MNWR_POS_CMD,R1		;å∏ë¨í‚é~,ãNìÆOFF
+	MOV.W	#BIT1,R0			;
+	MOV.W	R0,@R1				;
+	.ENDM
+
+
+;	***********************************
+;	***	ÉÇÉjÉ^à íuópÉfÅ[É^ì]ëó	***
+;	***	MEM=>MEM 		***
+;	***********************************
+;	à íu”∆¿ópÿ–Øƒ
+	.MACRO	MNP_MOV_TO_MEM SRC_ADR,L1,DST_ADR,L2,WKREG1,WKREG2,LIMIT
+	MOV.L	#\SRC_ADR,\WKREG1	;
+	MOV.\L1	@\WKREG1,\WKREG2	;
+	MOV.L	#\LIMIT,\WKREG1		;67108863Ç‹Ç≈
+	AND	\WKREG1,\WKREG2		;
+	MOV.L	#\DST_ADR,\WKREG1		;
+	MOV.\L2	\WKREG2,@\WKREG1	;
+	.ENDM

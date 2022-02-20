@@ -1,0 +1,191 @@
+
+	.INCLUDE	"cm_equ1.equ"		; //ã§í íËã`:ïKÇ∏é¿çsÃﬂ€∏ﬁ◊—Ç…≤›∏Ÿ∞ƒﬁÇ∑ÇÈéñ
+	.INCLUDE	"com_et1.equ"		; //
+
+;	***************************************************
+;	***						***
+;	***		ÇcÇoÇqÇ`Çl			***
+;	***		cpuA<=>cpuB			***
+;	***						***
+;	***************************************************
+	.SECTION	BdpramAB, DATA			;
+	.export		_DPRAMAB_TOP
+	.export		_DPRAMAB_END
+	.include	"dp_cpuab.ext"
+
+	.org	h'0
+_DPRAMAB_TOP			;
+_dpramAB_top:
+	.include	"dp_cpuab.inc"			;cpua<=>cpubä‘
+
+	.org	h'3FFC
+	.export		_AB_CPUA_RD_CPUB_WR;
+_AB_CPUA_RD_CPUB_WR	.SRES	2			;
+
+	.org	h'3FFE
+	.export		_AB_CPUA_WR_CPUB_RD;
+_AB_CPUA_WR_CPUB_RD	.SRES	2			;
+_DPRAMAB_END			;
+
+
+
+;	***************************************************
+;	***						***
+;	***		ÇcÇoÇqÇ`Çl			***
+;	***						***
+;	***************************************************
+	.SECTION	Bdpram, DATA			;
+	.export		_DPRAM_TOP
+	.export		_DPRAM_END
+	.INCLUDE	"dp_cpud.ext"		; //[2013-11-29 MC]
+
+	.org	h'0
+_DPRAM_TOP			;
+_dpram_top:
+
+	.include	"dp_cpud_com.inc"		;cpud<=>cpua
+
+;;;;	.org	h'2000 êÈåæÇÕdp_cpud_a.incÇÃíÜÇ≈org h'2000Ç™çsÇÌÇÍÇÈ
+
+	.include	"dp_cpud_a.inc"			;cpud<=>cpua
+
+	.org	h'3FFC
+	.export		_CPUA_RD_CPUB_WR;
+_CPUA_RD_CPUB_WR	.SRES	2			;
+
+	.org	h'3FFE
+	.export		_CPUA_WR_CPUB_RD;
+_CPUA_WR_CPUB_RD	.SRES	2			;
+_DPRAM_END			;
+
+
+;	***************************************************
+;	***		Flashrom seq code address	***
+;	***		070000~077FFF		32k	***
+;	***************************************************
+	.SECTION	Pseqcode1,DATA			;
+	.export		_SEQ_COM1_TOP        		;
+	.export		_SEQ_COM1_END        		;
+
+_SEQ_COM1_TOP:						;32Kbyte
+	.INCLUDE	"seq_rom.inc"			;
+
+	.ORG		H'7FF0				;
+_SEQ_COM1_END	.sres		4			;
+
+
+;	***************************************************
+;	***						***
+;	***		FLASH-ROM			***
+;	***						***
+;	***************************************************
+;;;	***************************************************
+;;;	***		ROM SYSTEM PARAMETER 		***
+;;;	***************************************************
+	.SECTION	Pcbsys, DATA			;
+
+	.INCLUDE	"cb_param.ext"			;
+
+	.ORG	H'0
+	.export		_CBSYS_TOP;
+_CBSYS_TOP:
+	.INCLUDE	"cb_param.inc"			;
+
+
+
+;	***************************************************
+;	***		IO-GA1	 mem			***
+;	***************************************************
+	.SECTION	Bdio1,DATA			;
+	.export		_dio_top1			;
+_dio_top1:						;
+
+;	***************************************************
+;	***		IO-GA1	 mem			***
+;	***************************************************
+	.SECTION	Bdio2,DATA			;
+	.export		_dio_top2			;
+_dio_top2:						;
+
+;	***************************************************
+;	***		sh3-position control lsi mem	***
+;	***************************************************
+	.SECTION	Baio,DATA			;
+	.export		_aio_top			;
+_aio_top:						;
+
+;	***************************************************
+;	***		sh3-position control lsi mem	***
+;	***************************************************
+	.SECTION	Bposlsi1,DATA			;
+	.export		_poslsi1_top			;
+_poslsi1_top:						;
+
+;	***************************************************
+;	***		Remote IO_INPUT mem		***
+;	***************************************************
+	.SECTION	BRMIO_I,DATA			;A8000,0300
+	.export		_RMIO_IN_TOP			;
+_RMIO_IN_TOP:						;
+
+;	***************************************************
+;	***		Remote IO_OUTPUT mem		***
+;	***************************************************
+	.SECTION	BRMIO_O,DATA			;A8000,0308
+	.export		_RMIO_OUT_TOP			;
+_RMIO_OUT_TOP:						;
+
+
+
+;	***************************************************
+;	***		Remote IO_INPUT mem[MC]		***
+;	***************************************************
+	.SECTION	BRMIO2_I,DATA			;A8000,0320
+	.export		_RMIO2_IN_TOP			;
+_RMIO2_IN_TOP:						;
+
+;	***************************************************
+;	***		Remote IO_OUTPUT mem[MC]	***
+;	***************************************************
+	.SECTION	BRMIO2_O,DATA			;A8000,0328
+	.export		_RMIO2_OUT_TOP			;
+_RMIO2_OUT_TOP:						;
+
+
+;	***************************************************
+;	***		DI,REMOTO-STS mem[MC]		***
+;	***************************************************
+	.SECTION	Bdio3,DATA			;A8000,0338
+	.export		_dio_top3			;
+_dio_top3:						;
+
+
+
+
+
+
+
+
+
+;;;	***************************************************
+;;;	***		ROM SYSTEM PARAMETER 		***
+;;;	***************************************************
+;;;	.SECTION	Pcbsys,DATA			;
+;;;	.export		_ROM_SYSPAR_TOP			;
+;;;_ROM_SYSPAR_TOP:						;
+
+;	***************************************************
+;	***						***
+;	***		ÇcÇoÇqÇ`Çl			***
+;	***		CPUA/cop2			***
+;	***		B800,0000			***
+;	***		2016-04-01 ÉåÉxÉã-FEEDER	***
+;	***						***
+;	***************************************************
+	.INCLUDE	"dp_cop2.ext"
+	.SECTION	Bcop2dpA,DATA			;
+	.export		_cop2dpA_top			;
+_cop2dpA_top						;
+	.INCLUDE	"dp_cop2.inc"			;()
+
+	.END

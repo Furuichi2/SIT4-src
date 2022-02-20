@@ -1,0 +1,457 @@
+SH SERIES C/C++ Compiler (V.9.04.01.002)                                                         14-Nov-2021 17:05:20  PAGE    1
+
+************ OBJECT LISTING ************
+
+FILE NAME: D:\SIT4S_MC_99\cpua\cpua\cb_src\K_SRC\ssc_k.c
+
+SCT OFFSET   CODE       C LABEL     INSTRUCTION OPERAND    COMMENT
+
+              ssc_k.c          1    //;   ***************************************************
+              ssc_k.c          2    //;   ***                     ***
+              ssc_k.c          3    //;   ***                     ***
+              ssc_k.c          4    //;   *** 各インターフェイスソフト        ***
+              ssc_k.c          5    //;   ***                     ***
+              ssc_k.c          6    //;   ***                     ***
+              ssc_k.c          7    //;   ***************************************************
+              ssc_k.c          8    #include  "cm_equ1.h" 
+            cm_equ1.h          1    /*    *********************************** */
+            cm_equ1.h          2    /*    ***     基本        *** */
+            cm_equ1.h          3    /*    *********************************** */
+            cm_equ1.h          4    #define   cBIT0   0x1 /* */
+            cm_equ1.h          5    #define   cBIT1   0x2 /* */
+            cm_equ1.h          6    #define   cBIT2   0x4 /* */
+            cm_equ1.h          7    #define   cBIT3   0x8 /* */
+            cm_equ1.h          8    #define   cBIT4   0x10    /* */
+            cm_equ1.h          9    #define   cBIT5   0x20    /* */
+            cm_equ1.h         10    #define   cBIT6   0x40    /* */
+            cm_equ1.h         11    #define   cBIT7   0x80    /* */
+            cm_equ1.h         12    #define   cBIT8   0x100   /* */
+            cm_equ1.h         13    #define   cBIT9   0x200   /* */
+            cm_equ1.h         14    #define   cBIT10  0x400   /* */
+            cm_equ1.h         15    #define   cBIT11  0x800   /* */
+            cm_equ1.h         16    #define   cBIT12  0x1000  /* */
+            cm_equ1.h         17    #define   cBIT13  0x2000  /* */
+            cm_equ1.h         18    #define   cBIT14  0x4000  /* */
+            cm_equ1.h         19    #define   cBIT15  0x8000  /* */
+            cm_equ1.h         20    
+            cm_equ1.h         21    //    *******************************************
+            cm_equ1.h         22    //    ***                 ***
+            cm_equ1.h         23    //    ***                 ***
+            cm_equ1.h         24    //    ***                 ***
+            cm_equ1.h         25    //    *******************************************
+            cm_equ1.h         26    //
+            cm_equ1.h         27    //    共通定義 型に意味のある場合下記を仕様する
+            cm_equ1.h         28    typedef unsigned char     Uchar;      //
+            cm_equ1.h         29    typedef unsigned short    Ushort;     //
+            cm_equ1.h         30    typedef unsigned int  Uint;       //
+            cm_equ1.h         31    typedef unsigned long Ulong;      //
+            cm_equ1.h         32    typedef signed char   Char;       //
+            cm_equ1.h         33    typedef signed short  Short;      //
+            cm_equ1.h         34    typedef signed int    Int;        //
+            cm_equ1.h         35    typedef signed long   Long;       //
+            cm_equ1.h         36    
+            cm_equ1.h         37    /*    共通定義 ﾊﾞｲﾄ長に意味のある場合下記を仕様する   */
+            cm_equ1.h         38    typedef unsigned char     U1b;        /*  u1b */
+            cm_equ1.h         39    typedef unsigned short    U2b;        /*  u2b */
+            cm_equ1.h         40    typedef unsigned long U4b;        /*  u4b */
+            cm_equ1.h         41    typedef signed char   S1b;        /*  s1b */
+            cm_equ1.h         42    typedef signed short  S2b;        /*  s2b */
+            cm_equ1.h         43    typedef signed long   S4b;        /*  s4b */
+            cm_equ1.h         44    
+            cm_equ1.h         45    /*    ============ 通常この記述を使用 =============   */
+            cm_equ1.h         46    //typedef signed char     BYTE;       /*  s1b */
+            cm_equ1.h         47    //typedef signed short    WORD;       /*  s2b */
+            cm_equ1.h         48    //typedef signed long DWORD;      /*  s4b */
+            cm_equ1.h         49    
+            cm_equ1.h         50    /*    *********************************** */
+            cm_equ1.h         51    /*    ***     sh3     *** */
+            cm_equ1.h         52    /*    *********************************** */
+            cm_equ1.h         53    /*    =================================   */
+            cm_equ1.h         54    #define       Debug_YES   1
+            cm_equ1.h         55    #define       Debug_NO    0
+            cm_equ1.h         56    #define       CMPILE_YES  1
+            cm_equ1.h         57    #define       CMPILE_NO   0
+            cm_equ1.h         58    
+            cm_equ1.h         59    #define       CB_STS_BUF_MAX      512     //128
+            cm_equ1.h         60    #define       CB_TRD_BUF_MAX      2048    //2048 total 2048確保
+            cm_equ1.h         61    #define       CB_TRD_SMP_CNT      128     //128個
+              ssc_k.c          9    #include  "ssc_wrmk.h"
+           ssc_wrmk.h          1    //    *******************************************
+           ssc_wrmk.h          2    //    ***                 ***
+           ssc_wrmk.h          3    //    *** ワークｒａｍ ｅｘｔｅｒｎ   ***
+           ssc_wrmk.h          4    //    *** アセンブラ          ***
+           ssc_wrmk.h          5    //    *******************************************
+           ssc_wrmk.h          6    
+           ssc_wrmk.h          7    //    *******************************************
+           ssc_wrmk.h          8    //    ***                 ***
+           ssc_wrmk.h          9    //    *** ワークｒａｍ ｅｘｔｅｒｎ   ***
+           ssc_wrmk.h         10    //    *** ｃ言語              ***
+           ssc_wrmk.h         11    //    *******************************************
+           ssc_wrmk.h         12      extern  S4b koma_c_ram_top;
+           ssc_wrmk.h         13    #include  "ssc_cbrm.h"
+           ssc_cbrm.h          1    //    *******************************************
+           ssc_cbrm.h          2    //    ***                 ***
+           ssc_cbrm.h          3    //    ***                 ***
+           ssc_cbrm.h          4    //    *** ｓｒａｍ            ***
+           ssc_cbrm.h          5    //    ***                 ***
+           ssc_cbrm.h          6    //    *******************************************
+           ssc_cbrm.h          7    
+           ssc_cbrm.h          8    //    ***************************
+           ssc_cbrm.h          9    //    *** ハード入出力    ***
+           ssc_cbrm.h         10    //    ***************************
+           ssc_cbrm.h         11    
+           ssc_cbrm.h         12    
+           ssc_cbrm.h         13    //    ***************************
+           ssc_cbrm.h         14    //    *** 異常関係    ***
+           ssc_cbrm.h         15    //    ***************************
+           ssc_cbrm.h         16    
+           ssc_cbrm.h         17    
+           ssc_cbrm.h         18    //    ***************************
+           ssc_cbrm.h         19    //    *** リセット関係    ***
+           ssc_cbrm.h         20    //    ***************************
+           ssc_cbrm.h         21    
+           ssc_cbrm.h         22    //    ***************************
+           ssc_cbrm.h         23    //    *** ｾﾙﾌﾁｪｯｸ関係 ***
+           ssc_cbrm.h         24    //    ***************************
+           ssc_cbrm.h         25    
+           ssc_cbrm.h         26    //    ***********************************
+           ssc_cbrm.h         27    //    *** ﾘﾆｱｽｹｰﾙ原点     ***
+           ssc_cbrm.h         28    //    ***********************************
+           ssc_cbrm.h         29      extern  S4b RNA_STLORK;
+           ssc_cbrm.h         30    
+           ssc_cbrm.h         31    //    ***************************
+           ssc_cbrm.h         32    //    *** ｼｰｹﾝｽ入出力 ***
+           ssc_cbrm.h         33    //    ***************************
+           ssc_cbrm.h         34      extern      U2b CB_SEQ_SW_SEL01;//SEQ 28
+           ssc_cbrm.h         35      extern      U2b CB_SEQ_SW_SEL02;//SEQ 29
+           ssc_cbrm.h         36      extern      U2b CB_SEQ_CB_COM340;
+           ssc_cbrm.h         37      extern      U2b CB_SEQ_CB_SEL341;
+           ssc_cbrm.h         38      extern      U2b CB_SEQ_CB_SEL342;
+           ssc_cbrm.h         39    
+           ssc_cbrm.h         40    
+           ssc_cbrm.h         41    //    *******************************************
+           ssc_cbrm.h         42    //    ***                 ***
+           ssc_cbrm.h         43    //    *** バイトアクセス可能ｒａｍ    ***
+           ssc_cbrm.h         44    //    *** ｓｒａｍ            ***
+           ssc_cbrm.h         45    //    *** (sh2内臓/sh4　sdram)        ***
+           ssc_cbrm.h         46    //    *******************************************
+           ssc_cbrm.h         47    
+           ssc_cbrm.h         48    //    *******************************************
+           ssc_cbrm.h         49    //    ***                 ***
+           ssc_cbrm.h         50    //    ***                 ***
+           ssc_cbrm.h         51    //    ***     位置決め部      ***
+           ssc_cbrm.h         52    //    ***                 ***
+           ssc_cbrm.h         53    //    *******************************************
+           ssc_cbrm.h         54    
+           ssc_cbrm.h         55    
+           ssc_cbrm.h         56    //    *******************************************
+           ssc_cbrm.h         57    //    ***                 ***
+           ssc_cbrm.h         58    //    *** dualportram         ***
+           ssc_cbrm.h         59    //    *** 大文字              ***
+           ssc_cbrm.h         60    //    ***                 ***
+           ssc_cbrm.h         61    //    *******************************************
+           ssc_cbrm.h         62    //    2011-09-14
+           ssc_cbrm.h         63      extern  U2b W_PARAM_TOP[512];   //
+           ssc_wrmk.h         14    
+           ssc_wrmk.h         15    
+           ssc_wrmk.h         16    
+           ssc_wrmk.h         17      extern  S4b ROOT_MAIN_INP;
+           ssc_wrmk.h         18      extern  S4b ROOT_MAIN_OUT;
+              ssc_k.c         10    
+              ssc_k.c         11    //    =============== extern宣言 ===================
+              ssc_k.c         12    
+              ssc_k.c         13    //    =============== public 宣言 ===================
+              ssc_k.c         14    //void c_k1_ctrl_main(void);//メインスキャン
+              ssc_k.c         15    //void c_k1_ctrl_int1(void);//200usec割込(100usec)
+              ssc_k.c         16    //void c_k1_ctrl_int2(void);//2msec割込(1msec)
+              ssc_k.c         17    //void c_k1_ctrl_int3(void);//10msec程度(温調/通常のﾀｲﾏ計測)
+              ssc_k.c         18    
+              ssc_k.c         19    extern    void ASM_DMK1_SOFT_INIT(void);//
+              ssc_k.c         20    extern    void ASM_DMK1_DATA_INIT(void);//isa-->SH4または SH4(ﾏｽﾀ→ｽﾚｰﾌﾞ)
+              ssc_k.c         21    extern    void ASM_K1_CTRL_INT1(void);//200usec割込(100usec)
+              ssc_k.c         22    extern    void ASM_K1_CTRL_INT2(void);//2msec割込(1msec)
+              ssc_k.c         23    extern    void ASM_K1_CTRL_INT3(void);//10msec程度(温調/通常のﾀｲﾏ計測)
+              ssc_k.c         24    //extern  void ASM_K1_CTRL_MAIN(void);//メインスキャン
+              ssc_k.c         25    
+              ssc_k.c         26    
+              ssc_k.c         27    
+              ssc_k.c         28    
+              ssc_k.c         29    extern    void C_ASM_DISP_MM_CHG_DG(void);
+              ssc_k.c         30    extern    void C_ASM_DISP_DG_CHG_MM(void);
+              ssc_k.c         31    
+              ssc_k.c         32    //;   ***************************************************
+              ssc_k.c         33    //;   ***                     ***
+              ssc_k.c         34    //;   ***                     ***
+              ssc_k.c         35    //;   *** SH4                 ***
+              ssc_k.c         36    //;   ***                     ***
+              ssc_k.c         37    //;   ***                     ***
+              ssc_k.c         38    //;   ***************************************************
+              ssc_k.c         39    
+              ssc_k.c         40    //;   ***********************************************************
+              ssc_k.c         41    //;   ***                         ***
+              ssc_k.c         42    //;   ***     ｲﾆｼｬﾙﾃﾞｰﾀ受信前１回         ***
+              ssc_k.c         43    //;   ***     割込解除前              ***
+              ssc_k.c         44    //;   ***     SH2/SH4共に             ***
+              ssc_k.c         45    //;   ***********************************************************
+              ssc_k.c         46    //    CHINが呼んでいる
+              ssc_k.c         47    //    
+              ssc_k.c         48    //;   ***********************************************************
+              ssc_k.c         49    //;   ***                         ***
+              ssc_k.c         50    //;   ***     ｲﾆｼｬﾙﾃﾞｰﾀ受信後１回         ***
+              ssc_k.c         51    //;   ***                         ***
+              ssc_k.c         52    //;   ***     SH2/SH4共に             ***
+              ssc_k.c         53    //;   ***********************************************************
+              ssc_k.c         54    //    位置決め関係のイニシャル()
+              ssc_k.c         55    //    その他の制御系のイニシャル()
+              ssc_k.c         56    //    呼んでいる
+              ssc_k.c         57    //;   ***********************************************************
+              ssc_k.c         58    //;   ***                         ***
+              ssc_k.c         59    //;   ***     ﾃﾞｰﾀ受信後毎スキャン            ***
+              ssc_k.c         60    //;   ***     未使用                  ***
+              ssc_k.c         61    //;   ***********************************************************
+              ssc_k.c         62    //    チンは呼んでいる
+              ssc_k.c         63    
+              ssc_k.c         64    //;   ***********************************************************
+              ssc_k.c         65    //;   ***                         ***
+              ssc_k.c         66    //;   ***     制御用メインスキャン            ***
+              ssc_k.c         67    //;   ***                         ***
+              ssc_k.c         68    //;   ***********************************************************
+              ssc_k.c         69    //    ﾒｲﾝでCHINが呼んでいる
+              ssc_k.c         70    //    CHINが呼んでいる
+              ssc_k.c         71    //void c_k1_ctrl_main(void)
+              ssc_k.c         72    //{
+              ssc_k.c         73    //    ASM_K1_CTRL_MAIN();//メインスキャン:出荷試験時は呼ばれない
+              ssc_k.c         74    //
+              ssc_k.c         75    //}
+              ssc_k.c         76    
+              ssc_k.c         77    
+              ssc_k.c         78    //;   ***********************************************************
+              ssc_k.c         79    //;   ***                         ***
+              ssc_k.c         80    //;   ***     定周期200usec(100usec)          ***
+              ssc_k.c         81    //;   ***                         ***
+              ssc_k.c         82    //;   ***********************************************************
+              ssc_k.c         83    //void c_k1_ctrl_int1(void)
+              ssc_k.c         84    //{
+              ssc_k.c         85    //}
+              ssc_k.c         86    //;   ***********************************************************
+              ssc_k.c         87    //;   ***                         ***
+              ssc_k.c         88    //;   ***     定周期2msec(1msec)          ***
+              ssc_k.c         89    //;   ***                         ***
+              ssc_k.c         90    //;   ***********************************************************
+              ssc_k.c         91    //void c_k1_ctrl_int2(void){
+              ssc_k.c         92    //}
+              ssc_k.c         93    //;   ***********************************************************
+              ssc_k.c         94    //;   ***                         ***
+              ssc_k.c         95    //;   ***     定周期5msec             ***
+              ssc_k.c         96    //;   ***                         ***
+              ssc_k.c         97    //;   ***********************************************************
+              ssc_k.c         98    //void c_k1_ctrl_int3(void){
+              ssc_k.c         99    //}
+              ssc_k.c        100    
+              ssc_k.c        101    
+              ssc_k.c        102    
+              ssc_k.c        103    //;   *******************************************************************
+              ssc_k.c        104    //;   ***                             ***
+              ssc_k.c        105    //;   ***                             ***
+              ssc_k.c        106    //;   ***     SH2                     ***
+              ssc_k.c        107    //;   ***                             ***
+              ssc_k.c        108    //;   ***                             ***
+              ssc_k.c        109    //;   *******************************************************************
+              ssc_k.c        110    
+              ssc_k.c        111    #pragma section
+              ssc_k.c        112    //;   ***********************************************************
+              ssc_k.c        113    //;   ***                         ***
+              ssc_k.c        114    //;   ***     割込み解除前1回             ***
+              ssc_k.c        115    //;   ***     SH2/SH4共に             ***
+              ssc_k.c        116    //;   ***********************************************************
+              ssc_k.c        117    void cbk_init1(void)
+P   00000000              _cbk_init1:                      ; function: cbk_init1
+                                                           ; frame size=4
+    00000000 4F22                   STS.L       PR,@-R15
+              ssc_k.c        118    {
+              ssc_k.c        119    //    c_dmk1_soft_init();
+              ssc_k.c        120      ASM_DMK1_SOFT_INIT();//
+    00000002 D30E                   MOV.L       L19,R3     ; _ASM_DMK1_SOFT_INIT
+    00000004 430B                   JSR         @R3
+    00000006 0009                   NOP
+    00000008 4F26                   LDS.L       @R15+,PR
+              ssc_k.c        121    
+              ssc_k.c        122    }
+    0000000A 000B                   RTS
+    0000000C 0009                   NOP
+              ssc_k.c        123    
+              ssc_k.c        124    //;   ***********************************************************
+              ssc_k.c        125    //;   ***                         ***
+              ssc_k.c        126    //;   ***     割込み解除後1回             ***
+              ssc_k.c        127    //;   ***                         ***
+              ssc_k.c        128    //;   ***********************************************************
+              ssc_k.c        129    //    存在しない
+              ssc_k.c        130    void cbk_init2(void)
+    0000000E              _cbk_init2:                      ; function: cbk_init2
+                                                           ; frame size=0
+              ssc_k.c        131    {
+              ssc_k.c        132    }
+    0000000E 000B                   RTS
+    00000010 0009                   NOP
+              ssc_k.c        133    
+              ssc_k.c        134    //;   ***********************************************************
+              ssc_k.c        135    //;   ***                         ***
+              ssc_k.c        136    //;   ***     ｲﾆｼｬﾙﾃﾞｰﾀ受信後1回          ***
+              ssc_k.c        137    //;   ***     SH2/SH4共に             ***
+              ssc_k.c        138    //;   ***********************************************************
+              ssc_k.c        139    //void cbk_init3(void)
+              ssc_k.c        140    //{
+              ssc_k.c        141    //    ASM_DMK1_DATA_INIT();//isa-->SH4または SH4(ﾏｽﾀ→ｽﾚｰﾌﾞ)
+              ssc_k.c        142    //
+              ssc_k.c        143    //}
+              ssc_k.c        144    
+              ssc_k.c        145    //;   ***********************************************************
+              ssc_k.c        146    //;   ***                         ***
+              ssc_k.c        147    //;   ***     ﾒｲﾝｽｷｬﾝ                 ***
+              ssc_k.c        148    //;   ***     SH2/SH4共に             ***
+              ssc_k.c        149    //;   ***                         ***
+              ssc_k.c        150    //;   ***********************************************************
+              ssc_k.c        151    //void cbk_main(void)
+              ssc_k.c        152    //{
+              ssc_k.c        153    //    c_k1_ctrl_main();
+              ssc_k.c        154    //
+              ssc_k.c        155    //}
+              ssc_k.c        156    
+              ssc_k.c        157    //;   ***********************************************************
+              ssc_k.c        158    //;   ***                         ***
+              ssc_k.c        159    //;   ***     定周期500us(200us)          ***
+              ssc_k.c        160    //;   ***     SH2/SH4共に             ***
+              ssc_k.c        161    //;   ***                         ***
+              ssc_k.c        162    //;   ***********************************************************
+              ssc_k.c        163    void cbk_int1(void)
+    00000012              _cbk_int1:                       ; function: cbk_int1
+                                                           ; frame size=4
+    00000012 4F22                   STS.L       PR,@-R15
+              ssc_k.c        164    {
+              ssc_k.c        165    //    c_k1_ctrl_int1();
+              ssc_k.c        166      ASM_K1_CTRL_INT1();//200usec割込(100usec)
+    00000014 D30A                   MOV.L       L19+4,R3   ; _ASM_K1_CTRL_INT1
+    00000016 430B                   JSR         @R3
+    00000018 0009                   NOP
+    0000001A 4F26                   LDS.L       @R15+,PR
+              ssc_k.c        167    
+              ssc_k.c        168    }
+    0000001C 000B                   RTS
+    0000001E 0009                   NOP
+              ssc_k.c        169    
+              ssc_k.c        170    //;   ***********************************************************
+              ssc_k.c        171    //;   ***                         ***
+              ssc_k.c        172    //;   ***     定周期2ms(1ms)              ***
+              ssc_k.c        173    //;   ***     SH2/SH4共に             ***
+              ssc_k.c        174    //;   ***                         ***
+              ssc_k.c        175    //;   ***********************************************************
+              ssc_k.c        176    void cbk_int2(void)
+    00000020              _cbk_int2:                       ; function: cbk_int2
+                                                           ; frame size=4
+    00000020 4F22                   STS.L       PR,@-R15
+              ssc_k.c        177    {
+              ssc_k.c        178    //    c_k1_ctrl_int2();
+              ssc_k.c        179      ASM_K1_CTRL_INT2();//2msec割込(1msec)
+    00000022 D308                   MOV.L       L19+8,R3   ; _ASM_K1_CTRL_INT2
+    00000024 430B                   JSR         @R3
+    00000026 0009                   NOP
+    00000028 4F26                   LDS.L       @R15+,PR
+              ssc_k.c        180    
+              ssc_k.c        181    }
+    0000002A 000B                   RTS
+    0000002C 0009                   NOP
+              ssc_k.c        182    
+              ssc_k.c        183    //;   ***********************************************************
+              ssc_k.c        184    //;   ***                         ***
+              ssc_k.c        185    //;   ***     定周期5ms               ***
+              ssc_k.c        186    //;   ***     SH2/SH4共に             ***
+              ssc_k.c        187    //;   ***                         ***
+              ssc_k.c        188    //;   ***********************************************************
+              ssc_k.c        189    void cbk_int3(void)
+    0000002E              _cbk_int3:                       ; function: cbk_int3
+                                                           ; frame size=4
+    0000002E 4F22                   STS.L       PR,@-R15
+              ssc_k.c        190    {
+              ssc_k.c        191    //    c_k1_ctrl_int3();
+              ssc_k.c        192      ASM_K1_CTRL_INT3();//10msec程度(温調/通常のﾀｲﾏ計測)
+    00000030 D305                   MOV.L       L19+12,R3  ; _ASM_K1_CTRL_INT3
+    00000032 430B                   JSR         @R3
+    00000034 0009                   NOP
+    00000036 4F26                   LDS.L       @R15+,PR
+              ssc_k.c        193    
+              ssc_k.c        194    }
+    00000038 000B                   RTS
+    0000003A 0009                   NOP
+    0000003C              L19:
+    0000003C <00000000>             .DATA.L     _ASM_DMK1_SOFT_INIT
+    00000040 <00000000>             .DATA.L     _ASM_K1_CTRL_INT1
+    00000044 <00000000>             .DATA.L     _ASM_K1_CTRL_INT2
+    00000048 <00000000>             .DATA.L     _ASM_K1_CTRL_INT3
+              ssc_k.c        195    
+              ssc_k.c        196    
+SH SERIES C/C++ Compiler (V.9.04.01.002)                                                         14-Nov-2021 17:05:20  PAGE    1
+
+
+******** STATISTICS INFORMATION ********
+
+
+********** ERROR INFORMATION ***********
+
+NUMBER OF ERRORS:           0
+NUMBER OF WARNINGS:         0
+
+
+
+
+******* SOURCE LINE INFORMATION ********
+
+COMPILED SOURCE LINE:      196
+
+
+
+******* SECTION SIZE INFORMATION *******
+
+PROGRAM  SECTION (P):                                 0000004C Byte(s)
+CONSTANT SECTION (C):                                 00000000 Byte(s)
+DATA     SECTION (D):                                 00000000 Byte(s)
+BSS      SECTION (B):                                 00000000 Byte(s)
+
+TOTAL PROGRAM  SECTION: 0000004C Byte(s)
+TOTAL CONSTANT SECTION: 00000000 Byte(s)
+TOTAL DATA     SECTION: 00000000 Byte(s)
+TOTAL BSS      SECTION: 00000000 Byte(s)
+
+    TOTAL PROGRAM SIZE: 0000004C Byte(s)
+
+
+
+********** LABEL INFORMATION ***********
+
+NUMBER OF EXTERNAL REFERENCE SYMBOLS:            4
+NUMBER OF EXTERNAL DEFINITION SYMBOLS:           5
+NUMBER OF INTERNAL/EXTERNAL SYMBOLS:            10
+
+
+
+*** COMMAND PARAMETER ***
+
+-subcommand=D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssc_k.shc
+-cpu=sh4
+-include="D:\SIT4S_MC_99\cpua\cpua\HW_SRC","D:\SIT4S_MC_99\comon","D:\SIT4S_MC_99\cpua\cpua","D:\SIT4S_MC_99\cpua\cpua\SEQ_SRC","D:\SIT4S_MC_99\cpua\cpua\cb_src\COMON","D:\SIT4S_MC_99\cpua\cpua\cb_src\K_SRC","D:\SIT4S_MC_99\comon\cpua_inc"
+-object="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssc_k.obj"
+-debug
+-listfile="D:\SIT4S_MC_99\cpua\cpua\cpua\Release\ssc_k.lst"
+-show=source,include,expansion,tab=4
+-optimize=0
+-noinline
+-gbr=auto
+-chgincpath
+-errorpath
+"D:\SIT4S_MC_99\cpua\cpua\cb_src\K_SRC\ssc_k.c"
+-global_volatile=0
+-opt_range=all
+-infinite_loop=0
+-del_vacant_loop=0
+-struct_alloc=1
+-lang=c
+-nologo

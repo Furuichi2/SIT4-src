@@ -1,0 +1,381 @@
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/12/17 19:19:38                                                  PAGE     1
+PROGRAM NAME =
+
+    1                               1     ;       ***************************************************
+    2                               2     ;       ***             sh3-position control lsi mem    ***
+    3                               3     ;       ***************************************************
+    4                               4             .INCLUDE        "SH7750RG.EXT"
+    5                               1 I1          .global         _PTEH
+    6                               2 I1          .global         _PTEL
+    7                               3 I1          .global         _TTB
+    8                               4 I1          .global         _TEA
+    9                               5 I1          .global         _MMUCR
+   10                               6 I1          .global         _BASRA
+   11                               7 I1          .global         _BASRB
+   12                               8 I1          .global         _CCR
+   13                               9 I1          .global         _TRA
+   14                              10 I1          .global         _EXPEVT
+   15                              11 I1          .global         _INTEVT
+   16                              12 I1          .global         _PTEA
+   17                              13 I1          .global         _QACR0
+   18                              14 I1          .global         _QACR1
+   19                              15 I1  
+   20                              16 I1  ;UBC
+   21                              17 I1          .global         _BARA
+   22                              18 I1          .global         _BAMRA
+   23                              19 I1          .global         _BBRA
+   24                              20 I1          .global         _BARB
+   25                              21 I1          .global         _BAMRB
+   26                              22 I1          .global         _BBRB
+   27                              23 I1          .global         _BDRB
+   28                              24 I1          .global         _BDMRB
+   29                              25 I1          .global         _BRCR
+   30                              26 I1  
+   31                              27 I1  ;BSC
+   32                              28 I1          .global         _BCR1
+   33                              29 I1          .global         _BCR2
+   34                              30 I1          .global         _WCR1
+   35                              31 I1          .global         _WCR2
+   36                              32 I1          .global         _WCR3
+   37                              33 I1          .global         _MCR
+   38                              34 I1          .global         _PCR
+   39                              35 I1          .global         _RTCSR
+   40                              36 I1          .global         _RTCNT
+   41                              37 I1          .global         _RTCOR
+   42                              38 I1          .global         _RFCR
+   43                              39 I1          .global         _PCTRA
+   44                              40 I1          .global         _PDTRA
+   45                              41 I1          .global         _PCTRB
+   46                              42 I1          .global         _PDTRB
+   47                              43 I1          .global         _GPIOIC
+   48                              44 I1  
+   49                              45 I1  ;DMAC
+   50                              46 I1          .global         _SAR0
+   51                              47 I1          .global         _DAR0
+   52                              48 I1          .global         _DMATCR0
+   53                              49 I1          .global         _CHCR0
+   54                              50 I1          .global         _SAR1
+   55                              51 I1          .global         _DAR1
+   56                              52 I1          .global         _DMATCR1
+   57                              53 I1          .global         _CHCR1
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/12/17 19:19:38                                                  PAGE     2
+PROGRAM NAME =
+
+   58                              54 I1          .global         _SAR2
+   59                              55 I1          .global         _DAR2
+   60                              56 I1          .global         _DMATCR2
+   61                              57 I1          .global         _CHCR2
+   62                              58 I1          .global         _SAR3
+   63                              59 I1          .global         _DAR3
+   64                              60 I1          .global         _DMATCR3
+   65                              61 I1          .global         _CHCR3
+   66                              62 I1          .global         _DMAOR
+   67                              63 I1  
+   68                              64 I1  ;CPG
+   69                              65 I1          .global         _FRQCR
+   70                              66 I1          .global         _STBCR
+   71                              67 I1          .global         _WTCNT
+   72                              68 I1          .global         _WTCSR
+   73                              69 I1          .global         _STBCR2
+   74                              70 I1  
+   75                              71 I1  ;INTC
+   76                              72 I1          .global         _ICR
+   77                              73 I1          .global         _IPRA
+   78                              74 I1          .global         _IPRB
+   79                              75 I1          .global         _IPRC
+   80                              76 I1          .global         _IPRD
+   81                              77 I1  
+   82                              78 I1  ;TMU
+   83                              79 I1          .global         _TOCR
+   84                              80 I1          .global         _TSTR
+   85                              81 I1          .global         _TCOR0
+   86                              82 I1          .global         _TCNT0
+   87                              83 I1          .global         _TCR0
+   88                              84 I1          .global         _TCOR1
+   89                              85 I1          .global         _TCNT1
+   90                              86 I1          .global         _TCR1
+   91                              87 I1          .global         _TCOR2
+   92                              88 I1          .global         _TCNT2
+   93                              89 I1          .global         _TCR2
+   94                              90 I1          .global         _TCPR2
+   95                              91 I1  
+   96                              92 I1  ;SCI
+   97                              93 I1          .global         _SCSMR1
+   98                              94 I1          .global         _SCBRR1
+   99                              95 I1          .global         _SCSCR1
+  100                              96 I1          .global         _SCTDR1
+  101                              97 I1          .global         _SCSSR1
+  102                              98 I1          .global         _SCRDR1
+  103                              99 I1          .global         _SCSCMR1
+  104                             100 I1          .global         _SCSPTR1
+  105                             101 I1  
+  106                             102 I1  ;SCIF
+  107                             103 I1          .global         _SCSMR2
+  108                             104 I1          .global         _SCBRR2
+  109                             105 I1          .global         _SCSCR2
+  110                             106 I1          .global         _SCFTDR2
+  111                             107 I1          .global         _SCFSR2
+  112                             108 I1          .global         _SCFRDR2
+  113                             109 I1          .global         _SCFCR2
+  114                             110 I1          .global         _SCFDR2
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/12/17 19:19:38                                                  PAGE     3
+PROGRAM NAME =
+
+  115                             111 I1          .global         _SCSPTR2
+  116                             112 I1          .global         _SCLSR2
+  117                             113 I1  
+  118                               5     
+  119 00000000                      6             .SECTION        SH7750RG,DATA                   ;
+  120                               7     
+  121 00000000                      8             .ORG    H'0
+  122 00000000 00000004             9     _PTEH           .SRES   4;.EQU  _REG_TOP+H'000000;LONG
+  123 00000004 00000004            10     _PTEL           .SRES   4;.EQU  _REG_TOP+H'000004;LONG
+  124 00000008 00000004            11     _TTB            .SRES   4;.EQU  _REG_TOP+H'000008;LONG
+  125 0000000C 00000004            12     _TEA            .SRES   4;.EQU  _REG_TOP+H'00000C;LONG
+  126 00000010 00000004            13     _MMUCR          .SRES   4;.EQU  _REG_TOP+H'000010;LONG
+  127 00000014 00000004            14     _BASRA          .SRES   4;.EQU  _REG_TOP+H'000014;BYTE
+  128 00000018 00000004            15     _BASRB          .SRES   4;.EQU  _REG_TOP+H'000018;BYTE
+  129 0000001C 00000004            16     _CCR            .SRES   4;.EQU  _REG_TOP+H'00001C;LONG
+  130 00000020 00000004            17     _TRA            .SRES   4;.EQU  _REG_TOP+H'000020;LONG
+  131 00000024 00000004            18     _EXPEVT         .SRES   4;.EQU  _REG_TOP+H'000024;LONG
+  132 00000028 00000004            19     _INTEVT         .SRES   4;.EQU  _REG_TOP+H'000028;LONG
+  133 0000002C 00000004            20                     .SRES   4;.EQU  _REG_TOP+H'00002C;LONG
+  134 00000030 00000004            21                     .SRES   4;.EQU  _REG_TOP+H'000030;LONG
+  135 00000034 00000004            22     _PTEA           .SRES   4;.EQU  _REG_TOP+H'000034;LONG
+  136 00000038 00000004            23     _QACR0          .SRES   4;.EQU  _REG_TOP+H'000038;LONG
+  137 0000003C 00000004            24     _QACR1          .SRES   4;.EQU  _REG_TOP+H'00003C;LONG
+  138                              25     
+  139 00200000                     26             .ORG    H'200000
+  140                              27     ;UBC
+  141 00200000 00000004            28     _BARA           .SRES   4;.EQU  _REG_TOP+H'200000;LONG
+  142 00200004 00000004            29     _BAMRA          .SRES   4;.EQU  _REG_TOP+H'200004;BYTE
+  143 00200008 00000004            30     _BBRA           .SRES   4;.EQU  _REG_TOP+H'200008;WORD
+  144 0020000C 00000004            31     _BARB           .SRES   4;.EQU  _REG_TOP+H'20000C;LONG
+  145 00200010 00000004            32     _BAMRB          .SRES   4;.EQU  _REG_TOP+H'200010;BYTE
+  146 00200014 00000004            33     _BBRB           .SRES   4;.EQU  _REG_TOP+H'200014;WORD
+  147 00200018 00000004            34     _BDRB           .SRES   4;.EQU  _REG_TOP+H'200018;LONG
+  148 0020001C 00000004            35     _BDMRB          .SRES   4;.EQU  _REG_TOP+H'20001C;WORD
+  149 00200020 00000004            36     _BRCR           .SRES   4;.EQU  _REG_TOP+H'200020;WORD
+  150                              37     
+  151 00800000                     38             .ORG    H'800000
+  152                              39     ;BSC
+  153 00800000 00000004            40     _BCR1           .SRES   4;.EQU  _REG_TOP+H'800000;LONG
+  154 00800004 00000004            41     _BCR2           .SRES   4;.EQU  _REG_TOP+H'800004;WORD
+  155 00800008 00000004            42     _WCR1           .SRES   4;.EQU  _REG_TOP+H'800008;LONG
+  156 0080000C 00000004            43     _WCR2           .SRES   4;.EQU  _REG_TOP+H'80000C;LONG
+  157 00800010 00000004            44     _WCR3           .SRES   4;.EQU  _REG_TOP+H'800010;LONG
+  158 00800014 00000004            45     _MCR            .SRES   4;.EQU  _REG_TOP+H'800014;LONG
+  159 00800018 00000004            46     _PCR            .SRES   4;.EQU  _REG_TOP+H'800018;WORD
+  160 0080001C 00000004            47     _RTCSR          .SRES   4;.EQU  _REG_TOP+H'80001C;WORD
+  161 00800020 00000004            48     _RTCNT          .SRES   4;.EQU  _REG_TOP+H'800020;WORD
+  162 00800024 00000004            49     _RTCOR          .SRES   4;.EQU  _REG_TOP+H'800024;WORD
+  163 00800028 00000004            50     _RFCR           .SRES   4;.EQU  _REG_TOP+H'800028;WORD
+  164 0080002C 00000004            51     _PCTRA          .SRES   4;.EQU  _REG_TOP+H'80002C;LONG
+  165 00800030 00000004            52     _PDTRA          .SRES   4;.EQU  _REG_TOP+H'800030;WORD
+  166 00800034 00000004            53                     .SRES   4;.EQU  _REG_TOP+H'800034;LONG
+  167 00800038 00000004            54                     .SRES   4;.EQU  _REG_TOP+H'800038;LONG
+  168 0080003C 00000004            55                     .SRES   4;.EQU  _REG_TOP+H'80003C;LONG
+  169 00800040 00000004            56     _PCTRB          .SRES   4;.EQU  _REG_TOP+H'800040;LONG
+  170 00800044 00000004            57     _PDTRB          .SRES   4;.EQU  _REG_TOP+H'800044;WORD
+  171 00800048 00000004            58     _GPIOIC         .SRES   4;.EQU  _REG_TOP+H'800048;WORD
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/12/17 19:19:38                                                  PAGE     4
+PROGRAM NAME =
+
+  172                              59     
+  173 00A00000                     60             .ORG    H'A00000
+  174                              61     ;DMAC
+  175 00A00000 00000004            62     _SAR0           .SRES   4;.EQU  _REG_TOP+H'A00000;LONG
+  176 00A00004 00000004            63     _DAR0           .SRES   4;.EQU  _REG_TOP+H'A00004;LONG
+  177 00A00008 00000004            64     _DMATCR0        .SRES   4;.EQU  _REG_TOP+H'A00008;LONG
+  178 00A0000C 00000004            65     _CHCR0          .SRES   4;.EQU  _REG_TOP+H'A0000C;LONG
+  179 00A00010 00000004            66     _SAR1           .SRES   4;.EQU  _REG_TOP+H'A00010;LONG
+  180 00A00014 00000004            67     _DAR1           .SRES   4;.EQU  _REG_TOP+H'A00014;LONG
+  181 00A00018 00000004            68     _DMATCR1        .SRES   4;.EQU  _REG_TOP+H'A00018;LONG
+  182 00A0001C 00000004            69     _CHCR1          .SRES   4;.EQU  _REG_TOP+H'A0001C;LONG
+  183 00A00020 00000004            70     _SAR2           .SRES   4;.EQU  _REG_TOP+H'A00020;LONG
+  184 00A00024 00000004            71     _DAR2           .SRES   4;.EQU  _REG_TOP+H'A00024;LONG
+  185 00A00028 00000004            72     _DMATCR2        .SRES   4;.EQU  _REG_TOP+H'A00028;LONG
+  186 00A0002C 00000004            73     _CHCR2          .SRES   4;.EQU  _REG_TOP+H'A0002C;LONG
+  187 00A00030 00000004            74     _SAR3           .SRES   4;.EQU  _REG_TOP+H'A00030;LONG
+  188 00A00034 00000004            75     _DAR3           .SRES   4;.EQU  _REG_TOP+H'A00034;LONG
+  189 00A00038 00000004            76     _DMATCR3        .SRES   4;.EQU  _REG_TOP+H'A00038;LONG
+  190 00A0003C 00000004            77     _CHCR3          .SRES   4;.EQU  _REG_TOP+H'A0003C;LONG
+  191 00A00040 00000004            78     _DMAOR          .SRES   4;.EQU  _REG_TOP+H'A00040;LONG
+  192                              79     
+  193 00C00000                     80             .ORG    H'C00000
+  194                              81     ;CPG
+  195 00C00000 00000004            82     _FRQCR          .SRES   4;.EQU  _REG_TOP+H'C00000;WORD
+  196 00C00004 00000004            83     _STBCR          .SRES   4;.EQU  _REG_TOP+H'C00004;BYTE
+  197 00C00008 00000004            84     _WTCNT          .SRES   4;.EQU  _REG_TOP+H'C00008;BYTE/WORD
+  198 00C0000C 00000004            85     _WTCSR          .SRES   4;.EQU  _REG_TOP+H'C0000C;BYTE/WORD
+  199 00C00010 00000004            86     _STBCR2         .SRES   4;.EQU  _REG_TOP+H'C00010;BYTE
+  200                              87     
+  201 00D00000                     88             .ORG    H'D00000
+  202                              89     ;INTC
+  203 00D00000 00000004            90     _ICR            .SRES   4;.EQU  _REG_TOP+H'D00000;WORD
+  204 00D00004 00000004            91     _IPRA           .SRES   4;.EQU  _REG_TOP+H'D00004;WORD
+  205 00D00008 00000004            92     _IPRB           .SRES   4;.EQU  _REG_TOP+H'D00008;WORD
+  206 00D0000C 00000004            93     _IPRC           .SRES   4;.EQU  _REG_TOP+H'D0000C;WORD
+  207 00D00010 00000004            94     _IPRD           .SRES   4;.EQU  _REG_TOP+H'D00010;WORD
+  208                              95     
+  209 00D80000                     96             .ORG    H'D80000
+  210                              97     ;TMU
+  211 00D80000 00000004            98     _TOCR           .SRES   4;.EQU  _REG_TOP+H'D80000;BYTE
+  212 00D80004 00000004            99     _TSTR           .SRES   4;.EQU  _REG_TOP+H'D80004;BYTE
+  213 00D80008 00000004           100     _TCOR0          .SRES   4;.EQU  _REG_TOP+H'D80008;LONG
+  214 00D8000C 00000004           101     _TCNT0          .SRES   4;.EQU  _REG_TOP+H'D8000C;LONG
+  215 00D80010 00000004           102     _TCR0           .SRES   4;.EQU  _REG_TOP+H'D80010;WORD
+  216 00D80014 00000004           103     _TCOR1          .SRES   4;.EQU  _REG_TOP+H'D80014;LONG
+  217 00D80018 00000004           104     _TCNT1          .SRES   4;.EQU  _REG_TOP+H'D80018;LONG
+  218 00D8001C 00000004           105     _TCR1           .SRES   4;.EQU  _REG_TOP+H'D8001C;WORD
+  219 00D80020 00000004           106     _TCOR2          .SRES   4;.EQU  _REG_TOP+H'D80020;LONG
+  220 00D80024 00000004           107     _TCNT2          .SRES   4;.EQU  _REG_TOP+H'D80024;LONG
+  221 00D80028 00000004           108     _TCR2           .SRES   4;.EQU  _REG_TOP+H'D80028;WORD
+  222 00D8002C 00000004           109     _TCPR2          .SRES   4;.EQU  _REG_TOP+H'D8002C;LONG
+  223                             110     
+  224 00E00000                    111             .ORG    H'E00000
+  225                             112     ;SCI
+  226 00E00000 00000004           113     _SCSMR1         .SRES   4;.EQU  _REG_TOP+H'E00000;BYTE
+  227 00E00004 00000004           114     _SCBRR1         .SRES   4;.EQU  _REG_TOP+H'E00004;BYTE
+  228 00E00008 00000004           115     _SCSCR1         .SRES   4;.EQU  _REG_TOP+H'E00008;BYTE
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/12/17 19:19:38                                                  PAGE     5
+PROGRAM NAME =
+
+  229 00E0000C 00000004           116     _SCTDR1         .SRES   4;.EQU  _REG_TOP+H'E0000C;BYTE
+  230 00E00010 00000004           117     _SCSSR1         .SRES   4;.EQU  _REG_TOP+H'E00010;BYTE
+  231 00E00014 00000004           118     _SCRDR1         .SRES   4;.EQU  _REG_TOP+H'E00014;BYTE
+  232 00E00018 00000004           119     _SCSCMR1        .SRES   4;.EQU  _REG_TOP+H'E00018;BYTE
+  233 00E0001C 00000004           120     _SCSPTR1        .SRES   4;.EQU  _REG_TOP+H'E0001C;BYTE
+  234                             121     
+  235 00E80000                    122             .ORG    H'E80000
+  236                             123     ;SCIF
+  237 00E80000 00000004           124     _SCSMR2         .SRES   4;.EQU  _REG_TOP+H'E80000;WORD
+  238 00E80004 00000004           125     _SCBRR2         .SRES   4;.EQU  _REG_TOP+H'E80004;BYTE
+  239 00E80008 00000004           126     _SCSCR2         .SRES   4;.EQU  _REG_TOP+H'E80008;WORD
+  240 00E8000C 00000004           127     _SCFTDR2        .SRES   4;.EQU  _REG_TOP+H'E8000C;BYTE
+  241 00E80010 00000004           128     _SCFSR2         .SRES   4;.EQU  _REG_TOP+H'E80010;WORD
+  242 00E80014 00000004           129     _SCFRDR2        .SRES   4;.EQU  _REG_TOP+H'E80014;BYTE
+  243 00E80018 00000004           130     _SCFCR2         .SRES   4;.EQU  _REG_TOP+H'E80018;WORD
+  244 00E8001C 00000004           131     _SCFDR2         .SRES   4;.EQU  _REG_TOP+H'E8001C;WORD
+  245 00E80020 00000004           132     _SCSPTR2        .SRES   4;.EQU  _REG_TOP+H'E80020;WORD
+  246 00E80024 00000004           133     _SCLSR2         .SRES   4;.EQU  _REG_TOP+H'E80024;WORD
+  247                             134     
+  248                             135             .END
+  *****TOTAL ERRORS       0
+  *****TOTAL WARNINGS     0
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/12/17 19:19:38                                                  PAGE     6
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+SH7750RG                         SH7750RG SCT  00000000    119*
+_BAMRA                           SH7750RG EXPT 00200004     22   142*
+_BAMRB                           SH7750RG EXPT 00200010     25   145*
+_BARA                            SH7750RG EXPT 00200000     21   141*
+_BARB                            SH7750RG EXPT 0020000C     24   144*
+_BASRA                           SH7750RG EXPT 00000014     10   127*
+_BASRB                           SH7750RG EXPT 00000018     11   128*
+_BBRA                            SH7750RG EXPT 00200008     23   143*
+_BBRB                            SH7750RG EXPT 00200014     26   146*
+_BCR1                            SH7750RG EXPT 00800000     32   153*
+_BCR2                            SH7750RG EXPT 00800004     33   154*
+_BDMRB                           SH7750RG EXPT 0020001C     28   148*
+_BDRB                            SH7750RG EXPT 00200018     27   147*
+_BRCR                            SH7750RG EXPT 00200020     29   149*
+_CCR                             SH7750RG EXPT 0000001C     12   129*
+_CHCR0                           SH7750RG EXPT 00A0000C     53   178*
+_CHCR1                           SH7750RG EXPT 00A0001C     57   182*
+_CHCR2                           SH7750RG EXPT 00A0002C     61   186*
+_CHCR3                           SH7750RG EXPT 00A0003C     65   190*
+_DAR0                            SH7750RG EXPT 00A00004     51   176*
+_DAR1                            SH7750RG EXPT 00A00014     55   180*
+_DAR2                            SH7750RG EXPT 00A00024     59   184*
+_DAR3                            SH7750RG EXPT 00A00034     63   188*
+_DMAOR                           SH7750RG EXPT 00A00040     66   191*
+_DMATCR0                         SH7750RG EXPT 00A00008     52   177*
+_DMATCR1                         SH7750RG EXPT 00A00018     56   181*
+_DMATCR2                         SH7750RG EXPT 00A00028     60   185*
+_DMATCR3                         SH7750RG EXPT 00A00038     64   189*
+_EXPEVT                          SH7750RG EXPT 00000024     14   131*
+_FRQCR                           SH7750RG EXPT 00C00000     69   195*
+_GPIOIC                          SH7750RG EXPT 00800048     47   171*
+_ICR                             SH7750RG EXPT 00D00000     76   203*
+_INTEVT                          SH7750RG EXPT 00000028     15   132*
+_IPRA                            SH7750RG EXPT 00D00004     77   204*
+_IPRB                            SH7750RG EXPT 00D00008     78   205*
+_IPRC                            SH7750RG EXPT 00D0000C     79   206*
+_IPRD                            SH7750RG EXPT 00D00010     80   207*
+_MCR                             SH7750RG EXPT 00800014     37   158*
+_MMUCR                           SH7750RG EXPT 00000010      9   126*
+_PCR                             SH7750RG EXPT 00800018     38   159*
+_PCTRA                           SH7750RG EXPT 0080002C     43   164*
+_PCTRB                           SH7750RG EXPT 00800040     45   169*
+_PDTRA                           SH7750RG EXPT 00800030     44   165*
+_PDTRB                           SH7750RG EXPT 00800044     46   170*
+_PTEA                            SH7750RG EXPT 00000034     16   135*
+_PTEH                            SH7750RG EXPT 00000000      5   122*
+_PTEL                            SH7750RG EXPT 00000004      6   123*
+_QACR0                           SH7750RG EXPT 00000038     17   136*
+_QACR1                           SH7750RG EXPT 0000003C     18   137*
+_RFCR                            SH7750RG EXPT 00800028     42   163*
+_RTCNT                           SH7750RG EXPT 00800020     40   161*
+_RTCOR                           SH7750RG EXPT 00800024     41   162*
+_RTCSR                           SH7750RG EXPT 0080001C     39   160*
+_SAR0                            SH7750RG EXPT 00A00000     50   175*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/12/17 19:19:38                                                  PAGE     7
+
+*** CROSS REFERENCE LIST
+
+NAME                             SECTION  ATTR VALUE             SEQUENCE
+
+_SAR1                            SH7750RG EXPT 00A00010     54   179*
+_SAR2                            SH7750RG EXPT 00A00020     58   183*
+_SAR3                            SH7750RG EXPT 00A00030     62   187*
+_SCBRR1                          SH7750RG EXPT 00E00004     98   227*
+_SCBRR2                          SH7750RG EXPT 00E80004    108   238*
+_SCFCR2                          SH7750RG EXPT 00E80018    113   243*
+_SCFDR2                          SH7750RG EXPT 00E8001C    114   244*
+_SCFRDR2                         SH7750RG EXPT 00E80014    112   242*
+_SCFSR2                          SH7750RG EXPT 00E80010    111   241*
+_SCFTDR2                         SH7750RG EXPT 00E8000C    110   240*
+_SCLSR2                          SH7750RG EXPT 00E80024    116   246*
+_SCRDR1                          SH7750RG EXPT 00E00014    102   231*
+_SCSCMR1                         SH7750RG EXPT 00E00018    103   232*
+_SCSCR1                          SH7750RG EXPT 00E00008     99   228*
+_SCSCR2                          SH7750RG EXPT 00E80008    109   239*
+_SCSMR1                          SH7750RG EXPT 00E00000     97   226*
+_SCSMR2                          SH7750RG EXPT 00E80000    107   237*
+_SCSPTR1                         SH7750RG EXPT 00E0001C    104   233*
+_SCSPTR2                         SH7750RG EXPT 00E80020    115   245*
+_SCSSR1                          SH7750RG EXPT 00E00010    101   230*
+_SCTDR1                          SH7750RG EXPT 00E0000C    100   229*
+_STBCR                           SH7750RG EXPT 00C00004     70   196*
+_STBCR2                          SH7750RG EXPT 00C00010     73   199*
+_TCNT0                           SH7750RG EXPT 00D8000C     86   214*
+_TCNT1                           SH7750RG EXPT 00D80018     89   217*
+_TCNT2                           SH7750RG EXPT 00D80024     92   220*
+_TCOR0                           SH7750RG EXPT 00D80008     85   213*
+_TCOR1                           SH7750RG EXPT 00D80014     88   216*
+_TCOR2                           SH7750RG EXPT 00D80020     91   219*
+_TCPR2                           SH7750RG EXPT 00D8002C     94   222*
+_TCR0                            SH7750RG EXPT 00D80010     87   215*
+_TCR1                            SH7750RG EXPT 00D8001C     90   218*
+_TCR2                            SH7750RG EXPT 00D80028     93   221*
+_TEA                             SH7750RG EXPT 0000000C      8   125*
+_TOCR                            SH7750RG EXPT 00D80000     83   211*
+_TRA                             SH7750RG EXPT 00000020     13   130*
+_TSTR                            SH7750RG EXPT 00D80004     84   212*
+_TTB                             SH7750RG EXPT 00000008      7   124*
+_WCR1                            SH7750RG EXPT 00800008     34   155*
+_WCR2                            SH7750RG EXPT 0080000C     35   156*
+_WCR3                            SH7750RG EXPT 00800010     36   157*
+_WTCNT                           SH7750RG EXPT 00C00008     71   197*
+_WTCSR                           SH7750RG EXPT 00C0000C     72   198*
+*** SuperH RISC engine ASSEMBLER V.7.01.02.000 ***    12/12/17 19:19:38                                                  PAGE     8
+
+*** SECTION DATA LIST
+
+SECTION                          ATTRIBUTE    SIZE             START
+
+SH7750RG                         REL-DATA    000E80028        
